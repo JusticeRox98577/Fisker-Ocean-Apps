@@ -10,3 +10,5 @@
 keystore.properties
 *.keystore
 *.jks
+
+!dev-debug.keystore

@@ -33,9 +33,29 @@ android {
         }
     }
 
+    signingConfigs {
+        // A fixed key for the Dev build, so each Dev build installs over the last one.
+        // This key is not secret. It only signs the test version.
+        create("dev") {
+            storeFile = rootProject.file("dev-debug.keystore")
+            storePassword = "android"
+            keyAlias = "oceanlivedev"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        // Dev is for testing new features. It installs next to the public app.
+        debug {
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            signingConfig = signingConfigs.getByName("dev")
+            resValue("string", "app_name", "Ocean Live Dev")
+        }
+        // Release is the public Beta that goes to Google Play.
         release {
             isMinifyEnabled = false
+            resValue("string", "app_name", "Ocean Live")
             if (keyFile.exists()) signingConfig = signingConfigs.getByName("upload")
         }
     }

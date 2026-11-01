@@ -10,9 +10,12 @@ One repo for all my Fisker apps. Each app lives in its own folder.
 | `ocean-live/android` | Fisker Ocean Live for Android (Kotlin, Compose) |
 | `obd-simulator/android` | OBD Adapter Simulator for Android (Kotlin, Compose). Pretends to be a vLinker FD Bluetooth adapter and sends made up battery data, so Ocean Live can be filmed or tested without a car |
 
-## Android
+## Android, Dev and Beta
 
-Pushes that change `ocean-live/android` build a debug APK with GitHub Actions and attach it to a GitHub Release.
+Android has two versions that install side by side.
+
+- **Ocean Live Dev** is for testing new features. It uses the package `com.justicemw.oceanlive.dev` and includes the test tools. Every push that changes `ocean-live/android` builds it with GitHub Actions and attaches the APK to a pre release named `dev-N`. It is signed with the fixed key `dev-debug.keystore`, so each new Dev build installs over the last one.
+- **Ocean Live** is the public Beta. It uses the package `com.justicemw.oceanlive`, hides the test tools, and is built as a signed bundle (`bundleRelease`) for Google Play.
 
 ## OBD Adapter Simulator
 
