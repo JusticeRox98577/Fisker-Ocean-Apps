@@ -223,7 +223,7 @@ class CarViewModel : ViewModel() {
         fleetId = 5,
         sdkToken = "YOUR_LOGIN_TOKEN_UUID"
     )
-    private val vin = "VCF1ZBU20PG005329"
+    private val vin = "YOUR_VIN"
 
     private val _state = MutableStateFlow<CarUiState>(CarUiState.Loading)
     val state: StateFlow<CarUiState> = _state

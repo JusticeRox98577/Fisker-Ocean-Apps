@@ -1,6 +1,6 @@
 # Fisker-apps
 
-One repo for all my Fisker apps. Each app lives in its own folder.
+One repo for all my Fisker apps. Each app lives in its own folder. See [SECURITY.md](SECURITY.md) for how security is handled and how to report a problem.
 
 ## Apps
 
