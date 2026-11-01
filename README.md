@@ -1,4 +1,4 @@
-# apple-apps
+# Fisker-apps
 
 One repo for all my Fisker apps. Each app lives in its own folder.
 
