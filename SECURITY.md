@@ -1,5 +1,7 @@
 # Security
 
+Maintainer Justice MontgomeryWalkup
+
 This repo holds unofficial community apps for the Fisker Ocean. I maintain it myself and take security reports seriously.
 
 ## What the apps touch
