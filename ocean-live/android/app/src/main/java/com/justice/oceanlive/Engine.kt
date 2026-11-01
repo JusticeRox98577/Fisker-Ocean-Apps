@@ -135,6 +135,19 @@ object Engine {
     private var restVoltage: Double? = null
     private var ocv = mutableListOf<DoubleArray>()
 
+    // Alerts
+    private var alertHighFired = false
+    private var alertLowFired = false
+    private var wasCharging = false
+
+    // History
+    private var historySegKind: String? = null
+    private var historySegStart: Long = 0L
+    private var historySegStartSoc: Double = 0.0
+    private var historySegDistance: Double = 0.0
+    private var historySegKWh: Double = 0.0
+    private var historyLastSample: Long? = null
+
     // Location
     @Volatile
     private var lastLocation: Location? = null
@@ -149,6 +162,7 @@ object Engine {
     fun init(ctx: Context) {
         app = ctx.applicationContext
         prefs = app.getSharedPreferences("ocean", Context.MODE_PRIVATE)
+        History.init(app)
         val bm = app.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         btAdapter = bm.adapter
         locationManager = app.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -217,6 +231,83 @@ object Engine {
         val v = min(100.0, max(0.0, value))
         _ui.update { it.copy(estSoc = v) }
         saveD("estSOC", v)
+        refreshWidget()
+    }
+
+    private fun refreshWidget() {
+        try {
+            OceanWidget.refreshAll(app)
+        } catch (e: Exception) {
+        }
+    }
+
+    // MARK: alerts
+
+    private fun checkAlerts(soc: Double) {
+        if (getPref("alertsOn", "0") != "1") {
+            wasCharging = chargingNow
+            return
+        }
+        if (getPref("alertHighOn", "0") == "1") {
+            val high = getPref("alertHighPct", "90").toDoubleOrNull() ?: 90.0
+            if (chargingNow && soc >= high && !alertHighFired) {
+                Alerts.chargeReachedHigh(app, soc.toInt())
+                alertHighFired = true
+            }
+            if (soc < high - 1) alertHighFired = false
+        }
+        if (getPref("alertLowOn", "0") == "1") {
+            val low = getPref("alertLowPct", "20").toDoubleOrNull() ?: 20.0
+            if (soc <= low && !alertLowFired) {
+                Alerts.chargeLow(app, soc.toInt())
+                alertLowFired = true
+            }
+            if (soc > low + 3) alertLowFired = false
+        }
+        if (getPref("alertStopOn", "0") == "1" && wasCharging && !chargingNow) {
+            Alerts.chargingStopped(app, soc.toInt())
+        }
+        wasCharging = chargingNow
+    }
+
+    // MARK: history
+
+    private fun closeHistorySegment(now: Long, endSoc: Double) {
+        val kind = historySegKind ?: return
+        if (now - historySegStart > 60_000) {
+            History.add(
+                HistoryEntry(
+                    kind = kind,
+                    startTime = historySegStart,
+                    endTime = now,
+                    startSoc = historySegStartSoc,
+                    endSoc = endSoc,
+                    distanceMeters = historySegDistance,
+                    kWh = historySegKWh
+                )
+            )
+        }
+        historySegKind = null
+    }
+
+    private fun trackHistory(now: Long, soc: Double?, distanceDelta: Double, kwDelta: Double, dtHours: Double) {
+        val kind = if (chargingNow) "charge" else "drive"
+        if (historySegKind == null) {
+            historySegKind = kind
+            historySegStart = now
+            historySegStartSoc = soc ?: 0.0
+            historySegDistance = 0.0
+            historySegKWh = 0.0
+        } else if (historySegKind != kind) {
+            closeHistorySegment(now, soc ?: historySegStartSoc)
+            historySegKind = kind
+            historySegStart = now
+            historySegStartSoc = soc ?: 0.0
+            historySegDistance = 0.0
+            historySegKWh = 0.0
+        }
+        historySegDistance += distanceDelta
+        historySegKWh += abs(kwDelta) * dtHours
     }
 
     fun resetLearning() {
@@ -780,6 +871,11 @@ object Engine {
         scope.launch {
             _ui.update { it.copy(active = true, tripMeters = 0.0, tripKWh = 0.0) }
             tripPrev = null
+            historySegKind = null
+            historyLastSample = null
+            alertHighFired = false
+            alertLowFired = false
+            wasCharging = chargingNow
             startAction = { runLoop(apiKey, token, interval, capacity) }
             if (ready) startAction?.invoke() else connectAdapterInternal()
         }
@@ -792,6 +888,7 @@ object Engine {
     private fun haltInternal() {
         _ui.update { it.copy(active = false) }
         startAction = null
+        closeHistorySegment(System.currentTimeMillis(), _ui.value.estSoc ?: historySegStartSoc)
         stopLoop()
         stopLocation()
         _ui.value.estSoc?.let { saveD("estSOC", it) }
@@ -875,6 +972,7 @@ object Engine {
                         log(p.name + " bad formula")
                     }
                 }
+                var tickDistance = 0.0
                 val loc = lastLocation
                 if (loc != null) {
                     tlm["lat"] = loc.latitude
@@ -887,6 +985,7 @@ object Engine {
                             if (d > 5 && d < 500) {
                                 _ui.update { it.copy(tripMeters = it.tripMeters + d) }
                                 tripPrev = loc
+                                tickDistance = d
                             } else if (d >= 500) {
                                 tripPrev = loc
                             }
@@ -911,12 +1010,14 @@ object Engine {
                     _ui.update { it.copy(socFromCar = false) }
                     if (_ui.value.estSoc == null) status("Match to car screen to set charge")
                 }
+                var tickKw = 0.0
                 val volts = tlm["voltage"] as? Double
                 val amps = tlm["current"] as? Double
                 if (volts != null && amps != null) {
                     val raw = volts * amps / 1000.0
                     val kw = smoothKW?.let { it * 0.8 + raw * 0.2 } ?: raw
                     smoothKW = kw
+                    tickKw = kw
                     if (chargingNow) {
                         if (kw > -0.5) chargingNow = false
                     } else if (kw < -1.5) {
@@ -928,15 +1029,23 @@ object Engine {
                     val now = System.currentTimeMillis()
                     val last = lastSample
                     val soc = _ui.value.estSoc
-                    if (carSoc == null && last != null && soc != null) {
+                    if (last != null) {
                         val dt = (now - last) / 1000.0
                         if (dt > 0 && dt < 30) {
                             val kwh = kw * dt / 3600.0
-                            val next = min(100.0, max(0.0, soc - kwh / capacityKWh * 100.0))
-                            energySinceSync += kwh
                             val countTrip = !chargingNow
-                            _ui.update {
-                                it.copy(estSoc = next, tripKWh = if (countTrip) it.tripKWh + kwh else it.tripKWh)
+                            // The trip energy count always runs, even when the car reports its own
+                            // charge level, so Efficiency and Range still have numbers to work with.
+                            if (carSoc == null && soc != null) {
+                                val next = min(100.0, max(0.0, soc - kwh / capacityKWh * 100.0))
+                                energySinceSync += kwh
+                                _ui.update {
+                                    it.copy(estSoc = next, tripKWh = if (countTrip) it.tripKWh + kwh else it.tripKWh)
+                                }
+                            } else {
+                                _ui.update {
+                                    it.copy(tripKWh = if (countTrip) it.tripKWh + kwh else it.tripKWh)
+                                }
                             }
                         }
                     }
@@ -960,6 +1069,15 @@ object Engine {
                         restSince = null
                     }
                 }
+                run {
+                    val nowH = System.currentTimeMillis()
+                    val lastH = historyLastSample
+                    val dtHours = if (lastH != null) ((nowH - lastH) / 1000.0 / 3600.0).coerceIn(0.0, 0.01) else 0.0
+                    historyLastSample = nowH
+                    trackHistory(nowH, _ui.value.estSoc, tickDistance, tickKw, dtHours)
+                    _ui.value.estSoc?.let { checkAlerts(it) }
+                }
+                refreshWidget()
                 val est = _ui.value.estSoc
                 if (est != null) tlm["soc"] = (est * 10).roundToLong() / 10.0
                 if (tlm["is_charging"] == null) tlm["is_charging"] = 0

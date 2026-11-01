@@ -56,11 +56,13 @@ class OceanCarScreen(carContext: CarContext) : Screen(carContext) {
 
     override fun onGetTemplate(): Template {
         val ui = Engine.ui.value
+        val useF = Engine.getPref("useF", "0") == "1"
+        val temp = ui.live["batt_temp"]?.let { if (useF) it * 9 / 5 + 32 else it }
         val pane = Pane.Builder()
             .addRow(Row.Builder().setTitle("Charge")
                 .addText(ui.estSoc?.let { String.format("%.1f%%", it) } ?: "--").build())
             .addRow(Row.Builder().setTitle("Power").addText(num(ui.live["power"], 1, "kW")).build())
-            .addRow(Row.Builder().setTitle("Battery temp").addText(num(ui.live["batt_temp"], 0, "°C")).build())
+            .addRow(Row.Builder().setTitle("Battery temp").addText(num(temp, 0, if (useF) "°F" else "°C")).build())
             .addRow(Row.Builder().setTitle("Status")
                 .addText(if (ui.connected) "Connected" else ui.status).build())
             .build()

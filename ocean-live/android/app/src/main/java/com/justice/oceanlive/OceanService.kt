@@ -27,8 +27,8 @@ class OceanService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val n: Notification = Notification.Builder(this, "ocean")
-            .setContentTitle("Ocean Live is running")
-            .setContentText("Sending your car data to ABRP")
+            .setContentTitle(getString(R.string.svc_title))
+            .setContentText(getString(R.string.svc_text))
             .setSmallIcon(R.drawable.ic_notif)
             .setContentIntent(open)
             .setOngoing(true)
