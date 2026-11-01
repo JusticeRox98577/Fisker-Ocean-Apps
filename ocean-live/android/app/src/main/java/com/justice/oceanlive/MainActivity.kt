@@ -153,6 +153,11 @@ fun App() {
 
     var apiKey by remember { mutableStateOf(Engine.getPref("apiKey", "")) }
     var token by remember { mutableStateOf(Engine.getPref("token", "")) }
+    var fBearer by remember { mutableStateOf(Engine.getPref("fiskerBearer", "")) }
+    var fEmail by remember { mutableStateOf(Engine.getPref("fiskerEmail", "")) }
+    var fFleet by remember { mutableStateOf(Engine.getPref("fiskerFleet", "5")) }
+    var fToken by remember { mutableStateOf(Engine.getPref("fiskerToken", "")) }
+    var fVin by remember { mutableStateOf(Engine.getPref("fiskerVin", "")) }
     var interval by remember { mutableStateOf(Engine.getPref("interval", "5").toIntOrNull() ?: 5) }
     var model by remember { mutableStateOf(Engine.getPref("model", "big")) }
     var useKm by remember { mutableStateOf(Engine.getPref("useKm", "0") == "1") }
@@ -653,6 +658,48 @@ fun App() {
                     }
                     Text(
                         stringResource(R.string.abrp_help),
+                        fontSize = 13.sp, color = Muted
+                    )
+
+                    SectionTitle("Car data online")
+                    OutlinedTextField(
+                        value = fBearer,
+                        onValueChange = { fBearer = it; Engine.setPref("fiskerBearer", it) },
+                        label = { Text("SDK bearer") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = fEmail,
+                        onValueChange = { fEmail = it; Engine.setPref("fiskerEmail", it) },
+                        label = { Text("Account email") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = fFleet,
+                        onValueChange = { fFleet = it; Engine.setPref("fiskerFleet", it) },
+                        label = { Text("Fleet ID") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = fToken,
+                        onValueChange = { fToken = it; Engine.setPref("fiskerToken", it) },
+                        label = { Text("Login token") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = fVin,
+                        onValueChange = { fVin = it.uppercase(); Engine.setPref("fiskerVin", fVin) },
+                        label = { Text("VIN") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        "When the adapter is not connected, pressing Start reads your charge and location from the online car service instead. Fill in all five fields to turn it on. It checks about every 15 seconds. The adapter takes over by itself once it connects.",
                         fontSize = 13.sp, color = Muted
                     )
 

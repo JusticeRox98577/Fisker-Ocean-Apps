@@ -20,6 +20,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -119,6 +120,10 @@ object Engine {
     private var pending: CompletableDeferred<String>? = null
     private var pollJob: Job? = null
     private var startAction: (() -> Unit)? = null
+    private var cloudAction: (() -> Unit)? = null
+    private var cloudJob: Job? = null
+    private var cloudClient: FiskerClient? = null
+    private var cloudClientKey = ""
     private var scanning = false
     @Volatile private var holdLoop = false
     @Volatile private var scanCancel = false
@@ -480,7 +485,9 @@ object Engine {
                     }
                     if (gatt === g) gatt = null
                     if (_ui.value.active) {
-                        status("Reconnecting")
+                        // With no adapter the car data still comes from the cloud when it is set up
+                        cloudAction?.invoke()
+                        if (cloudJob?.isActive != true) status("Reconnecting")
                         delay(2000)
                         val addr = prefs.getString("adapterAddr", null)
                         if (_ui.value.active && addr != null && gatt == null) connectTo(addr)
@@ -877,8 +884,93 @@ object Engine {
             alertLowFired = false
             wasCharging = chargingNow
             startAction = { runLoop(apiKey, token, interval, capacity) }
-            if (ready) startAction?.invoke() else connectAdapterInternal()
+            cloudAction = if (cloudConfigured()) ({ runCloudLoop(apiKey, token, interval) }) else null
+            if (ready) {
+                startAction?.invoke()
+            } else if (cloudAction != null) {
+                // Not connected over Bluetooth, so use the cloud path. If an adapter was
+                // saved before, still try it. The Bluetooth loop takes over once it connects.
+                cloudAction?.invoke()
+                val saved = prefs.getString("adapterAddr", null)
+                if (saved != null && btAdapter?.isEnabled == true) connectAdapterInternal()
+            } else {
+                connectAdapterInternal()
+            }
         }
+    }
+
+    // MARK: cloud data, used when the Bluetooth adapter is not connected
+
+    private fun cloudConfigured(): Boolean =
+        getPref("fiskerBearer", "").isNotBlank() &&
+            getPref("fiskerEmail", "").isNotBlank() &&
+            getPref("fiskerToken", "").isNotBlank() &&
+            getPref("fiskerVin", "").isNotBlank() &&
+            getPref("fiskerFleet", "5").trim().toIntOrNull() != null
+
+    private fun cloudClientFor(): FiskerClient {
+        val bearer = getPref("fiskerBearer", "").trim()
+        val email = getPref("fiskerEmail", "").trim()
+        val fleet = getPref("fiskerFleet", "5").trim().toInt()
+        val tok = getPref("fiskerToken", "").trim()
+        val key = "$bearer|$email|$fleet|$tok"
+        val existing = cloudClient
+        if (existing != null && key == cloudClientKey) return existing
+        val c = FiskerClient(bearer, email, fleet, tok)
+        cloudClient = c
+        cloudClientKey = key
+        return c
+    }
+
+    private fun runCloudLoop(apiKey: String, token: String, interval: Double) {
+        if (cloudJob?.isActive == true || ready) return
+        val client = cloudClientFor()
+        val vin = getPref("fiskerVin", "").trim()
+        _ui.update { it.copy(running = true) }
+        cloudJob = scope.launch {
+            var lastUpload = 0L
+            while (isActive) {
+                try {
+                    val s = client.shortStats(vin)
+                    val pct = s.battery.percent.toDouble()
+                    _ui.update { it.copy(estSoc = pct, socFromCar = true) }
+                    saveD("estSOC", pct)
+                    status(if (s.online) "Using cloud data" else "Car is asleep, showing last cloud data")
+                    val tlm = mutableMapOf<String, Any>(
+                        "utc" to System.currentTimeMillis() / 1000,
+                        "soc" to pct,
+                        "is_charging" to 0,
+                        "is_parked" to (if (s.gear.inPark) 1 else 0)
+                    )
+                    if (s.location.latitude != 0.0 || s.location.longitude != 0.0) {
+                        tlm["lat"] = s.location.latitude
+                        tlm["lon"] = s.location.longitude
+                        tlm["elevation"] = s.location.altitude
+                    }
+                    if (s.gear.inPark) tlm["speed"] = 0.0
+                    if (System.currentTimeMillis() - lastUpload >= max(15.0, interval) * 1000) {
+                        if (apiKey.isNotBlank() && token.isNotBlank()) {
+                            upload(tlm, apiKey, token)
+                        } else {
+                            _ui.update { it.copy(abrpStatus = "ABRP is off. Add the API key and token in Settings to send") }
+                        }
+                        lastUpload = System.currentTimeMillis()
+                    }
+                    touchActive()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    status("Cloud error")
+                    log("Cloud " + (e.message ?: "request failed").take(80))
+                }
+                delay((max(15.0, interval) * 1000).toLong())
+            }
+        }
+    }
+
+    private fun stopCloud() {
+        cloudJob?.cancel()
+        cloudJob = null
     }
 
     fun halt() {
@@ -888,6 +980,8 @@ object Engine {
     private fun haltInternal() {
         _ui.update { it.copy(active = false) }
         startAction = null
+        cloudAction = null
+        stopCloud()
         closeHistorySegment(System.currentTimeMillis(), _ui.value.estSoc ?: historySegStartSoc)
         stopLoop()
         stopLocation()
@@ -930,7 +1024,11 @@ object Engine {
     }
 
     private fun runLoop(apiKey: String, token: String, interval: Double, capacity: Double) {
-        if (!ready || _ui.value.running) return
+        if (!ready) return
+        // Bluetooth is connected, so it takes over from the cloud path
+        val cloudWasOn = cloudJob?.isActive == true
+        stopCloud()
+        if (_ui.value.running && !cloudWasOn) return
         _ui.update { it.copy(running = true) }
         capacityKWh = _ui.value.learnedCap ?: max(10.0, capacity)
         lastSample = null
