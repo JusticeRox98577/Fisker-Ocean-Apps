@@ -1,6 +1,6 @@
 # apple-apps
 
-One repo for all my Apple apps. Each app lives in its own folder.
+One repo for all my Fisker apps. Each app lives in its own folder.
 
 ## Apps
 
