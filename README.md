@@ -8,10 +8,17 @@ One repo for all my Fisker apps. Each app lives in its own folder.
 | --- | --- |
 | `ocean-live/ios` | Fisker Ocean Live for iPhone (SwiftUI). The Xcode project is made by XcodeGen from `project.yml` |
 | `ocean-live/android` | Fisker Ocean Live for Android (Kotlin, Compose) |
+| `obd-simulator/android` | OBD Adapter Simulator for Android (Kotlin, Compose). Pretends to be a vLinker FD Bluetooth adapter and sends made up battery data, so Ocean Live can be filmed or tested without a car |
 
 ## Android
 
 Pushes that change `ocean-live/android` build a debug APK with GitHub Actions and attach it to a GitHub Release.
+
+## OBD Adapter Simulator
+
+A second phone running `obd-simulator/android` advertises itself over Bluetooth as a vLinker FD. Ocean Live connects to it like a real adapter and shows the fake charge, voltage, current and temperature. Pick Parked, Driving or Charging and move the charge and temperature sliders to change what the app sees. It is for demo videos and testing only.
+
+Pushes that change `obd-simulator/android` build a debug APK with GitHub Actions and attach it to a GitHub Release named `obdsim-N`.
 
 ## iPhone builds without a Mac
 
