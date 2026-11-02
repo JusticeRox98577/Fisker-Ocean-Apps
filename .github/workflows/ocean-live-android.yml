@@ -63,9 +63,9 @@ jobs:
           name: encrypted-symbols-android
           path: ocean-live/flutter/build/private-artifacts/*.enc
           if-no-files-found: ignore
-      - name: Save draft Dev release
+      - name: Publish release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v2.0-build-${{ github.run_number }}" OceanLive-2.0-Android.apk --draft --title "Ocean Live 2.0 (build ${{ github.run_number }})" --notes "Public Ocean Live 2.0 for Android from ${{ github.sha }}. Obfuscated release build with no test or dev tools."
+          gh release create "v2.0-build-${{ github.run_number }}" OceanLive-2.0-Android.apk --latest --title "Ocean Live 2.0 (build ${{ github.run_number }})" --notes "Public Ocean Live 2.0 for Android from ${{ github.sha }}. Obfuscated release build with no test or dev tools."
