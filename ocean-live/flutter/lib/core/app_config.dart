@@ -10,7 +10,7 @@ class AppConfig {
   static const firebaseApiKey = 'AIzaSyBliRciMYTu3aYC1PtQLZRVND9Z3vI3_GY';
 
   /// Optional separate key for iPhone. Falls back to the key above when empty.
-  static const firebaseIosApiKey = '';
+  static const firebaseIosApiKey = 'AIzaSyAzUuK6dS_f_NZ8CqVB9CsdS5bcmuO0vfo';
   static const firebaseProjectId = 'ocean-live-justicemw-4821';
   static const firebaseMessagingSenderId = '469357538067';
   static const firebaseAndroidAppId =
