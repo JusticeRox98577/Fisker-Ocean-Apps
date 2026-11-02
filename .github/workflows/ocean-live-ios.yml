@@ -1,7 +1,7 @@
 name: Ocean Live Flutter iOS
 on:
   push:
-    branches: [main, flutter-migration]
+    branches: [main, flutter-migration, release-2.0]
     paths: ["ocean-live/flutter/**", ".github/workflows/ocean-live-ios.yml"]
   pull_request:
     paths: ["ocean-live/flutter/**", ".github/workflows/ocean-live-ios.yml"]
@@ -38,10 +38,18 @@ jobs:
         run: |
           ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app OceanLive-iOS-unsigned.app.zip
           echo "The automatic iOS artifact is unsigned. Use the manual TestFlight option for an installable signed build." >> "$GITHUB_STEP_SUMMARY"
+      - name: Package unsigned IPA for sideloading
+        run: |
+          rm -rf Payload && mkdir Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -qry OceanLive-2.0-iOS-unsigned.ipa Payload
+          rm -rf Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: OceanLive-Flutter-iOS-unsigned
-          path: ocean-live/flutter/OceanLive-iOS-unsigned.app.zip
+          name: OceanLive-iOS
+          path: |
+            ocean-live/flutter/OceanLive-2.0-iOS-unsigned.ipa
+            ocean-live/flutter/OceanLive-iOS-unsigned.app.zip
       - name: Install iOS signing material
         if: github.event_name == 'workflow_dispatch' && inputs.upload_testflight
         env:

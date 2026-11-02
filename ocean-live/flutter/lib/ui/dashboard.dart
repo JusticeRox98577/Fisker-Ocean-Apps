@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../online/cloud_api.dart';
 import '../vehicle/ocean_engine.dart';
 import 'account_screen.dart';
 import 'history_screen.dart';
 import 'settings_screen.dart';
+import 'battery_ring.dart';
+import 'brand.dart';
 import 'localization.dart';
+import 'theme.dart';
+import 'widgets.dart';
 
 class Dashboard extends StatefulWidget {
   final OceanEngine engine;
@@ -25,8 +30,6 @@ class _DashboardState extends State<Dashboard> {
     });
   }
 
-  String f(double? value, [int digits = 1]) =>
-      value?.toStringAsFixed(digits) ?? '—';
   Future<void> match() async {
     final field = TextEditingController(
       text: e.battery.soc?.round().toString() ?? '',
@@ -80,6 +83,7 @@ class _DashboardState extends State<Dashboard> {
       );
       if (yes != true) return;
     }
+    HapticFeedback.mediumImpact();
     try {
       await e.control(
         command,
@@ -95,314 +99,258 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
+  double? _temp(double? c, bool useF) =>
+      c == null ? null : (useF ? c * 9 / 5 + 32 : c);
+
+  Future<void> _openSettings() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => SettingsScreen(e)),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _openAccount() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<bool>(builder: (_) => AccountScreen(e.settings)),
+    );
+    if (mounted) setState(() {});
+  }
+
+  String _caption() {
+    if (e.battery.soc == null) return 'Waiting for car';
+    if (e.battery.charging) return 'Charging';
+    return e.battery.fromCar ? 'Charge from your car' : 'Estimated charge';
+  }
+
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: e,
     builder: (context, _) {
       final km = e.settings.flag('useKm'), useF = e.settings.flag('useF');
-      final temp = e.live['batt_temp'];
-      final tempShown = temp == null
-          ? null
-          : useF
-          ? temp * 9 / 5 + 32
-          : temp;
+      final temp = _temp(e.live['batt_temp'], useF);
+      final eff = km
+          ? (e.efficiency == null ? null : e.efficiency! / 1.609344)
+          : e.efficiency;
+      final range = km
+          ? (e.rangeMiles == null ? null : e.rangeMiles! * 1.609344)
+          : e.rangeMiles;
+      var i = 0;
       return Scaffold(
-        appBar: AppBar(
-          title: const AppText('Ocean Live'),
-          actions: [
-            IconButton(
-              tooltip: 'History',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute<void>(builder: (_) => HistoryScreen(e)),
-              ),
-              icon: const Icon(Icons.history),
-            ),
-            IconButton(
-              tooltip: 'Settings',
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => SettingsScreen(e)),
-                );
-                if (mounted) setState(() {});
-              },
-              icon: const Icon(Icons.settings),
-            ),
-          ],
-        ),
         body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
+          bottom: false,
+          child: Stack(
             children: [
-              Row(
+              ListView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
                 children: [
-                  Icon(
-                    Icons.circle,
-                    size: 9,
-                    color: e.polling
-                        ? Colors.green
-                        : e.connected
-                        ? Colors.amber
-                        : Colors.grey,
+                  Reveal(index: i++, child: _header()),
+                  const SizedBox(height: 18),
+                  Reveal(
+                    index: i++,
+                    child: Center(
+                      child: BatteryRing(
+                        soc: e.battery.soc,
+                        charging: e.battery.charging,
+                        caption: _caption(),
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(child: AppText(e.status)),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: SizedBox(
-                  width: 240,
-                  height: 240,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox.expand(
-                        child: CircularProgressIndicator(
-                          value: (e.battery.soc ?? 0) / 100,
-                          strokeWidth: 17,
-                          backgroundColor: Colors.white10,
-                          color: (e.battery.soc ?? 100) < 15
-                              ? Colors.red
-                              : Colors.tealAccent,
+                  const SizedBox(height: 4),
+                  Reveal(
+                    index: i++,
+                    child: Center(
+                      child: TextButton.icon(
+                        onPressed: match,
+                        icon: const Icon(Icons.sync_alt_rounded, size: 18),
+                        label: const AppText('Match to car screen'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Reveal(
+                    index: i++,
+                    child: _grid([
+                      _Metric(
+                        Icons.speed_rounded,
+                        'Power',
+                        e.live['power'],
+                        'kW',
+                        1,
+                      ),
+                      _Metric(
+                        Icons.thermostat_rounded,
+                        'Battery temp',
+                        temp,
+                        useF ? '°F' : '°C',
+                        0,
+                      ),
+                      _Metric(
+                        Icons.electric_bolt_rounded,
+                        'Voltage',
+                        e.live['voltage'],
+                        'V',
+                        0,
+                      ),
+                      _Metric(
+                        Icons.waves_rounded,
+                        'Current',
+                        e.live['current'],
+                        'A',
+                        0,
+                      ),
+                      _Metric(
+                        Icons.eco_rounded,
+                        'Efficiency',
+                        eff,
+                        km ? 'Wh/km' : 'Wh/mi',
+                        0,
+                      ),
+                      _Metric(
+                        Icons.route_rounded,
+                        'Range left',
+                        range,
+                        km ? 'km' : 'mi',
+                        0,
+                      ),
+                      _Metric(
+                        Icons.battery_charging_full_rounded,
+                        '12V battery',
+                        e.battery12v,
+                        'V',
+                        2,
+                      ),
+                      _Metric(
+                        Icons.battery_5_bar_rounded,
+                        '12V charge',
+                        e.battery12vPercent,
+                        '%',
+                        0,
+                      ),
+                    ]),
+                  ),
+                  if (e.battery12vHealth != null || e.cloudUpdated != null) ...[
+                    const SizedBox(height: 12),
+                    Reveal(
+                      index: i++,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (e.battery12vHealth != null)
+                              AppText(
+                                '12V health: ${e.battery12vHealth!.toStringAsFixed(0)} (service value)',
+                                style: const TextStyle(color: Palette.textDim),
+                              ),
+                            if (e.cloudUpdated != null)
+                              AppText(
+                                'Online data updated ${TimeOfDay.fromDateTime(e.cloudUpdated!.toLocal()).format(context)}',
+                                style: const TextStyle(
+                                  color: Palette.textDim,
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AppText(
-                            e.battery.soc == null
-                                ? '—'
-                                : '${e.battery.soc!.round()}%',
-                            style: const TextStyle(
-                              fontSize: 60,
-                              fontWeight: FontWeight.bold,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Reveal(index: i++, child: _abrp()),
+                  if (e.settings.credentials != null)
+                    Reveal(index: i++, child: _vehicle(useF))
+                  else
+                    Reveal(
+                      index: i++,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 14),
+                        child: Pressable(
+                          onTap: _openAccount,
+                          child: Glass(
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.cloud_sync_rounded,
+                                  color: Palette.aqua,
+                                ),
+                                const SizedBox(width: 14),
+                                const Expanded(
+                                  child: AppText(
+                                    'Sign in for online data and vehicle controls',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(Icons.chevron_right_rounded),
+                              ],
                             ),
                           ),
-                          AppText(
-                            e.battery.soc == null
-                                ? 'Waiting for car'
-                                : e.battery.charging
-                                ? 'Charging'
-                                : e.battery.fromCar
-                                ? 'Charge from your car'
-                                : 'Estimated charge',
-                          ),
-                        ],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: match,
-                child: const AppText('Match to car screen'),
-              ),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 1.65,
-                children: [
-                  tile('Power', f(e.live['power']), 'kW'),
-                  tile('Battery temp', f(tempShown, 0), useF ? '°F' : '°C'),
-                  tile('Voltage', f(e.live['voltage'], 0), 'V'),
-                  tile('Current', f(e.live['current'], 0), 'A'),
-                  tile(
-                    'Efficiency',
-                    f(
-                      km
-                          ? e.efficiency == null
-                                ? null
-                                : e.efficiency! / 1.609344
-                          : e.efficiency,
-                      0,
                     ),
-                    km ? 'Wh/km' : 'Wh/mi',
-                  ),
-                  tile(
-                    'Range left',
-                    f(
-                      km
-                          ? e.rangeMiles == null
-                                ? null
-                                : e.rangeMiles! * 1.609344
-                          : e.rangeMiles,
-                      0,
+                  if (!e.connected && e.adapters.isNotEmpty) ...[
+                    const SectionTitle('Choose your adapter'),
+                    ...e.adapters.entries.indexed.map(
+                      (entry) => Reveal(
+                        index: entry.$1,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Pressable(
+                            onTap: () => e.connect(entry.$2.key),
+                            child: Glass(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.bluetooth_rounded,
+                                    color: Palette.blue,
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        AppText(
+                                          entry.$2.value,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        AppText(
+                                          entry.$2.key,
+                                          style: const TextStyle(
+                                            color: Palette.textDim,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    km ? 'km' : 'mi',
-                  ),
-                  tile('12V battery', f(e.battery12v, 2), 'V'),
-                  tile('12V charge', f(e.battery12vPercent, 0), '%'),
+                  ],
                 ],
               ),
-              const SizedBox(height: 14),
-              if (e.battery12vHealth != null)
-                AppText(
-                  '12V health: ${f(e.battery12vHealth, 0)} (service value)',
-                ),
-              if (e.cloudUpdated != null)
-                AppText(
-                  'Online data updated ${TimeOfDay.fromDateTime(e.cloudUpdated!.toLocal()).format(context)}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              Card(
-                child: ListTile(
-                  title: const AppText('A Better Route Planner'),
-                  subtitle: AppText(e.abrpStatus),
-                  trailing: e.lastSent == null
-                      ? null
-                      : AppText(
-                          TimeOfDay.fromDateTime(e.lastSent!.toLocal())
-                              .format(context),
-                        ),
-                ),
-              ),
-              if (e.settings.credentials != null) ...[
-                const SizedBox(height: 12),
-                const AppText(
-                  'Your vehicle',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                AppText('VIN ${e.settings.credentials!.vin}'),
-                AppText(
-                  e.doorsLocked == null
-                      ? 'Driver door status unavailable'
-                      : e.doorsLocked!
-                      ? 'Driver door locked'
-                      : 'Driver door unlocked',
-                ),
-                Wrap(
-                  spacing: 10,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: e.commandBusy
-                          ? null
-                          : () => command(VehicleCommand.unlock),
-                      icon: const Icon(Icons.lock_open),
-                      label: const AppText('Unlock'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: e.commandBusy
-                          ? null
-                          : () => command(VehicleCommand.lock),
-                      icon: const Icon(Icons.lock),
-                      label: const AppText('Lock'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                AppText(
-                  'Air-conditioning preconditioning',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                AppText(
-                  'Cabin ${f(e.cabinC == null
-                      ? null
-                      : useF
-                      ? e.cabinC! * 9 / 5 + 32
-                      : e.cabinC, 0)} ${useF ? '°F' : '°C'}',
-                ),
-                Wrap(
-                  spacing: 10,
-                  children: [
-                    FilledButton(
-                      onPressed: e.commandBusy
-                          ? null
-                          : () => command(VehicleCommand.climateOn),
-                      child: const AppText('Start aircon'),
-                    ),
-                    OutlinedButton(
-                      onPressed: e.commandBusy
-                          ? null
-                          : () => command(VehicleCommand.climateOff),
-                      child: const AppText('Stop aircon'),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Slider(
-                        value: target,
-                        min: 16,
-                        max: 30,
-                        divisions: 14,
-                        label: '${target.round()} °C',
-                        onChanged: e.commandBusy
-                            ? null
-                            : (v) => setState(() => target = v),
-                      ),
-                    ),
-                    AppText(
-                      '${useF ? (target * 9 / 5 + 32).round() : target.round()} ${useF ? '°F' : '°C'}',
-                    ),
-                  ],
-                ),
-                TextButton(
-                  onPressed: e.commandBusy
-                      ? null
-                      : () => command(VehicleCommand.cabinTemperature),
-                  child: const AppText('Set cabin temperature'),
-                ),
-                if (e.commandBusy) const LinearProgressIndicator(),
-                if (e.commandStatus.isNotEmpty) AppText(e.commandStatus),
-                TextButton(
-                  onPressed: () => e.refreshCloud(),
-                  child: const AppText('Refresh online information'),
-                ),
-              ] else ...[
-                const SizedBox(height: 14),
-                FilledButton.tonal(
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute<bool>(
-                        builder: (_) => AccountScreen(e.settings),
-                      ),
-                    );
-                    if (mounted) setState(() {});
-                  },
-                  child: const AppText(
-                    'Sign in for online data and vehicle controls',
-                  ),
-                ),
-              ],
-              if (!e.connected && e.adapters.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const AppText('Choose your adapter'),
-                ...e.adapters.entries.map(
-                  (d) => Card(
-                    child: ListTile(
-                      title: AppText(d.value),
-                      subtitle: AppText(d.key),
-                      onTap: () => e.connect(d.key),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  backgroundColor: e.active ? Colors.red.shade700 : null,
-                ),
-                onPressed: () async {
-                  if (e.active) {
-                    await e.stop();
-                  } else {
-                    await e.start();
-                  }
-                },
-                child: AppText(
-                  e.active
-                      ? Strings.of(context, 'stop')
-                      : Strings.of(context, 'start'),
-                  style: const TextStyle(fontSize: 20),
-                ),
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 16 + MediaQuery.paddingOf(context).bottom * 0.5,
+                child: _startStop(),
               ),
             ],
           ),
@@ -410,24 +358,544 @@ class _DashboardState extends State<Dashboard> {
       );
     },
   );
-  Widget tile(String title, String value, String unit) => Card(
-    margin: EdgeInsets.zero,
-    child: Padding(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+
+  Widget _header() => Row(
+    children: [
+      const OceanMark(size: 40, glow: 0.3),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppText(
+              'Ocean Live',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                _StatusDot(
+                  color: e.polling
+                      ? Palette.aqua
+                      : e.connected
+                      ? Palette.amber
+                      : Colors.white38,
+                  pulsing: e.polling,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: AppText(
+                      e.status,
+                      key: ValueKey(e.status),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Palette.textDim,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      GlassIconButton(
+        icon: Icons.history_rounded,
+        tooltip: 'History',
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (_) => HistoryScreen(e)),
+        ),
+      ),
+      const SizedBox(width: 10),
+      GlassIconButton(
+        icon: Icons.settings_rounded,
+        tooltip: 'Settings',
+        onTap: _openSettings,
+      ),
+    ],
+  );
+
+  Widget _grid(List<_Metric> metrics) => LayoutBuilder(
+    builder: (context, c) {
+      final w = (c.maxWidth - 12) / 2;
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
         children: [
-          AppText(title, style: const TextStyle(color: Colors.white60)),
-          const SizedBox(height: 5),
-          Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
+          for (final (n, m) in metrics.indexed)
+            SizedBox(
+              width: w,
+              child: Reveal(index: n, child: _tile(m)),
+            ),
+        ],
+      );
+    },
+  );
+
+  Widget _tile(_Metric m) => Glass(
+    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(m.icon, size: 16, color: Palette.aqua),
+            const SizedBox(width: 6),
+            Expanded(
               child: AppText(
-                '$value $unit',
-                style: const TextStyle(fontSize: 27),
+                m.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Palette.textDim, fontSize: 13),
               ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CountText(
+                m.value,
+                digits: m.digits,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                m.unit,
+                style: const TextStyle(color: Palette.textDim, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _abrp() => Glass(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    child: Row(
+      children: [
+        const Icon(Icons.alt_route_rounded, color: Palette.blue),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const AppText(
+                'A Better Route Planner',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 2),
+              AppText(
+                e.abrpStatus,
+                style: const TextStyle(color: Palette.textDim, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        if (e.lastSent != null)
+          AppText(
+            TimeOfDay.fromDateTime(e.lastSent!.toLocal()).format(context),
+            style: const TextStyle(color: Palette.textDim, fontSize: 13),
+          ),
+      ],
+    ),
+  );
+
+  Widget _vehicle(bool useF) {
+    final locked = e.doorsLocked;
+    final busy = e.commandBusy;
+    final cabin = _temp(e.cabinC, useF);
+    final unit = useF ? '°F' : '°C';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle('Your vehicle'),
+        Glass(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 350),
+                    transitionBuilder: (child, a) => ScaleTransition(
+                      scale: CurvedAnimation(
+                        parent: a,
+                        curve: Curves.easeOutBack,
+                      ),
+                      child: FadeTransition(opacity: a, child: child),
+                    ),
+                    child: Container(
+                      key: ValueKey(locked),
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            (locked == null
+                                    ? Colors.white38
+                                    : locked
+                                    ? Palette.aqua
+                                    : Palette.amber)
+                                .withValues(alpha: 0.18),
+                      ),
+                      child: Icon(
+                        locked == null
+                            ? Icons.help_outline_rounded
+                            : locked
+                            ? Icons.lock_rounded
+                            : Icons.lock_open_rounded,
+                        color: locked == null
+                            ? Colors.white54
+                            : locked
+                            ? Palette.aqua
+                            : Palette.amber,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          locked == null
+                              ? 'Driver door status unavailable'
+                              : locked
+                              ? 'Driver door locked'
+                              : 'Driver door unlocked',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 2),
+                        AppText(
+                          'VIN ${e.settings.credentials!.vin}',
+                          style: const TextStyle(
+                            color: Palette.textDim,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () => command(VehicleCommand.unlock),
+                      icon: const Icon(Icons.lock_open_rounded),
+                      label: const AppText('Unlock'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () => command(VehicleCommand.lock),
+                      icon: const Icon(Icons.lock_rounded),
+                      label: const AppText('Lock'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Glass(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.ac_unit_rounded, color: Palette.blue),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: AppText(
+                      'Air-conditioning preconditioning',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  const AppText(
+                    'Cabin',
+                    style: TextStyle(color: Palette.textDim),
+                  ),
+                  const SizedBox(width: 8),
+                  CountText(
+                    cabin,
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    ' $unit',
+                    style: const TextStyle(color: Palette.textDim),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: busy
+                          ? null
+                          : () => command(VehicleCommand.climateOn),
+                      child: const AppText('Start aircon'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: busy
+                          ? null
+                          : () => command(VehicleCommand.climateOff),
+                      child: const AppText('Stop aircon'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Slider(
+                      value: target,
+                      min: 16,
+                      max: 30,
+                      divisions: 14,
+                      label: '${target.round()} °C',
+                      onChanged: busy
+                          ? null
+                          : (v) => setState(() => target = v),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 64,
+                    child: AppText(
+                      '${useF ? (target * 9 / 5 + 32).round() : target.round()} $unit',
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: busy
+                      ? null
+                      : () => command(VehicleCommand.cabinTemperature),
+                  child: const AppText('Set cabin temperature'),
+                ),
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (busy)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 14),
+                        child: LinearProgressIndicator(
+                          minHeight: 4,
+                          borderRadius: BorderRadius.all(Radius.circular(4)),
+                        ),
+                      ),
+                    if (e.commandStatus.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: AppText(
+                          e.commandStatus,
+                          style: const TextStyle(
+                            color: Palette.textDim,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Center(
+          child: TextButton.icon(
+            onPressed: () => e.refreshCloud(),
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const AppText('Refresh online information'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _startStop() {
+    final active = e.active;
+    return Pressable(
+      onTap: () async {
+        if (active) {
+          await e.stop();
+        } else {
+          await e.start();
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+        height: 58,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: active
+                ? const [Color(0xffd7263d), Color(0xffff5d6c)]
+                : const [Palette.blue, Palette.aqua],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (active ? Palette.red : Palette.blue).withValues(
+                alpha: 0.45,
+              ),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: Row(
+            key: ValueKey(active),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                active ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                color: active ? Colors.white : const Color(0xff04101f),
+              ),
+              const SizedBox(width: 8),
+              AppText(
+                active
+                    ? Strings.of(context, 'stop')
+                    : Strings.of(context, 'start'),
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                  color: active ? Colors.white : const Color(0xff04101f),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Metric {
+  final IconData icon;
+  final String title;
+  final double? value;
+  final String unit;
+  final int digits;
+  const _Metric(this.icon, this.title, this.value, this.unit, this.digits);
+}
+
+class _StatusDot extends StatefulWidget {
+  final Color color;
+  final bool pulsing;
+  const _StatusDot({required this.color, required this.pulsing});
+  @override
+  State<_StatusDot> createState() => _StatusDotState();
+}
+
+class _StatusDotState extends State<_StatusDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+  @override
+  void initState() {
+    super.initState();
+    if (widget.pulsing) _c.repeat();
+  }
+
+  @override
+  void didUpdateWidget(_StatusDot old) {
+    super.didUpdateWidget(old);
+    if (widget.pulsing && !_c.isAnimating) {
+      _c.repeat();
+    } else if (!widget.pulsing) {
+      _c.stop();
+      _c.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 14,
+    height: 14,
+    child: AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) => Stack(
+        alignment: Alignment.center,
+        children: [
+          if (widget.pulsing)
+            Container(
+              width: 8 + 6 * _c.value,
+              height: 8 + 6 * _c.value,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: widget.color.withValues(alpha: 0.5 * (1 - _c.value)),
+              ),
+            ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.color,
             ),
           ),
         ],

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../core/settings.dart';
 import '../vehicle/ocean_engine.dart';
 import 'account_screen.dart';
-import 'diagnostics_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final OceanEngine engine;
@@ -187,18 +186,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const AppText(
           'Press Start on the main screen to discover nearby Bluetooth LE adapters. On Android, allow background activity for Ocean Live in battery settings.',
         ),
-        if (devTools) ...[
-          heading('Dev tools'),
-          OutlinedButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => DiagnosticsScreen(widget.engine),
-              ),
-            ),
-            child: const AppText('Adapter diagnostics'),
-          ),
-        ],
         heading('Activity'),
         ...widget.engine.logs.reversed
             .take(12)
@@ -210,7 +197,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
         const SizedBox(height: 24),
         const AppText(
-          'Ocean Live 2.0 · Flutter\nUnofficial community app. Online services are operated by third parties.',
+          'Ocean Live 2.0\nUnofficial community app. Online services are operated by third parties.',
         ),
       ],
     ),

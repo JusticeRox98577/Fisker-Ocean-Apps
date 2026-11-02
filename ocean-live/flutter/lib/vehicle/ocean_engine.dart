@@ -13,8 +13,6 @@ import '../core/settings.dart';
 import '../online/cloud_api.dart';
 import 'elm_transport.dart';
 
-const devTools = bool.fromEnvironment('OCEAN_DEV', defaultValue: false);
-
 class OceanEngine extends ChangeNotifier {
   final AppSettings settings;
   final ElmTransport transport;
@@ -28,14 +26,10 @@ class OceanEngine extends ChangeNotifier {
   final live = <String, double>{};
   final adapters = <String, String>{};
   final logs = <String>[];
-  bool active = false, polling = false, scanning = false, commandBusy = false;
-  bool _cloudBusy = false, _obdBusy = false, _hold = false, _cancelScan = false;
-  String status = 'Not connected',
-      abrpStatus = 'ABRP is off',
-      testResult = '',
-      scanText = '';
+  bool active = false, polling = false, commandBusy = false;
+  bool _cloudBusy = false, _obdBusy = false;
+  String status = 'Not connected', abrpStatus = 'ABRP is off';
   String commandStatus = '';
-  int scanDone = 0, scanTotal = 0;
   DateTime? lastSent, lastUpdated, cloudUpdated;
   double tripMeters = 0;
   double? battery12v, battery12vPercent, battery12vHealth, cabinC;
@@ -256,7 +250,7 @@ class OceanEngine extends ChangeNotifier {
   }
 
   Future<void> _pollObd() async {
-    if (!active || !connected || _obdBusy || _hold) return;
+    if (!active || !connected || _obdBusy) return;
     _obdBusy = true;
     try {
       final current = <String, double>{};
@@ -564,7 +558,6 @@ class OceanEngine extends ChangeNotifier {
   Future<void> stop() async {
     active = false;
     polling = false;
-    _cancelScan = true;
     _cloudTimer?.cancel();
     _obdTimer?.cancel();
     _reconnectTimer?.cancel();
@@ -576,151 +569,5 @@ class OceanEngine extends ChangeNotifier {
     await _bridge('stopBackground');
     status = 'Stopped';
     notifyListeners();
-  }
-
-  Future<void> scanIdentifiers(
-    String header,
-    String rx,
-    int from,
-    int to, {
-    bool auto = false,
-    bool control = false,
-    bool session = false,
-  }) async {
-    if (!devTools ||
-        !active ||
-        !connected ||
-        scanning ||
-        from < 0 ||
-        to > 0xffff ||
-        from > to) {
-      return;
-    }
-    if (!RegExp(r'^[\dA-F]{3}$').hasMatch(header) ||
-        rx.isNotEmpty && !RegExp(r'^[\dA-F]{3}$').hasMatch(rx)) {
-      throw const ServiceFailure('Invalid CAN header or reply address.');
-    }
-    if (!auto && to - from + 1 > 4096) {
-      throw const ServiceFailure('Read at most 4096 identifiers per scan.');
-    }
-    final identifiers = auto
-        ? [
-            for (var block = 0x10; block <= 0x4f; block++)
-              for (var offset = 0; offset < 64; offset++) block * 256 + offset,
-          ]
-        : [for (var id = from; id <= to; id++) id];
-    if (control && (!_stationary() || battery.charging)) {
-      throw const ServiceFailure(
-        'Park the car and stop charging before control tests.',
-      );
-    }
-    scanning = true;
-    _hold = true;
-    _cancelScan = false;
-    scanDone = 0;
-    scanTotal = identifiers.length;
-    scanText = '';
-    notifyListeners();
-    while (_obdBusy) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
-    try {
-      await transport.send('ATSH$header');
-      await transport.send(rx.isEmpty ? 'ATAR' : 'ATCRA$rx');
-      if (session) {
-        final response = await transport.send('1003');
-        if (!response.replaceAll(' ', '').toUpperCase().contains('5003')) {
-          throw const ServiceFailure('Extended session was refused.');
-        }
-      }
-      for (final id in identifiers) {
-        if (!connected || !active || _cancelScan) break;
-        if (control && (!_stationary() || battery.charging)) {
-          scanText += 'Stopped: car is no longer stationary or is charging.\n';
-          break;
-        }
-        final command =
-            '${control ? '2F' : '22'}${id.toRadixString(16).padLeft(4, '0').toUpperCase()}${control ? '00' : ''}';
-        final response = await transport.send(
-          command,
-          timeout: const Duration(milliseconds: 1500),
-        );
-        if (parseObdResponse(response, command) != null ||
-            control && response.contains('7F2F')) {
-          scanText += '$command ${response.trim()}\n';
-          if (scanText.length > 100000) {
-            scanText = scanText.substring(scanText.length - 100000);
-          }
-        }
-        scanDone++;
-        notifyListeners();
-      }
-    } finally {
-      scanning = false;
-      _hold = false;
-      notifyListeners();
-    }
-  }
-
-  void stopScan() {
-    _cancelScan = true;
-  }
-
-  bool _stationary() =>
-      _location != null &&
-      _location!.speed >= 0 &&
-      _location!.speed * 3.6 < 1 &&
-      DateTime.now().difference(_location!.timestamp).inSeconds < 30;
-  Future<void> testCommand(
-    String header,
-    String rx,
-    String command,
-    bool session,
-  ) async {
-    command = command.replaceAll(' ', '').toUpperCase();
-    if (!devTools || !connected || !active) {
-      throw const ServiceFailure('Start with an adapter connected first.');
-    }
-    if (!RegExp(r'^[\dA-F]{3}$').hasMatch(header) ||
-        rx.isNotEmpty && !RegExp(r'^[\dA-F]{3}$').hasMatch(rx)) {
-      throw const ServiceFailure('Invalid CAN header or reply address.');
-    }
-    if (!RegExp(r'^(31|2F)[\dA-F]{4,12}$').hasMatch(command) ||
-        command.length.isOdd) {
-      throw const ServiceFailure(
-        'Only services 31 and 2F, 3 to 7 bytes, are allowed.',
-      );
-    }
-    if (!_stationary() || battery.charging) {
-      throw const ServiceFailure(
-        'A fresh stationary GPS speed and no charging are required.',
-      );
-    }
-    if (_hold) return;
-    _hold = true;
-    while (_obdBusy) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
-    try {
-      await transport.send('ATSH$header');
-      await transport.send(rx.isEmpty ? 'ATAR' : 'ATCRA$rx');
-      if (session &&
-          !(await transport.send('1003'))
-              .replaceAll(' ', '')
-              .toUpperCase()
-              .contains('5003')) {
-        throw const ServiceFailure('Extended session was refused.');
-      }
-      if (!_stationary() || battery.charging) {
-        throw const ServiceFailure('Car must remain parked and not charging.');
-      }
-      testResult = await transport.send(
-        command,
-        timeout: const Duration(seconds: 4),
-      );
-    } finally {
-      _hold = false;
-      notifyListeners();
-    }
   }
 }

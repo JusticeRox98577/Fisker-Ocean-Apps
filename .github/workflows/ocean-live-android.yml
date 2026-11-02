@@ -1,7 +1,7 @@
 name: Ocean Live Flutter
 on:
   push:
-    branches: [main, flutter-migration]
+    branches: [main, flutter-migration, release-2.0]
     paths: ["ocean-live/flutter/**", ".github/workflows/ocean-live-android.yml"]
   pull_request:
     paths: ["ocean-live/flutter/**", ".github/workflows/ocean-live-android.yml"]
@@ -46,14 +46,16 @@ jobs:
           flutter-version: '3.47.9'
           cache: true
       - run: flutter pub get --enforce-lockfile
-      - name: Build obfuscated Dev APK
+      - name: Build public Android APK (no test features)
+        env:
+          ALLOW_PUBLIC_KEY_SIGNING: 'true'
         run: |
-          flutter build apk --flavor dev --release --obfuscate --split-debug-info=build/symbols/android --dart-define=OCEAN_DEV=true --build-number=$((2000 + GITHUB_RUN_NUMBER))
-          cp build/app/outputs/flutter-apk/app-dev-release.apk OceanLiveDev-Flutter.apk
+          flutter build apk --flavor prod --release --obfuscate --split-debug-info=build/symbols/android --dart-define=OCEAN_DEV=false --build-number=$((2000 + GITHUB_RUN_NUMBER))
+          cp build/app/outputs/flutter-apk/app-prod-release.apk OceanLive-2.0-Android.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: OceanLiveDev-Flutter-android
-          path: ocean-live/flutter/OceanLiveDev-Flutter.apk
+          name: OceanLive-Android
+          path: ocean-live/flutter/OceanLive-2.0-Android.apk
       - name: Encrypt crash symbols
         env:
           SYMBOLS_ENCRYPTION_PASSWORD: ${{ secrets.SYMBOLS_ENCRYPTION_PASSWORD }}
@@ -68,4 +70,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "flutter-dev-${{ github.run_number }}" OceanLiveDev-Flutter.apk --draft --title "Ocean Live Flutter Dev ${{ github.run_number }}" --notes "Shared Flutter app from ${{ github.sha }}. Obfuscated release build signed with the existing Dev key."
+          gh release create "v2.0-build-${{ github.run_number }}" OceanLive-2.0-Android.apk --draft --title "Ocean Live 2.0 (build ${{ github.run_number }})" --notes "Public Ocean Live 2.0 for Android from ${{ github.sha }}. Obfuscated release build with no test or dev tools."

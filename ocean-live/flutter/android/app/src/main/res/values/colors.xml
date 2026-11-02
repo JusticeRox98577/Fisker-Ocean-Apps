@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ocean_bg">#08162E</color>
-    <color name="ic_launcher_bg">#0A84FF</color>
+    <color name="ocean_bg">#050E20</color>
+    <color name="ic_launcher_bg">#0A1D3F</color>
 </resources>

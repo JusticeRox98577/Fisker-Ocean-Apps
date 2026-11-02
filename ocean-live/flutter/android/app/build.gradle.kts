@@ -50,6 +50,7 @@ android {
         create("prod") {
             dimension = "distribution"
             if (uploadStore != null) signingConfig = signingConfigs.getByName("upload")
+            else if (System.getenv("ALLOW_PUBLIC_KEY_SIGNING") == "true") signingConfig = signingConfigs.getByName("dev")
             resValue("string", "app_name", "Ocean Live")
             buildConfigField("boolean", "OCEAN_DEV", "false")
         }
