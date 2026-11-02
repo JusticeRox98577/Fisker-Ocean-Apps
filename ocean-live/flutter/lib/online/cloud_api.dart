@@ -80,10 +80,30 @@ class CloudApi {
   Map<String, dynamic> _read(http.Response response, {bool auth = false}) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final stage = auth ? 'Account sign-in' : 'Vehicle service';
+      // Only the short Auth0 error code is read, never the full body.
+      var code = '';
+      if (auth) {
+        try {
+          final body = jsonDecode(response.body);
+          if (body is Map && body['error'] is String) {
+            code = (body['error'] as String).toLowerCase();
+          }
+        } catch (_) {
+          /* No readable error code. */
+        }
+      }
       final detail = response.statusCode == 429
           ? 'Wait before trying again.'
+          : code == 'invalid_grant'
+          ? 'Wrong email or password. If you created your O Loop account with Google or Apple, it has no password, so use Import existing credentials below.'
+          : code == 'unauthorized_client'
+          ? 'O Loop does not allow password sign-in for this app. Use Import existing credentials below.'
+          : code == 'mfa_required'
+          ? 'Your O Loop account needs a second step that this app cannot do. Use Import existing credentials below.'
+          : code == 'too_many_attempts' || code == 'access_denied'
+          ? 'O Loop blocked this sign-in. Wait a few minutes or reset your password in the O Loop app.'
           : auth && [400, 401, 403].contains(response.statusCode)
-          ? 'Check your credentials. Account verification or this login method may need service support.'
+          ? 'Check your credentials, or use Import existing credentials below.${code.isEmpty ? '' : ' ($code)'}'
           : 'Try signing in again.';
       // Never include server bodies, which may echo passwords or tokens.
       throw ServiceFailure(
