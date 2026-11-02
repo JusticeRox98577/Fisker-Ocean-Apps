@@ -33,97 +33,141 @@ class ElmTransport {
         );
   }
 
+  String lastError = '';
+
+  Future<void> stopScan() async {
+    await _scan?.cancel();
+    _scan = null;
+  }
+
   Future<void> connect(String id) async {
     if (connected || connecting) return;
     connecting = true;
-    deviceId = id;
-    await _scan?.cancel();
-    _scan = null;
-    await _connection?.cancel();
-    final ready = Completer<void>();
-    _connection = ble
-        .connectToDevice(id: id, connectionTimeout: const Duration(seconds: 15))
-        .listen(
-          (event) async {
-            if (event.connectionState == DeviceConnectionState.connected) {
-              try {
-                await ble.discoverAllServices(id);
-                final services = await ble.getDiscoveredServices(id);
-                QualifiedCharacteristic? notify;
-                for (final service in services) {
-                  final short = service.id
-                      .toString()
-                      .substring(4, 8)
-                      .toLowerCase();
-                  if (service.id.toString().startsWith('0000') &&
-                      {'1800', '1801', '180a', '180f'}.contains(short)) {
-                    continue;
-                  }
-                  for (final characteristic in service.characteristics) {
-                    final q = QualifiedCharacteristic(
-                      serviceId: service.id,
-                      characteristicId: characteristic.id,
-                      deviceId: id,
-                    );
-                    if (notify == null &&
-                        (characteristic.isNotifiable ||
-                            characteristic.isIndicatable)) {
-                      notify = q;
-                    }
-                    if (_write == null &&
-                        (characteristic.isWritableWithResponse ||
-                            characteristic.isWritableWithoutResponse)) {
-                      _write = q;
-                      _withResponse = !characteristic.isWritableWithoutResponse;
-                    }
-                  }
-                }
-                if (notify == null || _write == null) {
-                  throw StateError('Adapter has no compatible serial service.');
-                }
-                _notifications = ble.subscribeToCharacteristic(notify).listen((
-                  data,
-                ) {
-                  _buffer += utf8.decode(data, allowMalformed: true);
-                  if (_buffer.contains('>') &&
-                      _reply != null &&
-                      !_reply!.isCompleted) {
-                    _reply!.complete(_buffer);
-                    _buffer = '';
-                  }
-                }, onError: (Object _) => _lost());
-                await Future<void>.delayed(const Duration(milliseconds: 200));
-                connected = true;
-                connecting = false;
-                onConnection?.call(true);
-                if (!ready.isCompleted) ready.complete();
-              } catch (_) {
-                _lost();
-                if (!ready.isCompleted) {
-                  ready.completeError(StateError('Adapter setup failed.'));
-                }
-              }
-            } else if (event.connectionState ==
-                DeviceConnectionState.disconnected) {
-              _lost();
-              if (!ready.isCompleted) {
-                ready.completeError(StateError('Adapter disconnected.'));
-              }
-            }
-          },
-          onError: (Object _) {
-            _lost();
-            if (!ready.isCompleted) {
-              ready.completeError(StateError('Bluetooth connection failed.'));
-            }
-          },
-        );
+    lastError = '';
     try {
-      await ready.future.timeout(const Duration(seconds: 20));
-    } catch (_) {
-      await disconnect();
-      rethrow;
+      await stopScan();
+      for (var attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await _attempt(id);
+          return;
+        } catch (error) {
+          lastError = error is StateError ? error.message : '$error';
+          await _teardown();
+          if (attempt == 3) break;
+          // Android often fails the first GATT attempt (status 133); a short pause fixes it.
+          await Future<void>.delayed(Duration(milliseconds: 600 * attempt));
+          connecting = true;
+        }
+      }
+      connecting = false;
+      throw StateError(lastError.isEmpty ? 'Could not connect.' : lastError);
+    } finally {
+      connecting = false;
     }
+  }
+
+  Future<void> _teardown() async {
+    await _notifications?.cancel();
+    _notifications = null;
+    await _connection?.cancel();
+    _connection = null;
+    _write = null;
+    connected = false;
+  }
+
+  Future<void> _attempt(String id) async {
+    await _teardown();
+    deviceId = id;
+    connecting = true;
+    final ready = Completer<void>();
+    void fail(String message) {
+      if (!ready.isCompleted) ready.completeError(StateError(message));
+    }
+
+    _connection = ble
+        .connectToDevice(id: id, connectionTimeout: const Duration(seconds: 12))
+        .listen((event) async {
+          if (event.connectionState == DeviceConnectionState.connected) {
+            try {
+              await ble.discoverAllServices(id);
+              final services = await ble.getDiscoveredServices(id);
+              QualifiedCharacteristic? notify, write;
+              var withResponse = true;
+              // Prefer one service that has both a notify and a write characteristic.
+              for (final service in services) {
+                final text = service.id.toString().toLowerCase();
+                final short = text.length >= 8 ? text.substring(4, 8) : '';
+                if (text.startsWith('0000') &&
+                    {'1800', '1801', '180a', '180f'}.contains(short)) {
+                  continue;
+                }
+                QualifiedCharacteristic? n, w;
+                var response = true;
+                for (final c in service.characteristics) {
+                  final q = QualifiedCharacteristic(
+                    serviceId: service.id,
+                    characteristicId: c.id,
+                    deviceId: id,
+                  );
+                  if (n == null && (c.isNotifiable || c.isIndicatable)) n = q;
+                  if (c.isWritableWithoutResponse && w == null) {
+                    w = q;
+                    response = false;
+                  } else if (c.isWritableWithResponse && w == null) {
+                    w = q;
+                    response = true;
+                  }
+                }
+                if (n != null && w != null) {
+                  notify = n;
+                  write = w;
+                  withResponse = response;
+                  break;
+                }
+                notify ??= n;
+                if (write == null && w != null) {
+                  write = w;
+                  withResponse = response;
+                }
+              }
+              if (notify == null || write == null) {
+                throw StateError('This device is not an OBD serial adapter.');
+              }
+              _write = write;
+              _withResponse = withResponse;
+              _buffer = '';
+              _notifications = ble.subscribeToCharacteristic(notify).listen((
+                data,
+              ) {
+                _buffer += utf8.decode(data, allowMalformed: true);
+                if (_buffer.contains('>') &&
+                    _reply != null &&
+                    !_reply!.isCompleted) {
+                  _reply!.complete(_buffer);
+                  _buffer = '';
+                }
+              }, onError: (Object _) => _lost());
+              await Future<void>.delayed(const Duration(milliseconds: 400));
+              if (!ready.isCompleted) ready.complete();
+            } catch (error) {
+              fail(error is StateError ? error.message : 'Adapter setup failed.');
+            }
+          } else if (event.connectionState ==
+              DeviceConnectionState.disconnected) {
+            if (connected) {
+              _lost();
+            } else {
+              fail('Adapter disconnected. Move closer and try again.');
+            }
+          }
+        }, onError: (Object _) => fail('Bluetooth connection failed.'));
+    await ready.future.timeout(
+      const Duration(seconds: 25),
+      onTimeout: () => throw StateError('Adapter did not respond.'),
+    );
+    connected = true;
+    connecting = false;
+    onConnection?.call(true);
   }
 
   void _lost() {

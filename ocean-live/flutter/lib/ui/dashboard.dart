@@ -153,6 +153,8 @@ class _DashboardState extends State<Dashboard> {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
                 children: [
                   Reveal(index: i++, child: _header()),
+                  const SizedBox(height: 14),
+                  Reveal(index: i++, child: _modeSwitch()),
                   const SizedBox(height: 18),
                   Reveal(
                     index: i++,
@@ -298,7 +300,7 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ),
                     ),
-                  if (!e.connected && e.adapters.isNotEmpty) ...[
+                  if (e.bluetoothMode && !e.connected && e.adapters.isNotEmpty) ...[
                     const SectionTitle('Choose your adapter'),
                     ...e.adapters.entries.indexed.map(
                       (entry) => Reveal(
@@ -362,6 +364,61 @@ class _DashboardState extends State<Dashboard> {
       );
     },
   );
+
+  Widget _modeSwitch() {
+    Widget option(String value, IconData icon, String label) {
+      final selected = e.mode == value;
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            e.setMode(value);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            height: 42,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              gradient: selected
+                  ? const LinearGradient(colors: [Palette.blue, Palette.aqua])
+                  : null,
+            ),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: selected ? const Color(0xff04101f) : Palette.textDim,
+                ),
+                const SizedBox(width: 8),
+                AppText(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: selected ? const Color(0xff04101f) : Palette.textDim,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Glass(
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          option('cloud', Icons.cloud_rounded, 'Cloud'),
+          option('bluetooth', Icons.bluetooth_rounded, 'Bluetooth'),
+        ],
+      ),
+    );
+  }
 
   Widget _header() => Row(
     children: [

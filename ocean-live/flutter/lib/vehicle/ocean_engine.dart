@@ -93,6 +93,27 @@ class OceanEngine extends ChangeNotifier {
             efficiency!
       : null;
   bool get connected => transport.connected;
+  bool get hasCloudLogin => settings.credentials != null;
+  /// 'bluetooth' reads the car through an OBD adapter, 'cloud' uses O Loop online data only.
+  String get mode {
+    final saved = settings.get('mode');
+    if (saved == 'cloud' || saved == 'bluetooth') return saved;
+    return hasCloudLogin && settings.get('adapterAddr').isEmpty
+        ? 'cloud'
+        : 'bluetooth';
+  }
+
+  bool get bluetoothMode => mode == 'bluetooth';
+  Future<void> setMode(String value) async {
+    if (value == mode) return;
+    final wasActive = active;
+    if (wasActive) await stop();
+    adapters.clear();
+    await settings.set('mode', value);
+    status = 'Not connected';
+    notifyListeners();
+    if (wasActive) await start();
+  }
   void log(String message) {
     // Only fixed statuses and adapter diagnostics enter this list. Never HTTP bodies or credentials.
     logs.add(message);
@@ -116,20 +137,27 @@ class OceanEngine extends ChangeNotifier {
     status = 'Connecting';
     battery.capacity = capacity;
     notifyListeners();
-    if (settings.credentials != null) unawaited(refreshCloud());
-    _cloudTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      if (active) unawaited(refreshCloud());
-    });
+    final bluetooth = bluetoothMode;
+    if (!bluetooth) {
+      if (hasCloudLogin) {
+        unawaited(refreshCloud());
+        _cloudTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+          if (active) unawaited(refreshCloud());
+        });
+      } else {
+        status = 'Sign in to O Loop in Settings';
+      }
+    }
     final permissions =
         await (Platform.isAndroid
                 ? [
-                    Permission.bluetoothScan,
-                    Permission.bluetoothConnect,
+                    if (bluetooth) Permission.bluetoothScan,
+                    if (bluetooth) Permission.bluetoothConnect,
                     Permission.locationWhenInUse,
                     Permission.notification,
                   ]
                 : [
-                    Permission.bluetooth,
+                    if (bluetooth) Permission.bluetooth,
                     Permission.locationWhenInUse,
                     Permission.notification,
                   ])
@@ -137,25 +165,29 @@ class OceanEngine extends ChangeNotifier {
     if (!active) return;
     await _bridge('startBackground');
     unawaited(_startLocation());
-    final bluetoothAllowed = Platform.isAndroid
-        ? permissions[Permission.bluetoothScan]?.isGranted == true &&
-              permissions[Permission.bluetoothConnect]?.isGranted == true
-        : permissions[Permission.bluetooth]?.isGranted == true;
-    if (bluetoothAllowed) {
-      final saved = settings.get('adapterAddr');
-      if (saved.isNotEmpty) {
-        unawaited(connect(saved));
+    if (bluetooth) {
+      final bluetoothAllowed = Platform.isAndroid
+          ? permissions[Permission.bluetoothScan]?.isGranted == true &&
+                permissions[Permission.bluetoothConnect]?.isGranted == true
+          : permissions[Permission.bluetooth]?.isGranted == true;
+      if (!bluetoothAllowed) {
+        status = 'Allow Bluetooth in Settings';
       } else {
+        final saved = settings.get('adapterAddr');
+        status = 'Looking for adapters';
         transport.scan();
+        if (saved.isNotEmpty) unawaited(connect(saved));
+        _reconnectTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+          final id = settings.get('adapterAddr');
+          if (active && !connected && !transport.connecting) {
+            if (id.isNotEmpty) {
+              unawaited(connect(id));
+            } else if (adapters.isEmpty) {
+              transport.scan();
+            }
+          }
+        });
       }
-      _reconnectTimer = Timer.periodic(const Duration(seconds: 8), (_) {
-        final id = settings.get('adapterAddr');
-        if (active && !connected && !transport.connecting && id.isNotEmpty) {
-          unawaited(connect(id));
-        }
-      });
-    } else if (settings.credentials == null) {
-      status = 'Allow Bluetooth in Settings';
     }
     notifyListeners();
   }
@@ -211,16 +243,22 @@ class OceanEngine extends ChangeNotifier {
   }
 
   Future<void> connect(String id) async {
+    if (transport.connecting || transport.connected) return;
     try {
       status = 'Connecting to adapter';
       notifyListeners();
       await transport.connect(id);
       await settings.set('adapterAddr', id);
-    } catch (_) {
-      status = settings.credentials != null
-          ? 'Online data · adapter unavailable'
-          : 'Adapter connection failed';
+      adapters.clear();
+      status = 'Adapter connected';
       notifyListeners();
+    } catch (error) {
+      final reason = error is StateError ? error.message : 'Could not connect.';
+      status = reason;
+      log('Adapter: $reason');
+      notifyListeners();
+      // Keep the list so another adapter can be picked, and resume scanning.
+      if (active && bluetoothMode) transport.scan();
     }
   }
 
