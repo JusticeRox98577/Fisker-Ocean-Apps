@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../vehicle/ocean_engine.dart';
+import 'support_prompt.dart';
 
 class HistoryScreen extends StatefulWidget {
   final OceanEngine engine;
@@ -41,6 +42,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       : box.localToGlobal(Offset.zero) & box.size,
                 ),
               );
+              if (context.mounted) {
+                await SupportPrompt.maybeShow(context, widget.engine.settings);
+              }
             },
           ),
           IconButton(

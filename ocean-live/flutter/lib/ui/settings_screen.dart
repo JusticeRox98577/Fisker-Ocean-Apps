@@ -2,9 +2,13 @@ import 'localization.dart';
 
 import 'package:flutter/material.dart';
 
+import '../core/accounts.dart';
+import '../core/app_config.dart';
 import '../core/settings.dart';
 import '../vehicle/ocean_engine.dart';
 import 'account_screen.dart';
+import 'ocean_account_screen.dart';
+import 'support_prompt.dart';
 
 class SettingsScreen extends StatefulWidget {
   final OceanEngine engine;
@@ -59,6 +63,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     },
   );
+  Widget _oceanAccountCard() => ListenableBuilder(
+    listenable: AccountService.instance,
+    builder: (context, _) {
+      final a = AccountService.instance;
+      return Card(
+        child: ListTile(
+          leading: Icon(
+            a.signedIn ? Icons.account_circle_rounded : Icons.person_add_alt_1,
+          ),
+          title: AppText(
+            a.signedIn ? (a.email ?? 'Signed in') : 'Ocean Live account',
+          ),
+          subtitle: AppText(
+            a.signedIn
+                ? 'Manage your account'
+                : 'Optional. Sign in or create an account',
+          ),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (_) => const OceanAccountScreen()),
+          ),
+        ),
+      );
+    },
+  );
   Widget heading(String title) => Padding(
     padding: const EdgeInsets.only(top: 18, bottom: 8),
     child: AppText(title, style: Theme.of(context).textTheme.titleLarge),
@@ -85,6 +115,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             saveError!,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
+        if (AppConfig.donationsEnabled) ...[
+          const SupportCard(),
+          const SizedBox(height: 12),
+        ],
+        if (AccountService.instance.available) ...[
+          _oceanAccountCard(),
+          const SizedBox(height: 4),
+        ],
         heading('Online car account'),
         AppText(s.credentials?.email ?? 'Not signed in'),
         if (s.credentials != null) AppText('VIN ${s.credentials!.vin}'),

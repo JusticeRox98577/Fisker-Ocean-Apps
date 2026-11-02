@@ -6,6 +6,7 @@ import '../vehicle/ocean_engine.dart';
 import 'account_screen.dart';
 import 'history_screen.dart';
 import 'settings_screen.dart';
+import 'support_prompt.dart';
 import 'battery_ring.dart';
 import 'brand.dart';
 import 'localization.dart';
@@ -91,6 +92,9 @@ class _DashboardState extends State<Dashboard> {
             ? target.round()
             : null,
       );
+      if (mounted && e.commandStatus.startsWith('Command accepted')) {
+        await SupportPrompt.maybeShow(context, e.settings);
+      }
     } on ServiceFailure catch (err) {
       if (mounted) {
         ScaffoldMessenger.of(context)

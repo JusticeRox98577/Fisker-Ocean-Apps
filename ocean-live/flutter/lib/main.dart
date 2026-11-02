@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/accounts.dart';
 import 'core/settings.dart';
 import 'ui/brand.dart';
 import 'ui/dashboard.dart';
@@ -25,6 +26,10 @@ Future<void> main() async {
   final settings = AppSettings(await SharedPreferences.getInstance());
   await settings.initialize();
   await Strings.load();
+  await AccountService.instance.initialize().timeout(
+    const Duration(seconds: 6),
+    onTimeout: () {},
+  );
   final engine = OceanEngine(settings);
   AppSettings.bridge.setMethodCallHandler((MethodCall call) async {
     if (call.method == 'toggle') {
