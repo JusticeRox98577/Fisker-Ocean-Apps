@@ -376,6 +376,13 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.justice.OceanABRP;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SDKROOT)/usr/lib/swift",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)",
+				);
 				DEVELOPMENT_TEAM = L2TJW2J666;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -558,6 +565,13 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.justice.OceanABRP;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SDKROOT)/usr/lib/swift",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)",
+				);
 				DEVELOPMENT_TEAM = L2TJW2J666;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -581,6 +595,13 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.justice.OceanABRP;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SDKROOT)/usr/lib/swift",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)",
+				);
 				DEVELOPMENT_TEAM = L2TJW2J666;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				PRODUCT_NAME = "$(TARGET_NAME)";
