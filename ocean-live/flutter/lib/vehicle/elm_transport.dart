@@ -150,7 +150,9 @@ class ElmTransport {
               await Future<void>.delayed(const Duration(milliseconds: 400));
               if (!ready.isCompleted) ready.complete();
             } catch (error) {
-              fail(error is StateError ? error.message : 'Adapter setup failed.');
+              fail(
+                error is StateError ? error.message : 'Adapter setup failed.',
+              );
             }
           } else if (event.connectionState ==
               DeviceConnectionState.disconnected) {

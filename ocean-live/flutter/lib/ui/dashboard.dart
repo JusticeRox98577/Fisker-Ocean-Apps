@@ -300,7 +300,9 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ),
                     ),
-                  if (e.bluetoothMode && !e.connected && e.adapters.isNotEmpty) ...[
+                  if (e.bluetoothMode &&
+                      !e.connected &&
+                      e.adapters.isNotEmpty) ...[
                     const SectionTitle('Choose your adapter'),
                     ...e.adapters.entries.indexed.map(
                       (entry) => Reveal(

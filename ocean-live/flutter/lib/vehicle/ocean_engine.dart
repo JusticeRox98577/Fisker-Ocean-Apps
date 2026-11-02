@@ -94,6 +94,7 @@ class OceanEngine extends ChangeNotifier {
       : null;
   bool get connected => transport.connected;
   bool get hasCloudLogin => settings.credentials != null;
+
   /// 'bluetooth' reads the car through an OBD adapter, 'cloud' uses O Loop online data only.
   String get mode {
     final saved = settings.get('mode');
@@ -114,6 +115,7 @@ class OceanEngine extends ChangeNotifier {
     notifyListeners();
     if (wasActive) await start();
   }
+
   void log(String message) {
     // Only fixed statuses and adapter diagnostics enter this list. Never HTTP bodies or credentials.
     logs.add(message);
