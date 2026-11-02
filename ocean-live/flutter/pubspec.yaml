@@ -1,0 +1,30 @@
+name: ocean_live
+description: Shared Android and iPhone client for Ocean Live.
+publish_to: none
+version: 2.0.0+21
+environment:
+  sdk: '>=3.13.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  http: ^1.6.0
+  flutter_secure_storage: ^11.2.0
+  shared_preferences: ^2.5.6
+  flutter_reactive_ble: ^5.6.0
+  permission_handler: ^13.0.2
+  geolocator: ^14.1.2
+  file_picker: 13.3.0
+  share_plus: ^13.3.1
+  path_provider: ^2.1.6
+  pointycastle: ^4.0.0
+  basic_utils: ^5.8.2
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/i18n.json

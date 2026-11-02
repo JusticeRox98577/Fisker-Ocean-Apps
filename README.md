@@ -1,34 +1,23 @@
-# Fisker-apps
-
-One repo for all my Fisker apps. Each app lives in its own folder. See [SECURITY.md](SECURITY.md) for how security is handled and how to report a problem.
-
-## Apps
+# Fisker Ocean Apps
 
 | Folder | App |
 | --- | --- |
-| `ocean-live/ios` | Fisker Ocean Live for iPhone (SwiftUI). The Xcode project is made by XcodeGen from `project.yml` |
-| `ocean-live/android` | Fisker Ocean Live for Android (Kotlin, Compose) |
-| `obd-simulator/android` | OBD Adapter Simulator for Android (Kotlin, Compose). Pretends to be a vLinker FD Bluetooth adapter and sends made up battery data, so Ocean Live can be filmed or tested without a car |
+| `ocean-live/flutter` | Ocean Live for Android and iPhone, one shared Flutter/Dart application |
+| `obd-simulator/android` | Separate Android OBD Adapter Simulator (unchanged) |
 
-## Android, Dev and Beta
+Ocean Live includes Bluetooth OBD telemetry, direct O Loop sign-in, online vehicle
+stats, 12V information, lock/unlock, air-conditioning preconditioning, ABRP upload,
+battery estimation, trip/charge history, notifications, Android Auto and CarPlay.
 
-Android has two versions that install side by side.
+See [Ocean Live setup, builds and signing](ocean-live/flutter/README.md) and
+[SECURITY.md](SECURITY.md).
 
-- **Ocean Live Dev** is for testing new features. It uses the package `com.justicemw.oceanlive.dev` and includes the test tools. Every push that changes `ocean-live/android` builds it with GitHub Actions and attaches the APK to a pre release named `dev-N`. It is signed with the fixed key `dev-debug.keystore`, so each new Dev build installs over the last one.
-- **Ocean Live** is the public Beta. It uses the package `com.justicemw.oceanlive`, hides the test tools, and is built as a signed bundle (`bundleRelease`) for Google Play.
+GitHub Actions builds Android and iPhone from the Flutter app. Android Dev APKs
+are signed with the existing public test key and attached to draft releases.
+iPhone builds are compiled on macOS; signed TestFlight uploads require the Apple
+signing secrets described in the Flutter README. Release code is obfuscated on
+both platforms. Native runners contain only Java/Objective-C platform bridges;
+Ocean Live application logic is Dart.
 
-## OBD Adapter Simulator
-
-A second phone running `obd-simulator/android` advertises itself over Bluetooth as a vLinker FD. Ocean Live connects to it like a real adapter and shows the fake charge, voltage, current and temperature. Pick Parked, Driving or Charging and move the charge and temperature sliders to change what the app sees. It is for demo videos and testing only.
-
-Pushes that change `obd-simulator/android` build a debug APK with GitHub Actions and attach it to a GitHub Release named `obdsim-N`.
-
-## iPhone builds without a Mac
-
-Pushes that change `ocean-live/ios` run a GitHub Actions workflow on a Mac server. It builds the app and uploads it to TestFlight. It needs three repo secrets from App Store Connect
-
-- `ASC_KEY_ID` is the key ID
-- `ASC_ISSUER_ID` is the issuer ID
-- `ASC_KEY_P8` is the full text of the downloaded .p8 key file
-
-Change the version number in `ocean-live/ios/project.yml`. The build number is set by the workflow.
+The OBD Adapter Simulator remains in its own Android project and retains its
+existing workflow.
