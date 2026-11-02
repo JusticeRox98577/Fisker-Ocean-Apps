@@ -14,7 +14,7 @@ class AppConfig {
   static const firebaseIosAppId = '';
 
   /// Your donation page, for example a Ko-fi or Buy Me a Coffee link.
-  static const donationUrl = '';
+  static const donationUrl = 'https://buymeacoffee.com/justicemw';
 
   static bool get accountsEnabled =>
       firebaseApiKey.isNotEmpty &&
