@@ -222,6 +222,25 @@ class CloudApi {
     return _data(_read(response));
   }
 
+  /// Wakes a sleeping car so a following command is acted on. The O Loop app
+  /// sends the same request, with the VIN as a query parameter and no body.
+  Future<void> wakeUp(CloudCredentials credentials) async {
+    final response = await client
+        .post(
+          Uri.parse('$serviceUrl/vehicle/wake_up')
+              .replace(queryParameters: {'vin': credentials.vin}),
+          headers: {
+            'Authorization': 'Bearer ${credentials.bearer}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        )
+        .timeout(const Duration(seconds: 20));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _read(response);
+    }
+  }
+
   Future<void> command(
     CloudCredentials credentials,
     VehicleCommand command, {

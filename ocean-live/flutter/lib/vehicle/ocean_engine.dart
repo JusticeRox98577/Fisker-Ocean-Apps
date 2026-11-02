@@ -381,6 +381,17 @@ class OceanEngine extends ChangeNotifier {
     commandStatus = 'Sending command…';
     notifyListeners();
     try {
+      // A sleeping car can accept a command and never act on it, so wake it first.
+      commandStatus = 'Waking your car…';
+      notifyListeners();
+      try {
+        await cloud.wakeUp(credentials);
+        await Future<void>.delayed(const Duration(seconds: 5));
+      } catch (_) {
+        /* Waking is best effort. Still send the command. */
+      }
+      commandStatus = 'Sending command…';
+      notifyListeners();
       await cloud.command(credentials, command, celsius: celsius);
       commandStatus =
           'Command accepted by the service. Check the vehicle for completion.';
