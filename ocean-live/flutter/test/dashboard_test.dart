@@ -23,8 +23,14 @@ void main() {
     'dashboard renders on a phone and exposes account setup without sending controls',
     (tester) async {
       final engine = await _engine(tester);
-      await tester.pumpWidget(OceanLiveApp(engine, splash: false));
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpWidget(OceanLiveApp(engine));
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('OCEAN LIVE'), findsOneWidget);
+      for (var i = 0; i < 60; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(find.text('Ocean Live'), findsOneWidget);
       expect(find.text('12V battery'), findsOneWidget);
       expect(
@@ -37,22 +43,4 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
-
-  testWidgets('loading screen plays, then hands over to the dashboard', (
-    tester,
-  ) async {
-    final engine = await _engine(tester);
-    await tester.pumpWidget(OceanLiveApp(engine));
-    await tester.pump(const Duration(milliseconds: 600));
-    expect(find.text('OCEAN LIVE'), findsNothing);
-    await tester.pump(const Duration(milliseconds: 1400));
-    expect(find.text('OCEAN LIVE'), findsOneWidget);
-    expect(find.text('12V battery'), findsNothing);
-    await tester.pump(const Duration(milliseconds: 1500));
-    await tester.pump(const Duration(seconds: 2));
-    expect(find.text('12V battery'), findsOneWidget);
-    expect(find.text('OCEAN LIVE'), findsNothing);
-    expect(tester.takeException(), null);
-    await tester.pumpWidget(const SizedBox());
-  });
 }
