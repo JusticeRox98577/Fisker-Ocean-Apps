@@ -36,6 +36,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "dev-${{ github.run_number }}" "OceanLiveDev-${{ github.run_number }}.apk" \
-            --prerelease \
+            --draft \
             --title "Ocean Live Dev build ${{ github.run_number }}" \
-            --notes "Dev build for testing new features, from ${{ github.sha }}. It installs next to the public Ocean Live app."
+            --notes "Dev build for testing new features, from ${{ github.sha }}. It installs next to the public Ocean Live app. Draft release, visible only to repo collaborators."
