@@ -181,6 +181,8 @@ fun App() {
     var scanTo by remember { mutableStateOf("21FF") }
     var confirmTest by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showCloudImport by remember { mutableStateOf(false) }
+    var cloudImportStatus by remember { mutableStateOf("") }
     var showSync by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
     var historyList by remember { mutableStateOf(listOf<HistoryEntry>()) }
@@ -602,8 +604,21 @@ fun App() {
         }
     }
 
+    if (showCloudImport) {
+        CloudImportDialog(onDismiss = { showCloudImport = false }) { credentials ->
+            Engine.saveCloudCredentials(credentials)
+            fBearer = credentials.bearer
+            fEmail = credentials.email
+            fFleet = credentials.fleet
+            fToken = credentials.token
+            fVin = credentials.vin
+            cloudImportStatus = "All five fields imported and saved."
+            showCloudImport = false
+        }
+    }
+
     // Settings
-    if (showSettings) {
+    if (showSettings && !showCloudImport) {
         Dialog(
             onDismissRequest = { showSettings = false },
             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -662,10 +677,15 @@ fun App() {
                     )
 
                     SectionTitle("Car data online")
+                    OutlinedButton(onClick = { showCloudImport = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Phone capture setup / import credentials")
+                    }
+                    if (cloudImportStatus.isNotBlank()) Text(cloudImportStatus, color = Cyan)
                     OutlinedTextField(
                         value = fBearer,
                         onValueChange = { fBearer = it; Engine.setPref("fiskerBearer", it) },
                         label = { Text("SDK bearer") },
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -688,6 +708,7 @@ fun App() {
                         value = fToken,
                         onValueChange = { fToken = it; Engine.setPref("fiskerToken", it) },
                         label = { Text("Login token") },
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )

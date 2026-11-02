@@ -15,8 +15,8 @@ android {
         applicationId = "com.justicemw.oceanlive"
         minSdk = 26
         targetSdk = 36
-        versionCode = 18
-        versionName = "1.9"
+        versionCode = 19
+        versionName = "1.9.1"
     }
 
     val keyProps = Properties()
@@ -74,6 +74,7 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.car.app:app:1.4.0")
     implementation("androidx.activity:activity-compose:1.9.3")

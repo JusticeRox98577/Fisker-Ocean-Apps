@@ -198,6 +198,16 @@ object Engine {
         prefs.edit().putString(key, value).apply()
     }
 
+    fun saveCloudCredentials(credentials: CloudCredentials) {
+        prefs.edit()
+            .putString("fiskerBearer", credentials.bearer)
+            .putString("fiskerEmail", credentials.email)
+            .putString("fiskerFleet", credentials.fleet)
+            .putString("fiskerToken", credentials.token)
+            .putString("fiskerVin", credentials.vin)
+            .apply()
+    }
+
     private fun log(s: String) {
         _ui.update { st ->
             val l = st.log + s

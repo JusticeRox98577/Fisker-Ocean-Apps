@@ -1,5 +1,7 @@
 Ocean Live for Android
 
+Phone-only cloud credential capture and import: see PHONE-CLOUD-SETUP.md.
+
 Open this folder in Android Studio (File, Open). Let it sync, plug in your Android phone with USB debugging on, and press Run.
 
 To share it as an installable file, build the APK with Build, Build Bundle(s) / APK(s), Build APK(s). The ready made debug file is in the apk folder next to this one.
