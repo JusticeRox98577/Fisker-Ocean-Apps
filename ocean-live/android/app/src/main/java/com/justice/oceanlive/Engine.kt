@@ -195,16 +195,19 @@ object Engine {
     fun getPref(key: String, def: String): String = prefs.getString(key, def) ?: def
 
     fun setPref(key: String, value: String) {
-        prefs.edit().putString(key, value).apply()
+        val editor = prefs.edit().putString(key, value)
+        if (key in setOf("fiskerBearer", "fiskerEmail", "fiskerFleet", "fiskerToken")) editor.remove("fiskerRefreshToken")
+        editor.apply()
     }
 
-    fun saveCloudCredentials(credentials: CloudCredentials) {
+    fun saveCloudCredentials(credentials: CloudCredentials, refreshToken: String? = null) {
         prefs.edit()
             .putString("fiskerBearer", credentials.bearer)
             .putString("fiskerEmail", credentials.email)
             .putString("fiskerFleet", credentials.fleet)
             .putString("fiskerToken", credentials.token)
             .putString("fiskerVin", credentials.vin)
+            .putString("fiskerRefreshToken", refreshToken)
             .apply()
     }
 
@@ -926,7 +929,19 @@ object Engine {
         val key = "$bearer|$email|$fleet|$tok"
         val existing = cloudClient
         if (existing != null && key == cloudClientKey) return existing
-        val c = FiskerClient(bearer, email, fleet, tok)
+        val c = FiskerClient(bearer, email, fleet, tok) {
+            val savedRefresh = getPref("fiskerRefreshToken", "")
+            if (savedRefresh.isBlank() || getPref("fiskerEmail", "") != email) null
+            else {
+                val refreshed = OLoopAuth().use { it.refresh(savedRefresh) }
+                check(getPref("fiskerRefreshToken", "") == savedRefresh && getPref("fiskerEmail", "") == email) {
+                    "Online account changed. Restart online data."
+                }
+                prefs.edit().putString("fiskerBearer", refreshed.access)
+                    .putString("fiskerRefreshToken", refreshed.refresh).apply()
+                refreshed.access
+            }
+        }
         cloudClient = c
         cloudClientKey = key
         return c

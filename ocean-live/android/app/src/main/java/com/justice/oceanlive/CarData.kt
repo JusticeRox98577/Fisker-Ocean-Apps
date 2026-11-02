@@ -27,7 +27,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import android.util.Base64
+import java.util.Base64
 import java.security.KeyPairGenerator
 
 /*
@@ -135,55 +135,36 @@ data class LoginRequest(
 )
 
 class FiskerClient(
-    private val sdkBearer: String,
+    private var sdkBearer: String,
     private val extUserId: String,
     private val fleetId: Int,
-    private val sdkToken: String
+    private val sdkToken: String,
+    private val http: HttpClient = HttpClient(OkHttp) {
+        expectSuccess = true
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true; isLenient = true }) }
+    },
+    private val refreshBearer: (suspend () -> String?)? = null
 ) {
 
-    // Session bearer pulled automatically from the login response
-    private var sessionToken: String? = null
+    private var loggedIn = false
 
     // RSA 2048 public key in X.509 form, base64 encoded, same shape as the app sends
     private val publicKeyB64: String by lazy {
         val pair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
-        Base64.encodeToString(pair.public.encoded, Base64.NO_WRAP)
+        Base64.getEncoder().encodeToString(pair.public.encoded)
     }
 
-    private val http = HttpClient(OkHttp) {
-        expectSuccess = true
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true; isLenient = true })
-        }
-    }
-
-    private suspend fun login(): String {
+    private suspend fun login() {
         val res: JsonElement = http.post("https://ccc.skipti.com/api/v1/goloopsdk/login") {
             header(HttpHeaders.Accept, "application/json")
             header(HttpHeaders.Authorization, "Bearer $sdkBearer")
             contentType(ContentType.Application.Json)
             setBody(LoginRequest(extUserId, fleetId, sdkToken, "1.0", publicKeyB64))
         }.body()
-        val found = findToken(res) ?: error("No token found in login response")
-        sessionToken = found
-        return found
-    }
-
-    // Searches the login response for a token like field at any depth
-    private fun findToken(el: JsonElement): String? {
-        val keys = listOf("token", "accessToken", "access_token", "jwt", "bearer", "authToken")
-        when (el) {
-            is JsonObject -> {
-                for (k in keys) {
-                    val v = el[k]
-                    if (v is JsonPrimitive && v.isString && v.content.isNotBlank()) return v.content
-                }
-                for (v in el.values) findToken(v)?.let { return it }
-            }
-            is JsonArray -> for (v in el) findToken(v)?.let { return it }
-            else -> {}
-        }
-        return null
+        // The SDK response contains reservations and key material, not a new bearer.
+        // The native O Loop SDK uses the Auth0 access token for both login and stats.
+        require((res as? JsonObject)?.get("success")?.toString() != "false") { "Vehicle login was not accepted." }
+        loggedIn = true
     }
 
     private suspend fun fetch(vin: String, bearer: String): ShortStats {
@@ -197,12 +178,16 @@ class FiskerClient(
     }
 
     suspend fun shortStats(vin: String): ShortStats {
-        val bearer = sessionToken ?: login()
         return try {
-            fetch(vin, bearer)
+            if (!loggedIn) login()
+            fetch(vin, sdkBearer)
         } catch (e: ClientRequestException) {
-            // Token expired, log in again and retry once
-            if (e.response.status == HttpStatusCode.Unauthorized) fetch(vin, login()) else throw e
+            if (e.response.status != HttpStatusCode.Unauthorized) throw e
+            sdkBearer = refreshBearer?.invoke()
+                ?: throw IllegalArgumentException("Online session expired. Sign in to O Loop again in Settings.")
+            loggedIn = false
+            login()
+            fetch(vin, sdkBearer)
         }
     }
 }

@@ -182,6 +182,7 @@ fun App() {
     var confirmTest by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var showCloudImport by remember { mutableStateOf(false) }
+    var showOLoopSignIn by remember { mutableStateOf(false) }
     var cloudImportStatus by remember { mutableStateOf("") }
     var showSync by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
@@ -617,8 +618,21 @@ fun App() {
         }
     }
 
+    if (showOLoopSignIn) {
+        OLoopSignInDialog(onDismiss = { showOLoopSignIn = false }) { credentials, refreshToken ->
+            Engine.saveCloudCredentials(credentials, refreshToken)
+            fBearer = credentials.bearer
+            fEmail = credentials.email
+            fFleet = credentials.fleet
+            fToken = credentials.token
+            fVin = credentials.vin
+            cloudImportStatus = "Signed in. All five fields saved for your vehicle."
+            showOLoopSignIn = false
+        }
+    }
+
     // Settings
-    if (showSettings && !showCloudImport) {
+    if (showSettings && !showCloudImport && !showOLoopSignIn) {
         Dialog(
             onDismissRequest = { showSettings = false },
             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -677,6 +691,10 @@ fun App() {
                     )
 
                     SectionTitle("Car data online")
+                    Button(onClick = { showOLoopSignIn = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Sign in to O Loop")
+                    }
+                    Text("Sign in on this phone to get your account and vehicle credentials. No traffic capture needed. Experimental until verified with a live account.", fontSize = 13.sp, color = Muted)
                     OutlinedButton(onClick = { showCloudImport = true }, modifier = Modifier.fillMaxWidth()) {
                         Text("Phone capture setup / import credentials")
                     }

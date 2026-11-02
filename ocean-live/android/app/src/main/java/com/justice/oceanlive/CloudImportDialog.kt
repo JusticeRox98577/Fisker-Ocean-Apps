@@ -103,7 +103,7 @@ fun CloudImportDialog(onDismiss: () -> Unit, onImport: (CloudCredentials) -> Uni
                 Text("If you see a certificate error or a closed lock, the traffic has not been decrypted. Many Android apps reject user certificates; a rooted phone with the certificate in its system store, or a capture-enabled build of the source app, may be needed. Import alone cannot fix this.")
                 TextButton(onClick = { uriHandler.openUri("https://emanuele-f.github.io/PCAPdroid/tls_decryption.html") }) { Text("Certificate setup and troubleshooting") }
                 Text("3. In PCAPdroid's HTTP view, select the POST /api/v1/goloopsdk/login and GET /api/v1/fisker/shortstats?vin= requests for your account and car. Save those two as HAR, then stop capture.")
-                Text("4. Import that HAR below. It fills SDK bearer, account email, fleet ID, login token and VIN together. Use the login request's bearer, never the shortstats bearer. Captures contain account secrets; delete exported files when finished.")
+                Text("4. Import that HAR below. It fills SDK bearer, account email, fleet ID, login token and VIN together, using the bearer matched with the login request. Captures contain account secrets; delete exported files when finished.")
                 OutlinedButton(onClick = { filePicker.launch(arrayOf("*/*")) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                     Text(if (busy) "Reading capture…" else "Import HAR / credential JSON file")
                 }
@@ -129,7 +129,7 @@ fun CloudImportDialog(onDismiss: () -> Unit, onImport: (CloudCredentials) -> Uni
                 )
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Button(onClick = { importText(capture) }, enabled = !busy && capture.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Import all five fields") }
-                Text("Imported values stay in this app's private storage. Signing out of Fisker may invalidate the login token; capture again if login stops working.")
+                Text("Imported values stay in this app's private storage. Access tokens can expire; sign in again or import a fresh capture if online login stops working.")
                 TextButton(onClick = onDismiss, enabled = !busy) { Text("Close") }
             }
         }

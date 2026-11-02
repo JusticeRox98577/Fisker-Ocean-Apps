@@ -1,5 +1,16 @@
 # Online car data: Android phone only
 
+## Try direct sign-in first
+
+Open **Settings → Car data online → Sign in to O Loop**. Enter your O Loop account
+email and password, then choose your VIN and tap **Save vehicle**. All five fields
+are filled together; your password is not saved. This route requires no capture
+tool, proxy, certificate, or computer. It is experimental until verified with a
+live account. See [CLOUD-AUTH-RESEARCH.md](CLOUD-AUTH-RESEARCH.md) for evidence and
+testing limits. Turn off the Wi-Fi interception proxy before testing normal login.
+
+## Import an existing capture
+
 Open **Settings → Car data online → Phone capture setup / import credentials**.
 This works in the Android app; a computer is not part of the capture/import workflow.
 
@@ -59,8 +70,9 @@ The five values are:
 | Login token | Login JSON `token` UUID |
 | VIN | `vin` query parameter on `shortstats`, or the VIN on your car |
 
-The shortstats authorization header can contain a different session bearer. It is
-never used as the SDK bearer during HAR import. Multiple accounts/sessions or VINs
+APK analysis shows that the native SDK uses the same Auth0 access token for login
+and shortstats. Import deliberately extracts the login header to keep it matched
+with the login request body. Multiple accounts/sessions or VINs
 in the HAR are rejected to avoid combining unrelated credentials. Validation checks
 format, not server acceptance or expiry. Screenshots with clipped tokens cannot
 recover the missing characters.

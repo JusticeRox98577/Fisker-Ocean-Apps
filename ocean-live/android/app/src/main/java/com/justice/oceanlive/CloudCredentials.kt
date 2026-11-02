@@ -31,7 +31,7 @@ class CloudCredentials(
                 val loginStart = capture.indexOf("/goloopsdk/login")
                 val bodyStart = capture.indexOf('{')
                 require(loginStart >= 0 && bodyStart > loginStart) { "Include the goloopsdk/login URL, authorization header and JSON body." }
-                // Never look in shortstats for the SDK bearer: that is a session bearer.
+                // Keep the bearer matched with the login request and its account fields.
                 Regex("(?i)authorization\\s*:\\s*Bearer\\s+([A-Za-z0-9_.-]+)")
                     .find(capture.substring(loginStart, bodyStart))?.groupValues?.get(1).orEmpty()
             }
