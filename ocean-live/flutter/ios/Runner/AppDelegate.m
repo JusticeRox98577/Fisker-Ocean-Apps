@@ -2,6 +2,13 @@
 #import "GeneratedPluginRegistrant.h"
 #import <UserNotifications/UserNotifications.h>
 
+// Swift packages such as Firebase reference these marker symbols from Apple's Swift
+// back-deployment libraries. The libraries are not needed for iOS 17 and newer, and
+// recent Xcode versions no longer ship them, so the linker would fail without these.
+__attribute__((used)) void *_swift_FORCE_LOAD_$_swiftCompatibility56 = 0;
+__attribute__((used)) void *_swift_FORCE_LOAD_$_swiftCompatibilityConcurrency = 0;
+__attribute__((used)) void *_swift_FORCE_LOAD_$_swiftCompatibilityPacks = 0;
+
 @implementation AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {
     self.oceanEngine = [[FlutterEngine alloc] initWithName:@"ocean" project:nil allowHeadlessExecution:YES];
