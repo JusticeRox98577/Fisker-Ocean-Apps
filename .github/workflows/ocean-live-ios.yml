@@ -1,9 +1,7 @@
 name: Ocean Live Flutter iOS
 on:
   push:
-    branches: [main, flutter-migration, release-2.0]
-    paths: ["ocean-live/flutter/**", ".github/workflows/ocean-live-ios.yml"]
-  pull_request:
+    branches: [main]
     paths: ["ocean-live/flutter/**", ".github/workflows/ocean-live-ios.yml"]
   workflow_dispatch:
 permissions:
@@ -46,7 +44,6 @@ jobs:
             ocean-live/flutter/OceanLive-2.0-iOS-unsigned.ipa
             ocean-live/flutter/OceanLive-iOS-unsigned.app.zip
       - name: Archive, sign and upload to App Store Connect
-        if: github.event_name != 'pull_request'
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

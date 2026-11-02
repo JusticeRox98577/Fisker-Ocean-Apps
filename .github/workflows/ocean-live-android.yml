@@ -1,9 +1,7 @@
 name: Ocean Live Flutter
 on:
   push:
-    branches: [main, flutter-migration, release-2.0]
-    paths: ["ocean-live/flutter/**", ".github/workflows/ocean-live-android.yml"]
-  pull_request:
+    branches: [main]
     paths: ["ocean-live/flutter/**", ".github/workflows/ocean-live-android.yml"]
   workflow_dispatch:
 permissions:
