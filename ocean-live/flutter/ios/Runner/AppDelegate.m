@@ -47,6 +47,16 @@ __attribute__((used)) void *_swift_FORCE_LOAD_$_swiftCompatibilityPacks = 0;
     }];
     return [super application:application didFinishLaunchingWithOptions:options];
 }
+// Ocean Live has no UI state worth restoring, and iOS's default state
+// restoration path (AppSceneDelegate) has crashed in production with an
+// internal assertion failure. Declining to save or restore state here
+// stops the system from ever walking that path for this app.
+- (BOOL)application:(UIApplication *)application shouldSaveApplicationState:(NSCoder *)coder {
+    return NO;
+}
+- (BOOL)application:(UIApplication *)application shouldRestoreApplicationState:(NSCoder *)coder {
+    return NO;
+}
 @end
 int main(int argc,char *argv[]) {
     @autoreleasepool {return UIApplicationMain(argc,argv,nil,NSStringFromClass(AppDelegate.class));}

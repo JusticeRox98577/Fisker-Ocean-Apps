@@ -14,6 +14,14 @@
     [self.window makeKeyAndVisible];
     [super scene:scene willConnectToSession:session options:options];
 }
+// We have nothing worth restoring, and leaving this unimplemented lets iOS
+// fall back to its own default (AppSceneDelegate.stateRestorationActivity),
+// which crashed with an internal assertion failure in production (iOS
+// 27.0.1, crash: AppSceneDelegate.sceneItem(flush:)). Returning nil here
+// opts this scene out of that path entirely.
+- (NSUserActivity *)stateRestorationActivityForScene:(UIScene *)scene {
+    return nil;
+}
 @end
 
 @interface CarPlaySceneDelegate : UIResponder<CPTemplateApplicationSceneDelegate>
@@ -28,6 +36,11 @@
 }
 - (void)templateApplicationScene:(CPTemplateApplicationScene *)scene didDisconnectInterfaceController:(CPInterfaceController *)controller {
     [self.timer invalidate];self.timer=nil;self.controller=nil;
+}
+// Same reasoning as SceneDelegate above: opt the CarPlay scene out of the
+// default state restoration path that crashed.
+- (NSUserActivity *)stateRestorationActivityForScene:(UIScene *)scene {
+    return nil;
 }
 - (NSString *)number:(NSDictionary *)data key:(NSString *)key unit:(NSString *)unit {
     id value=data[key];if(!value||value==NSNull.null)return @"—";
