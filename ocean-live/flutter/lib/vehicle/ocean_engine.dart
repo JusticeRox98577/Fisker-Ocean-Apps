@@ -413,6 +413,16 @@ class OceanEngine extends ChangeNotifier {
 
   Future<void> control(VehicleCommand command, {int? celsius}) async {
     if (commandBusy) return;
+    // Starting the cabin climate system has no confirmed auto shutoff on
+    // the cloud API. A reported case left a car's climate running and its
+    // 12V draining until the owner cut power at the T-Box. Block it here
+    // too, not just in the UI, until that is understood.
+    if (command == VehicleCommand.climateOn ||
+        command == VehicleCommand.cabinTemperature) {
+      throw const ServiceFailure(
+        'Starting aircon from the app is disabled for safety. Use the O Loop app to precondition.',
+      );
+    }
     final credentials = settings.credentials;
     if (credentials == null) {
       throw const ServiceFailure('Sign in and choose your vehicle first.');

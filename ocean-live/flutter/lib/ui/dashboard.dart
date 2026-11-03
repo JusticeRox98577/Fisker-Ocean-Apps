@@ -730,9 +730,11 @@ class _DashboardState extends State<Dashboard> {
                 children: [
                   Expanded(
                     child: FilledButton(
-                      onPressed: busy
-                          ? null
-                          : () => command(VehicleCommand.climateOn),
+                      // Starting aircon from the cloud has no confirmed auto
+                      // shutoff. A reported case left a car's climate system
+                      // running and its 12V draining until the owner
+                      // physically cut power. Disabled until that is fixed.
+                      onPressed: null,
                       child: const AppText('Start aircon'),
                     ),
                   ),
@@ -746,6 +748,13 @@ class _DashboardState extends State<Dashboard> {
                     ),
                   ),
                 ],
+              ),
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: AppText(
+                  'Starting is temporarily disabled for safety. Use the O Loop app to precondition, or Stop aircon here if it will not turn off.',
+                  style: TextStyle(fontSize: 12, color: Palette.textDim),
+                ),
               ),
               const SizedBox(height: 8),
               Row(
@@ -778,9 +787,10 @@ class _DashboardState extends State<Dashboard> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: busy
-                      ? null
-                      : () => command(VehicleCommand.cabinTemperature),
+                  // Setting a target temperature can itself start the
+                  // cabin climate system server-side, so it is held to the
+                  // same disabled state as Start aircon above.
+                  onPressed: null,
                   child: const AppText('Set cabin temperature'),
                 ),
               ),
