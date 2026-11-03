@@ -6,6 +6,8 @@ permissions:
 jobs:
   play_bundle:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: ocean-live/flutter
@@ -37,6 +39,12 @@ jobs:
         with:
           name: OceanLive-Play-bundle
           path: ocean-live/flutter/build/app/outputs/bundle/prodRelease/*.aab
+      - name: Draft release with the Play bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp build/app/outputs/bundle/prodRelease/*.aab OceanLive-Play-bundle.aab
+          gh release create "play-bundle-${{ github.run_number }}" OceanLive-Play-bundle.aab --draft --title "Ocean Live Play bundle (build ${{ github.run_number }})" --notes "Signed .aab for Google Play Console, built from ${{ github.sha }}."
       - name: Encrypt crash symbols
         env:
           SYMBOLS_ENCRYPTION_PASSWORD: ${{ secrets.SYMBOLS_ENCRYPTION_PASSWORD }}
