@@ -24,8 +24,16 @@ Future<void> main() async {
     ),
   );
   final settings = AppSettings(await SharedPreferences.getInstance());
-  await settings.initialize();
-  await Strings.load();
+  // Keychain reads here (flutter_secure_storage) have been seen to hang on
+  // some devices, especially on a fresh TestFlight install, which left the
+  // app on a black launch screen forever since nothing after this await
+  // ever ran. A timeout guarantees runApp() is always reached; settings
+  // keep loading in the background and the UI catches up once they land.
+  await settings.initialize().timeout(
+    const Duration(seconds: 8),
+    onTimeout: () {},
+  );
+  await Strings.load().timeout(const Duration(seconds: 5), onTimeout: () {});
   await AccountService.instance.initialize().timeout(
     const Duration(seconds: 6),
     onTimeout: () {},
