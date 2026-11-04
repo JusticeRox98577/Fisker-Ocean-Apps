@@ -1,8 +1,5 @@
 name: Ocean Live Flutter iOS
 on:
-  push:
-    branches: [main]
-    paths: ["ocean-live/flutter/**", ".github/workflows/ocean-live-ios.yml"]
   workflow_dispatch:
 permissions:
   contents: read
