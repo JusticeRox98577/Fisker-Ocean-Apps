@@ -5,6 +5,7 @@ import 'brand.dart';
 import 'dashboard.dart';
 import 'diagnostics_screen.dart';
 import 'localization.dart';
+import 'pkc_key_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -112,6 +113,17 @@ class ModeSelectScreen extends StatelessWidget {
                 MaterialPageRoute<void>(
                   builder: (_) => DiagnosticsScreen(engine),
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _card(
+              index: 2,
+              icon: Icons.key_rounded,
+              title: 'Vehicle key (BLE)',
+              subtitle: 'Phone-as-key lock/unlock (experimental)',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(builder: (_) => const PkcKeyScreen()),
               ),
             ),
           ],

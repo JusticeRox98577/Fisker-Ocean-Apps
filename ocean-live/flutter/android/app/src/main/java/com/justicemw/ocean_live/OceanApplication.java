@@ -15,8 +15,14 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodChannel;
+import com.justicemw.ocean_live.pkc.PkcPlugin;
 
-/** Platform lifecycle and display bridge only. All vehicle/account logic lives in Dart. */
+/**
+ * Platform lifecycle and display bridge only. All vehicle/account logic
+ * lives in Dart, with one exception: PkcPlugin (phone-as-key BLE unlock),
+ * which needs Android's BLE peripheral/GATT-server APIs that Dart has no
+ * access to. See PkcPlugin's own doc comment.
+ */
 public class OceanApplication extends Application {
     public FlutterEngine engine;
     public MethodChannel channel;
@@ -72,6 +78,7 @@ public class OceanApplication extends Application {
                 }
             } catch (Exception ignored) { result.error("platform", "Platform integration unavailable", null); }
         });
+        new PkcPlugin(this, engine.getDartExecutor().getBinaryMessenger());
         FlutterEngineCache.getInstance().put("ocean", engine);
         engine.getDartExecutor().executeDartEntrypoint(DartExecutor.DartEntrypoint.createDefault());
     }
