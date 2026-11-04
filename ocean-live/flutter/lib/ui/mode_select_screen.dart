@@ -4,6 +4,7 @@ import '../vehicle/ocean_engine.dart';
 import 'brand.dart';
 import 'dashboard.dart';
 import 'diagnostics_screen.dart';
+import 'indigo_key_screen.dart';
 import 'localization.dart';
 import 'pkc_key_screen.dart';
 import 'theme.dart';
@@ -124,6 +125,19 @@ class ModeSelectScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute<void>(builder: (_) => const PkcKeyScreen()),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _card(
+              index: 3,
+              icon: Icons.bluetooth_connected_rounded,
+              title: 'Vehicle key (Indigo BLE)',
+              subtitle: 'O Loop-style phone-as-key lock/unlock (experimental)',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const IndigoKeyScreen(),
+                ),
               ),
             ),
           ],
