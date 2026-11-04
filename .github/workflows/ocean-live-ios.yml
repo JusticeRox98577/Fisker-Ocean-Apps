@@ -44,6 +44,10 @@ jobs:
             ocean-live/flutter/OceanLive-2.0-iOS-unsigned.ipa
             ocean-live/flutter/OceanLive-iOS-unsigned.app.zip
       - name: Archive, sign and upload to App Store Connect
+        # Every push to main still builds and tests, but shipping a new
+        # TestFlight build is held back until it's manually triggered
+        # (Actions tab -> Run workflow), same as the Android release.
+        if: github.event_name == 'workflow_dispatch'
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

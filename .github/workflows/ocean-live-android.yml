@@ -64,7 +64,11 @@ jobs:
           path: ocean-live/flutter/build/private-artifacts/*.enc
           if-no-files-found: ignore
       - name: Publish release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # Every push to main still builds and tests, but only publishing a
+        # public release is held back until it's manually triggered (Actions
+        # tab -> Run workflow), so pushing new features doesn't ship them to
+        # the public release until it's actually ready.
+        if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
