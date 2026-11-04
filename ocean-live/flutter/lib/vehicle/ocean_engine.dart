@@ -11,6 +11,7 @@ import '../core/calculations.dart';
 import '../core/history.dart';
 import '../core/settings.dart';
 import '../online/cloud_api.dart';
+import 'dtc.dart';
 import 'elm_transport.dart';
 
 class OceanEngine extends ChangeNotifier {
@@ -28,6 +29,9 @@ class OceanEngine extends ChangeNotifier {
   final logs = <String>[];
   bool active = false, polling = false, commandBusy = false;
   bool _cloudBusy = false, _obdBusy = false;
+  List<DtcCode> dtcs = [];
+  DateTime? dtcsUpdated;
+  bool dtcBusy = false;
   String status = 'Not connected', abrpStatus = 'ABRP is off';
   String commandStatus = '';
   DateTime? lastSent, lastUpdated, cloudUpdated;
@@ -339,6 +343,65 @@ class OceanEngine extends ChangeNotifier {
       await _publish();
     } finally {
       _obdBusy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Reads stored/pending trouble codes from the same battery module
+  /// `_pollObd` already talks to. See dtc.dart for why that module (not a
+  /// generic Mode 03 broadcast) is the one asked.
+  Future<void> readDtcs() async {
+    if (!connected) {
+      throw const ServiceFailure('Connect to your OBD adapter first.');
+    }
+    if (dtcBusy) return;
+    dtcBusy = true;
+    notifyListeners();
+    try {
+      await transport.send('ATSH7E1');
+      await transport.send('ATCRA7E9');
+      final response = await transport.send(
+        '1902FF',
+        timeout: const Duration(seconds: 5),
+      );
+      final parsed = parseDtcResponse(response);
+      if (parsed == null) {
+        throw const ServiceFailure('The vehicle did not return trouble codes.');
+      }
+      dtcs = parsed;
+      dtcsUpdated = DateTime.now();
+    } finally {
+      dtcBusy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Clears trouble codes. Callers are expected to confirm with the person
+  /// first (see diagnostics_screen.dart) - clearing hides a real fault's
+  /// evidence, it does not fix whatever set the code.
+  Future<void> clearDtcs() async {
+    if (!connected) {
+      throw const ServiceFailure('Connect to your OBD adapter first.');
+    }
+    if (dtcBusy) return;
+    dtcBusy = true;
+    notifyListeners();
+    try {
+      await transport.send('ATSH7E1');
+      await transport.send('ATCRA7E9');
+      final response = await transport.send(
+        '14FFFFFF',
+        timeout: const Duration(seconds: 5),
+      );
+      if (!parseClearDtcResponse(response)) {
+        throw const ServiceFailure(
+          'The vehicle did not accept clearing codes.',
+        );
+      }
+      dtcs = [];
+      dtcsUpdated = DateTime.now();
+    } finally {
+      dtcBusy = false;
       notifyListeners();
     }
   }

@@ -7,6 +7,13 @@ import 'package:firebase_core/firebase_core.dart';
 /// They identify your project and are safe to keep in a public repo. Security comes
 /// from your Firebase Authentication settings, not from hiding these.
 class AppConfig {
+  /// True only in the dev-flavor build (see android/app/build.gradle.kts
+  /// and .github/workflows/ocean-live-android.yml's android_dev job),
+  /// which ships as its own installable app icon/name so it never collides
+  /// with the public release, and is only ever published as a draft GitHub
+  /// release, not a public one. Gates features not ready for every user yet.
+  static const devBuild = bool.fromEnvironment('OCEAN_DEV');
+
   static const firebaseApiKey = 'AIzaSyBliRciMYTu3aYC1PtQLZRVND9Z3vI3_GY';
 
   /// Optional separate key for iPhone. Falls back to the key above when empty.

@@ -73,3 +73,39 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "v2.0-build-${{ github.run_number }}" OceanLive-2.0-Android.apk --latest --title "Ocean Live 2.0 (build ${{ github.run_number }})" --notes "Public Ocean Live 2.0 for Android from ${{ github.sha }}. Obfuscated release build with no test or dev tools."
+  android_dev:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: ocean-live/flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - name: Build dev Android APK
+        # The dev flavor signs with its own checked-in dev-debug.keystore
+        # (android/app/build.gradle.kts), has its own applicationId suffix
+        # and app icon, and installs side by side with the real app. Gates
+        # itself with OCEAN_DEV so in-progress features never reach the
+        # public build.
+        run: |
+          flutter build apk --flavor dev --release --dart-define=OCEAN_DEV=true --build-number=$((2000 + GITHUB_RUN_NUMBER))
+          cp build/app/outputs/flutter-apk/app-dev-release.apk OceanLive-Dev.apk
+      - name: Draft a dev-only release
+        # Always a draft, never --latest: a draft release on GitHub is only
+        # visible to people with write access to this repo, i.e. just you,
+        # even though the repo itself is public.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "dev-build-${{ github.run_number }}" OceanLive-Dev.apk --draft --title "Ocean Live Dev (build ${{ github.run_number }})" --notes "Dev-flavor build from ${{ github.sha }}. Sideloadable, installs alongside the real app, draft release so only repo collaborators can see it."

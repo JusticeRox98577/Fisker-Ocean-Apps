@@ -4,10 +4,12 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/accounts.dart';
+import 'core/app_config.dart';
 import 'core/settings.dart';
 import 'ui/brand.dart';
 import 'ui/dashboard.dart';
 import 'ui/localization.dart';
+import 'ui/mode_select_screen.dart';
 import 'ui/splash_screen.dart';
 import 'ui/theme.dart';
 import 'vehicle/ocean_engine.dart';
@@ -95,6 +97,11 @@ class _OceanLiveAppState extends State<OceanLiveApp> {
               key: const ValueKey('splash'),
               onDone: () => setState(() => _loading = false),
             )
+          // Dev builds land on a chooser so Diagnostics never clutters the
+          // regular Live data screen everyone else gets; the public app
+          // never has this flag set, so it always goes straight to it.
+          : AppConfig.devBuild
+          ? ModeSelectScreen(widget.engine, key: const ValueKey('mode'))
           : Dashboard(widget.engine, key: const ValueKey('dashboard')),
     ),
   );
