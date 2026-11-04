@@ -28,15 +28,13 @@
 	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
-		<!-- Declaring multi-window support routed launches through iOS's newer
-		     scene-item/snapshot machinery, which crashed on iOS 27.0.1 with an
-		     internal assertion inside Apple's own AppSceneDelegate, even after
-		     opting both our scenes out of state restoration. Ocean Live never
-		     opens a second window, and CarPlay connects through its own scene
-		     session role regardless of this flag, so turning it off removes us
-		     from that path rather than fighting it. -->
+		<!-- Apple's own CarPlay docs require this to be true for a
+		     CPTemplateApplicationSceneSessionRoleApplication scene to
+		     register at all; setting it false (to dodge an AppSceneDelegate
+		     crash on iOS 27.0.1) broke CarPlay registration entirely, which
+		     is worse. Back to true; the crash needs a different fix. -->
 		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
+		<true/>
 		<key>UISceneConfigurations</key>
 		<dict>
 			<key>UIWindowSceneSessionRoleApplication</key>
