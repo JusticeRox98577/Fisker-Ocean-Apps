@@ -15,6 +15,14 @@ class ServiceFailure implements Exception {
 
 enum VehicleCommand { lock, unlock, climateOn, climateOff, cabinTemperature }
 
+/// Minutes O Loop itself offers for how long a remote-started cabin climate
+/// run lasts before the vehicle's own cloud service shuts it off
+/// automatically (recovered from the native SDK's `IgnitionDuration` enum in
+/// O Loop 1.3.1). Always send one of these as `climateMinutes` to
+/// [VehicleCommand.climateOn] - the service rejects (and this app refuses to
+/// send) a climate-start with no bounded run time.
+const List<int> climateAutoOffMinutes = [15, 30, 60];
+
 class AccountResult {
   final String email, bearer, loginToken;
   final int fleet;
@@ -265,20 +273,62 @@ class CloudApi {
     CloudCredentials credentials,
     VehicleCommand command, {
     int? celsius,
+    int? climateMinutes,
   }) async {
-    final (path, value) = switch (command) {
-      VehicleCommand.lock => ('doors', 'lock'),
-      VehicleCommand.unlock => ('doors', 'unlock'),
-      VehicleCommand.climateOn => ('temp_cabin', 'on'),
-      VehicleCommand.climateOff => ('temp_cabin', 'off'),
-      VehicleCommand.cabinTemperature => ('temp_cabin', '${celsius ?? 21}'),
-    };
     if (command == VehicleCommand.cabinTemperature &&
         (celsius == null || celsius < 16 || celsius > 30)) {
       throw const ServiceFailure(
         'Choose a cabin temperature between 16 and 30 °C.',
       );
     }
+    // Starting the cabin climate goes through the SDK's dedicated /vehicle/
+    // ignition endpoint, not the /vehicle/temp_cabin one used for the target
+    // temperature. temp_cabin's own "on" value has no run-time limit at all
+    // - sending that is what left a reported car's fan running until its
+    // 12V drained. ignition's own request model (recovered from O Loop
+    // 1.3.1's IgnitionRequest/Commands classes) requires a timeout of at
+    // least 30 seconds whenever it turns the cabin on, and the vehicle's
+    // cloud service - not this app - is what shuts it back off at that
+    // point, so the limit holds even if the app is closed or offline.
+    if (command == VehicleCommand.climateOn ||
+        command == VehicleCommand.climateOff) {
+      final on = command == VehicleCommand.climateOn;
+      int? timeoutSeconds;
+      if (on) {
+        if (climateMinutes == null || climateMinutes < 1) {
+          throw const ServiceFailure(
+            'Choose how long the cabin should run before it shuts off automatically.',
+          );
+        }
+        timeoutSeconds = climateMinutes * 60;
+        if (timeoutSeconds < 30) {
+          throw const ServiceFailure('Choose at least 30 seconds of run time.');
+        }
+      }
+      final body = <String, dynamic>{'ignition_action': on ? 'on' : 'off'};
+      if (timeoutSeconds != null) body['timeout'] = timeoutSeconds;
+      body['vin'] = credentials.vin;
+      final response = await client
+          .post(
+            Uri.parse('$serviceUrl/vehicle/ignition'),
+            headers: {
+              'Authorization': 'Bearer ${credentials.bearer}',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
+      _checkCommandResponse(response);
+      return;
+    }
+    final (path, value) = switch (command) {
+      VehicleCommand.lock => ('doors', 'lock'),
+      VehicleCommand.unlock => ('doors', 'unlock'),
+      VehicleCommand.cabinTemperature => ('temp_cabin', '${celsius ?? 21}'),
+      VehicleCommand.climateOn ||
+      VehicleCommand.climateOff => throw StateError('handled above'),
+    };
     final response = await client
         .post(
           Uri.parse('$serviceUrl/vehicle/$path'),
@@ -290,6 +340,10 @@ class CloudApi {
           body: jsonEncode({'vin': credentials.vin, 'data': value}),
         )
         .timeout(const Duration(seconds: 30));
+    _checkCommandResponse(response);
+  }
+
+  void _checkCommandResponse(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       _read(response);
     }

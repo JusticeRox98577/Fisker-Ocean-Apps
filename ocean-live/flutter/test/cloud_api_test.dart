@@ -163,7 +163,11 @@ void main() {
       );
       await api.command(credentials, VehicleCommand.unlock);
       await api.command(credentials, VehicleCommand.lock);
-      await api.command(credentials, VehicleCommand.climateOn);
+      await api.command(
+        credentials,
+        VehicleCommand.climateOn,
+        climateMinutes: 15,
+      );
       await api.command(credentials, VehicleCommand.climateOff);
       await api.command(
         credentials,
@@ -173,22 +177,40 @@ void main() {
       expect(sent.map((r) => r.url.path), [
         '/api/v1/vehicle/doors',
         '/api/v1/vehicle/doors',
-        '/api/v1/vehicle/temp_cabin',
-        '/api/v1/vehicle/temp_cabin',
+        '/api/v1/vehicle/ignition',
+        '/api/v1/vehicle/ignition',
         '/api/v1/vehicle/temp_cabin',
       ]);
-      expect(sent.map((r) => (jsonDecode(r.body) as Map)['data']), [
-        'unlock',
-        'lock',
-        'on',
-        'off',
-        '21',
+      expect(sent.map((r) => jsonDecode(r.body)), [
+        {'vin': vin, 'data': 'unlock'},
+        {'vin': vin, 'data': 'lock'},
+        {'ignition_action': 'on', 'timeout': 900, 'vin': vin},
+        {'ignition_action': 'off', 'vin': vin},
+        {'vin': vin, 'data': '21'},
       ]);
       for (final request in sent) {
         expect(request.method, 'POST');
         expect(jsonDecode(request.body)['vin'], vin);
         expect(request.headers['Authorization'], 'Bearer $bearer');
       }
+      api.close();
+    },
+  );
+  test(
+    'starting the cabin climate without a run-time limit is refused',
+    () async {
+      var calls = 0;
+      final api = CloudApi(
+        client: MockClient((_) async {
+          calls++;
+          return http.Response('', 204);
+        }),
+      );
+      await expectLater(
+        api.command(credentials, VehicleCommand.climateOn),
+        throwsA(isA<ServiceFailure>()),
+      );
+      expect(calls, 0);
       api.close();
     },
   );

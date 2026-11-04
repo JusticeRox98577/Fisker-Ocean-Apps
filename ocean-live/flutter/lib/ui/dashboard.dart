@@ -63,7 +63,33 @@ class _DashboardState extends State<Dashboard> {
     if (result != null) await e.matchCharge(result);
   }
 
-  Future<void> command(VehicleCommand command) async {
+  Future<int?> _chooseClimateMinutes() => showDialog<int>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: const AppText('Start aircon'),
+      content: const AppText(
+        'Choose how long it should run. The car shuts it off automatically '
+        'when the time is up, even if this app is closed.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(c),
+          child: const AppText('Cancel'),
+        ),
+        for (final minutes in climateAutoOffMinutes)
+          FilledButton(
+            onPressed: () => Navigator.pop(c, minutes),
+            child: AppText('$minutes min'),
+          ),
+      ],
+    ),
+  );
+
+  Future<void> command(VehicleCommand command, {int? climateMinutes}) async {
+    if (command == VehicleCommand.climateOn && climateMinutes == null) {
+      climateMinutes = await _chooseClimateMinutes();
+      if (!mounted || climateMinutes == null) return;
+    }
     if (command == VehicleCommand.unlock) {
       final yes = await showDialog<bool>(
         context: context,
@@ -91,6 +117,7 @@ class _DashboardState extends State<Dashboard> {
         celsius: command == VehicleCommand.cabinTemperature
             ? target.round()
             : null,
+        climateMinutes: climateMinutes,
       );
       if (mounted && e.commandStatus.startsWith('Command accepted')) {
         await SupportPrompt.maybeShow(context, e.settings);
@@ -730,11 +757,14 @@ class _DashboardState extends State<Dashboard> {
                 children: [
                   Expanded(
                     child: FilledButton(
-                      // Starting aircon from the cloud has no confirmed auto
-                      // shutoff. A reported case left a car's climate system
-                      // running and its 12V draining until the owner
-                      // physically cut power. Disabled until that is fixed.
-                      onPressed: null,
+                      // Starting aircon now goes through the vehicle's own
+                      // /vehicle/ignition command with a mandatory run-time
+                      // limit (recovered from O Loop 1.3.1), so the car's
+                      // cloud service - not this app - always shuts it back
+                      // off, even if the app is closed. See cloud_api.dart.
+                      onPressed: busy
+                          ? null
+                          : () => command(VehicleCommand.climateOn),
                       child: const AppText('Start aircon'),
                     ),
                   ),
@@ -752,7 +782,7 @@ class _DashboardState extends State<Dashboard> {
               const Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: AppText(
-                  'Starting is temporarily disabled for safety. Use the O Loop app to precondition, or Stop aircon here if it will not turn off.',
+                  'Starting asks how long to run and shuts off on its own after that, even if this app is closed.',
                   style: TextStyle(fontSize: 12, color: Palette.textDim),
                 ),
               ),
@@ -787,10 +817,13 @@ class _DashboardState extends State<Dashboard> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  // Setting a target temperature can itself start the
-                  // cabin climate system server-side, so it is held to the
-                  // same disabled state as Start aircon above.
-                  onPressed: null,
+                  // Only sets the target temperature (a separate /vehicle/
+                  // temp_cabin request from the ignition on/off command
+                  // above) - it doesn't itself start the cabin running, so
+                  // it carries none of the run-away risk Start aircon had.
+                  onPressed: busy
+                      ? null
+                      : () => command(VehicleCommand.cabinTemperature),
                   child: const AppText('Set cabin temperature'),
                 ),
               ),
