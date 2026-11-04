@@ -1,7 +1,7 @@
 name: ocean_live
 description: Shared Android and iPhone client for Ocean Live.
 publish_to: none
-version: 2.0.0+21
+version: 2.0.1+22
 environment:
   sdk: '>=3.13.0 <4.0.0'
 dependencies:

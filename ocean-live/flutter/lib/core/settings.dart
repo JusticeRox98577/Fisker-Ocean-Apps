@@ -5,12 +5,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'credentials.dart';
+import 'phone_key.dart';
 
 class AppSettings {
   final SharedPreferences preferences;
   final FlutterSecureStorage secure;
   final Map<String, String> _secrets = {};
   CloudCredentials? credentials;
+  PhoneKey? phoneKey;
   static const bridge = MethodChannel('ocean_live/platform');
   AppSettings(
     this.preferences, {
@@ -37,6 +39,18 @@ class AppSettings {
   }
 
   Future<void> initialize() async {
+    final keyJson = await secure.read(key: 'ocean.phoneKey');
+    if (keyJson != null) {
+      try {
+        phoneKey = PhoneKey.fromJson(
+          jsonDecode(keyJson) as Map<String, dynamic>,
+        );
+      } on FormatException {
+        phoneKey = null;
+      } on TypeError {
+        phoneKey = null;
+      }
+    }
     for (final key in secretKeys) {
       _secrets[key] = await secure.read(key: 'ocean.$key') ?? '';
     }
@@ -115,5 +129,18 @@ class AppSettings {
   Future<void> clearCredentials() async {
     await secure.delete(key: 'ocean.cloud');
     credentials = null;
+  }
+
+  Future<void> savePhoneKey(PhoneKey value) async {
+    await secure.write(
+      key: 'ocean.phoneKey',
+      value: jsonEncode(value.toJson()),
+    );
+    phoneKey = value;
+  }
+
+  Future<void> clearPhoneKey() async {
+    await secure.delete(key: 'ocean.phoneKey');
+    phoneKey = null;
   }
 }

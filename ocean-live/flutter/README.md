@@ -24,6 +24,21 @@ shared preferences. Passwords are never persisted.
 
 ## Online account and controls
 
+Settings → **Set up your Ocean** groups online sign-in, OBD adapter instructions
+and existing Bluetooth-key import into one phone-only setup screen. Imported
+keys are tied to a VIN, validated as 32 hexadecimal characters, and kept in the
+platform secure store. The form never reloads or displays a saved key.
+
+**Bluetooth key support is preparation only in this build.** Importing a key does
+not enable a PKC connection. Automatic diagnostic key retrieval and the native
+BLE peripheral/GATT-server implementation are unfinished. The setup screen
+labels those limits explicitly. Existing cloud lock/unlock continues to work
+through the online account; it does not use an imported Bluetooth key.
+
+The investigated PKC read flow needs external seed/signature authorization.
+No third-party signing-service credential or APK-derived token has been added to
+Ocean Live, and this setup screen makes no key-upload or account lookup request.
+
 Open Settings → Sign in / manage online account, use your O Loop credentials,
 select your VIN, then Save vehicle. The recovered direct login flow was verified
 by the owner in Android 1.9.2. The Flutter version implements that same flow and

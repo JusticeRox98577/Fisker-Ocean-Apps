@@ -6,6 +6,7 @@ import '../core/settings.dart';
 import '../vehicle/ocean_engine.dart';
 import 'account_screen.dart';
 import 'diagnostics_screen.dart';
+import 'setup_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final OceanEngine engine;
@@ -81,6 +82,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     body: ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        FilledButton.icon(
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => SetupScreen(widget.engine),
+              ),
+            );
+            if (mounted) setState(() {});
+          },
+          icon: const Icon(Icons.checklist),
+          label: const AppText('Set up your Ocean'),
+        ),
         if (saveError != null)
           AppText(
             saveError!,
