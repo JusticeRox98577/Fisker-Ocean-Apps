@@ -18,6 +18,7 @@ class _SetupScreenState extends State<SetupScreen> {
   final vin = TextEditingController(),
       key = TextEditingController(),
       version = TextEditingController();
+  final olpApiKey = TextEditingController();
   List<OlpVehicle> vehicles = [];
   String? selectedVin, message;
   bool busy = false;
@@ -31,6 +32,8 @@ class _SetupScreenState extends State<SetupScreen> {
 
   @override
   void dispose() {
+    olpApiKey.clear();
+    olpApiKey.dispose();
     vin.dispose();
     key.clear();
     key.dispose();
@@ -143,14 +146,79 @@ class _SetupScreenState extends State<SetupScreen> {
                 'Sign in with your Ocean Link Pro account to retrieve the Bluetooth key for a vehicle on that account. Your password stays on OLP’s sign-in page. Only the selected key is saved on this phone.',
               ),
               const SizedBox(height: 12),
+              AppText(
+                s.get('olpSubscriptionKey').isEmpty
+                    ? 'OLP API access must be configured before signing in. Your OLP account alone does not supply an application subscription.'
+                    : 'OLP API access key configured on this phone.',
+              ),
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const AppText('OLP API access configuration'),
+                children: [
+                  const AppText(
+                    'Use a subscription key issued or explicitly authorized by OLP for this integration. This is separate from your vehicle’s Bluetooth key. No OLP app credential is bundled.',
+                  ),
+                  TextField(
+                    controller: olpApiKey,
+                    obscureText: true,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    enableIMEPersonalizedLearning: false,
+                    decoration: const InputDecoration(
+                      labelText: 'OLP-issued API subscription key',
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: busy
+                        ? null
+                        : () => run(() async {
+                            final value = olpApiKey.text.trim();
+                            if (value.isEmpty ||
+                                value.length > 512 ||
+                                value.contains(RegExp(r'\s'))) {
+                              throw const FormatException(
+                                'Enter a valid OLP-issued API key.',
+                              );
+                            }
+                            await s.set('olpSubscriptionKey', value);
+                            olpApiKey.clear();
+                            if (mounted) {
+                              setState(
+                                () => message =
+                                    'OLP API access key saved securely.',
+                              );
+                            }
+                          }),
+                    child: const AppText('Save API access key'),
+                  ),
+                  if (s.get('olpSubscriptionKey').isNotEmpty)
+                    TextButton(
+                      onPressed: busy
+                          ? null
+                          : () => run(() async {
+                              await s.set('olpSubscriptionKey', '');
+                              olpApiKey.clear();
+                            }),
+                      child: const AppText('Clear API access key'),
+                    ),
+                ],
+              ),
               FilledButton.icon(
                 onPressed: busy
                     ? null
                     : () async {
+                        final subscription = s.get('olpSubscriptionKey');
+                        if (subscription.isEmpty) {
+                          setState(
+                            () => message = 'An OLP-issued API subscription key is required. Configure API access above before signing in.',
+                          );
+                          return;
+                        }
                         final result = await Navigator.push<List<OlpVehicle>>(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const OlpSignInScreen(),
+                            builder: (_) =>
+                                OlpSignInScreen(subscriptionKey: subscription),
                           ),
                         );
                         if (!mounted || result == null) return;

@@ -22,7 +22,7 @@ class AppSettings {
       ),
     ),
   });
-  static const secretKeys = {'apiKey', 'token'};
+  static const secretKeys = {'apiKey', 'token', 'olpSubscriptionKey'};
   String get(String key, [String fallback = '']) =>
       _secrets[key] ?? preferences.get(key)?.toString() ?? fallback;
   bool flag(String key, [bool fallback = false]) =>

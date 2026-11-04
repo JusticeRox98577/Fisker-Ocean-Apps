@@ -27,6 +27,14 @@ shared preferences. Passwords are never persisted.
 ### OLP Bluetooth key setup
 
 Settings → **OLP Bluetooth key setup** is an independent phone-key workflow.
+**OLP API authorization is required.** Configure an application subscription key
+issued or explicitly authorized by OLP for this integration before signing in.
+An ordinary user login does not replace this gateway requirement. The key is
+stored securely and sent only to the OLP vehicle endpoint, never to the OAuth
+token endpoint. No OLP application subscription credential is bundled or copied
+from the investigated APK. Until authorized API access is available, automatic
+OLP retrieval is blocked; an already-known vehicle key can still be imported.
+
 Use **Sign in to OLP and retrieve key**, complete Ocean Link Pro's HTTPS sign-in,
 choose the vehicle, confirm its PKC software version and save the selected key.
 The account request uses `undercurrentapi.com/identity/vehicle/getvehicles`.

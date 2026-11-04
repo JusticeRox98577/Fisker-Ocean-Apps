@@ -84,7 +84,9 @@ class OlpVehicle {
 
 class OlpApi {
   final http.Client client;
-  OlpApi({http.Client? client}) : client = client ?? http.Client();
+  final String subscriptionKey;
+  OlpApi({http.Client? client, this.subscriptionKey = ''})
+    : client = client ?? http.Client();
   Future<http.Response> _send(http.Request request) async {
     request.followRedirects = false;
     try {
@@ -100,7 +102,11 @@ class OlpApi {
         }
         bytes.addAll(chunk);
       }
-      return http.Response.bytes(bytes, response.statusCode);
+      return http.Response.bytes(
+        bytes,
+        response.statusCode,
+        headers: response.headers,
+      );
     } on OlpFailure {
       rethrow;
     } catch (_) {
@@ -111,6 +117,13 @@ class OlpApi {
   }
 
   Future<List<OlpVehicle>> retrieve(OlpAuthorization auth, String code) async {
+    if (subscriptionKey.trim().isEmpty ||
+        subscriptionKey.length > 512 ||
+        subscriptionKey.contains(RegExp(r'\s'))) {
+      throw const OlpFailure(
+        'OLP API access is not configured. An OLP-issued application subscription key is required in addition to account sign-in.',
+      );
+    }
     final tokenRequest =
         http.Request(
             'POST',
@@ -149,11 +162,12 @@ class OlpApi {
             Uri.https('undercurrentapi.com', '/identity/vehicle/getvehicles'),
           )
           ..headers['Authorization'] = 'Bearer $access'
+          ..headers['Ocp-Apim-Subscription-Key'] = subscriptionKey
           ..headers['Accept'] = 'application/json';
     final response = await _send(request);
     if (response.statusCode == 401 || response.statusCode == 403) {
-      throw const OlpFailure(
-        'OLP did not grant vehicle access. Check your OLP account permissions.',
+      throw OlpFailure(
+        'OLP refused the vehicle request (HTTP ${response.statusCode}). Check the OLP-issued API subscription and application registration. This is not proof of an account-permission problem.',
       );
     }
     if (response.statusCode != 200) {

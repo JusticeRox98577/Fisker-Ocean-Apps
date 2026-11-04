@@ -8,14 +8,15 @@ import 'localization.dart';
 
 /// OLP's own HTTPS sign-in page. No password field or JavaScript interception.
 class OlpSignInScreen extends StatefulWidget {
-  const OlpSignInScreen({super.key});
+  final String subscriptionKey;
+  const OlpSignInScreen({required this.subscriptionKey, super.key});
   @override
   State<OlpSignInScreen> createState() => _OlpSignInScreenState();
 }
 
 class _OlpSignInScreenState extends State<OlpSignInScreen> {
   final auth = OlpAuthorization();
-  final api = OlpApi();
+  late final api = OlpApi(subscriptionKey: widget.subscriptionKey);
   late final WebViewController web;
   bool finishing = false;
   String host = 'auth.undercurrent.cloud';
