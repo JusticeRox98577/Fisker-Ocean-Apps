@@ -12,10 +12,12 @@ import '../core/history.dart';
 import '../core/settings.dart';
 import '../online/cloud_api.dart';
 import 'elm_transport.dart';
+import 'phone_key_controller.dart';
 
 const devTools = bool.fromEnvironment('OCEAN_DEV', defaultValue: false);
 
 class OceanEngine extends ChangeNotifier {
+  late final phoneKey = PhoneKeyController();
   final AppSettings settings;
   final ElmTransport transport;
   final CloudApi cloud;

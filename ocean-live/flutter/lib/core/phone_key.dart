@@ -1,5 +1,3 @@
-import 'credentials.dart';
-
 /// Owner-imported key material. Never include this object in logs or telemetry.
 class PhoneKey {
   final String vin;
@@ -10,7 +8,7 @@ class PhoneKey {
   factory PhoneKey.parse(String vin, String key, int pkcVersion) {
     vin = vin.trim().toUpperCase();
     key = key.trim().toUpperCase();
-    if (!CloudCredentials.validVin(vin)) {
+    if (!RegExp(r'^[A-HJ-NPR-Z0-9]{17}$').hasMatch(vin)) {
       throw const FormatException(
         'Enter your car’s complete 17-character VIN.',
       );

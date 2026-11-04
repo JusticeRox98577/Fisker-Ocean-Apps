@@ -24,6 +24,7 @@ public class OceanApplication extends Application {
     @Override public void onCreate() {
         super.onCreate();
         engine = new FlutterEngine(this);
+        new PkcPeripheral(this, engine);
         channel = new MethodChannel(engine.getDartExecutor().getBinaryMessenger(), "ocean_live/platform");
         channel.setMethodCallHandler((call, result) -> {
             try {

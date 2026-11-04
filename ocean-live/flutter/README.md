@@ -24,20 +24,37 @@ shared preferences. Passwords are never persisted.
 
 ## Online account and controls
 
-Settings → **Set up your Ocean** groups online sign-in, OBD adapter instructions
-and existing Bluetooth-key import into one phone-only setup screen. Imported
-keys are tied to a VIN, validated as 32 hexadecimal characters, and kept in the
-platform secure store. The form never reloads or displays a saved key.
+### OLP Bluetooth key setup
 
-**Bluetooth key support is preparation only in this build.** Importing a key does
-not enable a PKC connection. Automatic diagnostic key retrieval and the native
-BLE peripheral/GATT-server implementation are unfinished. The setup screen
-labels those limits explicitly. Existing cloud lock/unlock continues to work
-through the online account; it does not use an imported Bluetooth key.
+Settings → **OLP Bluetooth key setup** is an independent phone-key workflow.
+Use **Sign in to OLP and retrieve key**, complete Ocean Link Pro's HTTPS sign-in,
+choose the vehicle, confirm its PKC software version and save the selected key.
+The account request uses `undercurrentapi.com/identity/vehicle/getvehicles`.
+Passwords stay on the provider page. PKCE/state protect the code exchange;
+access/refresh/ID tokens are not retained after this one-time lookup. Only the
+selected vehicle key is saved in the platform secure store. No key is uploaded.
 
-The investigated PKC read flow needs external seed/signature authorization.
-No third-party signing-service credential or APK-derived token has been added to
-Ocean Live, and this setup screen makes no key-upload or account lookup request.
+Android provides an experimental modern-PKC BLE peripheral/GATT-server connection.
+After saving a valid key, tap Connect near the vehicle with the other phone-key
+app disconnected. Keep Ocean Live open while testing. Lock and unlock each
+require an explicit confirmation; connecting never sends a vehicle command.
+Messages distinguish authenticated connection, transport acceptance and actual
+vehicle action. No automatic command retries or passive unlocking are included.
+
+An existing key can also be imported and used offline. Fully offline extraction
+from the PKC is **not implemented**: the investigated diagnostic flow relies on an
+external security-response calculation. No recovered signing-service token is
+embedded or reused, and no signing-service request is made by this feature.
+This feature targets Android only; phone-key setup is disabled on other platforms.
+
+PKC version 20 or later is required by the investigated app's warning. Support
+here is limited to its modern service protocol; older/legacy services are not
+implemented. This code needs owner testing with real hardware. Anonymous OLP
+metadata and the authorization page were checked live, but a real OLP account
+sign-in, vehicle key lookup and car commands have not been tested by the agent.
+OLP can change its API or require a separately registered OAuth client.
+
+### Existing online vehicle controls
 
 Open Settings → Sign in / manage online account, use your O Loop credentials,
 select your VIN, then Save vehicle. The recovered direct login flow was verified
@@ -51,9 +68,8 @@ sent merely by opening the app, signing in, refreshing, reconnecting or starting
 telemetry. An HTTP acknowledgement is labelled as service acceptance, not proof
 the vehicle acted. Controls are not automatically retried after timeouts.
 
-Vehicle controls depend on the service and the car being reachable; this is not
-an offline Bluetooth phone key implementation. The BLE path reads the OBD
-adapter. No undocumented vehicle commands are guessed.
+These online vehicle controls depend on the cloud service and car being reachable.
+The separate OLP key setup uses its own authentication and offline PKC connection.
 
 ## Release obfuscation
 

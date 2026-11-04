@@ -93,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (mounted) setState(() {});
           },
           icon: const Icon(Icons.checklist),
-          label: const AppText('Set up your Ocean'),
+          label: const AppText('OLP Bluetooth key setup'),
         ),
         if (saveError != null)
           AppText(
