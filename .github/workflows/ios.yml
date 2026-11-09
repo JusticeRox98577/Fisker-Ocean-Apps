@@ -28,6 +28,16 @@ jobs:
           brew install xcodegen
           xcodegen generate
           echo "BUILD_NUMBER=$((3000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+      - name: Unit tests (simulator)
+        run: |
+          SIM=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in d.items() if 'iOS' in k for x in v if x['name'].startswith('iPhone')))")
+          echo "Testing on simulator $SIM"
+          if ! xcodebuild test -project OceanLive.xcodeproj -scheme OceanLive -destination "id=$SIM" \
+              CODE_SIGNING_ALLOWED=NO > test.log 2>&1; then
+            grep -E "error:|failed|Fatal" test.log | head -150
+            exit 1
+          fi
+          grep -E "Executed [0-9]+ test" test.log | tail -1
       - name: Build (unsigned)
         run: |
           xcodebuild -project OceanLive.xcodeproj -scheme OceanLive -configuration Release \
@@ -38,11 +48,11 @@ jobs:
         run: |
           rm -rf Payload && mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/OceanLive.app Payload/
-          zip -qry OceanLive-3.0-iOS-unsigned.ipa Payload
+          zip -qry OceanLive-3.1-iOS-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
           name: OceanLive-iOS-unsigned
-          path: ios/OceanLive-3.0-iOS-unsigned.ipa
+          path: ios/OceanLive-3.1-iOS-unsigned.ipa
       - name: Archive, sign and upload to TestFlight
         if: github.event_name == 'workflow_dispatch'
         env:
