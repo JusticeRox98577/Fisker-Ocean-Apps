@@ -1,0 +1,7 @@
+*.xcodeproj
+OceanLive/Info.plist
+build/
+DerivedData/
+*.ipa
+xcuserdata/
+.DS_Store

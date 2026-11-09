@@ -1,0 +1,77 @@
+name: Android
+
+on:
+  push:
+    branches: [main]
+    paths: ["android/**", ".github/workflows/android.yml"]
+  pull_request:
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Set build number
+        run: echo "BUILD_NUMBER=$((3000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
+      - name: Build APK
+        # Signed with the public test key in android/dev-debug.keystore, same as
+        # the 2.0 GitHub APKs, so it installs over a sideloaded 2.0.
+        run: |
+          ./gradlew assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk OceanLive-3.0-Android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OceanLive-Android
+          path: android/OceanLive-3.0-Android.apk
+      - name: Build Play bundle
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "No upload key secrets set, skipping the Play bundle." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          ANDROID_STORE_FILE="$RUNNER_TEMP/upload.jks" ./gradlew bundleRelease
+          cp app/build/outputs/bundle/release/app-release.aab OceanLive-3.0-Play.aab
+          rm -f "$RUNNER_TEMP/upload.jks"
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: OceanLive-Play-bundle
+          path: android/OceanLive-3.0-Play.aab
+          if-no-files-found: ignore
+      - name: Publish GitHub release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v3.0.0-build-${{ github.run_number }}" OceanLive-3.0-Android.apk \
+            --latest \
+            --title "Ocean Live 3.0 (build ${{ github.run_number }})" \
+            --notes "Bluetooth only. No account, no cloud, no internet permission. Built from ${{ github.sha }}."
