@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct OceanLiveApp: App {
-    @StateObject private var car = Car()
+    @StateObject private var car = Car.shared
 
     var body: some Scene {
         WindowGroup {

@@ -72,6 +72,9 @@ final class AsyncLock {
 /// The one connection to the car, shared by every screen.
 @MainActor
 final class Car: ObservableObject {
+    /// One connection shared by the phone screens and CarPlay.
+    static let shared = Car()
+
     @Published private(set) var state = CarState()
     @Published private(set) var found: [FoundAdapter] = []
     @Published private(set) var history: [HistoryEntry] = []
@@ -90,8 +93,13 @@ final class Car: ObservableObject {
     private var selectedEcu: Ecu?
     private var lastAbrp: Int64 = 0
 
-    private static let pollNs: UInt64 = 2_000_000_000
+    private var carPlayConnected = false
+
+    /// Seconds between readings: every second while CarPlay is showing, every two otherwise.
+    private var pollInterval: Double { carPlayConnected ? 1 : 2 }
     private static let reconnectNs: UInt64 = 10_000_000_000
+
+    func setCarPlayConnected(_ on: Bool) { carPlayConnected = on }
 
     init() {
         settings = Settings.load()
@@ -266,6 +274,7 @@ final class Car: ObservableObject {
         var misses = 0
         var cycle = 0
         while wantConnected && !Task.isCancelled {
+            let cycleStart = Date()
             var answered = false
             var snap = state.snapshot
             let flip = settings.flipCurrent
@@ -308,7 +317,9 @@ final class Car: ObservableObject {
                 if misses >= 3 { throw CarError.stoppedAnswering }
             }
             cycle += 1
-            try await Task.sleep(nanoseconds: Self.pollNs)
+            // Wait out the rest of the interval, so a reading lands every second (or two) no matter how long the adapter took.
+            let wait = Swift.max(pollInterval - Date().timeIntervalSince(cycleStart), 0.05)
+            try await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
         }
     }
 

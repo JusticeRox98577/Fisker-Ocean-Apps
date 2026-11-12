@@ -25,7 +25,9 @@ the same expected values.
   causes and repair steps); they stay on your phone
 * **Alerts:** charge level, charging stopped, low 12V battery, uneven cells, hot pack
 * **ABRP:** optional live telemetry to A Better Route Planner
-* Android also has a home screen widget and Android Auto
+* **In the car:** Android Auto on Android, CarPlay on iPhone. Both show the live charge,
+  power, the current charge or drive, and the battery readings, updated every second
+* Android also has a home screen widget
 
 ## What you need
 

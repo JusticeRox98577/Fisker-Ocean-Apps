@@ -74,8 +74,24 @@ jobs:
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/OceanLive.xcarchive" \
             CURRENT_PROJECT_VERSION=$BUILD_NUMBER \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= archive
+          # An unsigned archive carries no entitlements, and export only re-signs what is there.
+          # Ad-hoc sign it with ours (no certificate needed) so the CarPlay entitlement survives export.
+          ARCHIVED_APP="$RUNNER_TEMP/OceanLive.xcarchive/Products/Applications/OceanLive.app"
+          codesign --force --sign - --timestamp=none --generate-entitlement-der \
+            --entitlements OceanLive/OceanLive.entitlements "$ARCHIVED_APP"
+          codesign -d --entitlements - --xml "$ARCHIVED_APP" | grep -q carplay-driving-task
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/OceanLive.xcarchive" \
             -exportOptionsPlist ExportOptions.plist -exportPath build/ipa $AUTH
+          # The signed app must carry the CarPlay entitlement, or CarPlay won't show the app.
+          rm -rf "$RUNNER_TEMP/check" && mkdir -p "$RUNNER_TEMP/check"
+          unzip -q build/ipa/*.ipa -d "$RUNNER_TEMP/check"
+          codesign -d --entitlements - --xml "$RUNNER_TEMP/check/Payload/OceanLive.app" > "$RUNNER_TEMP/entitlements.plist" 2>/dev/null || true
+          if ! grep -q "com.apple.developer.carplay-driving-task" "$RUNNER_TEMP/entitlements.plist"; then
+            echo "The exported app is missing the CarPlay entitlement. Signed entitlements:"
+            cat "$RUNNER_TEMP/entitlements.plist"
+            exit 1
+          fi
+          echo "CarPlay entitlement present."
           API_PRIVATE_KEYS_DIR="$RUNNER_TEMP/keys" xcrun altool --upload-app --type ios -f build/ipa/*.ipa \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
       - name: Remove App Store Connect key
