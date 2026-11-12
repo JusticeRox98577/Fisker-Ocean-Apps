@@ -1000,3 +1000,78 @@ final class TwelveVoltTests: XCTestCase {
         XCTAssertEqual(a.check(12.1, asleep: true), .none)
     }
 }
+
+final class BatteryReportTests: XCTestCase {
+    private let hour: Int64 = 3_600_000
+
+    private func charge(_ start: Int64, from a: Double, to b: Double, kwh: Double, fast: Bool = false) -> HistoryEntry {
+        HistoryEntry(kind: .Charge, start: start, end: start + hour, socStart: a, socEnd: b, kwh: kwh, fast: fast)
+    }
+
+    func testNothingKnownSaysNotMeasuredYet() {
+        let r = BatteryReport.make(settings: Settings(), snapshot: Snapshot(), history: [], drains: [], vin: nil, scans: [])
+        XCTAssertEqual(r.value("Car", "Rated usable"), Format.n(106.5, 1) + " kWh")
+        XCTAssertNil(r.value("Car", "VIN"))
+        XCTAssertEqual(r.value("Battery health", "Measured usable"), BatteryReport.missing)
+        XCTAssertEqual(r.value("Cells", "Spread"), BatteryReport.missing)
+        XCTAssertEqual(r.value("Electrical", "12V status"), BatteryReport.missing)
+        XCTAssertEqual(r.value("Parked drain", "Average per day"), BatteryReport.missing)
+        XCTAssertEqual(r.value("Charging totals", "Sessions"), BatteryReport.missing)
+        XCTAssertNil(r.faults)
+        XCTAssertTrue(r.allRows.filter { $0.value == BatteryReport.missing }.allSatisfy { $0.tone == .missing })
+    }
+
+    func testUsesWhatTheAppAlreadyHas() {
+        var s = Snapshot()
+        s.cellMax = 3937; s.cellAvg = 3925; s.cellMin = 3912
+        s.aux12v = 12.6; s.isolation = 3000; s.time = 1_700_000_000_000
+        let history = [charge(0, from: 20, to: 80, kwh: 60), charge(10 * hour, from: 30, to: 50, kwh: 20, fast: true)]
+        let drains = [ParkedDrain(start: 0, end: 24 * hour, socStart: 80, socEnd: 78)]
+        let r = BatteryReport.make(settings: Settings(), snapshot: s, history: history, drains: drains, vin: "VIN1", scans: [])
+        XCTAssertEqual(r.vin, "VIN1")
+        XCTAssertEqual(r.value("Car", "VIN"), "VIN1")
+        XCTAssertEqual(r.value("Battery health", "Measured usable"), Format.n(100, 1) + " kWh")
+        XCTAssertEqual(r.value("Battery health", "Of rated"), "94%")
+        XCTAssertEqual(r.value("Battery health", "Based on"), "2 charging sessions")
+        XCTAssertEqual(r.value("Cells", "Spread"), "25 mV · Well balanced")
+        XCTAssertEqual(r.left[2].rows.last?.tone, .good)
+        XCTAssertEqual(r.value("Electrical", "Isolation resistance"), "3000 kΩ")
+        XCTAssertEqual(r.value("Electrical", "12V status"), "Good")
+        XCTAssertEqual(r.value("Parked drain", "Average per day"), Format.perDay(2, Settings()))
+        XCTAssertEqual(r.value("Charging totals", "Sessions"), "2")
+        XCTAssertEqual(r.value("Charging totals", "Energy added"), "80 kWh")
+        XCTAssertEqual(r.value("Charging totals", "DC fast sessions"), "1")
+    }
+
+    func testLastFaultScanOfThisCar() throws {
+        let mine = SavedScan(time: 1, vin: "VIN1", modules: ["BMS": "ok"], codes: [
+            SavedCode(ecu: "BMS", code: "P0A9000", status: 0x09),
+            SavedCode(ecu: "BMS", code: "P100216", status: 0x08),
+        ])
+        let other = SavedScan(time: 2, vin: "VIN2", modules: ["BMS": "ok"], codes: [])
+        let r = BatteryReport.make(settings: Settings(), snapshot: Snapshot(), history: [], drains: [], vin: "VIN1", scans: [mine, other])
+        let f = try XCTUnwrap(r.faults)
+        XCTAssertEqual(f.rows[1].value, "1 active · 1 stored")
+        XCTAssertEqual(f.rows[1].tone, .warn)
+        XCTAssertEqual(f.rows.count, 3)
+        XCTAssertEqual(f.rows[2].label, "P0A9000 · BMS")
+        XCTAssertFalse(f.rows[2].value.isEmpty)
+    }
+
+    func testFaultListFitsThePage() {
+        let head = [ReportRow(label: "Scanned", value: "x"), ReportRow(label: "Codes", value: "12 active · 0 stored")]
+        let codes = (0..<12).map { ReportRow(label: "C\($0)", value: "code \($0)") }
+        let section = ReportSection(title: "Last fault scan", rows: head + codes)
+
+        let tight = BatteryReport.fitting(section, rows: 7)
+        XCTAssertEqual(tight.rows.count, 7)
+        XCTAssertEqual(tight.rows.last?.value, "and 8 more active codes")
+
+        let roomy = BatteryReport.fitting(section, rows: 30)
+        XCTAssertEqual(roomy.rows.count, 2 + BatteryReport.maxCodes + 1)
+        XCTAssertEqual(roomy.rows.last?.value, "and \(12 - BatteryReport.maxCodes) more active codes")
+
+        let one = ReportSection(title: "Last fault scan", rows: head + [codes[0]])
+        XCTAssertEqual(BatteryReport.fitting(one, rows: 3), one)
+    }
+}

@@ -105,13 +105,30 @@ struct BatteryView: View {
             }
 
             let charges = history.filter { $0.kind == .Charge }
-            if !charges.isEmpty {
-                SectionTitle("Charging totals")
-                CardBox {
-                    KeyValue("Sessions", "\(charges.count)")
-                    KeyValue("Energy added", Format.n(charges.reduce(0) { $0 + $1.kwh }, 0) + " kWh")
-                    KeyValue("DC fast sessions", "\(charges.filter { $0.fast }.count)")
+            VStack(alignment: .leading, spacing: 0) {
+                if !charges.isEmpty {
+                    SectionTitle("Charging totals")
+                    CardBox {
+                        KeyValue("Sessions", "\(charges.count)")
+                        KeyValue("Energy added", Format.n(charges.reduce(0) { $0 + $1.kwh }, 0) + " kWh")
+                        KeyValue("DC fast sessions", "\(charges.filter { $0.fast }.count)")
+                    }
                 }
+
+                // Built from what the app already has. Sharing never asks the car for anything.
+                let report = BatteryReport.make(settings: settings, snapshot: s, history: history, drains: drains,
+                                                vin: car.state.vin, scans: car.pastScans)
+                ShareLink(item: report, preview: SharePreview(BatteryReport.title, image: Image(systemName: "doc.richtext"))) {
+                    Text("Share battery report")
+                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.aqua)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.aqua.opacity(0.4), lineWidth: 1))
+                }
+                .buttonStyle(PressStyle())
+                .padding(.top, 22)
+                Text("A one-page PDF of the readings and history on this phone.")
+                    .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                    .frame(maxWidth: .infinity).padding(.top, 8)
             }
         }
         .sheet(isPresented: $showV12) { V12View().environmentObject(car) }
