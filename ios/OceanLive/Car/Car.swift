@@ -119,6 +119,8 @@ final class Car: ObservableObject {
     private let location = LocationFeed()
     /// Charging Live Activity and home-screen widget. Display only.
     private let liveActivity = LiveActivityController()
+    /// Latest reading for the Apple Watch app. Display only.
+    private let watch = WatchLink()
     private var task: Task<Void, Never>?
     private var wantConnected = false
     private var selectedEcu: Ecu?
@@ -493,6 +495,7 @@ final class Car: ObservableObject {
         trackParked(snap)
         maybeSendAbrp(snap)
         liveActivity.onReading(state, settings: settings, history: history)
+        watch.onReading(state, settings: settings, history: history)
     }
 
     // MARK: 12V log
@@ -730,6 +733,7 @@ final class Car: ObservableObject {
         state.currentCharge = nil
         state.currentDrive = nil
         liveActivity.onDisconnected(state, settings: settings, history: history)
+        watch.onDisconnected(state, settings: settings, history: history)
     }
 
     func clearHistory() {

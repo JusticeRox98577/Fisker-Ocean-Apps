@@ -1,8 +1,10 @@
+#if os(iOS)
 import ActivityKit
+#endif
 import Foundation
 import SwiftUI
 
-// Compiled into both the app and the widget extension.
+// Compiled into the app, the widget extension and the Apple Watch app.
 
 enum OceanShared {
     /// App Group both targets can read and write.
@@ -62,6 +64,7 @@ struct WidgetData: Codable, Equatable {
     }
 }
 
+#if os(iOS)
 /// The charging Live Activity (lock screen, Dynamic Island, Apple Watch and CarPlay).
 struct ChargeActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
@@ -89,6 +92,7 @@ struct ChargeActivityAttributes: ActivityAttributes {
     var carName: String
     var adapterName: String?
 }
+#endif
 
 /// Deep ocean palette, same values as the app's Theme.
 enum OceanPalette {

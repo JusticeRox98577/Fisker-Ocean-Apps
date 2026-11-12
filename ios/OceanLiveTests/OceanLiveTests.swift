@@ -1105,3 +1105,118 @@ final class BatteryReportTests: XCTestCase {
         XCTAssertEqual(BatteryReport.itemsThatFit([30], space: 10, moreHeight: 5), 0)
     }
 }
+
+/// What the phone sends the Apple Watch app, and when.
+final class WatchTests: XCTestCase {
+    private func chargingState(soc: Double, kw: Double) -> CarState {
+        var s = CarState()
+        s.status = .live
+        s.mode = .charging
+        s.snapshot.soc = soc
+        s.snapshot.packV = 400
+        s.snapshot.packA = kw * 1000 / 400
+        s.snapshot.aux12v = 12.63
+        s.lastUpdate = 1_700_000_000_000
+        return s
+    }
+
+    private var settings: Settings {
+        var s = Settings()
+        s.model = .custom
+        s.customKwh = 100
+        s.alertHigh = 80
+        return s
+    }
+
+    func testSummaryWhileCharging() {
+        let w = Glance.watchSummary(chargingState(soc: 50.04, kw: 10.02), settings, [], connected: true)
+        XCTAssertTrue(w.live)
+        XCTAssertTrue(w.charging)
+        XCTAssertFalse(w.fast)
+        XCTAssertEqual(w.status, "Charging")
+        XCTAssertEqual(w.soc, 50.0)
+        XCTAssertEqual(w.powerKw, 10.0)
+        XCTAssertEqual(w.aux12v, 12.6)
+        XCTAssertEqual(w.targetPercent, 80)
+        XCTAssertEqual(w.minutesToTarget, 180)
+        XCTAssertEqual(w.toTargetText, "≈ 3 h 0 min")
+        XCTAssertEqual(w.powerLabel, "into the battery")
+        XCTAssertEqual(w.updatedAt, Date(timeIntervalSince1970: 1_700_000_000))
+    }
+
+    func testSummaryWhenReadingStops() {
+        let w = Glance.watchSummary(chargingState(soc: 50, kw: 10), settings, [], connected: false)
+        XCTAssertFalse(w.live)
+        XCTAssertFalse(w.charging)
+        XCTAssertNil(w.powerKw)
+        XCTAssertNil(w.minutesToTarget)
+        XCTAssertEqual(w.status, "Not connected")
+        XCTAssertEqual(w.soc, 50)
+        XCTAssertEqual(w.powerLabel, "power")
+    }
+
+    func testContextRoundTrip() throws {
+        let w = Glance.watchSummary(chargingState(soc: 64, kw: 7), settings, [], connected: true)
+        XCTAssertEqual(WatchSummary(context: w.context), w)
+        XCTAssertNil(WatchSummary(context: [:]))
+        XCTAssertNil(WatchSummary(context: [WatchSummary.key: Data("junk".utf8)]))
+
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "OceanLiveTests.watch"))
+        defaults.removePersistentDomain(forName: "OceanLiveTests.watch")
+        XCTAssertNil(WatchSummary.load(defaults))
+        w.save(defaults)
+        XCTAssertEqual(WatchSummary.load(defaults), w)
+        defaults.removePersistentDomain(forName: "OceanLiveTests.watch")
+    }
+
+    func testGateSendsOnlyChangesAtMostEvery15s() {
+        var gate = WatchGate()
+        let t0 = Date(timeIntervalSince1970: 1000)
+        let a = Glance.watchSummary(chargingState(soc: 50, kw: 10), settings, [], connected: true, now: t0)
+        let b = Glance.watchSummary(chargingState(soc: 51, kw: 10), settings, [], connected: true, now: t0)
+        XCTAssertTrue(gate.shouldSend(a, now: t0))
+        gate.sent(a, now: t0)
+        // Changed, but too soon.
+        XCTAssertFalse(gate.shouldSend(b, now: t0.addingTimeInterval(10)))
+        // Unchanged: not news.
+        XCTAssertFalse(gate.shouldSend(a, now: t0.addingTimeInterval(30)))
+        // Changed and 15 s on.
+        XCTAssertTrue(gate.shouldSend(b, now: t0.addingTimeInterval(15)))
+        // Unchanged values go again after a couple of minutes, so the watch knows the phone is still reading.
+        XCTAssertTrue(gate.shouldSend(a, now: t0.addingTimeInterval(WatchGate.refresh)))
+    }
+
+    func testTinyChangesAreNotNews() {
+        let a = Glance.watchSummary(chargingState(soc: 50.01, kw: 10.01), settings, [], connected: true)
+        let b = Glance.watchSummary(chargingState(soc: 50.02, kw: 10.03), settings, [], connected: true)
+        XCTAssertTrue(a.sameValues(b))
+    }
+
+    func testFreshnessAndAge() {
+        let w = Glance.watchSummary(chargingState(soc: 50, kw: 10), settings, [], connected: true)
+        let t = w.updatedAt
+        XCTAssertTrue(w.isFresh(now: t.addingTimeInterval(60)))
+        XCTAssertTrue(w.chargingNow(now: t.addingTimeInterval(60)))
+        XCTAssertEqual(w.statusText(now: t.addingTimeInterval(60)), "Charging")
+        XCTAssertFalse(w.isFresh(now: t.addingTimeInterval(10 * 60)))
+        XCTAssertFalse(w.chargingNow(now: t.addingTimeInterval(10 * 60)))
+        XCTAssertEqual(w.statusText(now: t.addingTimeInterval(10 * 60)), "Not updating")
+
+        XCTAssertEqual(w.updatedText(now: t.addingTimeInterval(20)), "Updated just now")
+        XCTAssertEqual(w.updatedText(now: t.addingTimeInterval(-5)), "Updated just now")
+        XCTAssertEqual(w.updatedText(now: t.addingTimeInterval(4 * 60)), "Updated 4 min ago")
+        XCTAssertEqual(w.updatedText(now: t.addingTimeInterval(2 * 3600 + 60)), "Updated 2 h ago")
+        XCTAssertEqual(w.updatedText(now: t.addingTimeInterval(26 * 3600)), "Updated 1 day ago")
+        XCTAssertEqual(w.updatedText(now: t.addingTimeInterval(3 * 86400)), "Updated 3 days ago")
+
+        let offline = Glance.watchSummary(chargingState(soc: 50, kw: 10), settings, [], connected: false)
+        XCTAssertFalse(offline.isFresh(now: t))
+        XCTAssertEqual(offline.statusText(now: t.addingTimeInterval(3600)), "Not connected")
+    }
+
+    func testReachedTarget() {
+        let w = Glance.watchSummary(chargingState(soc: 81, kw: 10), settings, [], connected: true)
+        XCTAssertNil(w.minutesToTarget)
+        XCTAssertEqual(w.toTargetText, "Reached")
+    }
+}
