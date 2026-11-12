@@ -23,7 +23,8 @@ enum HistoryStore {
         try? data.write(to: file, options: .atomic)
     }
 
-    static func csv(_ entries: [HistoryEntry]) -> String {
+    /// Cost uses the current prices in settings.
+    static func csv(_ entries: [HistoryEntry], settings: Settings = Settings()) -> String {
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "en_US_POSIX")
         fmt.dateFormat = "yyyy-MM-dd HH:mm"
@@ -34,11 +35,34 @@ enum HistoryStore {
             let fields = [
                 e.kind.rawValue.lowercased(), date(e.start), date(e.end), String(e.minutes),
                 n(e.socStart), n(e.socEnd), n(e.kwh, 2), n(e.distanceKm, 2), n(e.whPerKm, 0), n(e.peakKw),
-                e.kind == .Charge ? String(e.fast) : "",
+                e.kind == .Charge ? String(e.fast) : "", n(chargeCost(e, settings), 2),
             ]
             out += fields.joined(separator: ",") + "\n"
         }
         return out
+    }
+}
+
+/// Parked drain: the last reading before the app lost the car, and the last 30 measured periods.
+/// Small, so it lives in UserDefaults.
+enum ParkedStore {
+    private static let anchorKey = "parked_anchor"
+    private static let drainsKey = "parked_drains"
+
+    static func loadAnchor() -> ParkedAnchor? {
+        UserDefaults.standard.data(forKey: anchorKey).flatMap { try? JSONDecoder().decode(ParkedAnchor.self, from: $0) }
+    }
+
+    static func saveAnchor(_ a: ParkedAnchor) {
+        if let data = try? JSONEncoder().encode(a) { UserDefaults.standard.set(data, forKey: anchorKey) }
+    }
+
+    static func loadDrains() -> [ParkedDrain] {
+        UserDefaults.standard.data(forKey: drainsKey).flatMap { try? JSONDecoder().decode([ParkedDrain].self, from: $0) } ?? []
+    }
+
+    static func saveDrains(_ list: [ParkedDrain]) {
+        if let data = try? JSONEncoder().encode(Array(list.suffix(ParkedDrain.keep))) { UserDefaults.standard.set(data, forKey: drainsKey) }
     }
 }
 

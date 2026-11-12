@@ -3,6 +3,8 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var car: Car
     @State private var customKwh = ""
+    @State private var homePrice = ""
+    @State private var dcPrice = ""
 
     var body: some View {
         Page {
@@ -36,6 +38,22 @@ struct SettingsView: View {
                         .padding(.top, 8)
                 }
                 Note("Published usable capacity: 106.5 kWh for One, Extreme and Ultra, about 75 kWh for the Sport. Used for range and charge-time estimates.")
+            }
+
+            SectionTitle("Charging cost")
+            CardBox {
+                Field(label: "Currency symbol", text: binding(\.currency))
+                Field(label: "Home price per kWh", text: $homePrice, keyboard: .decimalPad)
+                    .onAppear { homePrice = s.homePrice > 0 ? String(s.homePrice) : "" }
+                    .onChange(of: homePrice) { _, v in
+                        if let d = Self.price(v) { car.updateSettings { $0.homePrice = d } }
+                    }
+                Field(label: "DC fast price per kWh", text: $dcPrice, keyboard: .decimalPad)
+                    .onAppear { dcPrice = s.dcPrice > 0 ? String(s.dcPrice) : "" }
+                    .onChange(of: dcPrice) { _, v in
+                        if let d = Self.price(v) { car.updateSettings { $0.dcPrice = d } }
+                    }
+                Note("Shows what each charge cost in Trips, using these prices. Leave a price empty to hide costs for that kind of charge.")
             }
 
             SectionTitle("Units and screen")
@@ -93,6 +111,14 @@ struct SettingsView: View {
             Text("Ocean Live 3.2 · unofficial community app. It only reads from the car, except when you clear fault codes or restart a module from the Faults tab.")
                 .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 18)
         }
+    }
+
+    /// A typed price, or nil while it isn't a valid number. Empty means not set.
+    static func price(_ text: String) -> Double? {
+        let t = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")
+        if t.isEmpty { return 0 }
+        guard let d = Double(t), (0...100).contains(d) else { return nil }
+        return d
     }
 
     private func binding(_ key: WritableKeyPath<Settings, String>) -> Binding<String> {

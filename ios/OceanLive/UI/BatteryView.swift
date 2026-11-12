@@ -34,6 +34,24 @@ struct BatteryView: View {
                 }
             }
 
+            let drains = car.drains
+            if let avg = averageDrainPerDay(drains), let last = drains.last {
+                SectionTitle("Parked drain")
+                CardBox {
+                    HStack {
+                        Text("Average per day").foregroundStyle(Theme.dim)
+                        Spacer()
+                        RollingText(text: Format.n(avg, 1) + "%", size: 22, weight: .bold)
+                    }
+                    KeyValue("Energy per day", settings.usableKwh > 0 ? Format.n(avg / 100 * settings.usableKwh, 1) + " kWh" : nil,
+                             color: Theme.violet)
+                        .padding(.top, 6)
+                    KeyValue("Last time", Format.drain(last, settings))
+                    Text("From \(drains.count) time\(drains.count == 1 ? "" : "s") the car sat parked for 30 minutes or more while the app wasn't connected. Longer waits give steadier numbers.")
+                        .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 6)
+                }
+            }
+
             SectionTitle("Cells")
             CardBox {
                 KeyValue("Highest", s.cellMax.map { "\(Int($0.rounded())) mV" })

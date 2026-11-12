@@ -43,6 +43,31 @@ enum Format {
         minutes < 60 ? "\(minutes) min" : "\(minutes / 60) h \(minutes % 60) min"
     }
 
+    static func money(_ value: Double?, _ s: Settings) -> String? {
+        guard let value else { return nil }
+        let symbol = s.currency.trimmingCharacters(in: .whitespaces)
+        return (symbol.isEmpty ? "$" : symbol) + n(value, 2)
+    }
+
+    /// A parked period's length: "45 min", "19 h", "3 days".
+    static func span(_ hours: Double) -> String {
+        if hours < 1 { return "\(Int((hours * 60).rounded())) min" }
+        if hours < 48 { return "\(Int(hours.rounded())) h" }
+        return "\(Int((hours / 24).rounded())) days"
+    }
+
+    /// "−2.1% over 19 h · about 2.2 kWh"
+    static func drain(_ d: ParkedDrain, _ s: Settings) -> String {
+        let kwh = d.kwh(s.usableKwh).map { " · about " + n($0, 1) + " kWh" } ?? ""
+        return "−" + n(d.drop, 1) + "% over " + span(d.hours) + kwh
+    }
+
+    /// "≈ 2.7% · 2.9 kWh" for a drain rate in percent per day.
+    static func perDay(_ pct: Double, _ s: Settings) -> String {
+        let kwh = s.usableKwh > 0 ? " · " + n(pct / 100 * s.usableKwh, 1) + " kWh" : ""
+        return "≈ " + n(pct, 1) + "%" + kwh
+    }
+
     static func date(_ ms: Int64) -> Date { Date(timeIntervalSince1970: Double(ms) / 1000) }
 }
 

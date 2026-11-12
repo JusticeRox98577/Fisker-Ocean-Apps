@@ -326,3 +326,122 @@ final class ModuleVersionTests: XCTestCase {
         XCTAssertNil(ModuleIds.text("NO DATA", did: "F189"))
     }
 }
+
+final class ParkedDrainTests: XCTestCase {
+    private let hour: Int64 = 3_600_000
+
+    private func snap(_ t: Int64, _ soc: Double?, odo: Double? = nil) -> Snapshot {
+        var s = Snapshot()
+        s.soc = soc
+        s.odometerKm = odo
+        s.time = t
+        return s
+    }
+
+    func testMeasuresDrop() {
+        let a = ParkedAnchor(soc: 80, time: 0, odometerKm: 1000)
+        let d = ParkedDrain.measure(a, snap(19 * hour, 77.9, odo: 1000), charging: false)!
+        XCTAssertEqual(d.drop, 2.1, accuracy: 0.001)
+        XCTAssertEqual(d.hours, 19, accuracy: 0.001)
+        XCTAssertEqual(d.perDay, 2.1 / 19 * 24, accuracy: 0.001)
+        XCTAssertEqual(d.kwh(106.5)!, 2.2365, accuracy: 0.001)
+        XCTAssertNil(d.kwh(0))
+    }
+
+    func testIgnoresShortGapChargingRiseAndMoves() {
+        let a = ParkedAnchor(soc: 80, time: 0, odometerKm: 1000)
+        XCTAssertNil(ParkedDrain.measure(a, snap(20 * 60_000, 79.8), charging: false))
+        XCTAssertNil(ParkedDrain.measure(a, snap(5 * hour, 79), charging: true))
+        XCTAssertNil(ParkedDrain.measure(a, snap(5 * hour, 85), charging: false))
+        XCTAssertNil(ParkedDrain.measure(a, snap(5 * hour, 75, odo: 1030), charging: false))
+        XCTAssertNil(ParkedDrain.measure(a, snap(5 * hour, nil), charging: false))
+    }
+
+    func testIgnoresImplausible() {
+        let a = ParkedAnchor(soc: 80, time: 0)
+        XCTAssertNil(ParkedDrain.measure(a, snap(48 * hour, 50), charging: false)) // 30 points
+        XCTAssertNil(ParkedDrain.measure(a, snap(2 * hour, 75), charging: false)) // 60% a day
+        XCTAssertNil(ParkedDrain.measure(ParkedAnchor(soc: 140, time: 0), snap(5 * hour, 79), charging: false))
+        XCTAssertNotNil(ParkedDrain.measure(a, snap(hour, 79.6), charging: false))
+    }
+
+    func testAveragePerDayIsTimeWeighted() {
+        let list = [
+            ParkedDrain(start: 0, end: 24 * hour, socStart: 80, socEnd: 78),
+            ParkedDrain(start: 0, end: 48 * hour, socStart: 78, socEnd: 77),
+        ]
+        XCTAssertEqual(averageDrainPerDay(list)!, 1.0, accuracy: 0.001)
+        XCTAssertNil(averageDrainPerDay([]))
+    }
+
+    func testDrainText() {
+        var s = Settings()
+        s.model = .big
+        let d = ParkedDrain(start: 0, end: 19 * hour, socStart: 80, socEnd: 77.9)
+        XCTAssertEqual(Format.span(d.hours), "19 h")
+        XCTAssertEqual(Format.span(0.75), "45 min")
+        XCTAssertEqual(Format.span(72), "3 days")
+        XCTAssertTrue(Format.drain(d, s).hasPrefix("−"))
+        XCTAssertTrue(Format.drain(d, s).hasSuffix(" kWh"))
+    }
+}
+
+final class ChargingCostTests: XCTestCase {
+    private func charge(_ start: Int64, _ kwh: Double, fast: Bool = false) -> HistoryEntry {
+        HistoryEntry(kind: .Charge, start: start, end: start + 60_000, socStart: 20, socEnd: 60, kwh: kwh, fast: fast)
+    }
+
+    private var prices: Settings {
+        var s = Settings()
+        s.homePrice = 0.15
+        s.dcPrice = 0.45
+        return s
+    }
+
+    func testCostUsesDcPriceForFastCharges() {
+        XCTAssertEqual(chargeCost(charge(0, 40), prices)!, 6.0, accuracy: 0.001)
+        XCTAssertEqual(chargeCost(charge(0, 40, fast: true), prices)!, 18.0, accuracy: 0.001)
+        XCTAssertNil(chargeCost(HistoryEntry(kind: .Drive, start: 0, end: 1, kwh: 5), prices))
+        XCTAssertNil(chargeCost(charge(0, 40), Settings()))
+    }
+
+    func testMonthlyTotals() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        func ms(_ y: Int, _ m: Int, _ d: Int) -> Int64 {
+            Int64(cal.date(from: DateComponents(year: y, month: m, day: d, hour: 12))!.timeIntervalSince1970 * 1000)
+        }
+        let history = [
+            charge(ms(2026, 9, 30), 10),
+            charge(ms(2026, 10, 1), 20),
+            charge(ms(2026, 10, 31), 10, fast: true),
+            charge(ms(2026, 11, 2), 30),
+            HistoryEntry(kind: .Drive, start: ms(2026, 11, 3), end: ms(2026, 11, 3) + 1, kwh: 9),
+        ]
+        let now = Date(timeIntervalSince1970: Double(ms(2026, 11, 11)) / 1000)
+        let m = monthlyCharging(history, prices, now: now, calendar: cal)
+        XCTAssertEqual(m.this.kwh, 30, accuracy: 0.001)
+        XCTAssertEqual(m.this.count, 1)
+        XCTAssertEqual(m.this.cost!, 4.5, accuracy: 0.001)
+        XCTAssertEqual(m.last.kwh, 30, accuracy: 0.001)
+        XCTAssertEqual(m.last.cost!, 7.5, accuracy: 0.001)
+        XCTAssertNil(monthlyCharging(history, Settings(), now: now, calendar: cal).this.cost)
+    }
+
+    func testCsvHasCostColumn() {
+        let csv = HistoryStore.csv([charge(0, 40, fast: true)], settings: prices)
+        let lines = csv.split(separator: "\n")
+        XCTAssertTrue(lines[0].hasSuffix(",cost"))
+        XCTAssertTrue(lines[1].hasSuffix(",18.00"))
+    }
+
+    func testOldSettingsStillLoad() throws {
+        let json = #"{"useMiles":false,"alertHigh":90}"#
+        let s = try JSONDecoder().decode(Settings.self, from: Data(json.utf8))
+        XCTAssertEqual(s.currency, "$")
+        XCTAssertEqual(s.homePrice, 0)
+        XCTAssertEqual(s.dcPrice, 0)
+        XCTAssertFalse(s.useMiles)
+        XCTAssertEqual(s.alertHigh, 90)
+    }
+}

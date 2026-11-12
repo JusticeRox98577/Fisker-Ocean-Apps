@@ -42,6 +42,11 @@ struct Settings: Codable, Equatable {
     var abrpEverySec = 10
     var abrpLocation = false
     var flipCurrent = false
+    var currency = "$"
+    /// Price per kWh at home. 0 means not set.
+    var homePrice = 0.0
+    /// Price per kWh at DC fast chargers. 0 means not set.
+    var dcPrice = 0.0
 
     var usableKwh: Double { model == .custom ? customKwh : model.usableKwh }
     var abrpEnabled: Bool {
@@ -90,5 +95,8 @@ struct Settings: Codable, Equatable {
         abrpEverySec = try c.decodeIfPresent(Int.self, forKey: .abrpEverySec) ?? d.abrpEverySec
         abrpLocation = try c.decodeIfPresent(Bool.self, forKey: .abrpLocation) ?? d.abrpLocation
         flipCurrent = try c.decodeIfPresent(Bool.self, forKey: .flipCurrent) ?? d.flipCurrent
+        currency = try c.decodeIfPresent(String.self, forKey: .currency) ?? d.currency
+        homePrice = try c.decodeIfPresent(Double.self, forKey: .homePrice) ?? d.homePrice
+        dcPrice = try c.decodeIfPresent(Double.self, forKey: .dcPrice) ?? d.dcPrice
     }
 }

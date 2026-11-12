@@ -15,6 +15,7 @@ struct OceanLiveApp: App {
 
 struct RootView: View {
     @EnvironmentObject var car: Car
+    @Environment(\.scenePhase) private var scenePhase
     @State private var tab = 0
 
     init() {
@@ -36,5 +37,9 @@ struct RootView: View {
         }
         .tint(Theme.aqua)
         .task { car.autoStart() }
+        .onChange(of: scenePhase) { _, phase in
+            // Remember the last reading in case iPhone ends the app while it's in the background.
+            if phase == .background { car.saveParkedAnchor() }
+        }
     }
 }

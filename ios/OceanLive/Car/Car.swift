@@ -12,6 +12,8 @@ struct CarState: Equatable {
     var vin: String?
     var abrpStatus: String?
     var lastUpdate: Int64?
+    /// Charge lost while parked, measured when this connection started.
+    var parked: ParkedDrain?
 
     var connected: Bool { status == .live }
 }
@@ -97,6 +99,8 @@ final class Car: ObservableObject {
     @Published private(set) var importedCount = 0
     @Published private(set) var pastScans: [SavedScan] = []
     @Published private(set) var versions = VersionRead()
+    /// The last 30 parked periods, oldest first.
+    @Published private(set) var drains: [ParkedDrain] = []
 
     private let transport = ElmTransport()
     private let bus = AsyncLock()
@@ -107,6 +111,10 @@ final class Car: ObservableObject {
     private var wantConnected = false
     private var selectedEcu: Ecu?
     private var lastAbrp: Int64 = 0
+    /// Compare the first reading of a connection with the saved anchor.
+    private var parkedCheckPending = false
+    private var latestAnchor: ParkedAnchor?
+    private var anchorSavedAt: Int64 = 0
 
     private var carPlayConnected = false
 
@@ -121,6 +129,7 @@ final class Car: ObservableObject {
         state.adapterName = settings.adapterName
         history = HistoryStore.load()
         pastScans = FaultHistoryStore.load()
+        drains = ParkedStore.loadDrains()
         loadDescriptions()
         location.setEnabled(settings.abrpEnabled && settings.abrpLocation)
         transport.onDisconnected = { [weak self] in self?.onLost("Adapter disconnected.") }
@@ -226,6 +235,7 @@ final class Car: ObservableObject {
                     throw error
                 }
                 alerts.resetHealth()
+                parkedCheckPending = true
                 first = false
                 state.status = .live
                 state.message = nil
@@ -348,7 +358,35 @@ final class Car: ObservableObject {
         state.currentDrive = tracker.currentDrive
         finished.forEach(addHistory)
         alerts.check(snap, mode: tracker.mode, settings: settings)
+        trackParked(snap)
         maybeSendAbrp(snap)
+    }
+
+    // MARK: Parked drain
+
+    private func trackParked(_ snap: Snapshot) {
+        guard let soc = snap.soc else { return }
+        if parkedCheckPending {
+            parkedCheckPending = false
+            let charging = tracker.mode == .charging || (snap.powerKw ?? 0) > Tracker.chargeStartKw
+            let drain = ParkedStore.loadAnchor().flatMap { ParkedDrain.measure($0, snap, charging: charging) }
+            if let drain {
+                state.parked = drain
+                drains = Array((drains + [drain]).suffix(ParkedDrain.keep))
+                ParkedStore.saveDrains(drains)
+            }
+        }
+        let anchor = ParkedAnchor(soc: soc, time: snap.time, odometerKm: snap.odometerKm ?? latestAnchor?.odometerKm)
+        latestAnchor = anchor
+        // Saved once a minute while connected, and again whenever readings stop.
+        if snap.time - anchorSavedAt >= 60_000 { saveParkedAnchor() }
+    }
+
+    /// Remembers the last reading, so the next connection can measure the drain since.
+    func saveParkedAnchor() {
+        guard let a = latestAnchor else { return }
+        ParkedStore.saveAnchor(a)
+        anchorSavedAt = a.time
     }
 
     private func addHistory(_ entry: HistoryEntry) {
@@ -360,6 +398,7 @@ final class Car: ObservableObject {
     }
 
     private func endSessions() {
+        saveParkedAnchor()
         tracker.flush(nowMs()).forEach(addHistory)
         state.mode = .parked
         state.currentCharge = nil

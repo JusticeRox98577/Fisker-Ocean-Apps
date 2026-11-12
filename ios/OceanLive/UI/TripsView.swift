@@ -42,6 +42,15 @@ struct TripsView: View {
                 }
             }
 
+            if history.contains(where: { $0.kind == .Charge }) {
+                let months = monthlyCharging(history, settings)
+                SectionTitle("Charging")
+                HStack(spacing: 10) {
+                    MonthTile(label: "This month", totals: months.this, settings: settings, accent: Theme.good)
+                    MonthTile(label: "Last month", totals: months.last, settings: settings, accent: Theme.violet)
+                }
+            }
+
             let list = Array(history.filter { filter == nil || $0.kind == filter }.reversed().prefix(200))
             SectionTitle(list.isEmpty ? "Nothing yet" : "Recent")
             if list.isEmpty {
@@ -67,7 +76,7 @@ struct TripsView: View {
                 .padding(.top, 20)
             }
         }
-        .fileExporter(isPresented: $exporting, document: CsvDocument(text: HistoryStore.csv(car.history)),
+        .fileExporter(isPresented: $exporting, document: CsvDocument(text: HistoryStore.csv(car.history, settings: car.settings)),
                       contentType: .commaSeparatedText, defaultFilename: "ocean-live-history") { _ in }
         .alert("Clear all history?", isPresented: $confirmClear) {
             Button("Clear", role: .destructive) { car.clearHistory() }
@@ -102,6 +111,23 @@ private struct Chip: View {
     }
 }
 
+/// Charging cost (or energy, when no price is set) for one calendar month.
+private struct MonthTile: View {
+    let label: String
+    let totals: ChargeTotals
+    let settings: Settings
+    let accent: Color
+
+    var body: some View {
+        let kwh = Format.n(totals.kwh, 1) + " kWh"
+        if let cost = Format.money(totals.cost, settings) {
+            Tile(label: label, value: cost, caption: kwh, accent: accent)
+        } else {
+            Tile(label: label, value: kwh, caption: "\(totals.count) charge\(totals.count == 1 ? "" : "s")", accent: accent)
+        }
+    }
+}
+
 private struct EntryRow: View {
     let entry: HistoryEntry
     let settings: Settings
@@ -116,7 +142,7 @@ private struct EntryRow: View {
                 Circle().fill(color).frame(width: 10, height: 10)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
-                    Text(Format.date(e.start).formatted(date: .omitted, time: .shortened) + " · " + Format.duration(e.minutes))
+                    Text(subtitle)
                         .font(.system(size: 12)).foregroundStyle(Theme.dim)
                 }
                 Spacer()
@@ -131,6 +157,7 @@ private struct EntryRow: View {
                     } else {
                         KeyValue("Peak power", e.peakKw.map { Format.n($0, 1) + " kW" })
                         KeyValue("Average power", e.minutes > 0 ? Format.n(e.kwh / (Double(e.minutes) / 60), 1) + " kW" : nil)
+                        if let cost = Format.money(chargeCost(e, settings), settings) { KeyValue("Cost", cost, color: Theme.good) }
                         KeyValue("Implied capacity", e.impliedCapacityKwh.map { Format.n($0, 1) + " kWh" })
                     }
                     Button("Delete this entry", role: .destructive, action: onDelete)
@@ -145,6 +172,12 @@ private struct EntryRow: View {
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.edge, lineWidth: 1))
         .contentShape(Rectangle())
         .onTapGesture { withAnimation(.easeInOut(duration: 0.25)) { open.toggle() } }
+    }
+
+    private var subtitle: String {
+        var parts = [Format.date(entry.start).formatted(date: .omitted, time: .shortened), Format.duration(entry.minutes)]
+        if let cost = Format.money(chargeCost(entry, settings), settings) { parts.append(cost) }
+        return parts.joined(separator: " · ")
     }
 
     private var title: String {

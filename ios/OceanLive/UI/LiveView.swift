@@ -71,6 +71,22 @@ private struct Dashboard: View {
             .transition(.opacity.combined(with: .move(edge: .top)))
         }
 
+        if state.mode == .parked, let d = state.parked {
+            VStack(spacing: 0) {
+                SectionTitle("While parked")
+                CardBox(glow: Theme.violet) {
+                    Text(Format.drain(d, settings))
+                        .font(.system(size: 17, weight: .semibold, design: .rounded)).foregroundStyle(.white)
+                    KeyValue("Per day", Format.perDay(d.perDay, settings), color: Theme.violet)
+                        .padding(.top, 6)
+                    KeyValue("Parked since", Format.date(d.start).formatted(date: .abbreviated, time: .shortened))
+                    Text("Charge the car used while you were away and the app wasn't connected.")
+                        .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 4)
+                }
+            }
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        }
+
         SectionTitle("Battery")
         VStack(spacing: 10) {
             HStack(spacing: 10) {

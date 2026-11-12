@@ -235,3 +235,91 @@ func measuredCapacityKwh(_ history: [HistoryEntry]) -> Double? {
     guard !values.isEmpty else { return nil }
     return values[values.count / 2]
 }
+
+/// The last reading before the app stopped hearing from the car, kept so the next
+/// connection can tell how much charge was lost while the car sat parked.
+struct ParkedAnchor: Codable, Equatable {
+    var soc: Double
+    var time: Int64
+    var odometerKm: Double? = nil
+}
+
+/// Charge lost while the car was parked and the app wasn't connected.
+struct ParkedDrain: Codable, Equatable, Identifiable {
+    var start: Int64
+    var end: Int64
+    var socStart: Double
+    var socEnd: Double
+
+    static let minGapMs: Int64 = 30 * 60_000
+    static let maxGapMs: Int64 = 90 * 24 * 3_600_000
+    static let keep = 30
+
+    var id: Int64 { start }
+    /// Percentage points lost. Never negative.
+    var drop: Double { socStart - socEnd }
+    var hours: Double { Double(end - start) / 3_600_000 }
+    var perDay: Double { hours > 0 ? drop / hours * 24 : 0 }
+
+    func kwh(_ usableKwh: Double) -> Double? { usableKwh > 0 ? drop / 100 * usableKwh : nil }
+
+    /// The drain between the anchor and the first reading of a new connection, or nil when it
+    /// doesn't count: too short a gap, charging, the car moved, the charge went up, or the numbers make no sense.
+    static func measure(_ anchor: ParkedAnchor, _ s: Snapshot, charging: Bool) -> ParkedDrain? {
+        guard !charging, let soc = s.soc else { return nil }
+        let gap = s.time - anchor.time
+        guard gap > minGapMs, gap <= maxGapMs else { return nil }
+        guard (0...100).contains(anchor.soc), (0...100).contains(soc) else { return nil }
+        if let a = anchor.odometerKm, let b = s.odometerKm, abs(b - a) > 0.5 { return nil }
+        let d = ParkedDrain(start: anchor.time, end: s.time, socStart: anchor.soc, socEnd: soc)
+        guard d.drop >= 0, d.drop <= 20 else { return nil }
+        // A short gap with a big drop is more likely a misread than real drain.
+        if d.drop >= 1 && d.perDay > 20 { return nil }
+        return d
+    }
+}
+
+/// Average charge lost per day while parked, weighted by how long each period lasted.
+func averageDrainPerDay(_ drains: [ParkedDrain]) -> Double? {
+    let hours = drains.reduce(0) { $0 + $1.hours }
+    guard hours >= 1 else { return nil }
+    return drains.reduce(0) { $0 + $1.drop } / hours * 24
+}
+
+/// What a charge cost at the user's current prices: DC price for fast charges, home price otherwise.
+/// Nil for drives, or when the matching price isn't set.
+func chargeCost(_ e: HistoryEntry, _ s: Settings) -> Double? {
+    guard e.kind == .Charge else { return nil }
+    let price = e.fast ? s.dcPrice : s.homePrice
+    return price > 0 ? e.kwh * price : nil
+}
+
+struct ChargeTotals: Equatable {
+    var kwh: Double = 0
+    /// Nil when no price is set.
+    var cost: Double? = nil
+    var count = 0
+}
+
+/// Charging in [from, to), by start time.
+func chargeTotals(_ history: [HistoryEntry], from: Int64, to: Int64, _ s: Settings) -> ChargeTotals {
+    var t = ChargeTotals()
+    for e in history where e.kind == .Charge && e.start >= from && e.start < to {
+        t.kwh += e.kwh
+        t.count += 1
+        if let c = chargeCost(e, s) { t.cost = (t.cost ?? 0) + c }
+    }
+    return t
+}
+
+/// Charging this calendar month and the one before.
+func monthlyCharging(_ history: [HistoryEntry], _ s: Settings, now: Date = Date(),
+                     calendar: Calendar = .current) -> (this: ChargeTotals, last: ChargeTotals) {
+    func ms(_ d: Date) -> Int64 { Int64(d.timeIntervalSince1970 * 1000) }
+    guard let month = calendar.dateInterval(of: .month, for: now),
+          let prevStart = calendar.date(byAdding: .month, value: -1, to: month.start) else {
+        return (ChargeTotals(), ChargeTotals())
+    }
+    return (chargeTotals(history, from: ms(month.start), to: ms(month.end), s),
+            chargeTotals(history, from: ms(prevStart), to: ms(month.start), s))
+}
