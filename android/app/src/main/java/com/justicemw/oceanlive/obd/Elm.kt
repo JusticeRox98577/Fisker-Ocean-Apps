@@ -35,6 +35,12 @@ object Elm {
         return ElmReply(bytes, declared, noData)
     }
 
+    /**
+     * True when the reply carries bytes from a module on the bus (a value or a refusal).
+     * "NO DATA", "CAN ERROR" and the like come from the adapter alone, so the car didn't answer.
+     */
+    fun carAnswered(response: String?): Boolean = response != null && parse(response).bytes.isNotEmpty()
+
     /** Data bytes after "62 HH LL" for [did], or null if the reply has no positive answer for it. */
     fun didData(response: String, did: String): List<Int>? {
         val reply = parse(response)

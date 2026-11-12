@@ -36,6 +36,16 @@ class ObdTest {
     @Test fun outOfRangeRejected() = assertNull(Elm.read("622050FFFF", Pids.soc))
     @Test fun noData() = assertNull(Elm.read("NO DATA\r\r>", Pids.soc))
     @Test fun wrongDidIgnored() = assertNull(Elm.read("62200302C6", Pids.soc))
+    @Test fun carAnsweredValue() = assertTrue(Elm.carAnswered("62205002C6\r\r>"))
+    @Test fun carAnsweredRefusal() = assertTrue(Elm.carAnswered("7F2231\r\r>"))
+    @Test fun asleepIsNotAnAnswer() {
+        assertFalse(Elm.carAnswered("NO DATA\r\r>"))
+        assertFalse(Elm.carAnswered("CAN ERROR\r\r>"))
+        assertFalse(Elm.carAnswered("?\r>"))
+        assertFalse(Elm.carAnswered("12.6V\r>"))
+        assertFalse(Elm.carAnswered(""))
+        assertFalse(Elm.carAnswered(null))
+    }
     @Test fun atrv() = assertEquals(12.6, Elm.adapterVoltage("12.6V")!!, 0.001)
     @Test fun atrvGarbage() = assertNull(Elm.adapterVoltage("?"))
 

@@ -200,7 +200,8 @@ object Car {
      */
     fun autoConnect() {
         val s = _settings.value
-        if (!s.autoStart || s.adapterAddress == null || userStopped || _state.value.status != Status.Idle) return
+        val status = _state.value.status
+        if (!s.autoStart || s.adapterAddress == null || userStopped || (status != Status.Idle && status != Status.Error)) return
         val granted = bluetoothPermissions().filter { it != Manifest.permission.POST_NOTIFICATIONS }
             .all { ContextCompat.checkSelfPermission(app, it) == PackageManager.PERMISSION_GRANTED }
         if (granted) connectSaved()
@@ -217,6 +218,12 @@ object Car {
     fun scan() {
         stopJob()
         transport.disconnect()
+        if (wantConnected) {
+            // Scanning ends any session: save the parked-drain mark and drop the service like a disconnect.
+            wantConnected = false
+            endSessions()
+            OceanService.stop(app)
+        }
         _found.value = emptyList()
         _state.update { it.copy(status = Status.Scanning, message = null, resting = false) }
         transport.startScan { adapter ->
@@ -355,7 +362,8 @@ object Car {
     private suspend fun read(did: Did): Pair<Boolean, Double?> {
         selectEcu(did.ecu)
         val reply = query(did.command) ?: return false to null
-        return true to Elm.read(reply, did)
+        // The adapter itself says "NO DATA" when the car is asleep; that isn't the car answering.
+        return Elm.carAnswered(reply) to Elm.read(reply, did)
     }
 
     private suspend fun poll() {
