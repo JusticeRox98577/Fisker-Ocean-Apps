@@ -44,7 +44,7 @@ jobs:
         with:
           name: OceanLive-Android
           path: android/OceanLive-3.1-Android.apk
-      - name: Build Play bundle
+      - name: Build Play bundle and signed APK
         if: github.event_name == 'workflow_dispatch'
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -53,25 +53,31 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "No upload key secrets set, skipping the Play bundle." >> "$GITHUB_STEP_SUMMARY"
+            echo "No upload key secrets set, skipping the Play bundle and signed APK." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
-          ANDROID_STORE_FILE="$RUNNER_TEMP/upload.jks" ./gradlew bundleRelease
+          ANDROID_STORE_FILE="$RUNNER_TEMP/upload.jks" ./gradlew bundleRelease assembleRelease
           cp app/build/outputs/bundle/release/app-release.aab OceanLive-3.1-Play.aab
+          # The same app signed with the upload key, for installing directly instead of through the Play Store.
+          cp app/build/outputs/apk/release/app-release.apk OceanLive-3.1-Android-signed.apk
           rm -f "$RUNNER_TEMP/upload.jks"
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:
           name: OceanLive-Play-bundle
-          path: android/OceanLive-3.1-Play.aab
+          path: |
+            android/OceanLive-3.1-Play.aab
+            android/OceanLive-3.1-Android-signed.apk
           if-no-files-found: ignore
       - name: Publish GitHub release
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v3.1.0-build-${{ github.run_number }}" OceanLive-3.1-Android.apk \
+          FILES="OceanLive-3.1-Android.apk"
+          if [ -f OceanLive-3.1-Android-signed.apk ]; then FILES="$FILES OceanLive-3.1-Android-signed.apk"; fi
+          gh release create "v3.1.0-build-${{ github.run_number }}" $FILES \
             --latest \
             --title "Ocean Live 3.1 (build ${{ github.run_number }})" \
             --notes "No account and no cloud. The only network use is optional ABRP live data. Built from ${{ github.sha }}."
