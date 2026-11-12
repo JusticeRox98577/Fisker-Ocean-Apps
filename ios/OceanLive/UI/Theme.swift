@@ -131,18 +131,19 @@ struct Pill: View {
     let text: String
     let color: Color
     var pulse = false
-    @State private var dim = false
 
     var body: some View {
         HStack(spacing: 7) {
-            Circle().fill(color).frame(width: 7, height: 7).opacity(pulse && dim ? 0.45 : 1)
+            // Clock-driven, so the dot pulses whenever `pulse` is on, however the pill appeared.
+            TimelineView(.animation(paused: !pulse)) { context in
+                let t = context.date.timeIntervalSinceReferenceDate
+                let wave = (sin(t * .pi / 0.9) + 1) / 2
+                Circle().fill(color).frame(width: 7, height: 7).opacity(pulse ? 0.45 + 0.55 * wave : 1)
+            }
             Text(text).font(.system(size: 12, weight: .semibold)).foregroundStyle(color)
         }
         .padding(.horizontal, 12).padding(.vertical, 5)
         .background(color.opacity(0.14), in: Capsule())
-        .onAppear {
-            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { dim = true }
-        }
     }
 }
 
@@ -156,7 +157,6 @@ struct SocRing<Center: View>: View {
     @ViewBuilder let center: () -> Center
 
     @State private var breathe = false
-    @State private var spin = false
 
     private var colors: [Color] {
         if charging { return [Theme.good, Theme.aqua, Theme.good] }
@@ -176,12 +176,8 @@ struct SocRing<Center: View>: View {
                     .rotationEffect(.degrees(135))
                     .shadow(color: colors[0].opacity(live ? (breathe ? 0.55 : 0.2) : 0.12), radius: 16)
                     .animation(.easeInOut(duration: 1.2), value: fraction)
-                if charging {
-                    // A bright highlight travels along the filled part while charging.
-                    Circle()
-                        .trim(from: 0, to: 0.06)
-                        .stroke(Color.white.opacity(0.75), style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                        .rotationEffect(.degrees(135 + (spin ? 270 * fraction : 0)))
+                if charging && fraction > 0.02 {
+                    ChargeSweep(fraction: fraction)
                 }
             }
             VStack(spacing: 2) { center() }
@@ -190,8 +186,33 @@ struct SocRing<Center: View>: View {
         .frame(width: size, height: size)
         .onAppear {
             withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { breathe = true }
-            withAnimation(.linear(duration: 2.6).repeatForever(autoreverses: false)) { spin = true }
         }
+    }
+}
+
+/// While charging, a bright streak runs from the start of the arc to the current charge, then starts again.
+/// It is driven by the clock rather than a one-off animation, so it always moves, however the ring
+/// appeared, and it stays inside the filled part as the charge rises.
+private struct ChargeSweep: View {
+    let fraction: Double
+    private let period = 2.4
+    private let length = 0.06
+
+    var body: some View {
+        TimelineView(.animation) { context in
+            let t = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: period) / period
+            let end = 0.75 * fraction
+            let head = end * t
+            let tail = Swift.max(head - length, 0)
+            // Fade in at the start and out at the end so the jump back to the start isn't visible.
+            let fade = Swift.min(t / 0.15, (1 - t) / 0.15, 1)
+            Circle()
+                .trim(from: tail, to: Swift.max(head, tail + 0.0005))
+                .stroke(Color.white.opacity(0.85 * fade), style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                .rotationEffect(.degrees(135))
+                .blur(radius: 0.6)
+        }
+        .allowsHitTesting(false)
     }
 }
 
