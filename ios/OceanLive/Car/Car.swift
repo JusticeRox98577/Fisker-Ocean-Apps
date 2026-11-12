@@ -122,8 +122,6 @@ final class Car: ObservableObject {
     private var anchorSavedAt: Int64 = 0
 
     private var carPlayConnected = false
-    /// The phone app isn't on screen (scene not active).
-    private var inBackground = false
     /// The user tapped Disconnect: don't connect again just because the app came back on screen.
     private var userStopped = false
     /// When to stop reading so the car can sleep.
@@ -139,8 +137,15 @@ final class Car: ObservableObject {
     /// The phone app went off screen or came back. Coming back connects again if auto-connect is on,
     /// unless the user disconnected. Nothing reconnects while the app stays in the background.
     func setInBackground(_ on: Bool) {
-        inBackground = on
         if !on && !userStopped { autoStart() }
+    }
+
+    /// Whether the phone app is on screen. Asked of the scenes themselves, not remembered, so a launch
+    /// that only brings up CarPlay (no phone screen at all) counts as the background once CarPlay goes.
+    private var phoneOnScreen: Bool {
+        UIApplication.shared.connectedScenes.contains {
+            $0.session.role == .windowApplication && $0.activationState == .foregroundActive
+        }
     }
 
     init() {
@@ -149,7 +154,6 @@ final class Car: ObservableObject {
         history = HistoryStore.load()
         pastScans = FaultHistoryStore.load()
         drains = ParkedStore.loadDrains()
-        inBackground = UIApplication.shared.applicationState == .background
         loadDescriptions()
         location.setEnabled(settings.abrpEnabled && settings.abrpLocation)
         transport.onDisconnected = { [weak self] in self?.onLost("Adapter disconnected.") }
@@ -399,7 +403,7 @@ final class Car: ObservableObject {
                 misses += 1
             }
             switch sleepPolicy.afterPoll(misses: misses, retrying: adapterRetries > 0, mode: tracker.mode,
-                                         background: inBackground, carScreen: carPlayConnected, now: nowMs()) {
+                                         background: !phoneOnScreen, carScreen: carPlayConnected, now: nowMs()) {
             case .keepReading: break
             case .carAsleep: throw CarError.asleep
             case .parkedIdle: throw CarError.parkedIdle

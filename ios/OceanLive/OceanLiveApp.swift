@@ -36,10 +36,8 @@ struct RootView: View {
             SettingsView().tabItem { Label("Settings", systemImage: "gearshape") }.tag(4)
         }
         .tint(Theme.aqua)
-        .task {
-            car.setInBackground(scenePhase != .active)
-            car.autoStart()
-        }
+        // Connects only once the app is actually on screen, never from a launch in the background.
+        .task { car.setInBackground(scenePhase != .active) }
         .onChange(of: scenePhase) { _, phase in
             // Off screen, a parked car is left to sleep after a while; back on screen connects again.
             car.setInBackground(phase != .active)
