@@ -12,6 +12,10 @@ on:
         description: "Include the widgets and Live Activity (needs the widget App ID and App Group set up in the Apple Developer account)"
         type: boolean
         default: true
+      include_watch:
+        description: "Include the Apple Watch app (needs the com.justice.OceanABRP.watchkitapp App ID and its profile set up in the Apple Developer account)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -26,6 +30,8 @@ jobs:
     env:
       # Push builds always include the widgets; manual runs can leave them out.
       WIDGETS: ${{ github.event_name != 'workflow_dispatch' || inputs.include_widgets }}
+      # The Apple Watch app is left out unless a manual run asks for it.
+      WATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.include_watch }}
     defaults:
       run:
         working-directory: ios
@@ -41,16 +47,31 @@ jobs:
           fi
           sudo xcode-select -s "$XC/Contents/Developer"
           xcodebuild -version
+      - name: Install the watchOS platform
+        if: env.WATCH == 'true'
+        # Compiling the watch app's asset catalog needs it; skipped when the runner already has it.
+        run: |
+          if ! xcrun simctl list runtimes | grep -q watchOS; then
+            xcodebuild -downloadPlatform watchOS
+          fi
       - name: Generate Xcode project
         run: |
           brew install xcodegen
           if [ "$WIDGETS" != "true" ]; then
             # Build the app without the widget extension: don't embed it, and don't offer Live Activities.
-            perl -0pi -e 's/    dependencies:\n      - target: OceanLiveWidgets\n//' project.yml
+            perl -0pi -e 's/      - target: OceanLiveWidgets\n//' project.yml
             perl -pi -e 's/NSSupportsLiveActivities: true/NSSupportsLiveActivities: false/' project.yml
             grep -q "target: OceanLiveWidgets" project.yml && { echo "Could not remove the widget extension"; exit 1; }
             echo "Building without the widget extension." >> "$GITHUB_STEP_SUMMARY"
           fi
+          if [ "$WATCH" != "true" ]; then
+            # Build the app without the Apple Watch app: don't embed it (its comment and embed lines go too).
+            perl -0pi -e 's/(?:      #[^\n]*\n)*      - target: OceanLiveWatch\n(?:        [^\n]*\n)*//' project.yml
+            grep -q "target: OceanLiveWatch" project.yml && { echo "Could not remove the Apple Watch app"; exit 1; }
+            echo "Building without the Apple Watch app." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          # A target left with no dependencies loses the empty list.
+          perl -0pi -e 's/    dependencies:\n(?!      [-#])//g' project.yml
           xcodegen generate
           echo "BUILD_NUMBER=$((3000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
       - name: Build (unsigned)
@@ -91,7 +112,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= archive
           # An unsigned archive carries no entitlements, and export only re-signs what is there.
           # Ad-hoc sign it with ours (no certificate needed) so the CarPlay and App Group entitlements
-          # survive export. Inside-out: the widget extension first, then the app around it.
+          # survive export. Inside-out: the widget extension and the watch app first, then the app around them.
           ARCHIVED_APP="$RUNNER_TEMP/OceanLive.xcarchive/Products/Applications/OceanLive.app"
           ARCHIVED_WIDGETS="$ARCHIVED_APP/PlugIns/OceanLiveWidgets.appex"
           if [ "$WIDGETS" = "true" ]; then
@@ -102,6 +123,16 @@ jobs:
             codesign --force --sign - --timestamp=none --generate-entitlement-der \
               --entitlements OceanLiveWidgets/OceanLiveWidgets.entitlements "$ARCHIVED_WIDGETS"
             codesign -d --entitlements - --xml "$ARCHIVED_WIDGETS" | grep -q application-groups
+          fi
+          if [ "$WATCH" = "true" ]; then
+            if ! ls -d "$ARCHIVED_APP"/Watch/*.app >/dev/null 2>&1; then
+              echo "The archive is missing the Apple Watch app:"; ls -la "$ARCHIVED_APP/Watch" || true
+              exit 1
+            fi
+            # No entitlements of its own: it only talks to the phone.
+            for WATCH_APP in "$ARCHIVED_APP"/Watch/*.app; do
+              codesign --force --sign - --timestamp=none --generate-entitlement-der "$WATCH_APP"
+            done
           fi
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
             --entitlements OceanLive/OceanLive.entitlements "$ARCHIVED_APP"
@@ -134,6 +165,18 @@ jobs:
           echo "Widget extension entitlements:"
           codesign -d --entitlements - --xml "$RUNNER_TEMP/check/Payload/OceanLive.app/PlugIns/OceanLiveWidgets.appex" 2>/dev/null || true
           echo
+          if [ "$WATCH" = "true" ]; then
+            if ! ls -d "$RUNNER_TEMP/check/Payload/OceanLive.app"/Watch/*.app >/dev/null 2>&1; then
+              echo "The exported app is missing the Apple Watch app."
+              exit 1
+            fi
+            for WATCH_APP in "$RUNNER_TEMP/check/Payload/OceanLive.app"/Watch/*.app; do
+              echo "Apple Watch app: $(basename "$WATCH_APP")"
+              codesign -dv "$WATCH_APP" 2>&1 | grep -E "^(Identifier|TeamIdentifier)=" || true
+              codesign -d --entitlements - --xml "$WATCH_APP" 2>/dev/null || true
+              echo
+            done
+          fi
           API_PRIVATE_KEYS_DIR="$RUNNER_TEMP/keys" xcrun altool --upload-app --type ios -f build/ipa/*.ipa \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
       - uses: actions/upload-artifact@v4
