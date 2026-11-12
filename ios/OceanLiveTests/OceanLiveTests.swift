@@ -139,6 +139,118 @@ final class TrackerTests: XCTestCase {
     }
 }
 
+final class ChargeCurveTests: XCTestCase {
+    private func snap(_ t: Int64, _ soc: Double, _ amps: Double, _ odo: Double?, temp: Double? = nil) -> Snapshot {
+        var s = Snapshot()
+        s.soc = soc
+        s.packV = 400
+        s.packA = amps
+        s.odometerKm = odo
+        s.tempAvg = temp
+        s.time = t
+        return s
+    }
+
+    func testChargeKeepsSamplesAboutEveryTenSeconds() {
+        let tr = Tracker()
+        var t: Int64 = 0
+        // 30 minutes of readings every 2 s.
+        for i in 0...900 { _ = tr.update(snap(t, 50 + Double(i) * 0.005, 25, 1000, temp: 30)); t += 2000 }
+        var done: [HistoryEntry] = []
+        for i in 0...3 { done += tr.update(snap(t + Int64(i) * 2000, 54.5, 0, 1000)) }
+        let samples = done[0].samples!
+        XCTAssertEqual(samples.count, 180, accuracy: 3)
+        XCTAssertEqual(samples[1].t - samples[0].t, 10_000)
+        XCTAssertEqual(samples[5].kw, 10, accuracy: 0.01)
+        XCTAssertEqual(samples[5].temp, 30)
+        XCTAssertNil(done[0].regenKwh)
+    }
+
+    func testLongChargeStaysUnderCap() {
+        var samples: [ChargeSample] = []
+        var interval = ChargeCurve.intervalMs
+        // 10 hours at one reading every 2 s.
+        for i in 0..<18_000 {
+            ChargeCurve.add(ChargeSample(t: Int64(i) * 2000, soc: Double(i) / 180, kw: 7), to: &samples, interval: &interval)
+        }
+        XCTAssertLessThanOrEqual(samples.count, ChargeCurve.maxPoints)
+        XCTAssertGreaterThan(samples.count, ChargeCurve.maxPoints / 2)
+        XCTAssertEqual(samples.first?.t, 0)
+        XCTAssertGreaterThan(samples.last!.t, 9 * 3_600_000)
+    }
+
+    func testDriveCountsRegenSeparately() {
+        let tr = Tracker()
+        var t: Int64 = 0
+        var odo = 1000.0
+        // 10 minutes using 20 kW, then 5 minutes of 10 kW regen, all while moving.
+        for _ in 0..<300 { odo += 0.03; _ = tr.update(snap(t, 80, -50, odo)); t += 2000 }
+        for _ in 0..<150 { odo += 0.03; _ = tr.update(snap(t, 79, 25, odo)); t += 2000 }
+        var finished: [HistoryEntry] = []
+        for _ in 0..<100 { finished += tr.update(snap(t, 79, -1, odo)); t += 2000 }
+        XCTAssertEqual(finished.count, 1)
+        XCTAssertEqual(finished[0].regenKwh!, 10.0 * 5 / 60, accuracy: 0.05)
+        // Net: 20 kW for 10 min minus 10 kW for 5 min, plus the idle draw at the end.
+        XCTAssertEqual(finished[0].kwh, 20.0 * 10 / 60 - 10.0 * 5 / 60, accuracy: 0.1)
+        XCTAssertEqual(finished[0].regenPercent!, finished[0].regenKwh! / finished[0].kwh * 100, accuracy: 0.001)
+        XCTAssertNil(finished[0].samples)
+    }
+
+    func testOldHistoryWithoutSamplesOrRegenLoads() throws {
+        let json = #"[{"kind":"Charge","start":1,"end":2,"socStart":20,"socEnd":80,"kwh":60,"peakKw":150,"fast":true},"#
+            + #"{"kind":"Drive","start":3,"end":4,"kwh":3,"km":20,"fast":false}]"#
+        let list = try JSONDecoder().decode([HistoryEntry].self, from: Data(json.utf8))
+        XCTAssertNil(list[0].samples)
+        XCTAssertNil(list[1].regenKwh)
+        XCTAssertNil(list[1].regenPercent)
+    }
+
+    func testSamplesRoundTrip() throws {
+        var e = HistoryEntry(kind: .Charge, start: 0, end: 20_000, socStart: 10, socEnd: 11, kwh: 1)
+        e.samples = [ChargeSample(t: 0, soc: 10, kw: 50, temp: 25), ChargeSample(t: 10_000, soc: nil, kw: 51)]
+        let back = try JSONDecoder().decode(HistoryEntry.self, from: JSONEncoder().encode(e))
+        XCTAssertEqual(back, e)
+    }
+
+    func testOnlyNewestChargesKeepSamples() {
+        var list: [HistoryEntry] = []
+        for i in 0..<60 {
+            var c = HistoryEntry(kind: .Charge, start: Int64(i), end: Int64(i) + 1, socStart: 10, socEnd: 20, kwh: 5)
+            c.samples = [ChargeSample(t: 0, soc: 10, kw: 7)]
+            list.append(c)
+            list.append(HistoryEntry(kind: .Drive, start: Int64(i), end: Int64(i) + 1, socStart: 20, socEnd: 10, kwh: 5))
+        }
+        let pruned = ChargeCurve.prune(list)
+        let charges = pruned.filter { $0.kind == .Charge }
+        XCTAssertEqual(charges.filter { $0.samples != nil }.count, 50)
+        XCTAssertNil(charges[9].samples)
+        XCTAssertNotNil(charges[10].samples)
+        XCTAssertEqual(pruned.count, list.count)
+        XCTAssertEqual(charges[0].kwh, 5)
+    }
+
+    func testTimeTenToEighty() {
+        // 1 % a minute from 5 % to 90 %.
+        let samples = (0...85).map { ChargeSample(t: Int64($0) * 60_000, soc: 5 + Double($0), kw: 60) }
+        XCTAssertEqual(ChargeCurve.time(samples)!, 70 * 60_000)
+        // Started above 10 %: not covered.
+        XCTAssertNil(ChargeCurve.time(Array(samples.dropFirst(10))))
+        // Stopped before 80 %: not covered.
+        XCTAssertNil(ChargeCurve.time(Array(samples.prefix(60))))
+    }
+
+    func testChartHasOnePointPerPercentWithPeak() {
+        let samples = [
+            ChargeSample(t: 0, soc: 20.1, kw: 100), ChargeSample(t: 1, soc: 20.2, kw: 150),
+            ChargeSample(t: 2, soc: 21.0, kw: 140), ChargeSample(t: 3, soc: nil, kw: 200),
+            ChargeSample(t: 4, soc: 19.6, kw: 90),
+        ]
+        let pts = ChargeCurve.chart(samples)
+        XCTAssertEqual(pts.map { $0.soc }, [20, 21])
+        XCTAssertEqual(ChargeCurve.peak(pts)?.kw, 150)
+    }
+}
+
 final class DtcCatalogTests: XCTestCase {
     override func tearDown() { DtcCatalog.shared.setImported([:]) }
 

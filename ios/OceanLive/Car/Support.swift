@@ -19,7 +19,7 @@ enum HistoryStore {
     }
 
     static func save(_ entries: [HistoryEntry]) {
-        guard let data = try? JSONEncoder().encode(Array(entries.suffix(max))) else { return }
+        guard let data = try? JSONEncoder().encode(ChargeCurve.prune(Array(entries.suffix(max)))) else { return }
         try? data.write(to: file, options: .atomic)
     }
 

@@ -61,6 +61,14 @@ struct Snapshot: Equatable {
 
 enum EntryKind: String, Codable { case Drive, Charge }
 
+/// One point of a charging curve, taken from the readings the app already makes.
+struct ChargeSample: Codable, Equatable {
+    var t: Int64
+    var soc: Double?
+    var kw: Double
+    var temp: Double? = nil
+}
+
 /// A finished drive or charging session. Energy is measured at the battery.
 struct HistoryEntry: Codable, Equatable, Identifiable {
     var kind: EntryKind
@@ -73,6 +81,10 @@ struct HistoryEntry: Codable, Equatable, Identifiable {
     var distanceKm: Double? = nil
     var peakKw: Double? = nil
     var fast: Bool = false
+    /// Drive: kWh put back into the pack by regen. Nil for older entries.
+    var regenKwh: Double? = nil
+    /// Charge: the charging curve, about every 10 s. Only the newest charges keep it.
+    var samples: [ChargeSample]? = nil
 
     var id: String { "\(kind.rawValue)-\(start)" }
     var minutes: Int64 { (end - start) / 60_000 }
@@ -90,7 +102,88 @@ struct HistoryEntry: Codable, Equatable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case kind, start, end, socStart, socEnd, kwh, distanceKm = "km", peakKw, fast
+        case kind, start, end, socStart, socEnd, kwh, distanceKm = "km", peakKw, fast, regenKwh, samples
+    }
+
+    /// Regen as a share of the energy used on this drive, percent. Nil when there is nothing to compare.
+    var regenPercent: Double? {
+        guard kind == .Drive, let r = regenKwh, kwh > 0.05 else { return nil }
+        return r / kwh * 100
+    }
+}
+
+struct CurvePoint: Equatable, Identifiable {
+    var t: Int64
+    var soc: Double
+    var kw: Double
+    var id: Int64 { t }
+}
+
+enum ChargeCurve {
+    static let intervalMs: Int64 = 10_000
+    static let maxPoints = 400
+    /// Charges that keep their curve; older ones keep only the summary.
+    static let keepCharges = 50
+
+    /// Adds a sample when one is due. Past the cap, every other point is dropped and the
+    /// gap between points doubles, so a long session still fits in about `maxPoints`.
+    static func add(_ sample: ChargeSample, to samples: inout [ChargeSample], interval: inout Int64) {
+        if let last = samples.last, sample.t - last.t < interval { return }
+        samples.append(sample)
+        if samples.count > maxPoints {
+            samples = samples.enumerated().filter { $0.offset % 2 == 0 }.map { $0.element }
+            interval *= 2
+        }
+    }
+
+    /// Drops the curves of all but the newest `keep` charges.
+    static func prune(_ history: [HistoryEntry], keep: Int = keepCharges) -> [HistoryEntry] {
+        var kept = 0
+        var out = history
+        for i in out.indices.reversed() where out[i].kind == .Charge && out[i].samples != nil {
+            if kept < keep { kept += 1 } else { out[i].samples = nil }
+        }
+        return out
+    }
+
+    /// Points that can be drawn as kW against charge %, in order of charge.
+    static func points(_ samples: [ChargeSample]) -> [CurvePoint] {
+        samples.compactMap { (s: ChargeSample) -> CurvePoint? in
+            guard let soc = s.soc else { return nil }
+            return CurvePoint(t: s.t, soc: soc, kw: Swift.max(s.kw, 0))
+        }
+    }
+
+    /// One point per whole charge %, sorted by charge, so the line never folds back on itself.
+    /// Uses the highest power in each step, so the drawn peak matches the real one.
+    static func chart(_ samples: [ChargeSample]) -> [CurvePoint] {
+        var steps: [Int: CurvePoint] = [:]
+        for p in points(samples) where (0...100).contains(p.soc) {
+            let key = Int(p.soc.rounded())
+            if let have = steps[key], have.kw >= p.kw { continue }
+            steps[key] = CurvePoint(t: Int64(key), soc: Double(key), kw: p.kw)
+        }
+        return steps.values.sorted { $0.soc < $1.soc }
+    }
+
+    /// The point with the highest power.
+    static func peak(_ points: [CurvePoint]) -> CurvePoint? { points.max { $0.kw < $1.kw } }
+
+    /// Milliseconds the charge took from `from` % to `to` %, or nil when the curve doesn't cover both.
+    static func time(_ samples: [ChargeSample], from: Double = 10, to: Double = 80) -> Int64? {
+        let pts = points(samples)
+        guard let first = pts.first, first.soc <= from else { return nil }
+        func crossing(_ level: Double) -> Double? {
+            for i in pts.indices where pts[i].soc >= level {
+                if i == 0 { return Double(pts[0].t) }
+                let a = pts[i - 1], b = pts[i]
+                let f = b.soc > a.soc ? (level - a.soc) / (b.soc - a.soc) : 1
+                return Double(a.t) + f * Double(b.t - a.t)
+            }
+            return nil
+        }
+        guard let a = crossing(from), let b = crossing(to), b > a else { return nil }
+        return Int64(b - a)
     }
 }
 
@@ -116,6 +209,7 @@ final class Tracker {
     private var driveStartOdo: Double?
     private var chargeEvidence = 0
     private var stopEvidence = 0
+    private var sampleInterval = ChargeCurve.intervalMs
 
     func update(_ s: Snapshot) -> [HistoryEntry] {
         let now = s.time
@@ -141,7 +235,9 @@ final class Tracker {
                 currentDrive = nil
                 mode = .charging
                 stopEvidence = 0
-                currentCharge = HistoryEntry(kind: .Charge, start: now, end: now, socStart: s.soc, socEnd: s.soc, kwh: 0, peakKw: power)
+                sampleInterval = ChargeCurve.intervalMs
+                currentCharge = HistoryEntry(kind: .Charge, start: now, end: now, socStart: s.soc, socEnd: s.soc, kwh: 0, peakKw: power,
+                                             samples: [ChargeSample(t: now, soc: s.soc, kw: power ?? 0, temp: s.tempAvg)])
             }
         } else {
             if power == nil || power! < Self.chargeStopKw { stopEvidence += 1 } else { stopEvidence = 0 }
@@ -160,7 +256,7 @@ final class Tracker {
         // Driving start / stop.
         if mode != .charging {
             if movingRecently && currentDrive == nil {
-                currentDrive = HistoryEntry(kind: .Drive, start: now, end: now, socStart: s.soc, socEnd: s.soc, kwh: 0, distanceKm: 0)
+                currentDrive = HistoryEntry(kind: .Drive, start: now, end: now, socStart: s.soc, socEnd: s.soc, kwh: 0, distanceKm: 0, regenKwh: 0)
                 driveStartOdo = odo
                 mode = .driving
             } else if !movingRecently, let d = currentDrive {
@@ -179,12 +275,16 @@ final class Tracker {
                 c.kwh += Swift.max(p, 0) * hours
                 c.peakKw = Swift.max(c.peakKw ?? 0, p)
                 c.fast = c.fast || p > Self.dcFastKw
+                var samples = c.samples ?? []
+                ChargeCurve.add(ChargeSample(t: now, soc: s.soc, kw: p, temp: s.tempAvg), to: &samples, interval: &sampleInterval)
+                c.samples = samples
                 currentCharge = c
             }
             if var d = currentDrive {
                 d.end = now
                 d.socEnd = s.soc ?? d.socEnd
                 d.kwh -= p * hours
+                if p > 0 { d.regenKwh = (d.regenKwh ?? 0) + p * hours }
                 d.distanceKm = driveDistance(odo) ?? d.distanceKm
                 currentDrive = d
             }

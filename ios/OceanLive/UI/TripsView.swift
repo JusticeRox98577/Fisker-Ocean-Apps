@@ -1,3 +1,4 @@
+import Charts
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -39,6 +40,14 @@ struct TripsView: View {
                 HStack(spacing: 10) {
                     Tile(label: "Distance", value: Format.distance(drives.reduce(0) { $0 + ($1.distanceKm ?? 0) }, settings), accent: Theme.cyan)
                     Tile(label: "Average", value: Format.efficiency(Format.whPerKm(history), settings), accent: Theme.aqua)
+                }
+                let regenDrives = drives.filter { $0.regenKwh != nil }
+                if !regenDrives.isEmpty {
+                    let regen = regenDrives.reduce(0) { $0 + ($1.regenKwh ?? 0) }
+                    let used = regenDrives.reduce(0) { $0 + $1.kwh }
+                    Tile(label: "Regen", value: "+" + Format.n(regen, 1) + " kWh",
+                         caption: used > 0.05 ? "\(Int((regen / used * 100).rounded())) % of energy used" : nil, accent: Theme.violet)
+                        .padding(.top, 10)
                 }
             }
 
@@ -154,9 +163,14 @@ private struct EntryRow: View {
                     if e.kind == .Drive {
                         KeyValue("Energy used", Format.n(e.kwh, 2) + " kWh")
                         KeyValue("Efficiency", Format.efficiency(e.whPerKm, settings))
+                        if let regen = regenText { KeyValue("Regen", regen, color: Theme.violet) }
                     } else {
+                        let points = ChargeCurve.chart(e.samples ?? [])
+                        if points.count >= 2 { ChargeCurveChart(points: points).padding(.bottom, 8) }
                         KeyValue("Peak power", e.peakKw.map { Format.n($0, 1) + " kW" })
                         KeyValue("Average power", e.minutes > 0 ? Format.n(e.kwh / (Double(e.minutes) / 60), 1) + " kW" : nil)
+                        if let ms = ChargeCurve.time(e.samples ?? []) { KeyValue("10–80 %", Format.duration(ms / 60_000)) }
+                        if let temps = tempRange { KeyValue("Battery temp", temps) }
                         if let cost = Format.money(chargeCost(e, settings), settings) { KeyValue("Cost", cost, color: Theme.good) }
                         KeyValue("Implied capacity", e.impliedCapacityKwh.map { Format.n($0, 1) + " kWh" })
                     }
@@ -174,6 +188,21 @@ private struct EntryRow: View {
         .onTapGesture { withAnimation(.easeInOut(duration: 0.25)) { open.toggle() } }
     }
 
+    /// "+1.2 kWh (14 % of energy used)", or nil for entries saved before regen was measured.
+    private var regenText: String? {
+        guard let regen = entry.regenKwh else { return nil }
+        let text = "+" + Format.n(regen, 1) + " kWh"
+        guard let pct = entry.regenPercent else { return text }
+        return text + " (\(Int(pct.rounded())) % of energy used)"
+    }
+
+    private var tempRange: String? {
+        let temps = (entry.samples ?? []).compactMap { $0.temp }
+        guard let lo = temps.min(), let hi = temps.max(),
+              let a = Format.temp(lo, settings), let b = Format.temp(hi, settings) else { return nil }
+        return a == b ? a : a + " – " + b
+    }
+
     private var subtitle: String {
         var parts = [Format.date(entry.start).formatted(date: .omitted, time: .shortened), Format.duration(entry.minutes)]
         if let cost = Format.money(chargeCost(entry, settings), settings) { parts.append(cost) }
@@ -185,5 +214,62 @@ private struct EntryRow: View {
             return (entry.fast ? "DC charge" : "Charge") + " · +" + Format.n(entry.kwh, 1) + " kWh"
         }
         return "Drive · " + (Format.distance(entry.distanceKm, settings, decimals: 1) ?? "—")
+    }
+}
+
+/// Charging power against charge %, drawn in when the row opens.
+private struct ChargeCurveChart: View {
+    let points: [CurvePoint]
+    @State private var shown = false
+
+    var body: some View {
+        let peak = ChargeCurve.peak(points)
+        let top = Swift.max((peak?.kw ?? 0) * 1.25, 5)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Charging curve").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.dim)
+            Chart {
+                ForEach(points) { p in
+                    AreaMark(x: .value("Charge", p.soc), y: .value("Power", shown ? p.kw : 0))
+                        .interpolationMethod(.monotone)
+                        .foregroundStyle(LinearGradient(colors: [Theme.aqua.opacity(0.32), Theme.cyan.opacity(0.10), Theme.violet.opacity(0)],
+                                                        startPoint: .top, endPoint: .bottom))
+                    LineMark(x: .value("Charge", p.soc), y: .value("Power", shown ? p.kw : 0))
+                        .interpolationMethod(.monotone)
+                        .foregroundStyle(Theme.ocean)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                }
+                if let peak {
+                    PointMark(x: .value("Charge", peak.soc), y: .value("Power", shown ? peak.kw : 0))
+                        .foregroundStyle(Theme.aqua)
+                        .symbolSize(60)
+                        .annotation(position: .top, alignment: .center, spacing: 4,
+                                    overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))) {
+                            Text("Peak " + Format.n(peak.kw, 0) + " kW")
+                                .font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.aqua)
+                                .opacity(shown ? 1 : 0)
+                        }
+                }
+            }
+            .chartXScale(domain: 0.0...100.0)
+            .chartYScale(domain: 0.0...top)
+            .chartXAxis {
+                AxisMarks(values: [0.0, 50.0, 100.0]) { value in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.edge)
+                    AxisValueLabel {
+                        Text("\(Int(value.as(Double.self) ?? 0)) %").font(.system(size: 11)).foregroundStyle(Theme.dim)
+                    }
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.edge)
+                    AxisValueLabel {
+                        Text("\(Int(value.as(Double.self) ?? 0)) kW").font(.system(size: 11)).foregroundStyle(Theme.dim)
+                    }
+                }
+            }
+            .frame(height: 170)
+        }
+        .onAppear { withAnimation(.easeOut(duration: 0.9).delay(0.1)) { shown = true } }
     }
 }

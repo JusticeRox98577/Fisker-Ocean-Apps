@@ -719,7 +719,7 @@ final class Car: ObservableObject {
         if entry.kind == .Charge { alerts.chargingStopped(entry, settings: settings) }
         let keep = entry.kind == .Drive ? (entry.distanceKm ?? 0) >= 0.3 : entry.kwh >= 0.2
         guard keep else { return }
-        history.append(entry)
+        history = ChargeCurve.prune(history + [entry])
         HistoryStore.save(history)
     }
 
