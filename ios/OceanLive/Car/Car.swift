@@ -107,6 +107,8 @@ final class Car: ObservableObject {
     private let tracker = Tracker()
     private let alerts = Alerts()
     private let location = LocationFeed()
+    /// Charging Live Activity and home-screen widget. Display only.
+    private let liveActivity = LiveActivityController()
     private var task: Task<Void, Never>?
     private var wantConnected = false
     private var selectedEcu: Ecu?
@@ -360,6 +362,7 @@ final class Car: ObservableObject {
         alerts.check(snap, mode: tracker.mode, settings: settings)
         trackParked(snap)
         maybeSendAbrp(snap)
+        liveActivity.onReading(state, settings: settings, history: history)
     }
 
     // MARK: Parked drain
@@ -403,6 +406,7 @@ final class Car: ObservableObject {
         state.mode = .parked
         state.currentCharge = nil
         state.currentDrive = nil
+        liveActivity.onDisconnected(state, settings: settings, history: history)
     }
 
     func clearHistory() {

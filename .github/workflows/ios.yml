@@ -75,11 +75,21 @@ jobs:
             CURRENT_PROJECT_VERSION=$BUILD_NUMBER \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= archive
           # An unsigned archive carries no entitlements, and export only re-signs what is there.
-          # Ad-hoc sign it with ours (no certificate needed) so the CarPlay entitlement survives export.
+          # Ad-hoc sign it with ours (no certificate needed) so the CarPlay and App Group entitlements
+          # survive export. Inside-out: the widget extension first, then the app around it.
           ARCHIVED_APP="$RUNNER_TEMP/OceanLive.xcarchive/Products/Applications/OceanLive.app"
+          ARCHIVED_WIDGETS="$ARCHIVED_APP/PlugIns/OceanLiveWidgets.appex"
+          if [ ! -d "$ARCHIVED_WIDGETS" ]; then
+            echo "The archive is missing the widget extension:"; ls -la "$ARCHIVED_APP/PlugIns" || true
+            exit 1
+          fi
+          codesign --force --sign - --timestamp=none --generate-entitlement-der \
+            --entitlements OceanLiveWidgets/OceanLiveWidgets.entitlements "$ARCHIVED_WIDGETS"
+          codesign -d --entitlements - --xml "$ARCHIVED_WIDGETS" | grep -q application-groups
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
             --entitlements OceanLive/OceanLive.entitlements "$ARCHIVED_APP"
           codesign -d --entitlements - --xml "$ARCHIVED_APP" | grep -q carplay-driving-task
+          codesign -d --entitlements - --xml "$ARCHIVED_APP" | grep -q application-groups
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/OceanLive.xcarchive" \
             -exportOptionsPlist ExportOptions.plist -exportPath build/ipa $AUTH
           # The signed app must carry the CarPlay entitlement, or CarPlay won't show the app.
@@ -92,6 +102,15 @@ jobs:
             exit 1
           fi
           echo "CarPlay entitlement present."
+          if ! grep -q "com.apple.security.application-groups" "$RUNNER_TEMP/entitlements.plist"; then
+            echo "The exported app is missing the App Group entitlement. Signed entitlements:"
+            cat "$RUNNER_TEMP/entitlements.plist"
+            exit 1
+          fi
+          echo "App Group entitlement present."
+          echo "Widget extension entitlements:"
+          codesign -d --entitlements - --xml "$RUNNER_TEMP/check/Payload/OceanLive.app/PlugIns/OceanLiveWidgets.appex" 2>/dev/null || true
+          echo
           API_PRIVATE_KEYS_DIR="$RUNNER_TEMP/keys" xcrun altool --upload-app --type ios -f build/ipa/*.ipa \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
       - name: Remove App Store Connect key

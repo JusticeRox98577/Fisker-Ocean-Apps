@@ -445,3 +445,103 @@ final class ChargingCostTests: XCTestCase {
         XCTAssertEqual(s.alertHigh, 90)
     }
 }
+
+/// Live Activity and widget values worked out from the car state.
+final class GlanceTests: XCTestCase {
+    private func chargingState(soc: Double, kw: Double) -> CarState {
+        var s = CarState()
+        s.status = .live
+        s.mode = .charging
+        s.snapshot.soc = soc
+        s.snapshot.packV = 400
+        s.snapshot.packA = kw * 1000 / 400
+        s.snapshot.aux12v = 12.6
+        s.lastUpdate = 1_700_000_000_000
+        return s
+    }
+
+    func testMinutesToTarget() {
+        // 30% of 100 kWh at 10 kW is 3 hours.
+        XCTAssertEqual(Glance.minutesToTarget(soc: 50, powerKw: 10, target: 80, usableKwh: 100), 180)
+        XCTAssertNil(Glance.minutesToTarget(soc: 85, powerKw: 10, target: 80, usableKwh: 100))
+        XCTAssertNil(Glance.minutesToTarget(soc: 50, powerKw: 0.2, target: 80, usableKwh: 100))
+        XCTAssertNil(Glance.minutesToTarget(soc: nil, powerKw: 10, target: 80, usableKwh: 100))
+        XCTAssertNil(Glance.minutesToTarget(soc: 50, powerKw: 10, target: 80, usableKwh: 0))
+    }
+
+    func testActivityContent() {
+        var settings = Settings()
+        settings.model = .custom
+        settings.customKwh = 100
+        settings.alertHigh = 80
+        let c = Glance.content(chargingState(soc: 50, kw: 10), settings, [])
+        XCTAssertTrue(c.charging)
+        XCTAssertFalse(c.fast)
+        XCTAssertEqual(c.targetPercent, 80)
+        XCTAssertEqual(c.minutesToTarget, 180)
+        XCTAssertEqual(c.powerKw!, 10, accuracy: 0.001)
+        XCTAssertEqual(c.title, "Charging")
+        XCTAssertEqual(c.toTargetText, "≈ 3 h 0 min")
+        XCTAssertNotNil(c.rangeText)
+    }
+
+    func testSameValuesIgnoresTime() {
+        let settings = Settings()
+        let a = Glance.content(chargingState(soc: 50, kw: 10), settings, [], now: Date(timeIntervalSince1970: 0))
+        let b = Glance.content(chargingState(soc: 50, kw: 10), settings, [], now: Date(timeIntervalSince1970: 60))
+        let c = Glance.content(chargingState(soc: 51, kw: 10), settings, [], now: Date(timeIntervalSince1970: 0))
+        XCTAssertTrue(Glance.sameValues(a, b))
+        XCTAssertFalse(Glance.sameValues(a, c))
+    }
+
+    func testStatusWords() {
+        var s = chargingState(soc: 50, kw: 10)
+        XCTAssertEqual(Glance.status(s, connected: true), "Charging")
+        s.currentCharge = HistoryEntry(kind: .Charge, start: 0, end: 0, kwh: 0, fast: true)
+        XCTAssertEqual(Glance.status(s, connected: true), "DC fast charging")
+        s.mode = .driving
+        XCTAssertEqual(Glance.status(s, connected: true), "Driving")
+        s.mode = .parked
+        XCTAssertEqual(Glance.status(s, connected: true), "Parked")
+        s.status = .reconnecting
+        XCTAssertEqual(Glance.status(s, connected: true), "Reconnecting")
+        XCTAssertEqual(Glance.status(s, connected: false), "Not connected")
+    }
+
+    func testWidgetDataRoundTrip() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "OceanLiveTests.widget"))
+        defaults.removePersistentDomain(forName: "OceanLiveTests.widget")
+        XCTAssertNil(WidgetData.load(defaults))
+        let data = Glance.widgetData(chargingState(soc: 64, kw: 7), Settings(), [], connected: true)
+        XCTAssertEqual(data.status, "Charging")
+        XCTAssertTrue(data.charging)
+        XCTAssertTrue(data.live)
+        XCTAssertEqual(data.updatedAt, Date(timeIntervalSince1970: 1_700_000_000))
+        data.save(defaults)
+        XCTAssertEqual(WidgetData.load(defaults), data)
+        let offline = Glance.widgetData(chargingState(soc: 64, kw: 7), Settings(), [], connected: false)
+        XCTAssertEqual(offline.status, "Not connected")
+        XCTAssertFalse(offline.charging)
+        XCTAssertFalse(offline.live)
+        defaults.removePersistentDomain(forName: "OceanLiveTests.widget")
+    }
+
+    func testThrottle() {
+        var t = Throttle(5)
+        let start = Date(timeIntervalSince1970: 1000)
+        XCTAssertTrue(t.ready(start))
+        XCTAssertFalse(t.ready(start.addingTimeInterval(4)))
+        XCTAssertTrue(t.ready(start.addingTimeInterval(5)))
+        t.mark(start.addingTimeInterval(20))
+        XCTAssertFalse(t.ready(start.addingTimeInterval(22)))
+    }
+
+    func testFinishedChargeText() {
+        let s = ChargeActivityAttributes.ContentState(soc: 81, rangeText: nil, powerKw: nil, minutesToTarget: nil,
+                                                      targetPercent: 80, charging: false, fast: false, updatedAt: Date())
+        XCTAssertEqual(s.title, "Charge finished")
+        XCTAssertEqual(s.toTargetText, "Reached")
+        XCTAssertEqual(OceanShared.percent(80.6), "81%")
+        XCTAssertEqual(OceanShared.duration(65), "1 h 5 min")
+    }
+}

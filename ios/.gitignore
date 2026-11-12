@@ -6,3 +6,5 @@ DerivedData/
 xcuserdata/
 .DS_Store
 OceanLive/OceanLive.entitlements
+OceanLiveWidgets/Info.plist
+OceanLiveWidgets/OceanLiveWidgets.entitlements

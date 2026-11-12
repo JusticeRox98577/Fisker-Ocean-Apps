@@ -17,6 +17,9 @@ targets:
     platform: iOS
     sources:
       - OceanLive
+      - Shared
+    dependencies:
+      - target: OceanLiveWidgets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.justice.OceanABRP
@@ -28,6 +31,8 @@ targets:
       path: OceanLive/OceanLive.entitlements
       properties:
         com.apple.developer.carplay-driving-task: true
+        com.apple.security.application-groups:
+          - group.com.justice.OceanABRP
     info:
       path: OceanLive/Info.plist
       properties:
@@ -46,6 +51,8 @@ targets:
         NSBluetoothAlwaysUsageDescription: Ocean Live reads your car's battery and fault codes through your Bluetooth OBD adapter.
         NSLocationWhenInUseUsageDescription: Only used when you turn on location sharing for A Better Route Planner, so ABRP can plan from where you are.
         ITSAppUsesNonExemptEncryption: false
+        # Charging progress on the lock screen, Dynamic Island, Apple Watch and CarPlay.
+        NSSupportsLiveActivities: true
         # The phone window comes from SwiftUI; CarPlay gets its own scene delegate.
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
@@ -53,6 +60,35 @@ targets:
             CPTemplateApplicationSceneSessionRoleApplication:
               - UISceneConfigurationName: CarPlay
                 UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).CarPlaySceneDelegate
+  # Home-screen and lock-screen widgets plus the charging Live Activity.
+  OceanLiveWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - OceanLiveWidgets
+      - Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.justice.OceanABRP.widgets
+        PRODUCT_NAME: OceanLiveWidgets
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+    entitlements:
+      path: OceanLiveWidgets/OceanLiveWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.justice.OceanABRP
+    info:
+      path: OceanLiveWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Ocean Live
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
   OceanLiveTests:
     type: bundle.unit-test
     platform: iOS
