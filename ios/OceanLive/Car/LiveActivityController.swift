@@ -127,6 +127,8 @@ final class LiveActivityController {
     }
 
     private func start(_ content: ChargeActivityAttributes.ContentState, adapter: String?, now: Date) {
+        // The widget extension that draws the Live Activity needs iOS 18; don't start one it can't show.
+        guard #available(iOS 18.0, *) else { return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled, startRetry.ready(now) else { return }
         do {
             activity = try Activity<ChargeActivityAttributes>.request(

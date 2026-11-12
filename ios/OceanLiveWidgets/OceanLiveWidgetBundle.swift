@@ -4,14 +4,10 @@ import WidgetKit
 @main
 struct OceanLiveWidgetBundle: WidgetBundle {
     var body: some Widget {
+        // The extension requires iOS 18 (see project.yml), so the Live Activity always includes the
+        // small layout for Apple Watch and CarPlay, with no OS checks in the bundle (Swift can't compile them here).
         StatusWidget()
-        // Only one Live Activity widget is ever registered: the one with the Watch and CarPlay layout on iOS 18+.
-        if #available(iOS 18.0, *) {
-            ChargeActivityWidgetWithSmall()
-        }
-        if #unavailable(iOS 18.0) {
-            ChargeActivityWidget()
-        }
+        ChargeActivityWidgetWithSmall()
     }
 }
 

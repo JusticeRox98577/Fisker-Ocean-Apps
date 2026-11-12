@@ -64,7 +64,8 @@ targets:
   OceanLiveWidgets:
     type: app-extension
     platform: iOS
-    deploymentTarget: "17.0"
+    # iOS 18: the Live Activity's small layout (Apple Watch, CarPlay) needs it. On iOS 17 the app works without widgets.
+    deploymentTarget: "18.0"
     sources:
       - OceanLiveWidgets
       - Shared
