@@ -39,11 +39,11 @@ jobs:
         # the 2.0 GitHub APKs, so it installs over a sideloaded 2.0.
         run: |
           ./gradlew assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk OceanLive-3.0-Android.apk
+          cp app/build/outputs/apk/release/app-release.apk OceanLive-3.1-Android.apk
       - uses: actions/upload-artifact@v4
         with:
           name: OceanLive-Android
-          path: android/OceanLive-3.0-Android.apk
+          path: android/OceanLive-3.1-Android.apk
       - name: Build Play bundle
         if: github.event_name == 'workflow_dispatch'
         env:
@@ -58,20 +58,20 @@ jobs:
           fi
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
           ANDROID_STORE_FILE="$RUNNER_TEMP/upload.jks" ./gradlew bundleRelease
-          cp app/build/outputs/bundle/release/app-release.aab OceanLive-3.0-Play.aab
+          cp app/build/outputs/bundle/release/app-release.aab OceanLive-3.1-Play.aab
           rm -f "$RUNNER_TEMP/upload.jks"
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:
           name: OceanLive-Play-bundle
-          path: android/OceanLive-3.0-Play.aab
+          path: android/OceanLive-3.1-Play.aab
           if-no-files-found: ignore
       - name: Publish GitHub release
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v3.0.0-build-${{ github.run_number }}" OceanLive-3.0-Android.apk \
+          gh release create "v3.1.0-build-${{ github.run_number }}" OceanLive-3.1-Android.apk \
             --latest \
-            --title "Ocean Live 3.0 (build ${{ github.run_number }})" \
-            --notes "Bluetooth only. No account, no cloud, no internet permission. Built from ${{ github.sha }}."
+            --title "Ocean Live 3.1 (build ${{ github.run_number }})" \
+            --notes "No account and no cloud. The only network use is optional ABRP live data. Built from ${{ github.sha }}."

@@ -1,0 +1,90 @@
+import SwiftUI
+
+struct BatteryView: View {
+    @EnvironmentObject var car: Car
+
+    var body: some View {
+        Page {
+            let s = car.state.snapshot
+            let settings = car.settings
+            let history = car.history
+
+            SectionTitle("Battery health")
+            CardBox {
+                let measured = measuredCapacityKwh(history)
+                let rated = settings.usableKwh
+                let samples = history.filter { $0.impliedCapacityKwh != nil }.count
+                if let measured, rated > 0 {
+                    let pct = measured / rated * 100
+                    HStack {
+                        Text("Measured capacity").foregroundStyle(Theme.dim)
+                        Spacer()
+                        RollingText(text: "\(Int(pct.rounded()))%", size: 22, weight: .bold)
+                    }
+                    MeterBar(fraction: pct / 100, gradient: LinearGradient(colors: [Theme.violet, Theme.cyan, Theme.aqua], startPoint: .leading, endPoint: .trailing))
+                        .padding(.vertical, 8)
+                    KeyValue("Usable now", Format.n(measured, 1) + " kWh")
+                    KeyValue("Rated usable", Format.n(rated, 1) + " kWh")
+                    Text("From \(samples) charging session\(samples == 1 ? "" : "s"). Each charge that adds 20% or more is measured at the battery.")
+                        .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 6)
+                } else {
+                    Text("Not measured yet").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                    Text("The car doesn't report battery health directly. Ocean Live works it out from your charging: keep the app connected through a charge that adds at least 20%.")
+                        .font(.system(size: 13)).foregroundStyle(Theme.dim).padding(.top, 4)
+                }
+            }
+
+            SectionTitle("Cells")
+            CardBox {
+                KeyValue("Highest", s.cellMax.map { "\(Int($0.rounded())) mV" })
+                KeyValue("Average", s.cellAvg.map { "\(Int($0.rounded())) mV" })
+                KeyValue("Lowest", s.cellMin.map { "\(Int($0.rounded())) mV" })
+                if let spread = s.cellSpread {
+                    HStack {
+                        Text("Spread").foregroundStyle(Theme.dim)
+                        Spacer()
+                        Text("\(Int(spread.rounded())) mV · \(balanceLabel(spread))")
+                            .fontWeight(.semibold).foregroundStyle(Theme.balanceColor(spread))
+                    }
+                    .padding(.top, 8)
+                    MeterBar(fraction: spread / 150, gradient: LinearGradient(colors: [Theme.good, Theme.warn, Theme.bad], startPoint: .leading, endPoint: .trailing))
+                        .padding(.top, 8)
+                    Text("Under 60 mV is normal. A spread that keeps growing over weeks is worth a dealer check.")
+                        .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 8)
+                }
+            }
+
+            SectionTitle("Temperatures")
+            CardBox {
+                KeyValue("Battery highest", Format.temp(s.tempMax, settings))
+                KeyValue("Battery average", Format.temp(s.tempAvg, settings))
+                KeyValue("Battery lowest", Format.temp(s.tempMin, settings))
+                KeyValue("Coolant in", Format.temp(s.coolantIn, settings))
+                KeyValue("Coolant out", Format.temp(s.coolantOut, settings))
+                if let t = s.tempAvg {
+                    Text(tempAdvice(t)).font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 8)
+                }
+            }
+
+            SectionTitle("High voltage")
+            CardBox {
+                KeyValue("Pack voltage", s.packV.map { Format.n($0, 1) + " V" })
+                KeyValue("Pack current", s.packA.map { Format.n($0, 1) + " A" })
+                KeyValue("Power", s.powerKw.map { Format.n($0, 2) + " kW" })
+                KeyValue("Isolation resistance", s.isolation.map { "\(Int($0.rounded())) kΩ" })
+                KeyValue("12V battery", s.aux12v.map { Format.n($0, 2) + " V" + (s.aux12vSource.map { " (\($0))" } ?? "") })
+                if let vin = car.state.vin { KeyValue("VIN", vin) }
+            }
+
+            let charges = history.filter { $0.kind == .Charge }
+            if !charges.isEmpty {
+                SectionTitle("Charging totals")
+                CardBox {
+                    KeyValue("Sessions", "\(charges.count)")
+                    KeyValue("Energy added", Format.n(charges.reduce(0) { $0 + $1.kwh }, 0) + " kWh")
+                    KeyValue("DC fast sessions", "\(charges.filter { $0.fast }.count)")
+                }
+            }
+        }
+    }
+}

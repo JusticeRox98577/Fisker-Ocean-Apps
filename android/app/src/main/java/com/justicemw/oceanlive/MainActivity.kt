@@ -1,6 +1,7 @@
 package com.justicemw.oceanlive
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -8,64 +9,83 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import java.util.Locale
-
-private val Aqua = Color(0xFF4FD1C5)
-private val Card = Color(0xFF14202B)
-private val Dim = Color(0xFF8A9BA8)
+import com.justicemw.oceanlive.car.Car
+import com.justicemw.oceanlive.car.HistoryStore
+import com.justicemw.oceanlive.car.Status
+import com.justicemw.oceanlive.ui.Aqua
+import com.justicemw.oceanlive.ui.BackgroundBrush
+import com.justicemw.oceanlive.ui.BatteryScreen
+import com.justicemw.oceanlive.ui.Bg
+import com.justicemw.oceanlive.ui.CardBg
+import com.justicemw.oceanlive.ui.CardEdge
+import com.justicemw.oceanlive.ui.Dim
+import com.justicemw.oceanlive.ui.FaultsScreen
+import com.justicemw.oceanlive.ui.LiveScreen
+import com.justicemw.oceanlive.ui.OceanBrush
+import com.justicemw.oceanlive.ui.SettingsScreen
+import com.justicemw.oceanlive.ui.TripsScreen
+import com.justicemw.oceanlive.ui.faultReport
 
 class MainActivity : ComponentActivity() {
-    private lateinit var monitor: Monitor
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        monitor = Monitor(this)
+        enableEdgeToEdge()
+        Car.init(this)
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme(primary = Aqua, background = Color(0xFF0B1218))) {
-                Screen(monitor, ::hasPermissions, ::keepScreenOn)
+            MaterialTheme(colorScheme = darkColorScheme(primary = Aqua, background = Bg, surface = CardBg)) {
+                App(::keepScreenOn)
             }
         }
-    }
-
-    override fun onDestroy() {
-        monitor.close()
-        super.onDestroy()
-    }
-
-    private fun hasPermissions(): Boolean = requiredPermissions().all {
-        ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun keepScreenOn(on: Boolean) {
@@ -74,190 +94,195 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-fun requiredPermissions(): Array<String> =
+fun bluetoothPermissions(): Array<String> = buildList {
     if (Build.VERSION.SDK_INT >= 31) {
-        arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+        add(Manifest.permission.BLUETOOTH_SCAN)
+        add(Manifest.permission.BLUETOOTH_CONNECT)
     } else {
-        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        add(Manifest.permission.ACCESS_FINE_LOCATION)
     }
+    if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
+}.toTypedArray()
+
+private enum class Tab(val label: String, val glyph: String) {
+    Live("Live", "◉"), Battery("Battery", "▮"), Trips("Trips", "≋"), Faults("Faults", "⚠"), Settings("Settings", "⚙")
+}
 
 @Composable
-private fun Screen(monitor: Monitor, hasPermissions: () -> Boolean, keepScreenOn: (Boolean) -> Unit) {
+private fun App(keepScreenOn: (Boolean) -> Unit) {
+    val context = LocalContext.current
+    val state by Car.state.collectAsState()
+    val settings by Car.settings.collectAsState()
+    val history by Car.history.collectAsState()
+    val found by Car.found.collectAsState()
+    val faults by Car.faults.collectAsState()
+    val action by Car.action.collectAsState()
+    val importedCount by Car.importedDescriptions.collectAsState()
+    var tab by rememberSaveable { mutableIntStateOf(0) }
+
+    fun granted(p: String) = ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
     val pending = remember { arrayOfNulls<() -> Unit>(1) }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-        if (result.values.all { it }) pending[0]?.invoke()
+    val btLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        // Notifications are optional; Bluetooth is not.
+        val needed = result.filterKeys { it != Manifest.permission.POST_NOTIFICATIONS }
+        if (needed.values.all { it }) pending[0]?.invoke()
+        pending[0] = null
     }
-    fun withPermissions(action: () -> Unit) {
-        if (hasPermissions()) action() else {
+    val simpleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
+    fun withBluetooth(action: () -> Unit) {
+        val missing = bluetoothPermissions().filterNot { granted(it) }
+        if (missing.none { it != Manifest.permission.POST_NOTIFICATIONS }) {
+            if (missing.isNotEmpty()) simpleLauncher.launch(missing.toTypedArray())
+            action()
+        } else {
             pending[0] = action
-            launcher.launch(requiredPermissions())
+            btLauncher.launch(missing.toTypedArray())
         }
     }
 
-    val live = monitor.status == Status.Live
-    DisposableEffect(live) {
-        keepScreenOn(live)
-        onDispose { }
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        if (uri != null) context.contentResolver.openOutputStream(uri)?.use { it.write(HistoryStore.csv(history).toByteArray()) }
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .safeDrawingPadding()
-            .padding(20.dp),
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val text = try {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+        } catch (_: Exception) { null }
+        val n = text?.let { Car.importDescriptions(it) }
+        android.widget.Toast.makeText(
+            context,
+            if (n == null) "No fault codes found in that file. Use CSV (code,description) or JSON." else "Imported $n descriptions",
+            android.widget.Toast.LENGTH_LONG,
+        ).show()
+    }
+
+    // Auto-connect once per app launch.
+    LaunchedEffect(Unit) {
+        if (settings.autoStart && settings.adapterAddress != null && state.status == Status.Idle &&
+            bluetoothPermissions().filter { it != Manifest.permission.POST_NOTIFICATIONS }.all { granted(it) }
+        ) Car.connectSaved()
+    }
+    val live = state.status == Status.Live
+    LaunchedEffect(live, settings.keepScreenOn) { keepScreenOn(live && settings.keepScreenOn) }
+
+    Box(Modifier.fillMaxSize().background(Bg).background(BackgroundBrush)) {
+        Column(Modifier.fillMaxSize().statusBarsPadding()) {
+            Header(state.status, state.adapterName)
+            AnimatedContent(
+                targetState = tab,
+                transitionSpec = {
+                    val dir = if (targetState > initialState) 1 else -1
+                    (slideInHorizontally(tween(280)) { it / 6 * dir } + fadeIn(tween(280))) togetherWith
+                        (slideOutHorizontally(tween(200)) { -it / 6 * dir } + fadeOut(tween(200)))
+                },
+                modifier = Modifier.weight(1f),
+                label = "tabs",
+            ) { current ->
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 24.dp)) {
+                    when (Tab.entries[current]) {
+                        Tab.Live -> LiveScreen(
+                            state, settings, history, found, Car.bluetoothOn,
+                            onScan = { withBluetooth { Car.scan() } },
+                            onCancelScan = { Car.cancelScan() },
+                            onConnect = { a -> withBluetooth { Car.connect(a.address, a.name) } },
+                            onConnectSaved = { withBluetooth { Car.connectSaved() } },
+                            onDisconnect = { Car.disconnect() },
+                        )
+                        Tab.Battery -> BatteryScreen(state, settings, history)
+                        Tab.Trips -> TripsScreen(
+                            history, settings,
+                            onExport = { exportLauncher.launch("ocean-live-history.csv") },
+                            onClear = { Car.clearHistory() },
+                            onDelete = { Car.deleteHistory(it) },
+                        )
+                        Tab.Faults -> FaultsScreen(
+                            state, faults, action,
+                            // Reads state, faults and action above, so it recomputes whenever they change.
+                            blockedReason = Car.changeBlockedReason(),
+                            onScan = { Car.scanFaults() },
+                            onShare = {
+                                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, faultReport(state, faults))
+                                context.startActivity(Intent.createChooser(send, "Share fault report"))
+                            },
+                            onClear = { Car.clearCodes(it) },
+                            onRestart = { Car.restartModule(it) },
+                            onDismissResults = { Car.dismissActionResults() },
+                            importedCount = importedCount,
+                            onImport = { importLauncher.launch(arrayOf("text/*", "application/json", "application/octet-stream")) },
+                            onClearImported = { Car.clearImportedDescriptions() },
+                        )
+                        Tab.Settings -> SettingsScreen(
+                            settings, Car::updateSettings,
+                            onForget = { Car.forgetAdapter() },
+                            onNeedNotifications = {
+                                if (Build.VERSION.SDK_INT >= 33 && !granted(Manifest.permission.POST_NOTIFICATIONS)) {
+                                    simpleLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
+                                }
+                            },
+                            onNeedLocation = {
+                                if (!granted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                                    simpleLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                                }
+                            },
+                        )
+                    }
+                }
+            }
+            NavBar(tab) { tab = it }
+        }
+    }
+}
+
+@Composable
+private fun Header(status: Status, adapter: String?) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("Ocean Live", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            val text = when (status) {
+                Status.Live -> "Connected to ${adapter ?: "adapter"}"
+                Status.Connecting -> "Connecting"
+                Status.Reconnecting -> "Reconnecting"
+                Status.Scanning -> "Looking for adapters"
+                Status.Error -> "Not connected"
+                Status.Idle -> "Not connected"
+            }
+            Text(text, color = Dim, fontSize = 13.sp)
+        }
+        val dot by animateColorAsState(
+            when (status) {
+                Status.Live -> Aqua
+                Status.Connecting, Status.Reconnecting, Status.Scanning -> com.justicemw.oceanlive.ui.Warn
+                else -> Dim
+            }, tween(500), label = "dot",
+        )
+        Box(Modifier.size(10.dp).clip(CircleShape).background(dot))
+    }
+}
+
+@Composable
+private fun NavBar(selected: Int, onSelect: (Int) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().background(Bg).navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceAround,
     ) {
-        Text("Ocean Live", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-        Text("Bluetooth only · no account · v3.0", color = Dim, fontSize = 13.sp)
-        Spacer(Modifier.height(20.dp))
-
-        when (monitor.status) {
-            Status.Live -> LiveView(monitor)
-            Status.Connecting -> Centered {
-                CircularProgressIndicator(color = Aqua)
-                Spacer(Modifier.height(12.dp))
-                Text("Connecting to adapter…", color = Dim)
-            }
-            Status.Scanning -> ScanView(monitor) { address, name -> withPermissions { monitor.connect(address, name) } }
-            Status.Idle, Status.Error -> StartView(
-                monitor,
-                onScan = { withPermissions { monitor.scan() } },
-                onReconnect = { withPermissions { monitor.connect(monitor.savedAddress!!, monitor.savedName ?: "Adapter") } },
-            )
-        }
-    }
-}
-
-@Composable
-private fun Centered(content: @Composable () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().padding(top = 60.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) { content() }
-}
-
-@Composable
-private fun StartView(monitor: Monitor, onScan: () -> Unit, onReconnect: () -> Unit) {
-    Text(
-        "Plug a Bluetooth LE OBD adapter into the car, turn the car on, then connect.",
-        color = Dim,
-    )
-    if (!monitor.bluetoothOn) {
-        Spacer(Modifier.height(12.dp))
-        Text("Bluetooth is off. Turn it on in your phone's settings.", color = Color(0xFFFFB74D))
-    }
-    monitor.message?.let {
-        Spacer(Modifier.height(12.dp))
-        Text(it, color = Color(0xFFFF8A80))
-    }
-    Spacer(Modifier.height(20.dp))
-    val saved = monitor.savedAddress
-    if (saved != null) {
-        Button(onClick = onReconnect, modifier = Modifier.fillMaxWidth()) {
-            Text("Connect to ${monitor.savedName ?: saved}")
-        }
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = onScan, modifier = Modifier.fillMaxWidth()) { Text("Choose a different adapter") }
-        TextButton(onClick = { monitor.forgetAdapter() }) { Text("Forget saved adapter", color = Dim) }
-    } else {
-        Button(onClick = onScan, modifier = Modifier.fillMaxWidth()) { Text("Find adapter") }
-    }
-}
-
-@Composable
-private fun ScanView(monitor: Monitor, onPick: (String, String) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        CircularProgressIndicator(color = Aqua, modifier = Modifier.height(18.dp), strokeWidth = 2.dp)
-        Spacer(Modifier.padding(start = 10.dp))
-        Text("Looking for adapters…", color = Dim, modifier = Modifier.weight(1f))
-        TextButton(onClick = { monitor.disconnect() }) { Text("Cancel") }
-    }
-    Spacer(Modifier.height(12.dp))
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(monitor.found, key = { it.address }) { adapter ->
+        Tab.entries.forEachIndexed { i, t ->
+            val on = i == selected
+            val color by animateColorAsState(if (on) Aqua else Dim, tween(250), label = "nav")
             Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Card, RoundedCornerShape(12.dp))
-                    .clickable { onPick(adapter.address, adapter.name) }
-                    .padding(14.dp),
+                Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
+                    .clickable(remember { MutableInteractionSource() }, null) { onSelect(i) }
+                    .padding(vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(adapter.name, color = Color.White, fontWeight = FontWeight.SemiBold)
-                Text("${adapter.address} · ${adapter.rssi} dBm", color = Dim, fontSize = 12.sp)
+                Text(t.glyph, color = color, fontSize = 18.sp)
+                Text(t.label, color = color, fontSize = 11.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal)
+                Spacer(Modifier.height(4.dp))
+                Box(
+                    Modifier.width(if (on) 18.dp else 0.dp).height(3.dp).clip(RoundedCornerShape(2.dp))
+                        .background(if (on) OceanBrush else androidx.compose.ui.graphics.SolidColor(CardEdge)),
+                )
             }
         }
     }
 }
-
-@Composable
-private fun LiveView(monitor: Monitor) {
-    val v = monitor.values
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("State of charge", color = Dim)
-        Text(
-            v["soc"]?.let { fmt(it, 1) + "%" } ?: "—",
-            color = Aqua,
-            fontSize = 56.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-    Spacer(Modifier.height(16.dp))
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Tile("Pack voltage", v["voltage"]?.let { fmt(it, 1) + " V" }, Modifier.weight(1f))
-        Tile("Current", v["current"]?.let { fmt(it, 1) + " A" }, Modifier.weight(1f))
-    }
-    Spacer(Modifier.height(10.dp))
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Tile("Power", v["power"]?.let { fmt(it, 1) + " kW" }, Modifier.weight(1f))
-        Tile(
-            "Battery temp",
-            v["batt_temp"]?.let { fmt(it, 0) + " °C / " + fmt(it * 9 / 5 + 32, 0) + " °F" },
-            Modifier.weight(1f),
-        )
-    }
-    Spacer(Modifier.height(10.dp))
-    val cellMax = v["cell_max"]
-    val cellMin = v["cell_min"]
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Tile(
-            "Cells min / max",
-            if (cellMin != null && cellMax != null) "${fmt(cellMin, 0)} / ${fmt(cellMax, 0)} mV" else null,
-            Modifier.weight(1f),
-            caption = if (cellMin != null && cellMax != null) "Spread ${fmt(cellMax - cellMin, 0)} mV" else null,
-        )
-        Tile(
-            "12V battery",
-            v["aux_voltage"]?.let { fmt(it, 2) + " V" },
-            Modifier.weight(1f),
-            caption = v["aux_voltage"]?.let { auxStatus(it) + (monitor.auxSource?.let { s -> " · $s" } ?: "") },
-        )
-    }
-    Spacer(Modifier.height(16.dp))
-    Text(
-        monitor.lastUpdate?.let { "Updated " + java.text.DateFormat.getTimeInstance().format(it) } ?: "Waiting for data…",
-        color = Dim,
-        fontSize = 12.sp,
-    )
-    Spacer(Modifier.height(16.dp))
-    OutlinedButton(onClick = { monitor.disconnect() }, modifier = Modifier.fillMaxWidth()) { Text("Disconnect") }
-}
-
-/** Rough reading of a 12V voltage. Above ~13.2 V the car's DC-DC converter is charging it. */
-private fun auxStatus(volts: Double): String = when {
-    volts >= 13.2 -> "Charging"
-    volts >= 12.4 -> "Good"
-    volts >= 12.0 -> "Low"
-    else -> "Very low, charge soon"
-}
-
-@Composable
-private fun Tile(label: String, value: String?, modifier: Modifier, caption: String? = null) {
-    Column(modifier.background(Card, RoundedCornerShape(14.dp)).padding(14.dp)) {
-        Text(label, color = Dim, fontSize = 13.sp)
-        Spacer(Modifier.height(4.dp))
-        Text(value ?: "—", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
-        if (caption != null) Text(caption, color = Dim, fontSize = 12.sp)
-    }
-}
-
-private fun fmt(value: Double, decimals: Int) = String.format(Locale.US, "%.${decimals}f", value)

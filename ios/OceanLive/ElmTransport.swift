@@ -113,7 +113,7 @@ final class ElmTransport: NSObject {
     }
 
     func initialize() async throws {
-        for command in Obd.initCommands {
+        for command in Elm.initCommands {
             _ = try await send(command, timeout: command == "ATZ" ? 6 : 4)
             if command == "ATZ" { try await Task.sleep(nanoseconds: 300_000_000) }
         }

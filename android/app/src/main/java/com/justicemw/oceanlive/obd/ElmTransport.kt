@@ -1,4 +1,4 @@
-package com.justicemw.oceanlive
+package com.justicemw.oceanlive.obd
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
@@ -110,7 +110,7 @@ class ElmTransport(context: Context) {
         }
         val bytes = "$command\r".toByteArray(Charsets.UTF_8)
         val ok = if (Build.VERSION.SDK_INT >= 33) {
-            g.writeCharacteristic(c, bytes, writeType) == BluetoothGatt.GATT_SUCCESS
+            g.writeCharacteristic(c, bytes, writeType) == android.bluetooth.BluetoothStatusCodes.SUCCESS
         } else {
             c.writeType = writeType
             c.value = bytes
@@ -128,7 +128,7 @@ class ElmTransport(context: Context) {
     }
 
     suspend fun initialize() {
-        for (command in Obd.initCommands) {
+        for (command in Elm.initCommands) {
             send(command, if (command == "ATZ") 6_000 else 4_000)
             if (command == "ATZ") delay(300)
         }

@@ -1,20 +1,31 @@
 # Ocean Live
 
-Live battery and 12V monitoring for the Fisker Ocean over a Bluetooth OBD adapter.
-No account, no cloud, no internet permission. Your car talks to your phone and nothing else.
+Battery, trips and fault codes for the Fisker Ocean over a Bluetooth OBD adapter.
+No account and no cloud. Your car talks to your phone; the only thing that ever leaves it
+is optional live data to A Better Route Planner, if you set that up.
 
 | Folder | App |
 | --- | --- |
 | `android` | Android app, Kotlin and Jetpack Compose |
 | `ios` | iPhone app, Swift, SwiftUI and CoreBluetooth |
 
-## What it shows
+Both apps have the same features and decode the car the same way; their unit tests share
+the same expected values.
 
-* State of charge
-* HV pack voltage, current and live power
-* Battery temperature
-* Lowest and highest cell voltage and the spread between them
-* 12V battery voltage and status
+## What it does
+
+* **Live:** state of charge, estimated range, power in and out, the current charge or drive
+* **Battery:** pack voltage and current, cell voltages and spread, battery and coolant
+  temperatures, insulation resistance, the 12V battery, and usable capacity measured from
+  your own charging
+* **Trips:** drive and charge history with efficiency, CSV export
+* **Faults:** reads stored fault codes from 39 modules with plain-language descriptions.
+  Codes can be cleared and modules restarted, only while parked and not charging, and the
+  app always asks first. You can import fault description lists (CSV, or JSON with names,
+  causes and repair steps); they stay on your phone
+* **Alerts:** charge level, charging stopped, low 12V battery, uneven cells, hot pack
+* **ABRP:** optional live telemetry to A Better Route Planner
+* Android also has a home screen widget and Android Auto
 
 ## What you need
 
@@ -24,25 +35,30 @@ similar clone. Plug it into the car's OBD port, turn the car on, open Ocean Live
 
 ## How it reads the car
 
-Everything is a read-only UDS ReadDataByIdentifier request (service `22`) to the battery
-management ECU, addressed with `ATSH7E1` / `ATCRA7E9`.
+Readings are UDS ReadDataByIdentifier requests (service `22`) to the battery management
+ECU, addressed with `ATSH7E1` / `ATCRA7E9`. The values were checked against the car's own
+screen.
 
 | Value | DID | Formula |
 | --- | --- | --- |
-| Pack voltage | `2003` | `(A*256+B)/10` V |
-| Pack current | `2016` | signed word at bytes 3 and 4, `/10` A |
-| Battery temp | `2038` | `(A*256+B)/2-50` °C |
 | State of charge | `2050` | `(A*256+B)/10` % |
-| Cell voltage max | `2137` | `A*256+B` mV |
-| Cell voltage min | `2138` | `A*256+B` mV |
+| Pack voltage | `2003` | `(A*256+B)/10` V |
+| Pack current | `2004` | `(raw/10 - 2000)`, negated so charging is positive, A |
+| Battery temp avg / max / min | `2038` / `2039` / `2040` | `(A*256+B)/2-50` °C |
+| Coolant in / out | `2026` / `2027` | `(A*256+B)/2-50` °C |
+| Cell voltage avg / max / min | `2136` / `2137` / `2138` | `A*256+B` mV |
+| Isolation resistance | `2069` | `A*256+B` kΩ |
 | 12V battery | `2130` | `(A*256+B)/1000` V |
+| Odometer (BCM `7C1`) | `3409` | 4 bytes `/100` km |
 
-The 12V DID comes from the Ocean's diagnostic data (KL30 voltage) and hasn't been
-confirmed on every car yet. If it doesn't answer, the app falls back to `ATRV`, which
-reports the adapter's own supply voltage from OBD pin 16. That is the 12V system,
-accurate to roughly ±0.2 V.
+If the 12V DID doesn't answer, the app falls back to `ATRV`, the adapter's own supply
+voltage from OBD pin 16.
 
-The app never writes to the car, never clears codes and never sends anything to a server.
+Fault codes use ReadDTCInformation (`19 02 FF`) on each module. Clearing sends
+ControlDTCSetting off (`85 02`), ClearDiagnosticInformation (`14 FF FF FF`), then
+ControlDTCSetting on (`85 01`); restarting sends ECUReset (`11 03`, or `11 01` for the
+telematics units). Nothing else is ever written to the car, and the app never uses
+security access.
 
 ## Building
 
