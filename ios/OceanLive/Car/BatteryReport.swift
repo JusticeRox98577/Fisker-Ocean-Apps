@@ -1,73 +1,107 @@
 import Foundation
 
-/// How a report value should stand out.
+/// How a value should be coloured in the report.
 enum ReportTone: Sendable {
-    case plain, good, warn, bad, missing
+    case normal, good, warn, bad, missing
 }
 
 struct ReportRow: Equatable, Sendable {
     let label: String
     let value: String
-    var tone: ReportTone = .plain
+    var tone: ReportTone = .normal
+}
+
+/// A headline number at the top of the report.
+struct ReportTile: Equatable, Sendable {
+    let label: String
+    let value: String
+    let caption: String
+    let tone: ReportTone
+}
+
+/// An active fault code with its plain-English description.
+struct ReportCode: Equatable, Sendable {
+    let module: String
+    let code: String
+    let description: String
 }
 
 struct ReportSection: Equatable, Sendable {
     let title: String
     var rows: [ReportRow]
+    var note: String? = nil
+    var codes: [ReportCode] = []
 }
 
-/// The one-page battery health report, built only from what the app already has:
-/// the last readings in memory, saved drives and charges, parked drain and the last fault scan.
-/// It never talks to the car. Pure data so it can be unit tested and drawn off the main thread.
+/// Everything on the one-page battery report, as plain text. Drawn by `BatteryReportPdf`.
 struct BatteryReport: Equatable, Sendable {
-    static let title = "Ocean Live battery report"
-    static let missing = "not measured yet"
-    static let footer = "Read from the car by Ocean Live (unofficial). Values are measured, not a dealer diagnosis."
-    static let fileName = "Ocean Live battery report.pdf"
-    /// Most active codes listed before the rest are summed up, so the report stays on one page.
-    static let maxCodes = 8
-
+    var title: String
     var date: String
-    var vin: String?
     var carLine: String
-    /// Drawn in two columns on the page.
-    var left: [ReportSection]
-    var right: [ReportSection]
-    /// The last fault scan, or nil when there isn't one.
-    var faults: ReportSection?
+    var tiles: [ReportTile]
+    var sections: [ReportSection]
+    var faults: ReportSection
+    var footer: String
+    /// File name of the shared PDF.
+    var pdfName: String
+}
 
-    static func make(settings: Settings, snapshot s: Snapshot, history: [HistoryEntry], drains: [ParkedDrain],
-                     vin: String?, scans: [SavedScan], now: Date = Date()) -> BatteryReport {
-        func when(_ d: Date) -> String { d.formatted(date: .abbreviated, time: .shortened) }
-        func row(_ label: String, _ value: String?, _ tone: ReportTone = .plain) -> ReportRow {
-            value.map { ReportRow(label: label, value: $0, tone: tone) } ?? ReportRow(label: label, value: missing, tone: .missing)
-        }
-        func mv(_ v: Double?) -> String? { v.map { "\(Int($0.rounded())) mV" } }
+/// Builds the battery report from data the app already has in memory and history.
+/// It never talks to the car. Pure logic so it can be unit tested.
+extension BatteryReport {
+    static let reportTitle = "Ocean Live battery report"
+    static let notMeasured = "not measured yet"
+    static let reportFooter = "Read from the car by Ocean Live (unofficial). Values are measured, not a dealer diagnosis."
+
+    static func make(
+        now: Int64,
+        vin: String?,
+        snapshot s: Snapshot,
+        settings: Settings,
+        history: [HistoryEntry],
+        drains: [ParkedDrain],
+        scans: [SavedScan],
+        dateText: (Int64) -> String = BatteryReport.defaultDate,
+        describe: (SavedCode) -> String = { $0.dtc.info.title }
+    ) -> BatteryReport {
         let rated = settings.usableKwh
-        let ratedText = rated > 0 ? Format.n(rated, 1) + " kWh" : nil
-
-        var car = ReportSection(title: "Car", rows: [
-            row("Model", settings.model.label),
-            row("Rated usable", ratedText),
-        ])
-        if let vin { car.rows.append(row("VIN", vin)) }
-        car.rows.append(row("Last reading", s.time > 0 ? when(Format.date(s.time)) : nil))
-
         let measured = measuredCapacityKwh(history)
+        let pct: Double? = measured.flatMap { m -> Double? in rated > 0 ? m / rated * 100 : nil }
         let samples = history.filter { $0.impliedCapacityKwh != nil }.count
+        let spread = s.cellSpread
+        let aux = s.aux12v
+
+        let capacityTone: ReportTone = pct.map { p -> ReportTone in p >= 85 ? .good : (p >= 70 ? .warn : .bad) } ?? .missing
+        let spreadTone: ReportTone? = spread.map { balanceTone($0) }
+        let twelveTone: ReportTone? = aux.map { auxTone($0) }
+        let tiles = [
+            ReportTile(label: "Capacity", value: pct.map { "\(Int($0.rounded()))%" } ?? "—",
+                       caption: measured.map { Format.n($0, 1) + " kWh usable" } ?? notMeasured, tone: capacityTone),
+            ReportTile(label: "Cell spread", value: spread.map { "\(Int($0.rounded())) mV" } ?? "—",
+                       caption: spread.map { balanceLabel($0) } ?? notMeasured, tone: spreadTone ?? .missing),
+            ReportTile(label: "12V battery", value: aux.map { Format.n($0, 2) + " V" } ?? "—",
+                       caption: aux.map { auxStatus($0) } ?? notMeasured, tone: twelveTone ?? .missing),
+        ]
+
+        let car = ReportSection(title: "Car", rows: [
+            row("VIN", vin),
+            row("Model", settings.model.label),
+            row("Rated usable", rated > 0 ? Format.n(rated, 1) + " kWh" : nil),
+            row("Live readings from", s.time > 0 ? dateText(s.time) : nil),
+        ])
+
         let health = ReportSection(title: "Battery health", rows: [
             row("Measured usable", measured.map { Format.n($0, 1) + " kWh" }),
-            row("Of rated", measured.flatMap { m -> String? in rated > 0 ? "\(Int((m / rated * 100).rounded()))%" : nil }),
-            row("Based on", samples > 0 ? "\(samples) charging session\(samples == 1 ? "" : "s")" : nil),
-        ])
+            row("Share of rated", pct.map { "\(Int($0.rounded()))%" }, capacityTone),
+            row("Samples", samples > 0 ? "\(samples) charging session\(plural(samples))" : nil),
+        ], note: "Each charge that adds 20% or more is measured at the battery.")
 
-        let spread = s.cellSpread
         let cells = ReportSection(title: "Cells", rows: [
-            row("Highest", mv(s.cellMax)),
-            row("Average", mv(s.cellAvg)),
-            row("Lowest", mv(s.cellMin)),
-            row("Spread", spread.map { "\(Int($0.rounded())) mV · \(balanceLabel($0))" }, spread.map(balanceTone) ?? .plain),
-        ])
+            row("Highest", s.cellMax.map { "\(Int($0.rounded())) mV" }),
+            row("Average", s.cellAvg.map { "\(Int($0.rounded())) mV" }),
+            row("Lowest", s.cellMin.map { "\(Int($0.rounded())) mV" }),
+            row("Spread", spread.map { "\(Int($0.rounded())) mV · \(balanceLabel($0))" }, spreadTone),
+        ], note: "Under 60 mV is normal.")
 
         let temps = ReportSection(title: "Temperatures", rows: [
             row("Battery highest", Format.temp(s.tempMax, settings)),
@@ -77,16 +111,18 @@ struct BatteryReport: Equatable, Sendable {
             row("Coolant out", Format.temp(s.coolantOut, settings)),
         ])
 
-        let electrical = ReportSection(title: "Electrical", rows: [
-            row("Isolation resistance", s.isolation.map { "\(Int($0.rounded())) kΩ" }),
-            row("12V battery", s.aux12v.map { Format.n($0, 2) + " V" }),
-            row("12V status", s.aux12v.map(auxStatus), s.aux12v.map(auxTone) ?? .plain),
+        let electrical = ReportSection(title: "Insulation and 12V", rows: [
+            row("Insulation resistance", s.isolation.map { "\(Int($0.rounded())) kΩ" }),
+            row("12V battery", aux.map { v -> String in Format.n(v, 2) + " V" + (s.aux12vSource.map { " (\($0))" } ?? "") }),
+            row("12V status", aux.map { auxStatus($0) }, twelveTone),
         ])
 
-        let avgDrain = averageDrainPerDay(drains)
+        let perDay = averageDrainPerDay(drains)
         let drain = ReportSection(title: "Parked drain", rows: [
-            row("Average per day", avgDrain.map { Format.perDay($0, settings) }),
-            row("Based on", avgDrain != nil ? "\(drains.count) parked period\(drains.count == 1 ? "" : "s")" : nil),
+            row("Average per day", perDay.map { p -> String in
+                Format.n(p, 1) + "%" + (rated > 0 ? " (about " + Format.n(p / 100 * rated, 1) + " kWh)" : "")
+            }),
+            row("Time measured", perDay != nil ? Format.span(drains.reduce(0) { $0 + $1.hours }) : nil),
         ])
 
         let charges = history.filter { $0.kind == .Charge }
@@ -96,58 +132,109 @@ struct BatteryReport: Equatable, Sendable {
             row("DC fast sessions", charges.isEmpty ? nil : "\(charges.filter { $0.fast }.count)"),
         ])
 
-        var faults: ReportSection?
-        if let scan = FaultHistory.previous(for: vin, in: scans) {
-            var rows = [
-                row("Scanned", when(Format.date(scan.time))),
-                row("Codes", "\(scan.active) active · \(scan.stored) stored", scan.active > 0 ? .warn : .good),
-            ]
-            // Every active code; `fitting` trims them to the room left on the page.
-            for d in Dtcs.activeFirst(scan.dtcs).active {
-                rows.append(ReportRow(label: "\(d.code) · \(d.ecu.code)", value: d.info.title))
-            }
-            faults = ReportSection(title: "Last fault scan", rows: rows)
-        }
+        let parts: [String?] = [
+            "Fisker " + settings.model.label,
+            rated > 0 ? Format.n(rated, 1) + " kWh rated" : nil,
+            vin.map { "VIN " + $0 },
+        ]
 
         return BatteryReport(
-            date: when(now),
-            vin: vin,
-            carLine: settings.model.label + (ratedText.map { " · \($0) rated usable" } ?? ""),
-            left: [car, health, cells, temps],
-            right: [electrical, drain, charging],
-            faults: faults
+            title: reportTitle,
+            date: dateText(now),
+            carLine: parts.compactMap { $0 }.joined(separator: " · "),
+            tiles: tiles,
+            sections: [car, health, cells, temps, electrical, drain, charging],
+            faults: faultSection(scans.max { $0.time < $1.time }, dateText: dateText, describe: describe),
+            footer: reportFooter,
+            pdfName: fileName(now: now)
         )
     }
 
-    /// The fault section cut down to `rows` rows at most: the scan date and counts, then as many
-    /// active codes as fit (never more than `maxCodes`), then how many were left out.
-    static func fitting(_ faults: ReportSection, rows: Int) -> ReportSection {
-        let head = Array(faults.rows.prefix(2))
-        let codes = Array(faults.rows.dropFirst(2))
-        var shown = Swift.min(codes.count, maxCodes, Swift.max(rows - head.count, 0))
-        if shown < codes.count { shown = Swift.min(shown, Swift.max(rows - head.count - 1, 0)) }
-        var out = ReportSection(title: faults.title, rows: head + codes.prefix(shown))
-        let left = codes.count - shown
-        if left > 0 {
-            out.rows.append(ReportRow(label: "", value: "and \(left) more active code\(left == 1 ? "" : "s")"))
+    private static func faultSection(_ scan: SavedScan?, dateText: (Int64) -> String,
+                                     describe: (SavedCode) -> String) -> ReportSection {
+        guard let scan else {
+            return ReportSection(title: "Latest fault scan",
+                                 rows: [ReportRow(label: "Last scan", value: "not run yet", tone: .missing)])
         }
-        return out
+        let active = scan.codes.filter { Dtcs.state($0.status) == .active }
+        return ReportSection(
+            title: "Latest fault scan",
+            rows: [
+                ReportRow(label: "Scanned", value: dateText(scan.time)),
+                ReportRow(label: "Active codes", value: "\(scan.active)", tone: scan.active > 0 ? .bad : .good),
+                ReportRow(label: "Stored codes", value: "\(scan.stored)", tone: scan.stored > 0 ? .warn : .normal),
+            ],
+            codes: active.map { ReportCode(module: $0.ecu, code: $0.code, description: describe($0)) }
+        )
     }
 
-    static func balanceTone(_ mv: Double) -> ReportTone { mv <= 60 ? .good : mv <= 100 ? .warn : .bad }
+    private static func row(_ label: String, _ value: String?, _ tone: ReportTone? = nil) -> ReportRow {
+        guard let value else { return ReportRow(label: label, value: notMeasured, tone: .missing) }
+        return ReportRow(label: label, value: value, tone: tone ?? .normal)
+    }
 
-    static func auxTone(_ volts: Double) -> ReportTone {
-        switch auxStatus(volts) {
-        case "Charging", "Good": return .good
-        case "Low": return .warn
-        default: return .bad
+    private static func plural(_ n: Int) -> String { n == 1 ? "" : "s" }
+
+    static func balanceTone(_ mv: Double) -> ReportTone { mv <= 60 ? .good : (mv <= 100 ? .warn : .bad) }
+
+    static func auxTone(_ volts: Double) -> ReportTone { volts >= 12.4 ? .good : (volts >= 12.0 ? .warn : .bad) }
+
+    static func defaultDate(_ time: Int64) -> String {
+        Format.date(time).formatted(date: .abbreviated, time: .shortened)
+    }
+
+    /// A file name such as "ocean-live-battery-report-2026-11-12.pdf".
+    static func fileName(now: Int64, calendar: Calendar = .current) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.timeZone = calendar.timeZone
+        f.dateFormat = "yyyy-MM-dd"
+        return "ocean-live-battery-report-" + f.string(from: Format.date(now)) + ".pdf"
+    }
+
+    /// Splits sections of these `heights` into two columns without changing their order,
+    /// so the taller column is as short as possible. Returns how many go in the left column.
+    static func splitColumns(_ heights: [Double]) -> Int {
+        if heights.count < 2 { return heights.count }
+        let total = heights.reduce(0, +)
+        var best = 1
+        var bestMax = Double.greatestFiniteMagnitude
+        var left = 0.0
+        for i in 1..<heights.count {
+            left += heights[i - 1]
+            let m = Swift.max(left, total - left)
+            if m < bestMax { bestMax = m; best = i }
         }
+        return best
+    }
+
+    /// How many items of these `heights` fit in `space`. When some are left out, room is
+    /// kept for a "+ N more" line of `moreHeight`.
+    static func itemsThatFit(_ heights: [Double], space: Double, moreHeight: Double) -> Int {
+        if heights.reduce(0, +) <= space { return heights.count }
+        var used = moreHeight
+        var n = 0
+        for h in heights {
+            if used + h > space { break }
+            used += h
+            n += 1
+        }
+        return n
+    }
+
+    /// The same report dated `now`, with a matching file name.
+    func stamped(_ now: Int64) -> BatteryReport {
+        var r = self
+        r.date = BatteryReport.defaultDate(now)
+        r.pdfName = BatteryReport.fileName(now: now)
+        return r
     }
 
     /// Every row, for tests and lookups.
-    var allRows: [ReportRow] { (left + right + (faults.map { [$0] } ?? [])).flatMap(\.rows) }
+    var allRows: [ReportRow] { (sections + [faults]).flatMap(\.rows) }
 
     func value(_ section: String, _ label: String) -> String? {
-        (left + right + (faults.map { [$0] } ?? [])).first { $0.title == section }?.rows.first { $0.label == label }?.value
+        (sections + [faults]).first { $0.title == section }?.rows.first { $0.label == label }?.value
     }
 }

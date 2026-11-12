@@ -105,7 +105,8 @@ struct BatteryView: View {
             }
 
             let charges = history.filter { $0.kind == .Charge }
-            VStack(alignment: .leading, spacing: 0) {
+            // Grouped so the page stays within the view builder's child limit.
+            Group {
                 if !charges.isEmpty {
                     SectionTitle("Charging totals")
                     CardBox {
@@ -115,20 +116,23 @@ struct BatteryView: View {
                     }
                 }
 
-                // Built from what the app already has. Sharing never asks the car for anything.
-                let report = BatteryReport.make(settings: settings, snapshot: s, history: history, drains: drains,
-                                                vin: car.state.vin, scans: car.pastScans)
-                ShareLink(item: report, preview: SharePreview(BatteryReport.title, image: Image(systemName: "doc.richtext"))) {
-                    Text("Share battery report")
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.aqua)
-                        .frame(maxWidth: .infinity, minHeight: 48)
-                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.aqua.opacity(0.4), lineWidth: 1))
+                SectionTitle("Report")
+                CardBox {
+                    Text("A one-page PDF of everything above plus your latest fault scan, to keep or send to a buyer or shop. It uses what the app already has and doesn't read from the car.")
+                        .font(.system(size: 13)).foregroundStyle(Theme.dim)
+                    // Built from what the app already has. Sharing never asks the car for anything.
+                    let report = BatteryReport.make(now: Int64(Date().timeIntervalSince1970 * 1000), vin: car.state.vin,
+                                                    snapshot: s, settings: settings, history: history, drains: drains,
+                                                    scans: car.pastScans)
+                    ShareLink(item: report, preview: SharePreview(report.title, image: Image(systemName: "doc.richtext"))) {
+                        Text("Share battery report")
+                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.aqua)
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.aqua.opacity(0.4), lineWidth: 1))
+                    }
+                    .buttonStyle(PressStyle())
+                    .padding(.top, 12)
                 }
-                .buttonStyle(PressStyle())
-                .padding(.top, 22)
-                Text("A one-page PDF of the readings and history on this phone.")
-                    .font(.system(size: 12)).foregroundStyle(Theme.dim)
-                    .frame(maxWidth: .infinity).padding(.top, 8)
             }
         }
         .sheet(isPresented: $showV12) { V12View().environmentObject(car) }
