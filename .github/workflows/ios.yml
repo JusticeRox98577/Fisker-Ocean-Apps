@@ -23,6 +23,16 @@ jobs:
         working-directory: ios
     steps:
       - uses: actions/checkout@v4
+      - name: Use Xcode 26
+        # App Store Connect only accepts builds made with the iOS 26 SDK or later.
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -viE 'beta|release_candidate|_rc' | sort -V | tail -1)
+          if [ -z "$XC" ]; then
+            echo "No stable Xcode 26 on this runner. Installed:"; ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
       - name: Generate Xcode project
         run: |
           brew install xcodegen
