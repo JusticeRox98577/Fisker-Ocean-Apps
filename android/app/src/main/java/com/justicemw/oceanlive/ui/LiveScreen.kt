@@ -35,6 +35,7 @@ import com.justicemw.oceanlive.Format
 import com.justicemw.oceanlive.car.CarState
 import com.justicemw.oceanlive.car.HistoryEntry
 import com.justicemw.oceanlive.car.Mode
+import com.justicemw.oceanlive.car.ParkedDrain
 import com.justicemw.oceanlive.car.Settings
 import com.justicemw.oceanlive.car.Status
 import com.justicemw.oceanlive.obd.FoundAdapter
@@ -48,6 +49,7 @@ fun LiveScreen(
     state: CarState,
     settings: Settings,
     history: List<HistoryEntry>,
+    parked: List<ParkedDrain>,
     found: List<FoundAdapter>,
     bluetoothOn: Boolean,
     onScan: () -> Unit,
@@ -132,6 +134,11 @@ fun LiveScreen(
         }
     }
 
+    val drain = parked.lastOrNull()?.takeIf { System.currentTimeMillis() - it.end < PARKED_SHOW_MS }
+    AnimatedVisibility(drain != null && state.mode == Mode.Parked, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+        if (drain != null) ParkedCard(drain, settings)
+    }
+
     SectionTitle("Battery")
     TileRow {
         Tile("Pack voltage", snap.packV?.let { Format.n(it, 1) + " V" }, Modifier.weight(1f), accent = Violet)
@@ -160,6 +167,24 @@ fun LiveScreen(
     Spacer(Modifier.height(16.dp))
     if (state.status == Status.Live || state.status == Status.Reconnecting) {
         GhostButton(if (state.status == Status.Reconnecting) "Stop reconnecting" else "Disconnect", onDisconnect, color = Dim)
+    }
+}
+
+/** How long after reconnecting the "While parked" card stays on the Live screen. */
+private const val PARKED_SHOW_MS = 12 * 3_600_000L
+
+@Composable
+private fun ParkedCard(d: ParkedDrain, settings: Settings) {
+    Column {
+        SectionTitle("While parked")
+        Card {
+            val kwh = d.kwh(settings.usableKwh)
+            val main = if (d.drop < 0.05) "No drop over ${Format.span(d.hours)}"
+            else "−${Format.n(d.drop, 1)}% over ${Format.span(d.hours)}" + (if (kwh > 0) " · about ${Format.n(kwh, 1)} kWh" else "")
+            Text(main, color = Color.White, fontWeight = FontWeight.SemiBold)
+            val perDay = if (d.hours >= 2 && d.drop >= 0.05) "About ${Format.n(d.perDay, 1)}% a day. " else ""
+            Text(perDay + "Since the app last saw the car.", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        }
     }
 }
 

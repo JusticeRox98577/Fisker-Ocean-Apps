@@ -30,6 +30,11 @@ data class Settings(
     val abrpEverySec: Int = 10,
     val abrpLocation: Boolean = false,
     val flipCurrent: Boolean = false,
+    val currency: String = "$",
+    /** Home (AC) charging price per kWh. 0 means not set. */
+    val homePrice: Double = 0.0,
+    /** DC fast charging price per kWh. 0 means not set. */
+    val dcPrice: Double = 0.0,
 ) {
     val usableKwh: Double get() = if (model == CarModel.Custom) customKwh else model.usableKwh
     val abrpEnabled: Boolean get() = abrpToken.isNotBlank() && abrpKey.isNotBlank()
@@ -54,6 +59,9 @@ data class Settings(
             abrpEverySec = p.getInt("abrp_every", 10),
             abrpLocation = p.getBoolean("abrp_location", false),
             flipCurrent = p.getBoolean("flip_current", false),
+            currency = p.getString("currency", "$")!!,
+            homePrice = p.getFloat("home_price", 0f).toString().toDouble(), // via String so 0.15 stays 0.15
+            dcPrice = p.getFloat("dc_price", 0f).toString().toDouble(),
         )
 
         fun prefs(context: Context): SharedPreferences =
@@ -79,5 +87,8 @@ data class Settings(
         putInt("abrp_every", abrpEverySec)
         putBoolean("abrp_location", abrpLocation)
         putBoolean("flip_current", flipCurrent)
+        putString("currency", currency)
+        putFloat("home_price", homePrice.toFloat())
+        putFloat("dc_price", dcPrice.toFloat())
     }
 }

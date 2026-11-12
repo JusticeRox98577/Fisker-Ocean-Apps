@@ -17,12 +17,14 @@ import com.justicemw.oceanlive.Format
 import com.justicemw.oceanlive.car.CarState
 import com.justicemw.oceanlive.car.EntryKind
 import com.justicemw.oceanlive.car.HistoryEntry
+import com.justicemw.oceanlive.car.ParkedDrain
+import com.justicemw.oceanlive.car.ParkedDrains
 import com.justicemw.oceanlive.car.Settings
 import com.justicemw.oceanlive.car.measuredCapacityKwh
 import kotlin.math.roundToInt
 
 @Composable
-fun BatteryScreen(state: CarState, settings: Settings, history: List<HistoryEntry>) {
+fun BatteryScreen(state: CarState, settings: Settings, history: List<HistoryEntry>, parked: List<ParkedDrain>) {
     val s = state.snapshot
 
     SectionTitle("Battery health")
@@ -47,6 +49,25 @@ fun BatteryScreen(state: CarState, settings: Settings, history: List<HistoryEntr
             Text("Not measured yet", color = Color.White, fontWeight = FontWeight.SemiBold)
             Text("The car doesn't report battery health directly. Ocean Live works it out from your charging: " +
                 "keep the app connected through a charge that adds at least 20%.", color = Dim, fontSize = 13.sp)
+        }
+    }
+
+    SectionTitle("Parked drain")
+    Card {
+        val perDay = ParkedDrains.averagePerDay(parked)
+        if (perDay != null) {
+            Row(Modifier.fillMaxWidth()) {
+                Text("Average per day", color = Dim, modifier = Modifier.weight(1f))
+                Text("${Format.n(perDay, 1)}%", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            }
+            if (settings.usableKwh > 0) KeyValue("Energy per day", "about " + Format.n(perDay / 100 * settings.usableKwh, 1) + " kWh")
+            KeyValue("Time measured", Format.span(parked.sumOf { it.hours }))
+            Text("From ${parked.size} parked period${if (parked.size == 1) "" else "s"} while the app wasn't connected. Charging and drives are left out.",
+                color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+        } else {
+            Text("Not measured yet", color = Color.White, fontWeight = FontWeight.SemiBold)
+            Text("Each time you reconnect after the car has sat parked, Ocean Live checks how much charge it lost while you were away.",
+                color = Dim, fontSize = 13.sp)
         }
     }
 

@@ -61,6 +61,19 @@ fun SettingsScreen(
             color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
     }
 
+    SectionTitle("Charging cost")
+    Card {
+        var currency by remember { mutableStateOf(s.currency) }
+        Field("Currency symbol", currency) {
+            currency = it
+            if (it.length <= 4) update { st -> st.copy(currency = it.trim()) }
+        }
+        PriceField("Home price per kWh", s.homePrice) { v -> update { it.copy(homePrice = v) } }
+        PriceField("DC fast price per kWh", s.dcPrice) { v -> update { it.copy(dcPrice = v) } }
+        Text("Used to show what each charge costs in Trips. Leave a price empty to skip it.",
+            color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+    }
+
     SectionTitle("Units and screen")
     Card {
         Toggle("Use miles", s.useMiles) { v -> update { it.copy(useMiles = v) } }
@@ -118,6 +131,16 @@ fun SettingsScreen(
 
     Spacer(Modifier.height(18.dp))
     Text("Ocean Live 3.2 · unofficial community app. It only reads from the car, except when you clear fault codes or restart a module from the Faults tab.", color = Dim, fontSize = 12.sp)
+}
+
+@Composable
+private fun PriceField(label: String, value: Double, onChange: (Double) -> Unit) {
+    var text by remember { mutableStateOf(if (value > 0) value.toString() else "") }
+    Field(label, text, KeyboardType.Decimal) {
+        text = it
+        val v = if (it.isBlank()) 0.0 else it.replace(',', '.').toDoubleOrNull()
+        v?.takeIf { p -> p in 0.0..100.0 }?.let(onChange)
+    }
 }
 
 @Composable

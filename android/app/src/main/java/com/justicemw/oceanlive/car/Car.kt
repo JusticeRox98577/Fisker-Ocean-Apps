@@ -3,6 +3,7 @@ package com.justicemw.oceanlive.car
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
+import androidx.core.content.edit
 import com.justicemw.oceanlive.OceanService
 import com.justicemw.oceanlive.OceanWidget
 import com.justicemw.oceanlive.obd.Did
@@ -111,6 +112,8 @@ object Car {
     private val tracker = Tracker()
     private var lastAbrp = 0L
     private var lastWidget = 0L
+    private var parkedMark: ParkedMark? = null
+    private var lastMarkSave = 0L
 
     private val _state = MutableStateFlow(CarState())
     val state: StateFlow<CarState> = _state.asStateFlow()
@@ -129,6 +132,9 @@ object Car {
     val pastScans: StateFlow<List<SavedScan>> = _pastScans.asStateFlow()
     private val _versions = MutableStateFlow(VersionRun())
     val versions: StateFlow<VersionRun> = _versions.asStateFlow()
+    private val _parked = MutableStateFlow<List<ParkedDrain>>(emptyList())
+    /** Recent periods the car sat parked while the app wasn't connected, oldest first. */
+    val parked: StateFlow<List<ParkedDrain>> = _parked.asStateFlow()
 
     /** Latest phone location, fed by the service when ABRP location sharing is on. */
     @Volatile var location: Location? = null
@@ -142,7 +148,10 @@ object Car {
         store = HistoryStore(app)
         alerts = Alerts(app)
         faultStore = FaultHistoryStore(app)
-        _settings.value = Settings.load(Settings.prefs(app))
+        val prefs = Settings.prefs(app)
+        _settings.value = Settings.load(prefs)
+        parkedMark = ParkedDrains.decodeMark(prefs.getString(PARKED_MARK, null))
+        _parked.value = ParkedDrains.decode(prefs.getString(PARKED_HISTORY, null))
         _state.update { it.copy(adapterName = _settings.value.adapterName) }
         scope.launch(Dispatchers.IO) {
             _history.value = store.load()
@@ -317,6 +326,7 @@ object Car {
 
     private fun onReading(snap: Snapshot) {
         val finished = tracker.update(snap)
+        trackParked(snap)
         _state.update {
             it.copy(
                 snapshot = snap, lastUpdate = snap.time, mode = tracker.mode,
@@ -328,6 +338,31 @@ object Car {
         alerts.check(snap, tracker.mode, settings)
         maybeSendAbrp(snap, settings)
         refreshWidget()
+    }
+
+    // ── Parked drain ────────────────────────────────────────────
+
+    /**
+     * Remembers the last reading, and on the first reading after a long gap
+     * records how much the battery dropped while the car sat parked.
+     */
+    private fun trackParked(snap: Snapshot) {
+        val soc = snap.soc ?: return
+        val chargingNow = tracker.mode == Mode.Charging || (snap.powerKw ?: 0.0) > Tracker.CHARGE_START_KW
+        ParkedDrains.measure(parkedMark, soc, snap.odometerKm, snap.time, chargingNow)?.let { drain ->
+            val list = ParkedDrains.add(_parked.value, drain)
+            _parked.value = list
+            Settings.prefs(app).edit { putString(PARKED_HISTORY, ParkedDrains.encode(list)) }
+        }
+        parkedMark = ParkedMark(snap.time, soc, snap.odometerKm, tracker.mode == Mode.Charging)
+        // Saved now and then, so it survives the app being closed without a goodbye.
+        if (snap.time - lastMarkSave >= 60_000) saveParkedMark()
+    }
+
+    private fun saveParkedMark() {
+        val mark = parkedMark ?: return
+        lastMarkSave = mark.time
+        Settings.prefs(app).edit { putString(PARKED_MARK, ParkedDrains.encodeMark(mark)) }
     }
 
     private fun addHistory(entry: HistoryEntry) {
@@ -343,6 +378,7 @@ object Car {
     }
 
     private fun endSessions() {
+        saveParkedMark()
         tracker.flush(System.currentTimeMillis()).forEach { addHistory(it) }
         _state.update { it.copy(mode = Mode.Parked, currentCharge = null, currentDrive = null) }
     }
@@ -619,6 +655,8 @@ object Car {
         return listOf("obd", "elm", "vlink", "vgate", "obdlink", "ios-vlink", "android-vlink", "konnwei", "veepeak", "carista").any { it in n }
     }
 
+    private const val PARKED_MARK = "parked_mark"
+    private const val PARKED_HISTORY = "parked_history"
     private const val POLL_MS = 2_000L
     private const val RECONNECT_MS = 10_000L
 }

@@ -39,4 +39,13 @@ object Format {
         minutes < 60 -> "$minutes min"
         else -> "${minutes / 60} h ${minutes % 60} min"
     }
+
+    /** A rough length of time, e.g. "45 min", "19 h", "3.5 days". */
+    fun span(hours: Double): String = when {
+        hours < 1 -> "${(hours * 60).roundToInt()} min"
+        hours < 48 -> "${hours.roundToInt()} h"
+        else -> "${n(hours / 24, 1)} days"
+    }
+
+    fun money(value: Double?, s: Settings): String? = value?.let { s.currency + n(it, 2) }
 }

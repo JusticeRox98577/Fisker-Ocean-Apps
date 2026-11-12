@@ -36,7 +36,11 @@ import androidx.compose.ui.unit.sp
 import com.justicemw.oceanlive.Format
 import com.justicemw.oceanlive.car.EntryKind
 import com.justicemw.oceanlive.car.HistoryEntry
+import com.justicemw.oceanlive.car.MonthTotals
 import com.justicemw.oceanlive.car.Settings
+import com.justicemw.oceanlive.car.chargeCost
+import com.justicemw.oceanlive.car.monthTotals
+import java.util.Calendar
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -60,6 +64,19 @@ fun TripsScreen(history: List<HistoryEntry>, settings: Settings, onExport: () ->
         TileRow {
             Tile("Distance", Format.distance(drives.sumOf { it.distanceKm ?: 0.0 }, settings), Modifier.weight(1f), accent = Cyan)
             Tile("Average", Format.efficiency(Format.whPerKm(history), settings), Modifier.weight(1f), accent = Aqua)
+        }
+    }
+
+    if (history.any { it.kind == EntryKind.Charge }) {
+        val now = System.currentTimeMillis()
+        val lastMonth = Calendar.getInstance().apply { timeInMillis = now; set(Calendar.DAY_OF_MONTH, 1); add(Calendar.MONTH, -1) }
+        SectionTitle("Charging")
+        TileRow {
+            MonthTile("This month", monthTotals(history, settings, now, 0), settings, Modifier.weight(1f), Good)
+            MonthTile(SimpleDateFormat("MMMM", Locale.getDefault()).format(lastMonth.time), monthTotals(history, settings, now, 1), settings, Modifier.weight(1f), Violet)
+        }
+        if (settings.homePrice <= 0 && settings.dcPrice <= 0) {
+            Text("Add your price per kWh in Settings to see what charging costs.", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
 
@@ -100,6 +117,13 @@ fun TripsScreen(history: List<HistoryEntry>, settings: Settings, onExport: () ->
 }
 
 @Composable
+private fun MonthTile(label: String, t: MonthTotals, s: Settings, modifier: Modifier, accent: Color) {
+    val kwh = Format.n(t.kwh, 0) + " kWh"
+    if (t.cost != null) Tile(label, Format.money(t.cost, s), modifier, caption = kwh, accent = accent)
+    else Tile(label, kwh, modifier, caption = "${t.charges} charge${if (t.charges == 1) "" else "s"}", accent = accent)
+}
+
+@Composable
 private fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         Modifier.clip(RoundedCornerShape(50))
@@ -130,7 +154,8 @@ private fun EntryRow(e: HistoryEntry, s: Settings, onDelete: (HistoryEntry) -> U
                     "Drive · " + (Format.distance(e.distanceKm, s, 1) ?: "—")
                 }
                 Text(title, color = Color.White, fontWeight = FontWeight.SemiBold)
-                Text(time.format(Date(e.start)) + " · " + Format.duration(e.minutes), color = Dim, fontSize = 12.sp)
+                val cost = Format.money(s.chargeCost(e), s)?.let { " · $it" } ?: ""
+                Text(time.format(Date(e.start)) + " · " + Format.duration(e.minutes) + cost, color = Dim, fontSize = 12.sp)
             }
             Text(
                 listOfNotNull(e.socStart?.roundToInt(), e.socEnd?.roundToInt()).joinToString(" → ") { "$it%" },
@@ -146,6 +171,7 @@ private fun EntryRow(e: HistoryEntry, s: Settings, onDelete: (HistoryEntry) -> U
                     KeyValue("Peak power", e.peakKw?.let { Format.n(it, 1) + " kW" })
                     KeyValue("Average power", if (e.minutes > 0) Format.n(e.kwh / (e.minutes / 60.0), 1) + " kW" else null)
                     KeyValue("Implied capacity", e.impliedCapacityKwh?.let { Format.n(it, 1) + " kWh" })
+                    s.chargeCost(e)?.let { KeyValue("Cost", Format.money(it, s), Good) }
                 }
                 TextButton(onClick = { onDelete(e) }) { Text("Delete this entry", color = Bad, fontSize = 13.sp) }
             }

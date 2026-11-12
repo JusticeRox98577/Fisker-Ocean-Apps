@@ -114,6 +114,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     val state by Car.state.collectAsState()
     val settings by Car.settings.collectAsState()
     val history by Car.history.collectAsState()
+    val parked by Car.parked.collectAsState()
     val found by Car.found.collectAsState()
     val faults by Car.faults.collectAsState()
     val action by Car.action.collectAsState()
@@ -143,7 +144,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
-        if (uri != null) context.contentResolver.openOutputStream(uri)?.use { it.write(HistoryStore.csv(history).toByteArray()) }
+        if (uri != null) context.contentResolver.openOutputStream(uri)?.use { it.write(HistoryStore.csv(history, settings).toByteArray()) }
     }
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -184,14 +185,14 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 24.dp)) {
                     when (Tab.entries[current]) {
                         Tab.Live -> LiveScreen(
-                            state, settings, history, found, Car.bluetoothOn,
+                            state, settings, history, parked, found, Car.bluetoothOn,
                             onScan = { withBluetooth { Car.scan() } },
                             onCancelScan = { Car.cancelScan() },
                             onConnect = { a -> withBluetooth { Car.connect(a.address, a.name) } },
                             onConnectSaved = { withBluetooth { Car.connectSaved() } },
                             onDisconnect = { Car.disconnect() },
                         )
-                        Tab.Battery -> BatteryScreen(state, settings, history)
+                        Tab.Battery -> BatteryScreen(state, settings, history, parked)
                         Tab.Trips -> TripsScreen(
                             history, settings,
                             onExport = { exportLauncher.launch("ocean-live-history.csv") },

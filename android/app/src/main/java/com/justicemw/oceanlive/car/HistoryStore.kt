@@ -62,16 +62,18 @@ class HistoryStore(context: Context) {
     companion object {
         const val MAX = 1000
 
-        fun csv(entries: List<HistoryEntry>): String {
+        /** CSV of [entries]. The cost column uses today's prices from [settings]. */
+        fun csv(entries: List<HistoryEntry>, settings: Settings = Settings()): String {
             val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
             fun n(v: Double?, d: Int = 1) = v?.let { String.format(Locale.US, "%.${d}f", it) } ?: ""
             return buildString {
-                append("type,start,end,minutes,soc_start,soc_end,kwh,distance_km,wh_per_km,peak_kw,dc_fast\n")
+                append("type,start,end,minutes,soc_start,soc_end,kwh,distance_km,wh_per_km,peak_kw,dc_fast,cost\n")
                 for (e in entries) {
                     append(listOf(
                         e.kind.name.lowercase(), fmt.format(Date(e.start)), fmt.format(Date(e.end)), e.minutes.toString(),
                         n(e.socStart), n(e.socEnd), n(e.kwh, 2), n(e.distanceKm, 2), n(e.whPerKm, 0), n(e.peakKw),
                         if (e.kind == EntryKind.Charge) e.fast.toString() else "",
+                        n(settings.chargeCost(e), 2),
                     ).joinToString(","))
                     append('\n')
                 }
