@@ -530,7 +530,10 @@ final class Car: ObservableObject {
                     try await selectEcu(ecu)
                     var version = ModuleVersion(ecu: ecu.code, name: ecu.name)
                     for did in ModuleIds.all {
-                        guard let reply = try await query(ModuleIds.command(did), timeout: 6) else { continue }
+                        let answer = try await query(ModuleIds.command(did), timeout: 6)
+                        // A module that doesn't answer the first read is skipped, so a silent one costs one timeout, not three.
+                        if did == ModuleIds.softwareVersion && (answer == nil || answer?.uppercased().contains("NO DATA") == true) { break }
+                        guard let reply = answer else { continue }
                         let text = ModuleIds.text(reply, did: did)
                         switch did {
                         case ModuleIds.softwareVersion: version.softwareVersion = text

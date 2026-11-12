@@ -343,14 +343,14 @@ private struct PastScans: View {
 
     var body: some View {
         let scans = Array(car.pastScans.reversed())
-        let shown = showAll ? scans : Array(scans.prefix(5))
+        let shown = showAll ? scans : Array(scans.prefix(8))
         SectionTitle("Past scans")
         CardBox {
             ForEach(shown) { s in
                 Button { open = s } label: { PastScanRow(scan: s) }
                     .buttonStyle(PressStyle())
             }
-            if scans.count > 5 {
+            if scans.count > 8 {
                 Button(showAll ? "Show fewer" : "Show all \(scans.count)") {
                     withAnimation(.easeInOut(duration: 0.3)) { showAll.toggle() }
                 }
@@ -603,7 +603,7 @@ private struct CodeRow: View {
                     if isNew {
                         Text("New").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.ink)
                             .padding(.horizontal, 10).padding(.vertical, 4)
-                            .background(Theme.ocean, in: Capsule())
+                            .background(Theme.violet, in: Capsule())
                     }
                 }
             }
