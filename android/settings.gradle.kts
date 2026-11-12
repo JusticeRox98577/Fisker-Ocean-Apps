@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "OceanLive"
 include(":app")
+include(":wear")

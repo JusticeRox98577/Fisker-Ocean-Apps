@@ -44,12 +44,15 @@ jobs:
         # Signed with the public test key in android/dev-debug.keystore, same as
         # the 2.0 GitHub APKs, so it installs over a sideloaded 2.0.
         run: |
-          ./gradlew assembleRelease
+          ./gradlew :app:assembleRelease :wear:assembleRelease
           cp app/build/outputs/apk/release/app-release.apk OceanLive-$SHORT-Android.apk
+          cp wear/build/outputs/apk/release/wear-release.apk OceanLive-$SHORT-Wear.apk
       - uses: actions/upload-artifact@v4
         with:
           name: OceanLive-Android
-          path: android/OceanLive-${{ env.SHORT }}-Android.apk
+          path: |
+            android/OceanLive-${{ env.SHORT }}-Android.apk
+            android/OceanLive-${{ env.SHORT }}-Wear.apk
       - name: Build Play bundle and signed APK
         if: github.event_name == 'workflow_dispatch'
         env:
@@ -63,8 +66,11 @@ jobs:
             exit 0
           fi
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
-          ANDROID_STORE_FILE="$RUNNER_TEMP/upload.jks" ./gradlew bundleRelease assembleRelease
+          ANDROID_STORE_FILE="$RUNNER_TEMP/upload.jks" ./gradlew :app:bundleRelease :app:assembleRelease :wear:bundleRelease :wear:assembleRelease
           cp app/build/outputs/bundle/release/app-release.aab OceanLive-$SHORT-Play.aab
+          # The watch app goes to Play as its own bundle (Wear OS form factor), same key.
+          cp wear/build/outputs/bundle/release/wear-release.aab OceanLive-$SHORT-Wear-Play.aab
+          cp wear/build/outputs/apk/release/wear-release.apk OceanLive-$SHORT-Wear-signed.apk
           # The same app signed with the upload key, for installing directly instead of through the Play Store.
           cp app/build/outputs/apk/release/app-release.apk OceanLive-$SHORT-Android-signed.apk
           rm -f "$RUNNER_TEMP/upload.jks"
@@ -75,15 +81,18 @@ jobs:
           path: |
             android/OceanLive-${{ env.SHORT }}-Play.aab
             android/OceanLive-${{ env.SHORT }}-Android-signed.apk
+            android/OceanLive-${{ env.SHORT }}-Wear-Play.aab
+            android/OceanLive-${{ env.SHORT }}-Wear-signed.apk
           if-no-files-found: ignore
       - name: Publish GitHub release
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          FILES="OceanLive-$SHORT-Android.apk"
+          FILES="OceanLive-$SHORT-Android.apk OceanLive-$SHORT-Wear.apk"
           if [ -f OceanLive-$SHORT-Android-signed.apk ]; then FILES="$FILES OceanLive-$SHORT-Android-signed.apk"; fi
+          if [ -f OceanLive-$SHORT-Wear-signed.apk ]; then FILES="$FILES OceanLive-$SHORT-Wear-signed.apk"; fi
           gh release create "v$VERSION-build-${{ github.run_number }}" $FILES \
             --latest \
             --title "Ocean Live $SHORT (build ${{ github.run_number }})" \
-            --notes "No account and no cloud. The only network use is optional ABRP live data. Built from ${{ github.sha }}."
+            --notes "The Wear OS app is OceanLive-$SHORT-Wear.apk. No account and no cloud. The only network use is optional ABRP live data. Built from ${{ github.sha }}."

@@ -12,6 +12,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.justicemw.oceanlive.OceanService
 import com.justicemw.oceanlive.OceanWidget
+import com.justicemw.oceanlive.WatchLink
 import com.justicemw.oceanlive.bluetoothPermissions
 import com.justicemw.oceanlive.obd.Did
 import com.justicemw.oceanlive.obd.Dtc
@@ -119,6 +120,7 @@ object Car {
     private lateinit var alerts: Alerts
     private lateinit var faultStore: FaultHistoryStore
     private lateinit var v12Store: V12Store
+    private lateinit var watch: WatchLink
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val bus = Mutex()
     private var job: Job? = null
@@ -208,6 +210,9 @@ object Car {
             waiting.forEach { record12v(it.time, it.volts, it.source, it.mode) }
         }
         transport.onDisconnected = { scope.launch { onLost("Adapter disconnected.") } }
+        // Mirror what the phone already has to a paired watch. Only follows the state; never connects or reads.
+        watch = WatchLink(app)
+        scope.launch { _state.collect { watch.update(WatchSync.reading(it, _settings.value, _history.value)) } }
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 inForeground = true

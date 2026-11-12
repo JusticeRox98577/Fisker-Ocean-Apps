@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ocean Live</string>
+    <string name="tile_desc">Your Ocean\'s charge and range</string>
+    <string name="complication_label">Ocean battery</string>
+</resources>

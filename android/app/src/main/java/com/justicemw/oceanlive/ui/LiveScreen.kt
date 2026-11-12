@@ -270,11 +270,8 @@ private fun SignalBars(rssi: Int) {
     }
 }
 
-private fun timeToTarget(soc: Double?, powerKw: Double?, s: Settings): String? {
-    if (soc == null || powerKw == null || powerKw < 0.5 || soc >= s.alertHigh || s.usableKwh <= 0) return null
-    val kwh = (s.alertHigh - soc) / 100 * s.usableKwh
-    return "≈ " + Format.duration((kwh / powerKw * 60).roundToInt().toLong())
-}
+private fun timeToTarget(soc: Double?, powerKw: Double?, s: Settings): String? =
+    Format.minutesToTarget(soc, powerKw, s)?.let { "≈ " + Format.duration(it) }
 
 fun balanceLabel(mv: Double) = when {
     mv <= 30 -> "Well balanced"

@@ -6,5 +6,7 @@
 .DS_Store
 /build
 /app/build
+/wear/build
 /captures
 *.jks
+.kotlin

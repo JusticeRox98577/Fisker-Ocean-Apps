@@ -35,6 +35,13 @@ object Format {
     fun range(soc: Double?, s: Settings, history: List<HistoryEntry>): String? =
         rangeKm(soc, s, history)?.let { "≈ " + distance(it, s) }
 
+    /** Minutes until the charge reaches the alert level at the current power, or null if not charging toward it. */
+    fun minutesToTarget(soc: Double?, powerKw: Double?, s: Settings): Long? {
+        if (soc == null || powerKw == null || powerKw < 0.5 || soc >= s.alertHigh || s.usableKwh <= 0) return null
+        val kwh = (s.alertHigh - soc) / 100 * s.usableKwh
+        return (kwh / powerKw * 60).roundToInt().toLong()
+    }
+
     fun duration(minutes: Long): String = when {
         minutes < 60 -> "$minutes min"
         else -> "${minutes / 60} h ${minutes % 60} min"
