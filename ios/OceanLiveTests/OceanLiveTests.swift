@@ -219,3 +219,110 @@ final class DtcCatalogTests: XCTestCase {
         XCTAssertTrue(i.hasDetails)
     }
 }
+
+final class FaultHistoryTests: XCTestCase {
+    private func scan(_ time: Int64, vin: String? = "VIN1", modules: [String: String], _ codes: [SavedCode]) -> SavedScan {
+        SavedScan(time: time, vin: vin, modules: modules, codes: codes)
+    }
+
+    func testActiveFirstListsEveryActiveCodeInModuleOrder() {
+        let codes = [
+            Dtc(code: "B000111", status: 0x08, ecu: Ecus.bcm),
+            Dtc(code: "U178B11", status: 0x09, ecu: Ecus.bcm),
+            Dtc(code: "P0A9000", status: 0x01, ecu: Ecus.bms),
+            Dtc(code: "C000100", status: 0x2F, ecu: Ecus.vcu),
+        ]
+        let split = Dtcs.activeFirst(codes)
+        XCTAssertEqual(split.active.map(\.id), ["BMSP0A9000", "VCUC000100", "BCMU178B11"])
+        XCTAssertEqual(split.rest.map(\.code), ["B000111"])
+    }
+
+    func testNewAndClearedSinceLastScan() {
+        let before = scan(1, modules: ["BMS": "ok", "BCM": "ok"], [
+            SavedCode(ecu: "BMS", code: "P0A9000", status: 0x08),
+            SavedCode(ecu: "BCM", code: "U178B11", status: 0x09),
+        ])
+        let after = scan(2, modules: ["BMS": "ok", "BCM": "ok", "VCU": "ok"], [
+            SavedCode(ecu: "BMS", code: "P0A9000", status: 0x08),
+            SavedCode(ecu: "BMS", code: "P100216", status: 0x09),
+            SavedCode(ecu: "VCU", code: "U000109", status: 0x08), // VCU didn't answer last time: not new
+        ])
+        let changes = FaultHistory.compare(after, to: before)
+        XCTAssertEqual(changes.newIds, ["BMSP100216"])
+        XCTAssertEqual(changes.cleared.map(\.key), ["BCMU178B11"])
+        XCTAssertEqual(changes.since, 1)
+    }
+
+    func testSilentModuleIsNotCleared() {
+        let before = scan(1, modules: ["BCM": "ok"], [SavedCode(ecu: "BCM", code: "U178B11", status: 0x09)])
+        let after = scan(2, modules: ["BCM": "no answer"], [])
+        XCTAssertTrue(FaultHistory.compare(after, to: before).cleared.isEmpty)
+        XCTAssertEqual(FaultHistory.compare(after, to: nil), ScanChanges())
+    }
+
+    func testPreviousScanIsSameCar() {
+        let scans = [scan(1, vin: "VIN1", modules: [:], []), scan(2, vin: "VIN2", modules: [:], [])]
+        XCTAssertEqual(FaultHistory.previous(for: "VIN1", in: scans)?.time, 1)
+        XCTAssertEqual(FaultHistory.previous(for: nil, in: scans)?.time, 2)
+        XCTAssertNil(FaultHistory.previous(for: "VIN3", in: scans))
+    }
+
+    func testKeepsLastFiftyAndRoundTrips() {
+        var scans: [SavedScan] = []
+        for i in 1...55 {
+            scans = FaultHistory.appending(scan(Int64(i), modules: ["BMS": "ok"], [SavedCode(ecu: "BMS", code: "P0A9000", status: 0x09)]), to: scans)
+        }
+        XCTAssertEqual(scans.count, 50)
+        XCTAssertEqual(scans.first?.time, 6)
+        var last = scans[49]
+        last.versions = [ModuleVersion(ecu: "BMS", name: "HV battery", softwareVersion: "1.2.3")]
+        let decoded = FaultHistory.decode(FaultHistory.encode([last])!)
+        XCTAssertEqual(decoded, [last])
+        XCTAssertEqual(decoded[0].active, 1)
+        XCTAssertEqual(decoded[0].dtcs[0].ecu, Ecus.bms)
+    }
+
+    func testReadsOlderFileWithoutVersions() {
+        let json = #"[{"time":5,"vin":"VIN1","modules":{"BMS":"ok"},"codes":[{"ecu":"XYZ","code":"P0A9000","status":8}]}]"#
+        let decoded = FaultHistory.decode(Data(json.utf8))
+        XCTAssertEqual(decoded.count, 1)
+        XCTAssertNil(decoded[0].versions)
+        XCTAssertEqual(decoded[0].dtcs[0].ecu.name, "XYZ")
+        XCTAssertEqual(decoded[0].stored, 1)
+    }
+
+    func testReportMarksNewAndCleared() {
+        var s = FaultScan()
+        s.codes = [Dtc(code: "P100216", status: 0x09, ecu: Ecus.bms)]
+        s.modules = ["BMS": "ok"]
+        s.finishedAt = 2
+        s.changes = ScanChanges(newIds: ["BMSP100216"], cleared: [SavedCode(ecu: "BCM", code: "U178B11", status: 0x09)], since: 1)
+        let report = faultReport(vin: "VIN1", scan: s, versions: [ModuleVersion(ecu: "BMS", name: "HV battery", partNumber: "AB12")])
+        XCTAssertTrue(report.contains("P100216"))
+        XCTAssertTrue(report.contains("[new]"))
+        XCTAssertTrue(report.contains("Cleared since last scan:\n  U178B11  Body control"))
+        XCTAssertTrue(report.contains("Module versions:\n  HV battery (BMS): Part no. AB12"))
+    }
+}
+
+final class ModuleVersionTests: XCTestCase {
+    func testAsciiVersion() {
+        XCTAssertEqual(ModuleIds.text("62F189 56 31 2E 32 2E 33 20 20", did: "F189"), "V1.2.3")
+    }
+
+    func testMultiFramePartNumber() {
+        // 62 F1 87 + "FA0123456789" padded with 00.
+        XCTAssertEqual(ModuleIds.text("011\r0:62F1874641\r1:30313233343536\r2:37383900000000\r>", did: "F187"), "FA0123456789")
+    }
+
+    func testBinaryFallsBackToHex() {
+        XCTAssertEqual(ModuleIds.text("62F18801A2FF", did: "F188"), "01A2")
+        XCTAssertEqual(ModuleIds.decode([0x00, 0x41, 0x05, 0x42]), "410542")
+    }
+
+    func testEmptyOrRefused() {
+        XCTAssertNil(ModuleIds.decode([0x00, 0x20, 0xFF]))
+        XCTAssertNil(ModuleIds.text("7F2231", did: "F189"))
+        XCTAssertNil(ModuleIds.text("NO DATA", did: "F189"))
+    }
+}

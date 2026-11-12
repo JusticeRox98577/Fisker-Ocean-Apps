@@ -79,6 +79,16 @@ enum Dtcs {
 
     private static func hex(_ n: Int) -> String { String(Array("0123456789ABCDEF")[n & 0xF]) }
 
+    /// For the "Active now" sort: every active code from every module (in scan order, then by code), and the rest.
+    static func activeFirst(_ codes: [Dtc]) -> (active: [Dtc], rest: [Dtc]) {
+        let order = Dictionary(Ecus.scanList.enumerated().map { ($1.code, $0) }, uniquingKeysWith: { a, _ in a })
+        let active = codes.filter { $0.state == .active }.sorted { a, b in
+            let oa = order[a.ecu.code] ?? Int.max, ob = order[b.ecu.code] ?? Int.max
+            return oa != ob ? oa < ob : a.code < b.code
+        }
+        return (active, codes.filter { $0.state != .active })
+    }
+
     /// ISO 14229 status byte to a plain state. Only bit 0 means "failing right now".
     static func state(_ status: Int) -> DtcState {
         if status & 0x01 != 0 { return .active }

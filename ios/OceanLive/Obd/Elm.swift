@@ -94,6 +94,11 @@ enum Ecus {
         Ecu(code: "AMP", name: "Audio amplifier", request: "7B5", response: "7BD"),
         Ecu(code: "VSP", name: "Pedestrian warning speaker", request: "7C6", response: "7CE"),
     ]
+
+    /// The module with this code. A code that is no longer known comes back with the code as its name.
+    static func byCode(_ code: String) -> Ecu {
+        scanList.first { $0.code == code } ?? Ecu(code: code, name: code, request: "", response: "", canRestart: false)
+    }
 }
 
 /// What Ocean Live reads. The BMS values were confirmed against the car's own

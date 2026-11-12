@@ -26,6 +26,19 @@ struct FaultScan {
     var modules: [String: String] = [:]
     var finishedAt: Int64?
     var error: String?
+    /// What changed since the last scan of this car.
+    var changes = ScanChanges()
+}
+
+/// Reading software versions and part numbers from the modules. Read-only.
+struct VersionRead {
+    var running = false
+    var progress = 0
+    var total = 0
+    var current: String?
+    var list: [ModuleVersion] = []
+    var finishedAt: Int64?
+    var error: String?
 }
 
 enum CarAction {
@@ -82,6 +95,8 @@ final class Car: ObservableObject {
     @Published private(set) var faults = FaultScan()
     @Published private(set) var action = ActionRun()
     @Published private(set) var importedCount = 0
+    @Published private(set) var pastScans: [SavedScan] = []
+    @Published private(set) var versions = VersionRead()
 
     private let transport = ElmTransport()
     private let bus = AsyncLock()
@@ -105,6 +120,7 @@ final class Car: ObservableObject {
         settings = Settings.load()
         state.adapterName = settings.adapterName
         history = HistoryStore.load()
+        pastScans = FaultHistoryStore.load()
         loadDescriptions()
         location.setEnabled(settings.abrpEnabled && settings.abrpLocation)
         transport.onDisconnected = { [weak self] in self?.onLost("Adapter disconnected.") }
@@ -393,7 +409,7 @@ final class Car: ObservableObject {
 
     /// Reads stored fault codes from every module. Read-only: nothing is cleared or changed.
     func scanFaults() {
-        guard !faults.running, state.connected else { return }
+        guard !faults.running, !versions.running, state.connected else { return }
         faults = FaultScan(running: true)
         Task {
             await bus.lock()
@@ -433,13 +449,75 @@ final class Car: ObservableObject {
                 faults.running = false
                 faults.progress = faults.total
                 faults.current = nil
-                faults.finishedAt = nowMs()
+                let finished = nowMs()
+                faults.finishedAt = finished
+                saveScan(SavedScan(time: finished, vin: state.vin, modules: modules, codes: codes.map { SavedCode($0) }))
             } catch {
                 faults.running = false
                 faults.error = error.localizedDescription
             }
             bus.unlock()
         }
+    }
+
+    /// Compares a finished scan with the last one of the same car, then adds it to the saved history.
+    private func saveScan(_ scan: SavedScan) {
+        faults.changes = FaultHistory.compare(scan, to: FaultHistory.previous(for: scan.vin, in: pastScans))
+        pastScans = FaultHistory.appending(scan, to: pastScans)
+        FaultHistoryStore.save(pastScans)
+    }
+
+    // MARK: Module versions
+
+    /// Reads the software version, software number and part number (F189, F188, F187) of each module
+    /// that answered the last scan, or of every module if there was no scan. Read-only.
+    func readModuleVersions() {
+        guard !versions.running, !faults.running, !action.running, state.connected else { return }
+        let answered = Ecus.scanList.filter { faults.modules[$0.code] == "ok" || faults.modules[$0.code] == "incomplete" }
+        let targets = answered.isEmpty ? Ecus.scanList : answered
+        versions = VersionRead(running: true, total: targets.count)
+        Task {
+            await bus.lock()
+            do {
+                _ = try await query("ATST96")
+                var list: [ModuleVersion] = []
+                for (index, ecu) in targets.enumerated() {
+                    versions.progress = index
+                    versions.current = ecu.name
+                    try await selectEcu(ecu)
+                    var version = ModuleVersion(ecu: ecu.code, name: ecu.name)
+                    for did in ModuleIds.all {
+                        guard let reply = try await query(ModuleIds.command(did), timeout: 6) else { continue }
+                        let text = ModuleIds.text(reply, did: did)
+                        switch did {
+                        case ModuleIds.softwareVersion: version.softwareVersion = text
+                        case ModuleIds.softwareNumber: version.softwareNumber = text
+                        default: version.partNumber = text
+                        }
+                    }
+                    if !version.isEmpty {
+                        list.append(version)
+                        versions.list = list
+                    }
+                }
+                _ = try await query("ATST20")
+                versions.progress = versions.total
+                versions.finishedAt = nowMs()
+                attachVersions(list)
+            } catch {
+                versions.error = error.localizedDescription
+            }
+            versions.running = false
+            versions.current = nil
+            bus.unlock()
+        }
+    }
+
+    /// Keeps the versions with the latest saved scan so they show up in past scans too.
+    private func attachVersions(_ list: [ModuleVersion]) {
+        guard !list.isEmpty, let at = faults.finishedAt, let i = pastScans.lastIndex(where: { $0.time == at }) else { return }
+        pastScans[i].versions = list
+        FaultHistoryStore.save(pastScans)
     }
 
     // MARK: Changing things: clear codes, restart modules
@@ -450,6 +528,7 @@ final class Car: ObservableObject {
         if state.mode == .driving { return "The car is moving. Park it first." }
         if state.mode == .charging { return "The car is charging. Unplug it first." }
         if faults.running { return "Wait for the scan to finish." }
+        if versions.running { return "Wait for the module versions to finish." }
         if action.running { return "Another action is still running." }
         return nil
     }

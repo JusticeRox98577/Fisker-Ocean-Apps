@@ -90,7 +90,7 @@ struct SettingsView: View {
                 Note("Turn on only if charging shows as using power on your car.")
             }
 
-            Text("Ocean Live 3.1 · unofficial community app. It only reads from the car, except when you clear fault codes or restart a module from the Faults tab.")
+            Text("Ocean Live 3.2 · unofficial community app. It only reads from the car, except when you clear fault codes or restart a module from the Faults tab.")
                 .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 18)
         }
     }
