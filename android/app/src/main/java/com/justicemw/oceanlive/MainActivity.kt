@@ -117,6 +117,8 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     val found by Car.found.collectAsState()
     val faults by Car.faults.collectAsState()
     val action by Car.action.collectAsState()
+    val versions by Car.versions.collectAsState()
+    val pastScans by Car.pastScans.collectAsState()
     val importedCount by Car.importedDescriptions.collectAsState()
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -197,17 +199,18 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                             onDelete = { Car.deleteHistory(it) },
                         )
                         Tab.Faults -> FaultsScreen(
-                            state, faults, action,
+                            state, faults, action, versions, pastScans,
                             // Reads state, faults and action above, so it recomputes whenever they change.
                             blockedReason = Car.changeBlockedReason(),
                             onScan = { Car.scanFaults() },
                             onShare = {
-                                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, faultReport(state, faults))
+                                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, faultReport(state, faults, versions.versions))
                                 context.startActivity(Intent.createChooser(send, "Share fault report"))
                             },
                             onClear = { Car.clearCodes(it) },
                             onRestart = { Car.restartModule(it) },
                             onDismissResults = { Car.dismissActionResults() },
+                            onReadVersions = { Car.readVersions() },
                             importedCount = importedCount,
                             onImport = { importLauncher.launch(arrayOf("text/*", "application/json", "application/octet-stream")) },
                             onClearImported = { Car.clearImportedDescriptions() },

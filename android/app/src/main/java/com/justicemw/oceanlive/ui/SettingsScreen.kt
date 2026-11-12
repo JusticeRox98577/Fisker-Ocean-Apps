@@ -117,7 +117,7 @@ fun SettingsScreen(
     }
 
     Spacer(Modifier.height(18.dp))
-    Text("Ocean Live 3.1 · unofficial community app. It only reads from the car, except when you clear fault codes or restart a module from the Faults tab.", color = Dim, fontSize = 12.sp)
+    Text("Ocean Live 3.2 · unofficial community app. It only reads from the car, except when you clear fault codes or restart a module from the Faults tab.", color = Dim, fontSize = 12.sp)
 }
 
 @Composable

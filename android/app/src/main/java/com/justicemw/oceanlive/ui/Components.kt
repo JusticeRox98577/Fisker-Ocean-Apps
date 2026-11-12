@@ -107,12 +107,22 @@ fun RollingText(text: String, color: Color = Color.White, size: TextUnit = 20.sp
     ) { Text(it, color = color, fontSize = size, fontWeight = weight) }
 }
 
+/**
+ * A small stat tile. With [onClick] it becomes a toggle: [selected] tints it with its accent.
+ */
 @Composable
-fun Tile(label: String, value: String?, modifier: Modifier, caption: String? = null, accent: Color = Aqua, captionColor: Color = Dim) {
+fun Tile(
+    label: String, value: String?, modifier: Modifier, caption: String? = null, accent: Color = Aqua, captionColor: Color = Dim,
+    selected: Boolean = false, onClick: (() -> Unit)? = null,
+) {
+    val edge by animateColorAsState(if (selected) accent.copy(alpha = 0.7f) else CardEdge, tween(300), label = "tileEdge")
+    val fill by animateColorAsState(if (selected) accent.copy(alpha = 0.12f) else Color.Transparent, tween(300), label = "tileFill")
     Column(
         modifier.clip(RoundedCornerShape(18.dp))
             .background(CardBg)
-            .border(1.dp, CardEdge, RoundedCornerShape(18.dp))
+            .background(fill)
+            .border(1.dp, edge, RoundedCornerShape(18.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

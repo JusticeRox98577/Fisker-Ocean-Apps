@@ -1,11 +1,15 @@
 package com.justicemw.oceanlive.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,12 +45,16 @@ import com.justicemw.oceanlive.car.ActionOutcome
 import com.justicemw.oceanlive.car.ActionRun
 import com.justicemw.oceanlive.car.CarAction
 import com.justicemw.oceanlive.car.CarState
+import com.justicemw.oceanlive.car.FaultHistory
 import com.justicemw.oceanlive.car.FaultScan
+import com.justicemw.oceanlive.car.SavedScan
+import com.justicemw.oceanlive.car.VersionRun
 import com.justicemw.oceanlive.obd.Dtc
 import com.justicemw.oceanlive.obd.DtcSeverity
 import com.justicemw.oceanlive.obd.DtcState
 import com.justicemw.oceanlive.obd.Ecu
 import com.justicemw.oceanlive.obd.Ecus
+import com.justicemw.oceanlive.obd.ModuleVersion
 import com.justicemw.oceanlive.obd.UdsResult
 import java.text.DateFormat
 import java.util.Date
@@ -54,17 +63,25 @@ private data class Pending(val action: CarAction, val ecus: List<Ecu>)
 
 private val DangerBrush = Brush.linearGradient(listOf(Bad, Violet))
 
+private fun dateTime(t: Long): String = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(t))
+
+/** Order of modules in the scan list, so lists keep a steady order. */
+private fun moduleOrder(ecu: Ecu): Int = Ecus.scanList.indexOf(ecu).let { if (it < 0) Int.MAX_VALUE else it }
+
 @Composable
 fun FaultsScreen(
     state: CarState,
     scan: FaultScan,
     action: ActionRun,
+    versions: VersionRun,
+    pastScans: List<SavedScan>,
     blockedReason: String?,
     onScan: () -> Unit,
     onShare: () -> Unit,
     onClear: (List<Ecu>) -> Unit,
     onRestart: (Ecu) -> Unit,
     onDismissResults: () -> Unit,
+    onReadVersions: () -> Unit,
     importedCount: Int,
     onImport: () -> Unit,
     onClearImported: () -> Unit,
@@ -83,102 +100,20 @@ fun FaultsScreen(
                 Text("${scan.progress} of ${scan.total} · about a minute", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             }
             !state.connected -> Text("Connect to the car first.", color = Warn)
-            else -> GradientButton(if (scan.finishedAt == null) "Scan all modules" else "Scan again", onScan, enabled = !action.running)
+            else -> GradientButton(if (scan.finishedAt == null) "Scan all modules" else "Scan again", onScan, enabled = !action.running && !versions.running)
         }
         scan.error?.let { Text(it, color = Bad, modifier = Modifier.padding(top = 8.dp)) }
     }
 
     ActionCard(action, onDismissResults)
 
-    if (scan.finishedAt == null && !scan.running) return
-
-    val codes = scan.codes
-    val active = codes.count { it.state == DtcState.Active }
-    val answered = scan.modules.count { it.value == "ok" || it.value == "incomplete" }
-    SectionTitle("Results")
-    TileRow {
-        Tile("Active now", active.toString(), Modifier.weight(1f), accent = if (active > 0) Bad else Good)
-        Tile("Stored", (codes.size - active).toString(), Modifier.weight(1f), accent = Warn)
-        Tile("Modules", "$answered", Modifier.weight(1f), accent = Cyan, caption = "answered")
-    }
-    scan.finishedAt?.let {
-        Text("Scanned " + DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(it)), color = Dim, fontSize = 12.sp)
-    }
-    val incomplete = scan.modules.filterValues { it == "incomplete" }.keys
-    if (incomplete.isNotEmpty()) {
-        Text("Some lists may be incomplete (${incomplete.joinToString()}). Scanning again usually fills them in.", color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+    if (scan.finishedAt != null || scan.running) {
+        Results(scan, versions.versions, blockedReason, onShare) { confirm = it }
     }
 
-    if (codes.isEmpty() && scan.finishedAt != null) {
-        Spacer(Modifier.height(12.dp))
-        Card(glow = Good) { Text("No fault codes stored in any module that answered.", color = Good) }
-    }
+    VersionsSection(state, scan, action, versions, onReadVersions)
 
-    val groups = codes.groupBy { it.ecu }.entries.sortedByDescending { e -> e.value.count { it.state == DtcState.Active } }
-    if (groups.isNotEmpty() && !scan.running) {
-        Spacer(Modifier.height(14.dp))
-        GradientButton(
-            "Clear codes in all ${groups.size} modules",
-            { confirm = Pending(CarAction.Clear, groups.map { it.key }) },
-            enabled = blockedReason == null, brush = DangerBrush,
-        )
-        blockedReason?.let { Text(it, color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
-    }
-    if (scan.finishedAt != null && !scan.running) {
-        TextButton(
-            onClick = { confirm = Pending(CarAction.Clear, Ecus.scanList) },
-            enabled = blockedReason == null,
-            modifier = Modifier.padding(top = if (groups.isEmpty()) 8.dp else 0.dp),
-        ) {
-            Text("Clear every module (${Ecus.scanList.size}), including ones that showed nothing", color = if (blockedReason == null) Bad else Dim, fontSize = 13.sp)
-        }
-    }
-
-    groups.forEach { (ecu, list) ->
-        Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("${ecu.name.uppercase()} · ${list.size}", color = Dim, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                letterSpacing = 1.2.sp, modifier = Modifier.weight(1f).padding(start = 4.dp))
-            SmallAction("Clear", Bad, blockedReason == null) { confirm = Pending(CarAction.Clear, listOf(ecu)) }
-            if (ecu.canRestart) {
-                Spacer(Modifier.width(6.dp))
-                SmallAction("Restart", Cyan, blockedReason == null) { confirm = Pending(CarAction.Restart, listOf(ecu)) }
-            }
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            list.sortedBy { it.state.ordinal }.forEach { CodeRow(it) }
-        }
-    }
-
-    // Restart any module that answered, including ones with no codes (a frozen screen, a stuck telematics box).
-    val reachable = Ecus.scanList.filter { it.canRestart && (scan.modules[it.code] == "ok" || scan.modules[it.code] == "incomplete") }
-    if (reachable.isNotEmpty() && !scan.running) {
-        var open by remember { mutableStateOf(false) }
-        SectionTitle("Restart a module")
-        Card(Modifier.animateContentSize()) {
-            Row(Modifier.fillMaxWidth().clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
-                Text("For a frozen screen or a module that stopped working. A restart is not a repair.", color = Dim, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                Text(if (open) "Hide" else "Show", color = Aqua, fontWeight = FontWeight.SemiBold)
-            }
-            if (open) {
-                Spacer(Modifier.height(8.dp))
-                reachable.forEach { ecu ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(ecu.name, color = Color.White)
-                            Text(ecu.code + if (ecu.hardRestart) " · full restart" else "", color = Dim, fontSize = 11.sp)
-                        }
-                        SmallAction("Restart", Cyan, blockedReason == null) { confirm = Pending(CarAction.Restart, listOf(ecu)) }
-                    }
-                }
-                blockedReason?.let { Text(it, color = Warn, fontSize = 12.sp) }
-            }
-        }
-    }
-
-    if (codes.isNotEmpty()) {
-        Spacer(Modifier.height(18.dp))
-        GhostButton("Share report", onShare)
-    }
+    PastScans(pastScans.filter { it.time != scan.finishedAt })
 
     SectionTitle("Code descriptions")
     Card {
@@ -203,6 +138,249 @@ fun FaultsScreen(
             CarAction.Restart -> onRestart(p.ecus.first())
         }
     } }
+}
+
+@Composable
+private fun Results(
+    scan: FaultScan,
+    versions: List<ModuleVersion>,
+    blockedReason: String?,
+    onShare: () -> Unit,
+    onConfirm: (Pending) -> Unit,
+) {
+    var activeFirst by rememberSaveable { mutableStateOf(false) }
+    val codes = scan.codes
+    val active = codes.count { it.state == DtcState.Active }
+    val answered = scan.modules.count { it.value == "ok" || it.value == "incomplete" }
+    val canSort = scan.finishedAt != null && !scan.running && active > 0
+    val byActive = activeFirst && canSort
+    SectionTitle("Results")
+    TileRow {
+        Tile(
+            "Active now", active.toString(), Modifier.weight(1f), accent = if (active > 0) Bad else Good,
+            caption = if (!canSort) null else if (byActive) "listed first" else "tap to list",
+            captionColor = if (byActive) Bad else Dim,
+            selected = byActive, onClick = if (canSort) ({ activeFirst = !activeFirst }) else null,
+        )
+        Tile("Stored", (codes.size - active).toString(), Modifier.weight(1f), accent = Warn)
+        Tile("Modules", "$answered", Modifier.weight(1f), accent = Cyan, caption = "answered")
+    }
+    scan.finishedAt?.let { Text("Scanned " + dateTime(it), color = Dim, fontSize = 12.sp) }
+    val diff = scan.diff
+    if (!scan.running) diff.previousTime?.let { prev ->
+        val changes = listOfNotNull(
+            diff.newKeys.size.takeIf { it > 0 }?.let { "$it new" },
+            diff.cleared.size.takeIf { it > 0 }?.let { "$it cleared" },
+        )
+        Text(
+            if (changes.isEmpty()) "No changes since the scan on ${dateTime(prev)}." else "Since the scan on ${dateTime(prev)}: ${changes.joinToString(", ")}.",
+            color = if (diff.newKeys.isNotEmpty()) Violet else Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+    val incomplete = scan.modules.filterValues { it == "incomplete" }.keys
+    if (incomplete.isNotEmpty()) {
+        Text("Some lists may be incomplete (${incomplete.joinToString()}). Scanning again usually fills them in.", color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+    }
+
+    if (codes.isEmpty() && scan.finishedAt != null) {
+        Spacer(Modifier.height(12.dp))
+        Card(glow = Good) { Text("No fault codes stored in any module that answered.", color = Good) }
+    }
+
+    val groups = codes.groupBy { it.ecu }.entries.sortedByDescending { e -> e.value.count { it.state == DtcState.Active } }
+    if (groups.isNotEmpty() && !scan.running) {
+        Spacer(Modifier.height(14.dp))
+        GradientButton(
+            "Clear codes in all ${groups.size} modules",
+            { onConfirm(Pending(CarAction.Clear, groups.map { it.key })) },
+            enabled = blockedReason == null, brush = DangerBrush,
+        )
+        blockedReason?.let { Text(it, color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
+    }
+    if (scan.finishedAt != null && !scan.running) {
+        TextButton(
+            onClick = { onConfirm(Pending(CarAction.Clear, Ecus.scanList)) },
+            enabled = blockedReason == null,
+            modifier = Modifier.padding(top = if (groups.isEmpty()) 8.dp else 0.dp),
+        ) {
+            Text("Clear every module (${Ecus.scanList.size}), including ones that showed nothing", color = if (blockedReason == null) Bad else Dim, fontSize = 13.sp)
+        }
+    }
+
+    AnimatedContent(
+        targetState = byActive,
+        transitionSpec = { fadeIn(tween(320, delayMillis = 80)) togetherWith fadeOut(tween(180)) using SizeTransform(clip = false) },
+        label = "faultSort",
+    ) { sorted ->
+        Column(Modifier.fillMaxWidth()) {
+            if (sorted) {
+                val now = codes.filter { it.state == DtcState.Active }.sortedBy { moduleOrder(it.ecu) }
+                Text("ACTIVE NOW · ${now.size}", color = Bad, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp,
+                    modifier = Modifier.padding(top = 18.dp, bottom = 6.dp, start = 4.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    now.forEach { CodeRow(it, module = it.ecu.name, isNew = FaultHistory.key(it) in scan.diff.newKeys) }
+                }
+                val rest = codes.filter { it.state != DtcState.Active }.groupBy { it.ecu }.entries.sortedBy { moduleOrder(it.key) }
+                rest.forEach { (ecu, list) -> ModuleGroup(ecu, list, scan, blockedReason, onConfirm) }
+            } else {
+                groups.forEach { (ecu, list) -> ModuleGroup(ecu, list, scan, blockedReason, onConfirm) }
+            }
+        }
+    }
+
+    if (diff.cleared.isNotEmpty() && !scan.running) {
+        SectionTitle("Cleared since last scan")
+        Card(glow = Good) {
+            Text("These codes were there last time and are gone now.", color = Dim, fontSize = 13.sp)
+            Spacer(Modifier.height(6.dp))
+            diff.cleared.forEach { c ->
+                val info = c.toDtc().info
+                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(info.title, color = Color.White, fontSize = 14.sp)
+                        Row {
+                            Text(c.code, color = Aqua, fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text("  ·  " + c.ecu.name, color = Dim, fontSize = 11.sp)
+                        }
+                    }
+                    Text("Cleared", color = Good, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+
+    // Restart any module that answered, including ones with no codes (a frozen screen, a stuck telematics box).
+    val reachable = Ecus.scanList.filter { it.canRestart && (scan.modules[it.code] == "ok" || scan.modules[it.code] == "incomplete") }
+    if (reachable.isNotEmpty() && !scan.running) {
+        var open by remember { mutableStateOf(false) }
+        SectionTitle("Restart a module")
+        Card(Modifier.animateContentSize()) {
+            Row(Modifier.fillMaxWidth().clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
+                Text("For a frozen screen or a module that stopped working. A restart is not a repair.", color = Dim, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                Text(if (open) "Hide" else "Show", color = Aqua, fontWeight = FontWeight.SemiBold)
+            }
+            if (open) {
+                Spacer(Modifier.height(8.dp))
+                reachable.forEach { ecu ->
+                    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(ecu.name, color = Color.White)
+                            Text(ecu.code + if (ecu.hardRestart) " · full restart" else "", color = Dim, fontSize = 11.sp)
+                        }
+                        SmallAction("Restart", Cyan, blockedReason == null) { onConfirm(Pending(CarAction.Restart, listOf(ecu))) }
+                    }
+                }
+                blockedReason?.let { Text(it, color = Warn, fontSize = 12.sp) }
+            }
+        }
+    }
+
+    if (!scan.running && (codes.isNotEmpty() || diff.cleared.isNotEmpty() || versions.isNotEmpty())) {
+        Spacer(Modifier.height(18.dp))
+        GhostButton("Share report", onShare)
+    }
+}
+
+@Composable
+private fun ModuleGroup(ecu: Ecu, list: List<Dtc>, scan: FaultScan, blockedReason: String?, onConfirm: (Pending) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("${ecu.name.uppercase()} · ${list.size}", color = Dim, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+            letterSpacing = 1.2.sp, modifier = Modifier.weight(1f).padding(start = 4.dp))
+        SmallAction("Clear", Bad, blockedReason == null) { onConfirm(Pending(CarAction.Clear, listOf(ecu))) }
+        if (ecu.canRestart) {
+            Spacer(Modifier.width(6.dp))
+            SmallAction("Restart", Cyan, blockedReason == null) { onConfirm(Pending(CarAction.Restart, listOf(ecu))) }
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        list.sortedBy { it.state.ordinal }.forEach { CodeRow(it, isNew = FaultHistory.key(it) in scan.diff.newKeys) }
+    }
+}
+
+@Composable
+private fun VersionsSection(state: CarState, scan: FaultScan, action: ActionRun, run: VersionRun, onRead: () -> Unit) {
+    SectionTitle("Module versions")
+    Card(Modifier.animateContentSize()) {
+        Text("Reads each module's software version and part number. Reading changes nothing.", color = Dim, fontSize = 13.sp)
+        Spacer(Modifier.height(14.dp))
+        when {
+            run.running -> {
+                Text("Reading ${run.current ?: "…"}", color = Color.White)
+                Spacer(Modifier.height(8.dp))
+                MeterBar(if (run.total == 0) 0f else run.progress.toFloat() / run.total)
+                Text("${run.progress} of ${run.total}", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            }
+            !state.connected -> if (run.versions.isEmpty()) Text("Connect to the car first.", color = Warn)
+            scan.running || action.running -> Text("Wait for the scan to finish.", color = Warn, fontSize = 13.sp)
+            else -> GhostButton(if (run.finishedAt == null) "Read module versions" else "Read again", onRead)
+        }
+        if (!run.running && run.finishedAt != null && run.versions.isEmpty()) {
+            Text("No module sent its version details.", color = Dim, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+        }
+        if (run.versions.isNotEmpty()) Spacer(Modifier.height(6.dp))
+        run.versions.forEach { v ->
+            Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(v.ecu.name, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Text(v.softwareVersion ?: "—", color = Aqua, fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
+                val details = listOfNotNull(v.partNumber?.let { "Part $it" }, v.softwareNumber?.let { "Software no. $it" })
+                if (details.isNotEmpty()) Text(details.joinToString("  ·  "), color = Dim, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PastScans(scans: List<SavedScan>) {
+    if (scans.isEmpty()) return
+    var showAll by remember { mutableStateOf(false) }
+    val newest = scans.sortedByDescending { it.time }
+    SectionTitle("Past scans")
+    Card(Modifier.animateContentSize()) {
+        (if (showAll) newest else newest.take(PAST_SHOWN)).forEach { PastScanRow(it) }
+        if (newest.size > PAST_SHOWN) {
+            TextButton(onClick = { showAll = !showAll }) {
+                Text(if (showAll) "Show fewer" else "Show all ${newest.size}", color = Aqua, fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+private const val PAST_SHOWN = 8
+
+@Composable
+private fun PastScanRow(s: SavedScan) {
+    var open by remember(s.time) { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().animateContentSize()) {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { open = !open }.padding(vertical = 8.dp, horizontal = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(dateTime(s.time), color = Color.White, fontSize = 14.sp)
+                Row {
+                    Text("${s.active} active", color = if (s.active > 0) Bad else Good, fontSize = 12.sp)
+                    Text("  ·  ${s.stored} stored", color = if (s.stored > 0) Warn else Dim, fontSize = 12.sp)
+                }
+            }
+            Text(if (open) "Hide" else "Show", color = Aqua, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        }
+        AnimatedVisibility(open, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+            Column(Modifier.padding(bottom = 8.dp)) {
+                if (s.codes.isEmpty()) {
+                    Text("No fault codes in this scan.", color = Good, fontSize = 13.sp, modifier = Modifier.padding(vertical = 4.dp))
+                }
+                s.codes.map { it.toDtc() }.groupBy { it.ecu }.entries.sortedBy { moduleOrder(it.key) }.forEach { (ecu, list) ->
+                    Text("${ecu.name.uppercase()} · ${list.size}", color = Dim, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.2.sp, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp, start = 4.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        list.sortedBy { it.state.ordinal }.forEach { CodeRow(it, inCard = true) }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -286,8 +464,10 @@ private fun SmallAction(text: String, color: Color, enabled: Boolean, onClick: (
     ) { Text(text, color = c, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
 }
 
+
+/** One fault code. [module] adds the module name (for lists that mix modules); [isNew] marks codes that weren't there last scan. */
 @Composable
-private fun CodeRow(d: Dtc) {
+private fun CodeRow(d: Dtc, module: String? = null, isNew: Boolean = false, inCard: Boolean = false) {
     val color = when (d.state) {
         DtcState.Active -> Bad
         DtcState.Pending -> Warn
@@ -297,7 +477,7 @@ private fun CodeRow(d: Dtc) {
     val info = d.info
     var open by remember(d.code) { mutableStateOf(false) }
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CardBg)
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (inCard) InsetBg else CardBg)
             .then(if (info.hasDetails) Modifier.clickable { open = !open } else Modifier)
             .animateContentSize().padding(12.dp),
     ) {
@@ -307,7 +487,7 @@ private fun CodeRow(d: Dtc) {
                 Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(d.code, color = Aqua, fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    Text("  ·  " + info.sourceLabel, color = Dim, fontSize = 11.sp)
+                    Text("  ·  " + (module ?: info.sourceLabel), color = Dim, fontSize = 11.sp)
                     info.severity?.takeIf { it != DtcSeverity.Info }?.let {
                         Text("  ·  " + it.label, color = if (it == DtcSeverity.Critical) Bad else Warn, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
@@ -316,8 +496,16 @@ private fun CodeRow(d: Dtc) {
                 if (info.hasDetails && !open) Text("Tap for causes and fixes", color = Cyan, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
             }
             Spacer(Modifier.width(8.dp))
-            Box(Modifier.clip(RoundedCornerShape(50)).background(color.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                Text(d.state.label, color = color, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Column(horizontalAlignment = Alignment.End) {
+                Box(Modifier.clip(RoundedCornerShape(50)).background(color.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
+                    Text(d.state.label, color = color, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                }
+                if (isNew) {
+                    Spacer(Modifier.height(4.dp))
+                    Box(Modifier.clip(RoundedCornerShape(50)).background(Violet.copy(alpha = 0.18f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
+                        Text("New", color = Violet, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
         }
         AnimatedVisibility(open, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
@@ -331,6 +519,9 @@ private fun CodeRow(d: Dtc) {
     }
 }
 
+/** Background for rows that sit inside a card. */
+private val InsetBg = Color(0xFF13233A)
+
 @Composable
 private fun DetailBlock(heading: String, items: List<String>, numbered: Boolean) {
     Text(heading, color = Aqua, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 3.dp))
@@ -343,21 +534,42 @@ private fun DetailBlock(heading: String, items: List<String>, numbered: Boolean)
     Spacer(Modifier.height(6.dp))
 }
 
-fun faultReport(state: CarState, scan: FaultScan): String = buildString {
+
+fun faultReport(state: CarState, scan: FaultScan, versions: List<ModuleVersion> = emptyList()): String = buildString {
     append("Ocean Live fault scan\n")
     state.vin?.let { append("VIN: $it\n") }
     scan.finishedAt?.let { append("Date: ${DateFormat.getDateTimeInstance().format(Date(it))}\n") }
+    val diff = scan.diff
+    diff.previousTime?.let {
+        append("Compared with the scan on ${DateFormat.getDateTimeInstance().format(Date(it))}: ${diff.newKeys.size} new, ${diff.cleared.size} cleared\n")
+    }
     append("\n")
     scan.codes.groupBy { it.ecu }.forEach { (ecu, list) ->
         append("${ecu.name} (${ecu.request}):\n")
         list.forEach {
             val info = it.info
-            append("  ${it.code}  ${it.state.label} · ${info.title}${info.note?.let { n -> " ($n)" } ?: ""}\n")
+            val new = if (FaultHistory.key(it) in diff.newKeys) " [NEW]" else ""
+            append("  ${it.code}  ${it.state.label}$new · ${info.title}${info.note?.let { n -> " ($n)" } ?: ""}\n")
             info.impact?.let { t -> append("      Affects: $t\n") }
             if (info.causes.isNotEmpty()) append("      Causes: ${info.causes.joinToString("; ")}\n")
             if (info.steps.isNotEmpty()) append("      Fix: ${info.steps.joinToString("; ")}\n")
         }
     }
+    if (diff.cleared.isNotEmpty()) {
+        append("\nCleared since last scan:\n")
+        diff.cleared.forEach { append("  ${it.code}  ${it.ecu.name} · ${it.toDtc().info.title}\n") }
+    }
     val silent = scan.modules.filterValues { it != "ok" }
     if (silent.isNotEmpty()) append("\nNo complete answer from: ${silent.entries.joinToString { "${it.key} (${it.value})" }}\n")
+    if (versions.isNotEmpty()) {
+        append("\nModule versions:\n")
+        versions.forEach { v ->
+            val parts = listOfNotNull(
+                v.softwareVersion?.let { "software $it" },
+                v.softwareNumber?.let { "software no. $it" },
+                v.partNumber?.let { "part $it" },
+            )
+            append("  ${v.ecu.name} (${v.ecu.code}): ${parts.joinToString(" · ")}\n")
+        }
+    }
 }

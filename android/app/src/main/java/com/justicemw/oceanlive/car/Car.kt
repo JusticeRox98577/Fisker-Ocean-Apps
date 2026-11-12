@@ -15,6 +15,8 @@ import com.justicemw.oceanlive.obd.Ecus
 import com.justicemw.oceanlive.obd.Elm
 import com.justicemw.oceanlive.obd.ElmTransport
 import com.justicemw.oceanlive.obd.FoundAdapter
+import com.justicemw.oceanlive.obd.Ident
+import com.justicemw.oceanlive.obd.ModuleVersion
 import com.justicemw.oceanlive.obd.Pids
 import com.justicemw.oceanlive.obd.Uds
 import com.justicemw.oceanlive.obd.UdsResult
@@ -58,6 +60,17 @@ data class FaultScan(
     val modules: Map<String, String> = emptyMap(),
     val finishedAt: Long? = null,
     val error: String? = null,
+    /** New and cleared codes compared with the scan before this one. */
+    val diff: ScanDiff = ScanDiff(),
+)
+
+data class VersionRun(
+    val running: Boolean = false,
+    val progress: Int = 0,
+    val total: Int = 0,
+    val current: String? = null,
+    val versions: List<ModuleVersion> = emptyList(),
+    val finishedAt: Long? = null,
 )
 
 enum class CarAction(val label: String) { Clear("Clear codes"), Restart("Restart") }
@@ -89,6 +102,7 @@ object Car {
     private lateinit var transport: ElmTransport
     private lateinit var store: HistoryStore
     private lateinit var alerts: Alerts
+    private lateinit var faultStore: FaultHistoryStore
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val bus = Mutex()
     private var job: Job? = null
@@ -110,6 +124,11 @@ object Car {
     val faults: StateFlow<FaultScan> = _faults.asStateFlow()
     private val _action = MutableStateFlow(ActionRun())
     val action: StateFlow<ActionRun> = _action.asStateFlow()
+    private val _pastScans = MutableStateFlow<List<SavedScan>>(emptyList())
+    /** Finished fault scans, oldest first (the latest [FaultHistory.MAX]). */
+    val pastScans: StateFlow<List<SavedScan>> = _pastScans.asStateFlow()
+    private val _versions = MutableStateFlow(VersionRun())
+    val versions: StateFlow<VersionRun> = _versions.asStateFlow()
 
     /** Latest phone location, fed by the service when ABRP location sharing is on. */
     @Volatile var location: Location? = null
@@ -122,10 +141,12 @@ object Car {
         transport = ElmTransport(app)
         store = HistoryStore(app)
         alerts = Alerts(app)
+        faultStore = FaultHistoryStore(app)
         _settings.value = Settings.load(Settings.prefs(app))
         _state.update { it.copy(adapterName = _settings.value.adapterName) }
         scope.launch(Dispatchers.IO) {
             _history.value = store.load()
+            _pastScans.value = faultStore.load()
             loadDescriptions()
         }
         transport.onDisconnected = { scope.launch { onLost("Adapter disconnected.") } }
@@ -376,7 +397,7 @@ object Car {
 
     /** Reads stored fault codes from every module. Read-only: nothing is cleared or changed. */
     fun scanFaults() {
-        if (_faults.value.running || !_state.value.connected) return
+        if (_faults.value.running || _versions.value.running || !_state.value.connected) return
         _faults.value = FaultScan(running = true)
         scope.launch {
             try {
@@ -408,10 +429,61 @@ object Car {
                         _faults.update { it.copy(codes = codes.toList(), modules = modules.toMap()) }
                     }
                     query("ATST20")
-                    _faults.update { it.copy(running = false, progress = it.total, current = null, finishedAt = System.currentTimeMillis()) }
+                    val now = System.currentTimeMillis()
+                    val saved = FaultHistory.snapshot(now, _state.value.vin, modules.toMap(), codes.toList())
+                    val past = _pastScans.value
+                    val diff = FaultHistory.diff(FaultHistory.previous(past, saved), saved)
+                    val list = FaultHistory.append(past, saved)
+                    _pastScans.value = list
+                    scope.launch(Dispatchers.IO) { try { faultStore.save(list) } catch (_: Exception) {} }
+                    _faults.update { it.copy(running = false, progress = it.total, current = null, finishedAt = now, diff = diff) }
                 }
             } catch (e: Exception) {
                 _faults.update { it.copy(running = false, error = e.message ?: "Scan stopped.") }
+            }
+        }
+    }
+
+    /**
+     * Reads the software version, software number and part number (standard UDS identification
+     * values, service 22) from each module. Read-only. Uses the modules that answered the last
+     * fault scan, or every module if there wasn't one.
+     */
+    fun readVersions() {
+        if (_versions.value.running || _faults.value.running || _action.value.running || !_state.value.connected) return
+        val scan = _faults.value
+        val ecus = if (scan.finishedAt != null) {
+            Ecus.scanList.filter { scan.modules[it.code] == "ok" || scan.modules[it.code] == "incomplete" }
+        } else Ecus.scanList
+        _versions.value = VersionRun(running = true, total = ecus.size)
+        scope.launch {
+            val found = mutableListOf<ModuleVersion>()
+            try {
+                bus.withLock {
+                    query("ATST96")
+                    ecus.forEachIndexed { index, ecu ->
+                        _versions.update { it.copy(progress = index, current = ecu.name) }
+                        selectEcu(ecu)
+                        val first = query("22${Ident.SOFTWARE_VERSION}", 3_000)
+                        // A module that doesn't answer at all is skipped so a silent one costs one timeout, not three.
+                        if (first == null || Elm.parse(first).bytes.isEmpty()) return@forEachIndexed
+                        val v = ModuleVersion(
+                            ecu,
+                            softwareVersion = Ident.read(first, Ident.SOFTWARE_VERSION),
+                            softwareNumber = Ident.read(query("22${Ident.SOFTWARE_NUMBER}", 3_000), Ident.SOFTWARE_NUMBER),
+                            partNumber = Ident.read(query("22${Ident.PART_NUMBER}", 3_000), Ident.PART_NUMBER),
+                        )
+                        if (!v.isEmpty) {
+                            found.add(v)
+                            _versions.update { it.copy(versions = found.toList()) }
+                        }
+                    }
+                    query("ATST20")
+                }
+            } catch (_: Exception) {
+                // Keep whatever was read before the connection dropped.
+            } finally {
+                _versions.update { it.copy(running = false, progress = it.total, current = null, versions = found.toList(), finishedAt = System.currentTimeMillis()) }
             }
         }
     }
@@ -425,7 +497,7 @@ object Car {
             !s.connected -> "Connect to the car first."
             s.mode == Mode.Driving -> "The car is moving. Park it first."
             s.mode == Mode.Charging -> "The car is charging. Unplug it first."
-            _faults.value.running -> "Wait for the scan to finish."
+            _faults.value.running || _versions.value.running -> "Wait for the scan to finish."
             _action.value.running -> "Another action is still running."
             else -> null
         }
