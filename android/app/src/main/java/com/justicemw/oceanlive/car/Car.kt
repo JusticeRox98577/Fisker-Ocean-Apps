@@ -621,7 +621,7 @@ object Car {
             EntryKind.Charge -> entry.kwh >= 0.2
         }
         if (!keep) return
-        val list = _history.value + entry
+        val list = ChargeCurve.trim(_history.value + entry)
         _history.value = list
         scope.launch(Dispatchers.IO) { store.save(list) }
     }

@@ -34,17 +34,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.justicemw.oceanlive.Format
+import com.justicemw.oceanlive.car.ChargeCurve
 import com.justicemw.oceanlive.car.EntryKind
 import com.justicemw.oceanlive.car.HistoryEntry
 import com.justicemw.oceanlive.car.MonthTotals
 import com.justicemw.oceanlive.car.Settings
 import com.justicemw.oceanlive.car.chargeCost
 import com.justicemw.oceanlive.car.monthTotals
+import com.justicemw.oceanlive.car.regenPercent
+import com.justicemw.oceanlive.car.regenTotals
 import java.util.Calendar
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 @Composable
 fun TripsScreen(history: List<HistoryEntry>, settings: Settings, onExport: () -> Unit, onClear: () -> Unit, onDelete: (HistoryEntry) -> Unit) {
@@ -64,6 +68,11 @@ fun TripsScreen(history: List<HistoryEntry>, settings: Settings, onExport: () ->
         TileRow {
             Tile("Distance", Format.distance(drives.sumOf { it.distanceKm ?: 0.0 }, settings), Modifier.weight(1f), accent = Cyan)
             Tile("Average", Format.efficiency(Format.whPerKm(history), settings), Modifier.weight(1f), accent = Aqua)
+        }
+        regenTotals(history)?.let { (regen, used) ->
+            TileRow {
+                Tile("Regen", "+" + Format.n(regen, 1) + " kWh", Modifier.weight(1f), caption = regenPercent(regen, used)?.let { "${it.roundToInt()} % of energy used" }, accent = Good)
+            }
         }
     }
 
@@ -157,9 +166,21 @@ private fun EntryRow(e: HistoryEntry, s: Settings, onDelete: (HistoryEntry) -> U
                 if (e.kind == EntryKind.Drive) {
                     KeyValue("Energy used", Format.n(e.kwh, 2) + " kWh")
                     KeyValue("Efficiency", Format.efficiency(e.whPerKm, s))
+                    e.regenKwh?.let { regen ->
+                        val pct = regenPercent(regen, e.kwh)?.let { " (${it.roundToInt()} % of energy used)" } ?: ""
+                        KeyValue("Regen", "+" + Format.n(regen, 1) + " kWh" + pct, Good)
+                    }
                 } else {
+                    e.samples?.let { samples ->
+                        Text("Charging curve", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                        ChargeCurveGraph(samples)
+                        Spacer(Modifier.height(8.dp))
+                    }
                     KeyValue("Peak power", e.peakKw?.let { Format.n(it, 1) + " kW" })
-                    KeyValue("Average power", if (e.minutes > 0) Format.n(e.kwh / (e.minutes / 60.0), 1) + " kW" else null)
+                    val average = e.samples?.let { ChargeCurve.averageKw(it) }
+                        ?: if (e.minutes > 0) e.kwh / (e.minutes / 60.0) else null
+                    KeyValue("Average power", average?.let { Format.n(it, 1) + " kW" })
+                    e.samples?.let { ChargeCurve.minutesBetween(it) }?.let { KeyValue("10–80 %", Format.duration(it.roundToLong())) }
                     KeyValue("Implied capacity", e.impliedCapacityKwh?.let { Format.n(it, 1) + " kWh" })
                     s.chargeCost(e)?.let { KeyValue("Cost", Format.money(it, s), Good) }
                 }

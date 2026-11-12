@@ -63,6 +63,10 @@ data class HistoryEntry(
     val distanceKm: Double? = null,
     val peakKw: Double? = null,
     val fast: Boolean = false,
+    /** Drive: kWh put back into the pack by regen. Null for drives saved before 3.3. */
+    val regenKwh: Double? = null,
+    /** Charge: readings taken about every 10 s, for the charging curve. Only the latest charges keep them. */
+    val samples: List<ChargeSample>? = null,
 ) {
     val minutes: Long get() = (end - start) / 60_000
     val whPerKm: Double? get() = distanceKm?.takeIf { it >= 0.5 }?.let { kwh * 1000 / it }
@@ -98,6 +102,7 @@ class Tracker {
     private var driveStartOdo: Double? = null
     private var chargeEvidence = 0
     private var stopEvidence = 0
+    private val samples = ChargeSamples()
 
     fun update(s: Snapshot): List<HistoryEntry> {
         val now = s.time
@@ -124,11 +129,12 @@ class Tracker {
                 mode = Mode.Charging
                 stopEvidence = 0
                 currentCharge = HistoryEntry(EntryKind.Charge, now, now, s.soc, s.soc, 0.0, peakKw = power)
+                samples.clear()
             }
         } else {
             stopEvidence = if (power == null || power < CHARGE_STOP_KW) stopEvidence + 1 else 0
             if (stopEvidence >= 3 || movedLastMinute) {
-                currentCharge?.let { finished.add(it.copy(end = now, socEnd = s.soc ?: it.socEnd)) }
+                currentCharge?.let { finished.add(finishCharge(it).copy(end = now, socEnd = s.soc ?: it.socEnd)) }
                 currentCharge = null
                 mode = Mode.Parked
                 chargeEvidence = 0
@@ -138,7 +144,7 @@ class Tracker {
         // Driving start / stop.
         if (mode != Mode.Charging) {
             if (movingRecently && currentDrive == null) {
-                currentDrive = HistoryEntry(EntryKind.Drive, now, now, s.soc, s.soc, 0.0, distanceKm = 0.0)
+                currentDrive = HistoryEntry(EntryKind.Drive, now, now, s.soc, s.soc, 0.0, distanceKm = 0.0, regenKwh = 0.0)
                 driveStartOdo = odo
                 mode = Mode.Driving
             } else if (!movingRecently && currentDrive != null) {
@@ -160,11 +166,13 @@ class Tracker {
                     fast = c.fast || power > DC_FAST_KW,
                 )
             }
+            if (currentCharge != null) samples.add(ChargeSample(now, s.soc, power, s.tempAvg))
             currentDrive?.let { d ->
                 currentDrive = d.copy(
                     end = now,
                     socEnd = s.soc ?: d.socEnd,
                     kwh = d.kwh - power * hours,
+                    regenKwh = (d.regenKwh ?: 0.0) + maxOf(power, 0.0) * hours,
                     distanceKm = driveDistance(odo) ?: d.distanceKm,
                 )
             }
@@ -175,7 +183,7 @@ class Tracker {
     /** Ends any open session, e.g. when the adapter disconnects. */
     fun flush(now: Long): List<HistoryEntry> {
         val out = mutableListOf<HistoryEntry>()
-        currentCharge?.let { out.add(it.copy(end = now)) }
+        currentCharge?.let { out.add(finishCharge(it).copy(end = now)) }
         currentDrive?.let { out.add(it.copy(end = now)) }
         currentCharge = null
         currentDrive = null
@@ -189,6 +197,12 @@ class Tracker {
     private fun driveDistance(odo: Double?): Double? {
         val start = driveStartOdo ?: return null
         return odo?.let { (it - start).coerceAtLeast(0.0) }
+    }
+
+    private fun finishCharge(c: HistoryEntry): HistoryEntry {
+        val list = samples.list()
+        samples.clear()
+        return c.copy(samples = list.takeIf { it.size >= 2 })
     }
 
     private fun finishDrive(d: HistoryEntry, now: Long, s: Snapshot) =
@@ -208,6 +222,16 @@ fun learnedWhPerKm(history: List<HistoryEntry>): Double? {
     val km = drives.sumOf { it.distanceKm!! }
     if (km < 10) return null
     return (drives.sumOf { it.kwh } * 1000 / km).takeIf { it in 80.0..600.0 }
+}
+
+/** Regen as a percentage of the net energy a drive used, or null when there's nothing to compare. */
+fun regenPercent(regenKwh: Double, usedKwh: Double): Double? = if (usedKwh >= 0.05) regenKwh / usedKwh * 100 else null
+
+/** Regen kWh and net energy used, summed over drives that recorded regen. Null if none did. */
+fun regenTotals(history: List<HistoryEntry>): Pair<Double, Double>? {
+    val drives = history.filter { it.kind == EntryKind.Drive && it.regenKwh != null }
+    if (drives.isEmpty()) return null
+    return drives.sumOf { it.regenKwh!! } to drives.sumOf { it.kwh }
 }
 
 /** Median usable capacity implied by charges that added at least 20%. */
