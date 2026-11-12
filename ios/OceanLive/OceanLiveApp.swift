@@ -36,8 +36,13 @@ struct RootView: View {
             SettingsView().tabItem { Label("Settings", systemImage: "gearshape") }.tag(4)
         }
         .tint(Theme.aqua)
-        .task { car.autoStart() }
+        .task {
+            car.setInBackground(scenePhase != .active)
+            car.autoStart()
+        }
         .onChange(of: scenePhase) { _, phase in
+            // Off screen, a parked car is left to sleep after a while; back on screen connects again.
+            car.setInBackground(phase != .active)
             // Remember the last reading in case iPhone ends the app while it's in the background.
             if phase == .background { car.saveParkedAnchor() }
         }

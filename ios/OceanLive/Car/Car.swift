@@ -14,6 +14,9 @@ struct CarState: Equatable {
     var lastUpdate: Int64?
     /// Charge lost while parked, measured when this connection started.
     var parked: ParkedDrain?
+    /// Why the app stopped reading on its own (the car went to sleep, or it sat parked with the app
+    /// in the background). Nil while connected, and after the user disconnects.
+    var stopped: String?
 
     var connected: Bool { status == .live }
 }
@@ -119,12 +122,26 @@ final class Car: ObservableObject {
     private var anchorSavedAt: Int64 = 0
 
     private var carPlayConnected = false
+    /// The phone app isn't on screen (scene not active).
+    private var inBackground = false
+    /// The user tapped Disconnect: don't connect again just because the app came back on screen.
+    private var userStopped = false
+    /// When to stop reading so the car can sleep.
+    private var sleepPolicy = SleepPolicy()
+    /// Reconnect attempts since the adapter dropped. Back to 0 once the car answers.
+    private var adapterRetries = 0
 
     /// Seconds between readings: every second while CarPlay is showing, every two otherwise.
     private var pollInterval: Double { carPlayConnected ? 1 : 2 }
-    private static let reconnectNs: UInt64 = 10_000_000_000
 
     func setCarPlayConnected(_ on: Bool) { carPlayConnected = on }
+
+    /// The phone app went off screen or came back. Coming back connects again if auto-connect is on,
+    /// unless the user disconnected. Nothing reconnects while the app stays in the background.
+    func setInBackground(_ on: Bool) {
+        inBackground = on
+        if !on && !userStopped { autoStart() }
+    }
 
     init() {
         settings = Settings.load()
@@ -132,6 +149,7 @@ final class Car: ObservableObject {
         history = HistoryStore.load()
         pastScans = FaultHistoryStore.load()
         drains = ParkedStore.loadDrains()
+        inBackground = UIApplication.shared.applicationState == .background
         loadDescriptions()
         location.setEnabled(settings.abrpEnabled && settings.abrpLocation)
         transport.onDisconnected = { [weak self] in self?.onLost("Adapter disconnected.") }
@@ -154,6 +172,7 @@ final class Car: ObservableObject {
         found = []
         state.status = .scanning
         state.message = nil
+        state.stopped = nil
         task = Task {
             do {
                 try await transport.startScan { [weak self] adapter in
@@ -182,9 +201,11 @@ final class Car: ObservableObject {
     func connect(id: UUID, name: String) {
         stopTask()
         wantConnected = true
+        userStopped = false
         updateSettings { $0.adapterId = id.uuidString; $0.adapterName = name }
         state.status = .connecting
         state.message = nil
+        state.stopped = nil
         state.adapterName = name
         task = Task { await runSession(id: id, firstAttempt: true) }
     }
@@ -196,11 +217,29 @@ final class Car: ObservableObject {
 
     func disconnect() {
         wantConnected = false
+        userStopped = true
         stopTask()
         transport.disconnect()
         endSessions()
         state.status = .idle
         state.message = nil
+        state.stopped = nil
+        state.abrpStatus = nil
+        updateScreenLock()
+    }
+
+    /// Stops reading and lets go of the adapter so the car can sleep. No timer brings it back:
+    /// the next connection waits for the user to open the app, CarPlay to connect, or a tap on Connect.
+    private func stopReading(_ reason: String) {
+        wantConnected = false
+        task = nil // called from the session itself, as its last step
+        transport.disconnect()
+        endSessions() // saves the parked anchor, like a disconnect
+        sleepPolicy.reset()
+        adapterRetries = 0
+        state.status = .idle
+        state.message = nil
+        state.stopped = reason
         state.abrpStatus = nil
         updateScreenLock()
     }
@@ -211,9 +250,10 @@ final class Car: ObservableObject {
         state.adapterName = nil
     }
 
-    /// Auto-connect once when the app opens.
+    /// Auto-connect when the app opens or comes back on screen, or CarPlay connects. Never on a timer.
     func autoStart() {
-        if settings.autoStart && settings.adapterId != nil && state.status == .idle { connectSaved() }
+        let notReading = state.status == .idle || state.status == .error
+        if settings.autoStart && settings.adapterId != nil && notReading { connectSaved() }
     }
 
     private func stopTask() {
@@ -224,6 +264,8 @@ final class Car: ObservableObject {
 
     private func runSession(id: UUID, firstAttempt: Bool) async {
         var first = firstAttempt
+        adapterRetries = 0
+        sleepPolicy.reset()
         while wantConnected && !Task.isCancelled {
             do {
                 try await transport.connect(id: id)
@@ -246,6 +288,11 @@ final class Car: ObservableObject {
                 try await poll()
             } catch {
                 if Task.isCancelled || !wantConnected { return }
+                if let stop = error as? CarError {
+                    // The car went quiet, or sat parked long enough: stop for good so it can sleep.
+                    stopReading(stop.message)
+                    return
+                }
                 transport.disconnect()
                 endSessions()
                 if first {
@@ -256,10 +303,16 @@ final class Car: ObservableObject {
                     updateScreenLock()
                     return
                 }
+                // The adapter dropped while the car was answering: a few short tries, then stop.
+                adapterRetries += 1
+                guard let delay = SleepPolicy.retryDelay(attempt: adapterRetries) else {
+                    stopReading(SleepPolicy.adapterLostMessage)
+                    return
+                }
                 state.status = .reconnecting
                 state.message = error.localizedDescription
                 updateScreenLock()
-                try? await Task.sleep(nanoseconds: Self.reconnectNs)
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
         }
     }
@@ -292,10 +345,11 @@ final class Car: ObservableObject {
         selectedEcu = ecu
     }
 
+    /// Whether the car answered (a "NO DATA" from the adapter doesn't count), and the value.
     private func read(_ did: Did) async throws -> (Bool, Double?) {
         try await selectEcu(did.ecu)
         guard let reply = try await query(did.command) else { return (false, nil) }
-        return (true, Elm.read(reply, did))
+        return (Elm.carAnswered(reply), Elm.read(reply, did))
     }
 
     private func poll() async throws {
@@ -323,8 +377,8 @@ final class Car: ObservableObject {
                         snap.aux12v = bms
                         snap.aux12vSource = "BMS"
                     } else {
+                        // The adapter answers this itself, so it says nothing about whether the car is awake.
                         let reply = try await query("ATRV")
-                        if reply != nil { answered = true }
                         let v = reply.flatMap { Elm.adapterVoltage($0) }
                         snap.aux12v = v
                         snap.aux12vSource = v == nil ? nil : "OBD port"
@@ -339,10 +393,16 @@ final class Car: ObservableObject {
 
             if answered {
                 misses = 0
+                adapterRetries = 0
                 onReading(snap)
             } else {
                 misses += 1
-                if misses >= 3 { throw CarError.stoppedAnswering }
+            }
+            switch sleepPolicy.afterPoll(misses: misses, retrying: adapterRetries > 0, mode: tracker.mode,
+                                         background: inBackground, carScreen: carPlayConnected, now: nowMs()) {
+            case .keepReading: break
+            case .carAsleep: throw CarError.asleep
+            case .parkedIdle: throw CarError.parkedIdle
             }
             cycle += 1
             // Wait out the rest of the interval, so a reading lands every second (or two) no matter how long the adapter took.
@@ -705,8 +765,16 @@ final class Car: ObservableObject {
     }
 }
 
+/// Reasons the app stops reading on its own so the car can sleep.
 enum CarError: LocalizedError {
-    case stoppedAnswering
+    case asleep, parkedIdle
 
-    var errorDescription: String? { "The car stopped answering." }
+    var message: String {
+        switch self {
+        case .asleep: return SleepPolicy.asleepMessage
+        case .parkedIdle: return SleepPolicy.parkedIdleMessage
+        }
+    }
+
+    var errorDescription: String? { message }
 }

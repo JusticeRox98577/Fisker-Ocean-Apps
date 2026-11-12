@@ -125,7 +125,7 @@ private struct Results: View {
             Button {
                 withAnimation(.easeInOut(duration: 0.3)) { activeFirst.toggle() }
             } label: {
-                Tile(label: "Active now", value: "\(active)", caption: canSort ? (sorting ? "Shown first" : "Tap to sort") : nil,
+                Tile(label: "Active now", value: "\(active)", caption: canSort ? (sorting ? "listed first" : "tap to list") : nil,
                      accent: active > 0 ? Theme.bad : Theme.good, captionColor: sorting ? Theme.bad : Theme.dim)
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -659,8 +659,8 @@ func faultReport(vin: String?, scan: FaultScan, versions: [ModuleVersion] = []) 
         out += "\(ecu.name) (\(ecu.request)):\n"
         for d in list {
             let info = d.info
-            let tag = changes.newIds.contains(d.id) ? "  [new]" : ""
-            out += "  \(d.code)  \(d.state.label) · \(info.title)" + (info.note.map { " (\($0))" } ?? "") + tag + "\n"
+            let tag = changes.newIds.contains(d.id) ? " [NEW]" : ""
+            out += "  \(d.code)  \(d.state.label)\(tag) · \(info.title)" + (info.note.map { " (\($0))" } ?? "") + "\n"
             if let impact = info.impact { out += "      Affects: \(impact)\n" }
             if !info.causes.isEmpty { out += "      Causes: \(info.causes.joined(separator: "; "))\n" }
             if !info.steps.isEmpty { out += "      Fix: \(info.steps.joined(separator: "; "))\n" }

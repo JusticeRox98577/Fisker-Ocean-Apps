@@ -174,6 +174,7 @@ final class CarPlayDashboard {
         case .connecting: return "Connecting"
         case .scanning: return "Looking for adapter"
         case .idle, .error:
+            if s.stopped != nil && car.settings.adapterId != nil { return "Car left to sleep · tap to connect" }
             return car.settings.adapterId != nil ? "Not connected · tap to connect" : "No adapter set up"
         }
     }

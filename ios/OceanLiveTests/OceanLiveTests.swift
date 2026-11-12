@@ -23,6 +23,19 @@ final class ObdTests: XCTestCase {
     func testAtrv() { XCTAssertEqual(Elm.adapterVoltage("12.6V")!, 12.6, accuracy: 0.001) }
     func testAtrvGarbage() { XCTAssertNil(Elm.adapterVoltage("?")) }
 
+    /// Only a reply from a module counts as the car answering; the adapter's own messages don't.
+    func testCarAnswered() {
+        XCTAssertTrue(Elm.carAnswered("62205002C6\r\r>"))
+        XCTAssertTrue(Elm.carAnswered("7F2231\r>")) // a refusal still means the module is awake
+        XCTAssertTrue(Elm.carAnswered("005\r0:622050\r1:02FD\r"))
+        XCTAssertFalse(Elm.carAnswered("NO DATA\r\r>"))
+        XCTAssertFalse(Elm.carAnswered("CAN ERROR\r>"))
+        XCTAssertFalse(Elm.carAnswered("?\r>"))
+        XCTAssertFalse(Elm.carAnswered("OK\r>"))
+        XCTAssertFalse(Elm.carAnswered("12.6V\r>"))
+        XCTAssertFalse(Elm.carAnswered(""))
+    }
+
     func testVinMultiFrame() {
         XCTAssertEqual(Elm.vin("014\r0:62F190564346\r1:315A4245323350\r2:47303037383438\r>"), "VCF1ZBE23PG007848")
     }
@@ -299,7 +312,8 @@ final class FaultHistoryTests: XCTestCase {
         s.changes = ScanChanges(newIds: ["BMSP100216"], cleared: [SavedCode(ecu: "BCM", code: "U178B11", status: 0x09)], since: 1)
         let report = faultReport(vin: "VIN1", scan: s, versions: [ModuleVersion(ecu: "BMS", name: "HV battery", partNumber: "AB12")])
         XCTAssertTrue(report.contains("P100216"))
-        XCTAssertTrue(report.contains("[new]"))
+        XCTAssertTrue(report.contains(" [NEW] · "))
+        XCTAssertFalse(report.contains("[new]"))
         XCTAssertTrue(report.contains("Cleared since last scan:\n  U178B11  Body control"))
         XCTAssertTrue(report.contains("Module versions:\n  HV battery (BMS): Part no. AB12"))
     }
@@ -359,10 +373,35 @@ final class ParkedDrainTests: XCTestCase {
 
     func testIgnoresImplausible() {
         let a = ParkedAnchor(soc: 80, time: 0)
-        XCTAssertNil(ParkedDrain.measure(a, snap(48 * hour, 50), charging: false)) // 30 points
-        XCTAssertNil(ParkedDrain.measure(a, snap(2 * hour, 75), charging: false)) // 60% a day
+        XCTAssertNil(ParkedDrain.measure(a, snap(48 * hour, 49), charging: false)) // 31 points
+        XCTAssertNotNil(ParkedDrain.measure(a, snap(48 * hour, 50), charging: false)) // 30 points is the limit
+        XCTAssertNil(ParkedDrain.measure(a, snap(6 * hour, 74), charging: false)) // 24% a day over 6 h
+        XCTAssertNotNil(ParkedDrain.measure(a, snap(6 * hour, 75.5), charging: false)) // 18% a day
         XCTAssertNil(ParkedDrain.measure(ParkedAnchor(soc: 140, time: 0), snap(5 * hour, 79), charging: false))
         XCTAssertNotNil(ParkedDrain.measure(a, snap(hour, 79.6), charging: false))
+    }
+
+    /// The 20% a day limit only applies to periods of 6 hours or more.
+    func testRateLimitOnlyForLongPeriods() {
+        let a = ParkedAnchor(soc: 80, time: 0)
+        let d = ParkedDrain.measure(a, snap(2 * hour, 75), charging: false) // 60% a day, but only 2 h
+        XCTAssertNotNil(d)
+        XCTAssertEqual(d!.drop, 5, accuracy: 0.001)
+    }
+
+    func testGapOver60DaysIgnored() {
+        let a = ParkedAnchor(soc: 80, time: 0)
+        let day = 24 * hour
+        XCTAssertNil(ParkedDrain.measure(a, snap(61 * day, 70), charging: false))
+        XCTAssertNotNil(ParkedDrain.measure(a, snap(60 * day, 70), charging: false))
+        XCTAssertEqual(ParkedDrain.maxGapMs, 60 * day)
+    }
+
+    func testTinyRiseCountsAsNoDrop() {
+        let a = ParkedAnchor(soc: 80, time: 0)
+        let d = ParkedDrain.measure(a, snap(5 * hour, 80.04), charging: false)
+        XCTAssertEqual(d?.drop, 0)
+        XCTAssertNil(ParkedDrain.measure(a, snap(5 * hour, 80.2), charging: false))
     }
 
     func testAveragePerDayIsTimeWeighted() {
@@ -372,6 +411,17 @@ final class ParkedDrainTests: XCTestCase {
         ]
         XCTAssertEqual(averageDrainPerDay(list)!, 1.0, accuracy: 0.001)
         XCTAssertNil(averageDrainPerDay([]))
+    }
+
+    /// The Battery screen average needs at least 12 hours of measured time.
+    func testAverageNeedsTwelveHours() {
+        let short = [
+            ParkedDrain(start: 0, end: 5 * hour, socStart: 80, socEnd: 79.8),
+            ParkedDrain(start: 0, end: 6 * hour, socStart: 79.8, socEnd: 79.5),
+        ]
+        XCTAssertNil(averageDrainPerDay(short))
+        let enough = short + [ParkedDrain(start: 0, end: hour, socStart: 79.5, socEnd: 79.5)]
+        XCTAssertEqual(averageDrainPerDay(enough)!, 0.5 / 12 * 24, accuracy: 0.001)
     }
 
     func testDrainText() {
@@ -543,5 +593,91 @@ final class GlanceTests: XCTestCase {
         XCTAssertEqual(s.toTargetText, "Reached")
         XCTAssertEqual(OceanShared.percent(80.6), "81%")
         XCTAssertEqual(OceanShared.duration(65), "1 h 5 min")
+    }
+}
+
+/// When the app stops reading so the car can sleep.
+final class SleepPolicyTests: XCTestCase {
+    private let minute: Int64 = 60_000
+
+    func testCarAsleepAfterThreeMissedPolls() {
+        var p = SleepPolicy()
+        XCTAssertEqual(p.afterPoll(misses: 1, mode: .parked, background: false, carScreen: false, now: 0), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 2, mode: .parked, background: false, carScreen: false, now: 0), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 3, mode: .parked, background: false, carScreen: false, now: 0), .carAsleep)
+        // Even while driving or with CarPlay on: a car that doesn't answer is left alone.
+        XCTAssertEqual(p.afterPoll(misses: 3, mode: .driving, background: false, carScreen: true, now: 0), .carAsleep)
+    }
+
+    func testOneMissIsEnoughAfterAnAdapterDrop() {
+        var p = SleepPolicy()
+        XCTAssertEqual(p.afterPoll(misses: 0, retrying: true, mode: .parked, background: false, carScreen: false, now: 0), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 1, retrying: true, mode: .parked, background: false, carScreen: false, now: 0), .carAsleep)
+    }
+
+    func testParkedInBackgroundStopsAfterTenMinutes() {
+        var p = SleepPolicy()
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 0), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 9 * minute), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 10 * minute), .parkedIdle)
+    }
+
+    func testForegroundKeepsReading() {
+        var p = SleepPolicy()
+        for t in 0...30 {
+            XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: false, carScreen: false, now: Int64(t) * minute), .keepReading)
+        }
+        XCTAssertNil(p.parkedSince)
+    }
+
+    func testCarPlayKeepsReading() {
+        var p = SleepPolicy()
+        for t in 0...30 {
+            XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: true, now: Int64(t) * minute), .keepReading)
+        }
+    }
+
+    func testChargingAndDrivingKeepReading() {
+        var p = SleepPolicy()
+        for t in 0...30 {
+            XCTAssertEqual(p.afterPoll(misses: 0, mode: .charging, background: true, carScreen: false, now: Int64(t) * minute), .keepReading)
+            XCTAssertEqual(p.afterPoll(misses: 0, mode: .driving, background: true, carScreen: false, now: Int64(t) * minute), .keepReading)
+        }
+    }
+
+    /// The ten minutes start when charging ends, not when the app went to the background.
+    func testTimerStartsWhenChargingEnds() {
+        var p = SleepPolicy()
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .charging, background: true, carScreen: false, now: 0), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .charging, background: true, carScreen: false, now: 60 * minute), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 61 * minute), .keepReading)
+        XCTAssertEqual(p.parkedSince, 61 * minute)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 70 * minute), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 71 * minute), .parkedIdle)
+    }
+
+    /// The time has to be continuous: coming back on screen starts it over.
+    func testForegroundResetsTheTimer() {
+        var p = SleepPolicy()
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 0), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: false, carScreen: false, now: 8 * minute), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 9 * minute), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 18 * minute), .keepReading)
+        XCTAssertEqual(p.afterPoll(misses: 0, mode: .parked, background: true, carScreen: false, now: 19 * minute), .parkedIdle)
+        p.reset()
+        XCTAssertNil(p.parkedSince)
+    }
+
+    func testRetriesBackOffAndRunOut() {
+        XCTAssertEqual(SleepPolicy.retryDelay(attempt: 1), 5)
+        XCTAssertEqual(SleepPolicy.retryDelay(attempt: 2), 10)
+        XCTAssertEqual(SleepPolicy.retryDelay(attempt: 3), 20)
+        XCTAssertNil(SleepPolicy.retryDelay(attempt: 4))
+        XCTAssertNil(SleepPolicy.retryDelay(attempt: 0))
+    }
+
+    func testStopReasonsArePlain() {
+        XCTAssertEqual(CarError.asleep.message, "The car is asleep. Ocean Live stopped reading so it can sleep.")
+        XCTAssertTrue(CarError.parkedIdle.message.contains("10 minutes"))
     }
 }

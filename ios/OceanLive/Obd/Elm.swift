@@ -169,6 +169,13 @@ enum Elm {
         return ElmReply(bytes: bytes, declaredLength: declared, noData: noData)
     }
 
+    /// Whether a module on the car actually replied, with an answer or a refusal. "NO DATA" and other
+    /// adapter messages don't count: the adapter sends those itself while the car is asleep.
+    static func carAnswered(_ response: String) -> Bool {
+        let reply = parse(response)
+        return !reply.noData && !reply.bytes.isEmpty
+    }
+
     /// Data bytes after "62 HH LL" for `did`, or nil if the reply has no positive answer for it.
     static func didData(_ response: String, did: String) -> [Int]? {
         let reply = parse(response)

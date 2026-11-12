@@ -252,12 +252,16 @@ struct ParkedDrain: Codable, Equatable, Identifiable {
     var socEnd: Double
 
     static let minGapMs: Int64 = 30 * 60_000
-    static let maxGapMs: Int64 = 90 * 24 * 3_600_000
+    static let maxGapMs: Int64 = 60 * 24 * 3_600_000
     static let keep = 30
+    /// Bigger drops than this are misreads, not drain.
+    static let maxDrop = 30.0
+    /// Fastest believable drain, percent a day, for periods of 6 hours or more.
+    static let maxPerDay = 20.0
 
     var id: Int64 { start }
     /// Percentage points lost. Never negative.
-    var drop: Double { socStart - socEnd }
+    var drop: Double { Swift.max(socStart - socEnd, 0) }
     var hours: Double { Double(end - start) / 3_600_000 }
     var perDay: Double { hours > 0 ? drop / hours * 24 : 0 }
 
@@ -271,18 +275,21 @@ struct ParkedDrain: Codable, Equatable, Identifiable {
         guard gap > minGapMs, gap <= maxGapMs else { return nil }
         guard (0...100).contains(anchor.soc), (0...100).contains(soc) else { return nil }
         if let a = anchor.odometerKm, let b = s.odometerKm, abs(b - a) > 0.5 { return nil }
+        // A rise means it was charged while the app was away.
+        if soc > anchor.soc + 0.05 { return nil }
         let d = ParkedDrain(start: anchor.time, end: s.time, socStart: anchor.soc, socEnd: soc)
-        guard d.drop >= 0, d.drop <= 20 else { return nil }
-        // A short gap with a big drop is more likely a misread than real drain.
-        if d.drop >= 1 && d.perDay > 20 { return nil }
+        if d.drop > maxDrop { return nil }
+        // Over 6 hours or more, a faster drop is more likely a misread than real drain.
+        if d.hours >= 6 && d.perDay > maxPerDay { return nil }
         return d
     }
 }
 
 /// Average charge lost per day while parked, weighted by how long each period lasted.
+/// Nil until there are at least 12 hours of measured time.
 func averageDrainPerDay(_ drains: [ParkedDrain]) -> Double? {
     let hours = drains.reduce(0) { $0 + $1.hours }
-    guard hours >= 1 else { return nil }
+    guard !drains.isEmpty, hours >= 12 else { return nil }
     return drains.reduce(0) { $0 + $1.drop } / hours * 24
 }
 

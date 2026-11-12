@@ -14,7 +14,7 @@ struct LiveView: View {
             case .connecting:
                 Connecting(name: state.adapterName)
             default:
-                if !showDash || state.status == .error { StartCard() }
+                if !showDash || state.status == .error || state.stopped != nil { StartCard() }
                 if showDash { Dashboard() }
             }
         }
@@ -71,7 +71,7 @@ private struct Dashboard: View {
             .transition(.opacity.combined(with: .move(edge: .top)))
         }
 
-        if state.mode == .parked, let d = state.parked {
+        if state.mode == .parked, let d = car.drains.last, nowMs() - d.end < parkedShowMs {
             VStack(spacing: 0) {
                 SectionTitle("While parked")
                 CardBox(glow: Theme.violet) {
@@ -157,14 +157,23 @@ private struct Dashboard: View {
     }
 }
 
+/// How long after reconnecting the "While parked" card stays on the Live screen.
+private let parkedShowMs: Int64 = 12 * 3_600_000
+
 private struct StartCard: View {
     @EnvironmentObject var car: Car
 
     var body: some View {
         CardBox {
             Text("Connect to your Ocean").font(.system(size: 20, weight: .bold)).foregroundStyle(.white)
-            Text("Plug a Bluetooth LE OBD adapter into the car, turn the car on, then connect.")
-                .foregroundStyle(Theme.dim).padding(.top, 6)
+            if let stopped = car.state.stopped {
+                // Stopped on purpose so the car can sleep: not an error.
+                Label(stopped, systemImage: "moon.zzz")
+                    .foregroundStyle(Theme.dim).padding(.top, 6)
+            } else {
+                Text("Plug a Bluetooth LE OBD adapter into the car, turn the car on, then connect.")
+                    .foregroundStyle(Theme.dim).padding(.top, 6)
+            }
             if let m = car.state.message {
                 Text(m).foregroundStyle(Theme.bad).padding(.top, 10)
             }
