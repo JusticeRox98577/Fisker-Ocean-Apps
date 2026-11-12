@@ -107,8 +107,14 @@ jobs:
             --entitlements OceanLive/OceanLive.entitlements "$ARCHIVED_APP"
           codesign -d --entitlements - --xml "$ARCHIVED_APP" | grep -q carplay-driving-task
           codesign -d --entitlements - --xml "$ARCHIVED_APP" | grep -q application-groups
-          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/OceanLive.xcarchive" \
-            -exportOptionsPlist ExportOptions.plist -exportPath build/ipa $AUTH
+          if ! xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/OceanLive.xcarchive" \
+            -exportOptionsPlist ExportOptions.plist -exportPath build/ipa $AUTH; then
+            # Keep Xcode's detailed distribution logs: they hold Apple's actual reason for a signing failure.
+            mkdir -p "$RUNNER_TEMP/distlogs"
+            find /var/folders "$TMPDIR" -maxdepth 6 -name '*.xcdistributionlogs' -exec cp -R {} "$RUNNER_TEMP/distlogs/" \; 2>/dev/null || true
+            grep -rhiE "error|fail|denied|forbidden|not allowed|401|403|unauthor" "$RUNNER_TEMP/distlogs" 2>/dev/null | sort -u | head -80
+            exit 1
+          fi
           # The signed app must carry the CarPlay entitlement, or CarPlay won't show the app.
           rm -rf "$RUNNER_TEMP/check" && mkdir -p "$RUNNER_TEMP/check"
           unzip -q build/ipa/*.ipa -d "$RUNNER_TEMP/check"
@@ -130,6 +136,12 @@ jobs:
           echo
           API_PRIVATE_KEYS_DIR="$RUNNER_TEMP/keys" xcrun altool --upload-app --type ios -f build/ipa/*.ipa \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: signing-logs
+          path: ${{ runner.temp }}/distlogs
+          if-no-files-found: ignore
       - name: Remove App Store Connect key
         if: always()
         run: rm -rf "$RUNNER_TEMP/keys"
