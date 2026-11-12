@@ -1,5 +1,6 @@
 package com.justicemw.oceanlive.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,11 +21,22 @@ import com.justicemw.oceanlive.car.HistoryEntry
 import com.justicemw.oceanlive.car.ParkedDrain
 import com.justicemw.oceanlive.car.ParkedDrains
 import com.justicemw.oceanlive.car.Settings
+import com.justicemw.oceanlive.car.Status
+import com.justicemw.oceanlive.car.V12Log
+import com.justicemw.oceanlive.car.V12Sample
+import com.justicemw.oceanlive.car.V12Watch
 import com.justicemw.oceanlive.car.measuredCapacityKwh
 import kotlin.math.roundToInt
 
 @Composable
-fun BatteryScreen(state: CarState, settings: Settings, history: List<HistoryEntry>, parked: List<ParkedDrain>) {
+fun BatteryScreen(
+    state: CarState,
+    settings: Settings,
+    history: List<HistoryEntry>,
+    parked: List<ParkedDrain>,
+    v12: List<V12Sample>,
+    onOpen12v: () -> Unit,
+) {
     val s = state.snapshot
 
     SectionTitle("Battery health")
@@ -71,6 +83,20 @@ fun BatteryScreen(state: CarState, settings: Settings, history: List<HistoryEntr
         }
     }
 
+    SectionTitle("12V battery")
+    Card(Modifier.clickable(onClick = onOpen12v), glow = if (state.status == Status.Watching) Violet else null) {
+        val volts = s.aux12v ?: v12.lastOrNull()?.volts
+        Row(Modifier.fillMaxWidth()) {
+            Text(if (s.aux12v != null) "Now" else "Last reading", color = Dim, modifier = Modifier.weight(1f))
+            Text(volts?.let { Format.n(it, 2) + " V" } ?: "—", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        }
+        s.aux12vSource?.let { Text(it, color = Dim, fontSize = 12.sp) }
+        val rest = v12.lastOrNull { it.atRest }
+        KeyValue("Latest resting", rest?.let { Format.n(it.volts, 2) + " V · " + V12Log.restLabel(it.volts) }, rest?.let { V12Chart.restColor(it.volts) } ?: Color.White)
+        if (state.status == Status.Watching) Text(V12Watch.STATUS, color = Violet, fontSize = 12.sp)
+        Text("See the 12V history ›", color = Aqua, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
+    }
+
     SectionTitle("Cells")
     Card {
         KeyValue("Highest", s.cellMax?.let { "${it.roundToInt()} mV" })
@@ -108,7 +134,6 @@ fun BatteryScreen(state: CarState, settings: Settings, history: List<HistoryEntr
         KeyValue("Pack current", s.packA?.let { Format.n(it, 1) + " A" })
         KeyValue("Power", s.powerKw?.let { Format.n(it, 2) + " kW" })
         KeyValue("Isolation resistance", s.isolation?.let { "${it.roundToInt()} kΩ" })
-        KeyValue("12V battery", s.aux12v?.let { Format.n(it, 2) + " V" + (s.aux12vSource?.let { src -> " ($src)" } ?: "") })
         state.vin?.let { KeyValue("VIN", it) }
     }
 

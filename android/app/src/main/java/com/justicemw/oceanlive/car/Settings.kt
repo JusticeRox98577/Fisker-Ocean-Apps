@@ -35,6 +35,10 @@ data class Settings(
     val homePrice: Double = 0.0,
     /** DC fast charging price per kWh. 0 means not set. */
     val dcPrice: Double = 0.0,
+    /** Keep the adapter connected while the car sleeps and ask it (only it) for the 12V. */
+    val watch12v: Boolean = false,
+    /** Minutes between 12V checks while the car sleeps: 5, 10 or 30. */
+    val watchEveryMin: Int = V12Watch.DEFAULT_INTERVAL,
 ) {
     val usableKwh: Double get() = if (model == CarModel.Custom) customKwh else model.usableKwh
     val abrpEnabled: Boolean get() = abrpToken.isNotBlank() && abrpKey.isNotBlank()
@@ -62,6 +66,8 @@ data class Settings(
             currency = p.getString("currency", "$")!!,
             homePrice = p.getFloat("home_price", 0f).toString().toDouble(), // via String so 0.15 stays 0.15
             dcPrice = p.getFloat("dc_price", 0f).toString().toDouble(),
+            watch12v = p.getBoolean("watch_12v", false),
+            watchEveryMin = p.getInt("watch_every", V12Watch.DEFAULT_INTERVAL).takeIf { it in V12Watch.INTERVALS } ?: V12Watch.DEFAULT_INTERVAL,
         )
 
         fun prefs(context: Context): SharedPreferences =
@@ -90,5 +96,7 @@ data class Settings(
         putString("currency", currency)
         putFloat("home_price", homePrice.toFloat())
         putFloat("dc_price", dcPrice.toFloat())
+        putBoolean("watch_12v", watch12v)
+        putInt("watch_every", watchEveryMin)
     }
 }

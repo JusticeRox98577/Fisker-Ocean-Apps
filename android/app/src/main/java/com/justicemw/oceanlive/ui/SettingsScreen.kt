@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.justicemw.oceanlive.car.CarModel
 import com.justicemw.oceanlive.car.Settings
+import com.justicemw.oceanlive.car.V12Watch
 import kotlin.math.roundToInt
 
 @Composable
@@ -86,6 +87,24 @@ fun SettingsScreen(
         Toggle("Connect automatically when the app opens", s.autoStart) { v -> update { it.copy(autoStart = v) } }
         Text(s.adapterName?.let { "Saved adapter: $it" } ?: "No saved adapter yet.", color = Dim, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
         if (s.adapterAddress != null) TextButton(onClick = onForget) { Text("Forget saved adapter", color = Bad) }
+    }
+
+    SectionTitle("12V battery")
+    Card {
+        Toggle("Watch 12V while the car sleeps", s.watch12v) { v ->
+            if (v) onNeedNotifications()
+            update { it.copy(watch12v = v) }
+        }
+        Text(V12Watch.settingNote(s.watchEveryMin), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        if (s.watch12v) {
+            Text("Check every", color = Color.White, fontSize = 15.sp, modifier = Modifier.padding(top = 12.dp, bottom = 8.dp))
+            Chips(V12Watch.INTERVALS.map { "$it min" }, V12Watch.INTERVALS.indexOf(s.watchEveryMin).coerceAtLeast(0)) { i ->
+                update { it.copy(watchEveryMin = V12Watch.INTERVALS[i]) }
+            }
+            Text("Shorter means more readings, but the adapter stays busier.", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+            Text("With Battery warnings on, you're told when the 12V drops under 12.2 V and again under 11.8 V.",
+                color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        }
     }
 
     SectionTitle("Alerts")

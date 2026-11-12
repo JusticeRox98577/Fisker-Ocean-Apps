@@ -123,16 +123,6 @@ private fun MonthTile(label: String, t: MonthTotals, s: Settings, modifier: Modi
     else Tile(label, kwh, modifier, caption = "${t.charges} charge${if (t.charges == 1) "" else "s"}", accent = accent)
 }
 
-@Composable
-private fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        Modifier.clip(RoundedCornerShape(50))
-            .background(if (selected) Aqua.copy(alpha = 0.18f) else CardBg)
-            .border(1.dp, if (selected) Aqua else CardEdge, RoundedCornerShape(50))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    ) { Text(text, color = if (selected) Aqua else Dim, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
-}
 
 @Composable
 private fun EntryRow(e: HistoryEntry, s: Settings, onDelete: (HistoryEntry) -> Unit) {

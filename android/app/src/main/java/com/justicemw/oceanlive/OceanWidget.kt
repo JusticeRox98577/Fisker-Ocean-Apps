@@ -39,6 +39,7 @@ class OceanWidget : AppWidgetProvider() {
                     "Charging" + (snap.powerKw?.let { " · %.1f kW".format(it) } ?: "")
                 state.status == Status.Live && state.mode == Mode.Driving -> "Driving"
                 state.status == Status.Live -> "Live"
+                state.status == Status.Watching -> "Car asleep" + (snap.aux12v?.let { " · 12V %.2f V".format(it) } ?: "")
                 state.lastUpdate != null -> "As of " + DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(state.lastUpdate))
                 else -> "Tap to connect"
             }

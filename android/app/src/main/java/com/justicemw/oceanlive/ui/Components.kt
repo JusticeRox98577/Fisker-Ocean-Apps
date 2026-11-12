@@ -223,6 +223,28 @@ fun MeterBar(fraction: Float, brush: Brush = OceanBrush) {
     }
 }
 
+/** A rounded filter chip, e.g. "All · Drives · Charges". */
+@Composable
+fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
+    val fill by animateColorAsState(if (selected) Aqua.copy(alpha = 0.18f) else CardBg, tween(250), label = "chipFill")
+    val edge by animateColorAsState(if (selected) Aqua else CardEdge, tween(250), label = "chipEdge")
+    Box(
+        Modifier.clip(RoundedCornerShape(50))
+            .background(fill)
+            .border(1.dp, edge, RoundedCornerShape(50))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) { Text(text, color = if (selected) Aqua else Dim, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+}
+
+/** A row of chips where one is selected. */
+@Composable
+fun Chips(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        labels.forEachIndexed { i, label -> FilterChip(label, i == selected) { onSelect(i) } }
+    }
+}
+
 /** Gradient-filled primary button. */
 @Composable
 fun GradientButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, brush: Brush = OceanBrush) {

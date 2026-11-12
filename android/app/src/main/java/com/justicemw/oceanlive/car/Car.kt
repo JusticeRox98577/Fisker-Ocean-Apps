@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class CarState(
     val status: Status = Status.Idle,
@@ -56,6 +59,8 @@ data class CarState(
     val lastUpdate: Long? = null,
     /** True when the app stopped on its own so the car can sleep; [message] says why. */
     val resting: Boolean = false,
+    /** While watching the 12V with the car asleep: when the adapter last answered ATRV. */
+    val watchedAt: Long? = null,
 ) {
     val connected: Boolean get() = status == Status.Live
 }
@@ -113,6 +118,7 @@ object Car {
     private lateinit var store: HistoryStore
     private lateinit var alerts: Alerts
     private lateinit var faultStore: FaultHistoryStore
+    private lateinit var v12Store: V12Store
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val bus = Mutex()
     private var job: Job? = null
@@ -131,6 +137,18 @@ object Car {
     private var carScreen = false
     /** The user tapped Disconnect; don't auto-connect again until they connect by hand. */
     private var userStopped = false
+
+    // 12V history and watching the 12V while the car sleeps.
+    private val v12Recorder = V12Recorder()
+    private var v12Loaded = false
+    private val pending12v = mutableListOf<V12Sample>()
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val v12Io = Dispatchers.IO.limitedParallelism(1)
+    private val wakeDetector = WakeDetector()
+    private val lowAlarm = LowVoltAlarm()
+    /** Asks watch mode for a reading now (the app opened); never more than once a minute. */
+    private val watchPoke = Channel<Unit>(Channel.CONFLATED)
+    private var lastWatchRead = 0L
 
     private val _state = MutableStateFlow(CarState())
     val state: StateFlow<CarState> = _state.asStateFlow()
@@ -152,6 +170,9 @@ object Car {
     private val _parked = MutableStateFlow<List<ParkedDrain>>(emptyList())
     /** Recent periods the car sat parked while the app wasn't connected, oldest first. */
     val parked: StateFlow<List<ParkedDrain>> = _parked.asStateFlow()
+    private val _v12 = MutableStateFlow<List<V12Sample>>(emptyList())
+    /** 12V readings of the last 90 days, oldest first. */
+    val v12: StateFlow<List<V12Sample>> = _v12.asStateFlow()
 
     /** Latest phone location, fed by the service when ABRP location sharing is on. */
     @Volatile var location: Location? = null
@@ -165,6 +186,7 @@ object Car {
         store = HistoryStore(app)
         alerts = Alerts(app)
         faultStore = FaultHistoryStore(app)
+        v12Store = V12Store(app)
         val prefs = Settings.prefs(app)
         _settings.value = Settings.load(prefs)
         parkedMark = ParkedDrains.decodeMark(prefs.getString(PARKED_MARK, null))
@@ -175,11 +197,21 @@ object Car {
             _pastScans.value = faultStore.load()
             loadDescriptions()
         }
+        scope.launch {
+            val loaded = withContext(Dispatchers.IO) { v12Store.load() }
+            _v12.value = loaded
+            v12Recorder.load(loaded)
+            v12Loaded = true
+            // Readings taken while the file was loading.
+            val waiting = pending12v.toList()
+            pending12v.clear()
+            waiting.forEach { record12v(it.time, it.volts, it.source, it.mode) }
+        }
         transport.onDisconnected = { scope.launch { onLost("Adapter disconnected.") } }
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 inForeground = true
-                autoConnect()
+                if (_state.value.status == Status.Watching) watchPoke.trySend(Unit) else autoConnect()
             }
 
             override fun onStop(owner: LifecycleOwner) {
@@ -191,7 +223,8 @@ object Car {
     /** Android Auto tells the car when its screen comes and goes; opening it counts as wanting live data. */
     fun setCarScreenConnected(connected: Boolean) {
         carScreen = connected
-        if (connected) autoConnect()
+        if (connected && _state.value.status == Status.Watching) watchPoke.trySend(Unit)
+        else if (connected) autoConnect()
     }
 
     /**
@@ -208,9 +241,18 @@ object Car {
     }
 
     fun updateSettings(change: (Settings) -> Settings) {
-        val next = change(_settings.value)
+        val prev = _settings.value
+        val next = change(prev)
         _settings.value = next
         next.save(Settings.prefs(app))
+        if (prev.watch12v && !next.watch12v && _state.value.status == Status.Watching) {
+            // Watching switched off: let go of the adapter like any other stop.
+            stopJob()
+            transport.disconnect()
+            rest(SleepPolicy.ASLEEP_MESSAGE)
+        } else if (next.watchEveryMin != prev.watchEveryMin && _state.value.status == Status.Watching) {
+            watchPoke.trySend(Unit)
+        }
     }
 
     // ── Connection ──────────────────────────────────────────────
@@ -245,6 +287,8 @@ object Car {
         userStopped = false
         reconnects = 0
         idleTimer.reset()
+        // Watch mode keeps the adapter connected; a different adapter needs a fresh link.
+        if (address != _settings.value.adapterAddress) transport.disconnect()
         updateSettings { it.copy(adapterAddress = address, adapterName = name) }
         _state.update { it.copy(status = Status.Connecting, message = null, resting = false, adapterName = name) }
         OceanService.start(app)
@@ -262,7 +306,7 @@ object Car {
         stopJob()
         transport.disconnect()
         endSessions()
-        _state.update { it.copy(status = Status.Idle, message = null, resting = false, abrpStatus = null) }
+        _state.update { it.copy(status = Status.Idle, message = null, resting = false, abrpStatus = null, watchedAt = null) }
         OceanService.stop(app)
         refreshWidget(force = true)
     }
@@ -283,11 +327,13 @@ object Car {
         var first = firstAttempt
         while (wantConnected) {
             try {
-                transport.connect(address)
+                // Still connected after watch mode, when the car woke up by itself.
+                if (!transport.connected) transport.connect(address)
                 bus.withLock {
                     transport.initialize()
                     selectedEcu = null
                 }
+                v12Recorder.startSession()
                 alerts.resetHealth()
                 first = false
                 _state.update { it.copy(status = Status.Live, message = null) }
@@ -296,6 +342,23 @@ object Car {
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) throw e
                 if (!wantConnected) return
+                if (e is StopReading && V12Watch.shouldWatch(_settings.value.watch12v, userStopped)) {
+                    // Keep the adapter, stop talking to the car, and only ask the adapter for the 12V.
+                    endSessions()
+                    if (!watch12v(address)) {
+                        if (wantConnected) {
+                            transport.disconnect()
+                            rest(e.message ?: SleepPolicy.ASLEEP_MESSAGE)
+                        }
+                        return
+                    }
+                    // The car woke up by itself: read it again as normal.
+                    first = false
+                    reconnects = 0
+                    idleTimer.reset()
+                    _state.update { it.copy(status = Status.Connecting, message = "The car woke up. Reading it again.", watchedAt = null) }
+                    continue
+                }
                 // Release the adapter straight away. endSessions saves the parked-drain mark too.
                 transport.disconnect()
                 endSessions()
@@ -329,7 +392,7 @@ object Car {
     /** Stops reading and lets go of the adapter so the car can sleep. Reconnects only when the user asks. */
     private fun rest(reason: String) {
         wantConnected = false
-        _state.update { it.copy(status = Status.Idle, message = reason, resting = true, abrpStatus = null) }
+        _state.update { it.copy(status = Status.Idle, message = reason, resting = true, abrpStatus = null, watchedAt = null) }
         OceanService.stop(app)
         refreshWidget(force = true)
     }
@@ -371,6 +434,7 @@ object Car {
         var cycle = 0
         while (scope.isActive && wantConnected) {
             var answered = false
+            var fresh12v = false
             var snap = _state.value.snapshot
             val flip = _settings.value.flipCurrent
             bus.withLock {
@@ -386,12 +450,13 @@ object Car {
                     // 12V: the BMS's own reading of the 12V terminal, else the adapter's supply voltage (OBD pin 16).
                     val bms = read(Pids.aux12v).second
                     snap = if (bms != null) {
-                        snap.copy(aux12v = bms, aux12vSource = "BMS")
+                        snap.copy(aux12v = bms, aux12vSource = V12Log.SOURCE_BMS)
                     } else {
                         // ATRV is answered by the adapter itself, so it doesn't count as the car answering.
                         val v = query("ATRV")?.let { Elm.adapterVoltage(it) }
-                        snap.copy(aux12v = v, aux12vSource = v?.let { "OBD port" })
+                        snap.copy(aux12v = v, aux12vSource = v?.let { V12Log.SOURCE_PORT })
                     }
+                    fresh12v = snap.aux12v != null
                 }
             }
             snap = snap.copy(time = System.currentTimeMillis())
@@ -399,6 +464,8 @@ object Car {
             if (answered) {
                 misses = 0
                 onReading(snap)
+                // Keeps the 12V reading just taken; never asks the car for anything extra.
+                if (fresh12v) record12v(snap.time, snap.aux12v!!, snap.aux12vSource ?: V12Log.SOURCE_PORT, V12Mode.of(tracker.mode))
                 if (idleTimer.shouldStop(tracker.mode, inForeground, carScreen, snap.time)) {
                     throw StopReading(SleepPolicy.PARKED_MESSAGE)
                 }
@@ -426,6 +493,100 @@ object Car {
         alerts.check(snap, tracker.mode, settings)
         maybeSendAbrp(snap, settings)
         refreshWidget()
+    }
+
+    // ── 12V battery ─────────────────────────────────────────────
+
+    private fun record12v(time: Long, volts: Double, source: String, mode: V12Mode) {
+        if (!v12Loaded) {
+            pending12v.add(V12Sample(time, volts, source, mode))
+            return
+        }
+        val sample = v12Recorder.add(time, volts, source, mode) ?: return
+        val all = _v12.value + sample
+        if (V12Log.needsCompaction(all, time)) {
+            // Keeps the file to 90 days while the app stays running for a long time.
+            val kept = V12Log.trim(all, time)
+            _v12.value = kept
+            scope.launch(v12Io) { v12Store.save(kept) }
+        } else {
+            _v12.value = all
+            scope.launch(v12Io) { v12Store.append(sample) }
+        }
+    }
+
+    /**
+     * Watching the 12V while the car sleeps (only when the user turned it on). The adapter stays
+     * connected and is sent ATRV and nothing else: the adapter measures OBD pin 16 itself, so
+     * nothing goes on the car's network. No resets, no protocol search, no module requests.
+     * If the link drops it is reconnected at most every 10 minutes, with only echo/linefeed/space
+     * settings. Returns true when the car woke up by itself (13.0 V or more twice in a row), false
+     * when watching ended another way (the setting turned off).
+     */
+    private suspend fun watch12v(address: String): Boolean {
+        wakeDetector.enter()
+        while (watchPoke.tryReceive().isSuccess) Unit
+        _state.update { it.copy(status = Status.Watching, message = null, resting = false, abrpStatus = null) }
+        refreshWidget(force = true)
+        var lastLinkTry = 0L
+        while (wantConnected && _settings.value.watch12v) {
+            val every = _settings.value.watchEveryMin
+            if (!transport.connected) {
+                val since = System.currentTimeMillis() - lastLinkTry
+                val gap = V12Watch.nextDelay(every, connected = false, confirmingWake = false)
+                if (since < gap) {
+                    watchWait(gap - since, needLink = true)
+                    continue
+                }
+                lastLinkTry = System.currentTimeMillis()
+                try {
+                    transport.connect(address)
+                    bus.withLock {
+                        transport.initializeForWatch()
+                        selectedEcu = null
+                    }
+                    _state.update { it.copy(message = null) }
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) throw e
+                    transport.disconnect()
+                    _state.update { it.copy(message = "Can't reach the adapter. Trying again every ${V12Watch.nextDelay(every, connected = false, confirmingWake = false) / 60_000} min.") }
+                    continue
+                }
+            }
+            val volts = try {
+                bus.withLock { query(Elm.READ_VOLTAGE) }?.let { Elm.adapterVoltage(it) }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) throw e
+                null
+            }
+            lastWatchRead = System.currentTimeMillis()
+            if (volts != null) onWatchReading(volts)
+            if (wakeDetector.add(volts)) return true
+            if (!transport.connected) continue
+            watchWait(V12Watch.nextDelay(every, connected = true, confirmingWake = wakeDetector.confirming), needLink = false)
+        }
+        return false
+    }
+
+    /** Waits [ms], or less when the app asks for a reading (at most once a minute, and only with the adapter connected). */
+    private suspend fun watchWait(ms: Long, needLink: Boolean) {
+        val until = System.currentTimeMillis() + ms
+        while (true) {
+            val left = until - System.currentTimeMillis()
+            if (left <= 0) return
+            val poked = withTimeoutOrNull(left) { watchPoke.receive() } != null
+            if (!poked) return
+            if (!wantConnected || !_settings.value.watch12v) return
+            if (!needLink && transport.connected && System.currentTimeMillis() - lastWatchRead >= V12Watch.MIN_SPACING_MS) return
+        }
+    }
+
+    private fun onWatchReading(volts: Double) {
+        val now = System.currentTimeMillis()
+        _state.update { it.copy(snapshot = it.snapshot.copy(aux12v = volts, aux12vSource = V12Log.SOURCE_ASLEEP), watchedAt = now) }
+        record12v(now, volts, V12Log.SOURCE_ASLEEP, V12Mode.Asleep)
+        lowAlarm.check(volts)?.let { alerts.low12v(it, volts, _settings.value) }
+        refreshWidget(force = true)
     }
 
     // ── Parked drain ────────────────────────────────────────────

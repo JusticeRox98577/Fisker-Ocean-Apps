@@ -57,6 +57,7 @@ fun LiveScreen(
     onConnect: (FoundAdapter) -> Unit,
     onConnectSaved: () -> Unit,
     onDisconnect: () -> Unit,
+    onOpen12v: () -> Unit,
 ) {
     val snap = state.snapshot
     val showDash = state.status == Status.Live || state.status == Status.Reconnecting || snap.soc != null
@@ -77,6 +78,7 @@ fun LiveScreen(
         Spacer(Modifier.height(8.dp))
         val pill = when {
             state.status == Status.Reconnecting -> Triple("Reconnecting", Warn, true)
+            state.status == Status.Watching -> Triple(com.justicemw.oceanlive.car.V12Watch.STATUS, Violet, true)
             state.status != Status.Live -> Triple(state.lastUpdate?.let { "Last seen " + DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it)) } ?: "Offline", Dim, false)
             charging -> Triple(if (state.currentCharge?.fast == true) "DC fast charging" else "Charging", Good, true)
             state.mode == Mode.Driving -> Triple("Driving", Cyan, true)
@@ -155,7 +157,7 @@ fun LiveScreen(
         val v12 = snap.aux12v
         Tile("12V battery", v12?.let { Format.n(it, 2) + " V" }, Modifier.weight(1f), accent = Good,
             caption = v12?.let { auxStatus(it) + (snap.aux12vSource?.let { s -> " · $s" } ?: "") },
-            captionColor = v12?.let { if (it < 12.0) Bad else if (it < 12.4) Warn else Dim } ?: Dim)
+            captionColor = v12?.let { if (it < 12.0) Bad else if (it < 12.4) Warn else Dim } ?: Dim, onClick = onOpen12v)
         Tile("Odometer", Format.distance(snap.odometerKm, settings), Modifier.weight(1f), accent = Violet,
             caption = Format.efficiency(Format.whPerKm(history), settings)?.let { "avg $it" })
     }
@@ -165,7 +167,7 @@ fun LiveScreen(
         Text("ABRP: $it", color = if (it.startsWith("Sent")) Dim else Warn, fontSize = 12.sp)
     }
     Spacer(Modifier.height(16.dp))
-    if (state.status == Status.Live || state.status == Status.Reconnecting) {
+    if (state.status == Status.Live || state.status == Status.Reconnecting || state.status == Status.Watching) {
         GhostButton(if (state.status == Status.Reconnecting) "Stop reconnecting" else "Disconnect", onDisconnect, color = Dim)
     }
 }

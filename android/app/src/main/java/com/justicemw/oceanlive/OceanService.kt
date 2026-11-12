@@ -21,6 +21,7 @@ import com.justicemw.oceanlive.car.Car
 import com.justicemw.oceanlive.car.CarState
 import com.justicemw.oceanlive.car.Mode
 import com.justicemw.oceanlive.car.Status
+import com.justicemw.oceanlive.car.V12Watch
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
@@ -107,6 +108,7 @@ class OceanService : Service() {
                 }
                 (soc?.let { "Ocean $it" } ?: "Ocean Live") to what
             }
+            Status.Watching -> (s.snapshot.aux12v?.let { "12V battery %.2f V".format(it) } ?: "Ocean Live") to V12Watch.NOTIFICATION
             Status.Reconnecting -> "Ocean Live" to "Reconnecting to ${s.adapterName ?: "adapter"}"
             else -> "Ocean Live" to "Connecting to ${s.adapterName ?: "adapter"}"
         }

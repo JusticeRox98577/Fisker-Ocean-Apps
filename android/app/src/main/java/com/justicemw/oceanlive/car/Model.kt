@@ -1,6 +1,10 @@
 package com.justicemw.oceanlive.car
 
-enum class Status { Idle, Scanning, Connecting, Live, Reconnecting, Error }
+enum class Status {
+    Idle, Scanning, Connecting, Live, Reconnecting, Error,
+    /** The car is asleep; the adapter stays connected and is asked only for the 12V now and then. */
+    Watching,
+}
 
 enum class Mode { Parked, Driving, Charging }
 

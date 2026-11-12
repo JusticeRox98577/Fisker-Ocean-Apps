@@ -50,6 +50,18 @@ class Alerts(private val context: Context) {
         }
     }
 
+    /** Low 12V seen while the car sleeps (see [LowVoltAlarm]); uses the Battery warnings switch. */
+    fun low12v(level: LowVoltAlarm.Level, volts: Double, settings: Settings) {
+        if (!settings.healthAlerts) return
+        val v = "%.2f V".format(volts)
+        when (level) {
+            LowVoltAlarm.Level.Low -> notify(20, "12V battery is getting low",
+                "It reads $v while the car sleeps. Something may be drawing power, or the 12V battery is weak.")
+            LowVoltAlarm.Level.VeryLow -> notify(21, "12V battery is very low",
+                "It reads $v while the car sleeps. The Ocean may not wake up. Drive it or charge the 12V soon.")
+        }
+    }
+
     fun chargingStopped(entry: HistoryEntry, settings: Settings) {
         if (!settings.alertsOn || !settings.alertStop) return
         val soc = entry.socEnd?.roundToInt()

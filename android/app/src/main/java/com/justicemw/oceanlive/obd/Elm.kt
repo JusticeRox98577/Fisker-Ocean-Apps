@@ -8,6 +8,15 @@ object Elm {
     /** AT commands sent once after connecting. */
     val initCommands = listOf("ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATCAF1", "ATSP6", "ATAT1", "ATST20")
 
+    /**
+     * Set-up after reconnecting while the car sleeps: echo, linefeeds and spaces only.
+     * None of these talk to the car (no reset, no protocol search).
+     */
+    val watchInitCommands = listOf("ATE0", "ATL0", "ATS0")
+
+    /** The adapter's own measurement of its supply (OBD pin 16). Puts nothing on the car's network. */
+    const val READ_VOLTAGE = "ATRV"
+
     private val hexLine = Regex("^[0-9A-F]+$")
     private val framePrefix = Regex("^[0-9A-F]:")
 

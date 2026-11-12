@@ -134,6 +134,11 @@ class ElmTransport(context: Context) {
         }
     }
 
+    /** Set-up for watching the 12V while the car sleeps: adapter-only settings, nothing sent to the car. */
+    suspend fun initializeForWatch() {
+        for (command in Elm.watchInitCommands) send(command)
+    }
+
     fun disconnect() {
         stopScan()
         closeGatt()

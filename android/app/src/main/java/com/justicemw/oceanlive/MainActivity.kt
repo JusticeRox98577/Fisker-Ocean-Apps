@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -47,6 +48,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -74,6 +76,8 @@ import com.justicemw.oceanlive.ui.LiveScreen
 import com.justicemw.oceanlive.ui.OceanBrush
 import com.justicemw.oceanlive.ui.SettingsScreen
 import com.justicemw.oceanlive.ui.TripsScreen
+import com.justicemw.oceanlive.ui.V12Screen
+import com.justicemw.oceanlive.ui.V12Share
 import com.justicemw.oceanlive.ui.faultReport
 
 class MainActivity : ComponentActivity() {
@@ -121,7 +125,11 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     val versions by Car.versions.collectAsState()
     val pastScans by Car.pastScans.collectAsState()
     val importedCount by Car.importedDescriptions.collectAsState()
+    val v12 by Car.v12.collectAsState()
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    // The 12V battery screen, opened from the Battery tab or the Live 12V tile.
+    var show12v by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = show12v && tab == Tab.Battery.ordinal) { show12v = false }
 
     fun granted(p: String) = ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
     val pending = remember { arrayOfNulls<() -> Unit>(1) }
@@ -186,8 +194,35 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                             onConnect = { a -> withBluetooth { Car.connect(a.address, a.name) } },
                             onConnectSaved = { withBluetooth { Car.connectSaved() } },
                             onDisconnect = { Car.disconnect() },
+                            onOpen12v = { show12v = true; tab = Tab.Battery.ordinal },
                         )
-                        Tab.Battery -> BatteryScreen(state, settings, history, parked)
+                        Tab.Battery -> AnimatedContent(
+                            targetState = show12v,
+                            transitionSpec = {
+                                val dir = if (targetState) 1 else -1
+                                (slideInHorizontally(tween(280)) { it / 6 * dir } + fadeIn(tween(280))) togetherWith
+                                    (slideOutHorizontally(tween(200)) { -it / 6 * dir } + fadeOut(tween(200)))
+                            },
+                            label = "battery12v",
+                        ) { open ->
+                            Column {
+                                if (open) {
+                                    V12Screen(
+                                        state, v12,
+                                        onBack = { show12v = false },
+                                        onShare = { range, kind ->
+                                            try {
+                                                V12Share.share(context, v12, range, kind)
+                                            } catch (_: Exception) {
+                                                android.widget.Toast.makeText(context, "Couldn't make the file to share.", android.widget.Toast.LENGTH_LONG).show()
+                                            }
+                                        },
+                                    )
+                                } else {
+                                    BatteryScreen(state, settings, history, parked, v12, onOpen12v = { show12v = true })
+                                }
+                            }
+                        }
                         Tab.Trips -> TripsScreen(
                             history, settings,
                             onExport = { exportLauncher.launch("ocean-live-history.csv") },
@@ -228,7 +263,10 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                     }
                 }
             }
-            NavBar(tab) { tab = it }
+            NavBar(tab) {
+                if (it == tab) show12v = false
+                tab = it
+            }
         }
     }
 }
@@ -245,12 +283,14 @@ private fun Header(status: Status, adapter: String?) {
                 Status.Scanning -> "Looking for adapters"
                 Status.Error -> "Not connected"
                 Status.Idle -> "Not connected"
+                Status.Watching -> com.justicemw.oceanlive.car.V12Watch.STATUS
             }
             Text(text, color = Dim, fontSize = 13.sp)
         }
         val dot by animateColorAsState(
             when (status) {
                 Status.Live -> Aqua
+                Status.Watching -> com.justicemw.oceanlive.ui.Violet
                 Status.Connecting, Status.Reconnecting, Status.Scanning -> com.justicemw.oceanlive.ui.Warn
                 else -> Dim
             }, tween(500), label = "dot",
