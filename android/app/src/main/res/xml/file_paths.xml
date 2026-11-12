@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Files Ocean Live hands to the share sheet (12V readings and graph). -->
+<!-- Files Ocean Live hands to the share sheet: 12V readings and graph, and battery report PDFs. -->
 <paths>
     <cache-path name="share" path="share/" />
+    <cache-path name="reports" path="reports/" />
 </paths>

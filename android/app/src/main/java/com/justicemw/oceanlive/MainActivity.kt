@@ -219,7 +219,20 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                                         },
                                     )
                                 } else {
-                                    BatteryScreen(state, settings, history, parked, v12, onOpen12v = { show12v = true })
+                                    BatteryScreen(
+                                        state, settings, history, parked, v12,
+                                        onOpen12v = { show12v = true },
+                                        onShareReport = {
+                                            // Built from memory and saved history only: no car requests.
+                                            val now = System.currentTimeMillis()
+                                            val report = BatteryReports.build(now, state.vin, state.snapshot, settings, history, parked, pastScans)
+                                            try {
+                                                BatteryReportPdf.share(context, report, now)
+                                            } catch (_: Exception) {
+                                                android.widget.Toast.makeText(context, "Couldn't make the report", android.widget.Toast.LENGTH_LONG).show()
+                                            }
+                                        },
+                                    )
                                 }
                             }
                         }

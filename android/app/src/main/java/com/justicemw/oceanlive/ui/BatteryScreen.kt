@@ -36,6 +36,7 @@ fun BatteryScreen(
     parked: List<ParkedDrain>,
     v12: List<V12Sample>,
     onOpen12v: () -> Unit,
+    onShareReport: () -> Unit,
 ) {
     val s = state.snapshot
 
@@ -145,6 +146,14 @@ fun BatteryScreen(
             KeyValue("Energy added", Format.n(charges.sumOf { it.kwh }, 0) + " kWh")
             KeyValue("DC fast sessions", charges.count { it.fast }.toString())
         }
+    }
+
+    SectionTitle("Report")
+    Card {
+        Text("A one-page PDF of everything above plus your latest fault scan, to keep or send to a buyer or shop. " +
+            "It uses what the app already has and doesn't read from the car.", color = Dim, fontSize = 13.sp)
+        Spacer(Modifier.height(12.dp))
+        GhostButton("Share battery report", onShareReport)
     }
 }
 

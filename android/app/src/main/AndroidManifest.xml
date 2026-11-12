@@ -46,7 +46,7 @@
 
         <receiver android:name=".StopReceiver" android:exported="false" />
 
-        <!-- Shares the 12V readings and graph with other apps. -->
+        <!-- Shares the 12V readings and graph, and battery report PDFs, with other apps. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"
