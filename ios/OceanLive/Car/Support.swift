@@ -30,7 +30,7 @@ enum HistoryStore {
         fmt.dateFormat = "yyyy-MM-dd HH:mm"
         func date(_ ms: Int64) -> String { fmt.string(from: Date(timeIntervalSince1970: Double(ms) / 1000)) }
         func n(_ v: Double?, _ d: Int = 1) -> String { v.map { String(format: "%.\(d)f", $0) } ?? "" }
-        var out = "type,start,end,minutes,soc_start,soc_end,kwh,distance_km,wh_per_km,peak_kw,dc_fast\n"
+        var out = "type,start,end,minutes,soc_start,soc_end,kwh,distance_km,wh_per_km,peak_kw,dc_fast,cost\n"
         for e in entries {
             let fields = [
                 e.kind.rawValue.lowercased(), date(e.start), date(e.end), String(e.minutes),

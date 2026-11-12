@@ -5,7 +5,13 @@ import WidgetKit
 struct OceanLiveWidgetBundle: WidgetBundle {
     var body: some Widget {
         StatusWidget()
-        ChargeActivityWidget()
+        // Only one Live Activity widget is ever registered: the one with the Watch and CarPlay layout on iOS 18+.
+        if #available(iOS 18.0, *) {
+            ChargeActivityWidgetWithSmall()
+        }
+        if #unavailable(iOS 18.0) {
+            ChargeActivityWidget()
+        }
     }
 }
 

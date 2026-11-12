@@ -2,22 +2,14 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
-/// The charging Live Activity: lock screen and banner, Dynamic Island, and (iOS 18+) Apple Watch and CarPlay.
+/// The charging Live Activity: lock screen and banner, Dynamic Island. Used on iOS 17.
+/// The bundle picks `ChargeActivityWidgetWithSmall` on iOS 18 and later instead.
 struct ChargeActivityWidget: Widget {
     var body: some WidgetConfiguration {
-        Self.configuration()
+        Self.activity()
     }
 
-    /// Also offers the small layout for Apple Watch and CarPlay on iOS 18 and later.
-    private static func configuration() -> some WidgetConfiguration {
-        if #available(iOS 18.0, *) {
-            return activity().supplementalActivityFamilies([.small])
-        } else {
-            return activity()
-        }
-    }
-
-    private static func activity() -> some WidgetConfiguration {
+    static func activity() -> some WidgetConfiguration {
         ActivityConfiguration(for: ChargeActivityAttributes.self) { context in
             ChargeActivityView(state: context.state)
                 .activityBackgroundTint(OceanPalette.card)
@@ -72,6 +64,15 @@ struct ChargeActivityWidget: Widget {
             }
             .keylineTint(OceanPalette.aqua)
         }
+    }
+}
+
+/// The same Live Activity, also offering the small layout for Apple Watch and CarPlay (iOS 18 and later).
+/// A separate widget because an opaque return type can't differ by OS version.
+@available(iOS 18.0, *)
+struct ChargeActivityWidgetWithSmall: Widget {
+    var body: some WidgetConfiguration {
+        ChargeActivityWidget.activity().supplementalActivityFamilies([.small])
     }
 }
 
