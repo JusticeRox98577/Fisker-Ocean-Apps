@@ -64,7 +64,7 @@ fun LiveScreen(
     when (state.status) {
         Status.Scanning -> { ScanList(found, onConnect, onCancelScan); return }
         Status.Connecting -> { Connecting(state.adapterName); return }
-        Status.Idle, Status.Error -> if (!showDash || state.status == Status.Error) {
+        Status.Idle, Status.Error -> if (!showDash || state.status == Status.Error || state.resting) {
             StartCard(state, settings, bluetoothOn, onScan, onConnectSaved)
             if (!showDash) return
         }
@@ -194,14 +194,15 @@ private fun StartCard(state: CarState, settings: Settings, bluetoothOn: Boolean,
     Card {
         Text("Connect to your Ocean", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        Text("Plug a Bluetooth LE OBD adapter into the car, turn the car on, then connect.", color = Dim)
+        if (!state.resting) Text("Plug a Bluetooth LE OBD adapter into the car, turn the car on, then connect.", color = Dim)
         if (!bluetoothOn) {
             Spacer(Modifier.height(10.dp))
             Text("Bluetooth is off. Turn it on in your phone's settings.", color = Warn)
         }
         state.message?.let {
             Spacer(Modifier.height(10.dp))
-            Text(it, color = Bad)
+            // Stopping so the car can sleep is normal, not an error.
+            Text(it, color = if (state.resting) Dim else Bad)
         }
         Spacer(Modifier.height(18.dp))
         if (settings.adapterAddress != null) {

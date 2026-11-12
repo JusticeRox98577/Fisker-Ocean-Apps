@@ -160,12 +160,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
         ).show()
     }
 
-    // Auto-connect once per app launch.
-    LaunchedEffect(Unit) {
-        if (settings.autoStart && settings.adapterAddress != null && state.status == Status.Idle &&
-            bluetoothPermissions().filter { it != Manifest.permission.POST_NOTIFICATIONS }.all { granted(it) }
-        ) Car.connectSaved()
-    }
+    // Auto-connect happens in Car when the app comes to the front (Car.autoConnect).
     val live = state.status == Status.Live
     LaunchedEffect(live, settings.keepScreenOn) { keepScreenOn(live && settings.keepScreenOn) }
 

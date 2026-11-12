@@ -1,11 +1,18 @@
 package com.justicemw.oceanlive.car
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.location.Location
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.justicemw.oceanlive.OceanService
 import com.justicemw.oceanlive.OceanWidget
+import com.justicemw.oceanlive.bluetoothPermissions
 import com.justicemw.oceanlive.obd.Did
 import com.justicemw.oceanlive.obd.Dtc
 import com.justicemw.oceanlive.obd.DtcCatalog
@@ -47,6 +54,8 @@ data class CarState(
     val vin: String? = null,
     val abrpStatus: String? = null,
     val lastUpdate: Long? = null,
+    /** True when the app stopped on its own so the car can sleep; [message] says why. */
+    val resting: Boolean = false,
 ) {
     val connected: Boolean get() = status == Status.Live
 }
@@ -114,6 +123,14 @@ object Car {
     private var lastWidget = 0L
     private var parkedMark: ParkedMark? = null
     private var lastMarkSave = 0L
+    private val idleTimer = IdleTimer()
+    private var reconnects = 0
+    /** An app screen is showing (any activity started). */
+    private var inForeground = false
+    /** An Android Auto screen is connected. */
+    private var carScreen = false
+    /** The user tapped Disconnect; don't auto-connect again until they connect by hand. */
+    private var userStopped = false
 
     private val _state = MutableStateFlow(CarState())
     val state: StateFlow<CarState> = _state.asStateFlow()
@@ -159,6 +176,34 @@ object Car {
             loadDescriptions()
         }
         transport.onDisconnected = { scope.launch { onLost("Adapter disconnected.") } }
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) {
+                inForeground = true
+                autoConnect()
+            }
+
+            override fun onStop(owner: LifecycleOwner) {
+                inForeground = false
+            }
+        })
+    }
+
+    /** Android Auto tells the car when its screen comes and goes; opening it counts as wanting live data. */
+    fun setCarScreenConnected(connected: Boolean) {
+        carScreen = connected
+        if (connected) autoConnect()
+    }
+
+    /**
+     * Connects to the saved adapter when the user opens the app or Android Auto, if
+     * auto-connect is on. Never called on a timer, so the app can't wake a sleeping car.
+     */
+    fun autoConnect() {
+        val s = _settings.value
+        if (!s.autoStart || s.adapterAddress == null || userStopped || _state.value.status != Status.Idle) return
+        val granted = bluetoothPermissions().filter { it != Manifest.permission.POST_NOTIFICATIONS }
+            .all { ContextCompat.checkSelfPermission(app, it) == PackageManager.PERMISSION_GRANTED }
+        if (granted) connectSaved()
     }
 
     fun updateSettings(change: (Settings) -> Settings) {
@@ -173,7 +218,7 @@ object Car {
         stopJob()
         transport.disconnect()
         _found.value = emptyList()
-        _state.update { it.copy(status = Status.Scanning, message = null) }
+        _state.update { it.copy(status = Status.Scanning, message = null, resting = false) }
         transport.startScan { adapter ->
             scope.launch {
                 val list = _found.value.filterNot { it.address == adapter.address } + adapter
@@ -190,8 +235,11 @@ object Car {
     fun connect(address: String, name: String) {
         stopJob()
         wantConnected = true
+        userStopped = false
+        reconnects = 0
+        idleTimer.reset()
         updateSettings { it.copy(adapterAddress = address, adapterName = name) }
-        _state.update { it.copy(status = Status.Connecting, message = null, adapterName = name) }
+        _state.update { it.copy(status = Status.Connecting, message = null, resting = false, adapterName = name) }
         OceanService.start(app)
         job = scope.launch { runSession(address, firstAttempt = true) }
     }
@@ -203,10 +251,11 @@ object Car {
 
     fun disconnect() {
         wantConnected = false
+        userStopped = true
         stopJob()
         transport.disconnect()
         endSessions()
-        _state.update { it.copy(status = Status.Idle, message = null, abrpStatus = null) }
+        _state.update { it.copy(status = Status.Idle, message = null, resting = false, abrpStatus = null) }
         OceanService.stop(app)
         refreshWidget(force = true)
     }
@@ -240,8 +289,13 @@ object Car {
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) throw e
                 if (!wantConnected) return
+                // Release the adapter straight away. endSessions saves the parked-drain mark too.
                 transport.disconnect()
                 endSessions()
+                if (e is StopReading) {
+                    rest(e.message ?: SleepPolicy.ASLEEP_MESSAGE)
+                    return
+                }
                 if (first) {
                     // A first attempt that fails is usually the wrong adapter or the car being off.
                     wantConnected = false
@@ -249,12 +303,32 @@ object Car {
                     OceanService.stop(app)
                     return
                 }
+                // The adapter dropped while the car was answering: a few short tries, then give up.
+                val wait = SleepPolicy.reconnectDelay(++reconnects)
+                if (wait == null) {
+                    wantConnected = false
+                    _state.update { it.copy(status = Status.Error, message = SleepPolicy.GAVE_UP_MESSAGE, abrpStatus = null) }
+                    OceanService.stop(app)
+                    refreshWidget(force = true)
+                    return
+                }
                 _state.update { it.copy(status = Status.Reconnecting, message = e.message) }
                 refreshWidget(force = true)
-                delay(RECONNECT_MS)
+                delay(wait)
             }
         }
     }
+
+    /** Stops reading and lets go of the adapter so the car can sleep. Reconnects only when the user asks. */
+    private fun rest(reason: String) {
+        wantConnected = false
+        _state.update { it.copy(status = Status.Idle, message = reason, resting = true, abrpStatus = null) }
+        OceanService.stop(app)
+        refreshWidget(force = true)
+    }
+
+    /** Thrown from the poll loop to end the session without reconnecting. */
+    private class StopReading(message: String) : Exception(message)
 
     private fun onLost(reason: String) {
         if (!wantConnected) return
@@ -306,7 +380,8 @@ object Car {
                     snap = if (bms != null) {
                         snap.copy(aux12v = bms, aux12vSource = "BMS")
                     } else {
-                        val v = query("ATRV")?.let { answered = true; Elm.adapterVoltage(it) }
+                        // ATRV is answered by the adapter itself, so it doesn't count as the car answering.
+                        val v = query("ATRV")?.let { Elm.adapterVoltage(it) }
                         snap.copy(aux12v = v, aux12vSource = v?.let { "OBD port" })
                     }
                 }
@@ -316,8 +391,12 @@ object Car {
             if (answered) {
                 misses = 0
                 onReading(snap)
-            } else if (++misses >= 3) {
-                throw IllegalStateException("The car stopped answering.")
+                if (idleTimer.shouldStop(tracker.mode, inForeground, carScreen, snap.time)) {
+                    throw StopReading(SleepPolicy.PARKED_MESSAGE)
+                }
+            } else if (SleepPolicy.carAsleep(++misses)) {
+                // Asleep or switched off. Asking again would only keep it awake.
+                throw StopReading(SleepPolicy.ASLEEP_MESSAGE)
             }
             cycle++
             delay(POLL_MS)
@@ -325,6 +404,7 @@ object Car {
     }
 
     private fun onReading(snap: Snapshot) {
+        reconnects = 0
         val finished = tracker.update(snap)
         trackParked(snap)
         _state.update {
@@ -658,5 +738,4 @@ object Car {
     private const val PARKED_MARK = "parked_mark"
     private const val PARKED_HISTORY = "parked_history"
     private const val POLL_MS = 2_000L
-    private const val RECONNECT_MS = 10_000L
 }

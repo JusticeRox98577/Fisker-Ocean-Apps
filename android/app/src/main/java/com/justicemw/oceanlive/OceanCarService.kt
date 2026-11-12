@@ -27,6 +27,20 @@ class OceanCarService : CarAppService() {
     override fun createHostValidator(): HostValidator = HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
 
     override fun onCreateSession(): Session = object : Session() {
+        init {
+            // While Android Auto shows the app, keep reading even with the phone screen off.
+            lifecycle.addObserver(object : DefaultLifecycleObserver {
+                override fun onCreate(owner: LifecycleOwner) {
+                    Car.init(carContext)
+                    Car.setCarScreenConnected(true)
+                }
+
+                override fun onDestroy(owner: LifecycleOwner) {
+                    Car.setCarScreenConnected(false)
+                }
+            })
+        }
+
         override fun onCreateScreen(intent: Intent): Screen {
             Car.init(carContext)
             return DashScreen(carContext)
