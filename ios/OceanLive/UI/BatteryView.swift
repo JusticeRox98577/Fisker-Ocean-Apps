@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BatteryView: View {
     @EnvironmentObject var car: Car
+    @State private var showV12 = false
 
     var body: some View {
         Page {
@@ -52,6 +53,12 @@ struct BatteryView: View {
                 }
             }
 
+            Group {
+                SectionTitle("12V battery")
+                Button { showV12 = true } label: { V12Card() }
+                    .buttonStyle(PressStyle())
+            }
+
             SectionTitle("Cells")
             CardBox {
                 KeyValue("Highest", s.cellMax.map { "\(Int($0.rounded())) mV" })
@@ -90,7 +97,10 @@ struct BatteryView: View {
                 KeyValue("Pack current", s.packA.map { Format.n($0, 1) + " A" })
                 KeyValue("Power", s.powerKw.map { Format.n($0, 2) + " kW" })
                 KeyValue("Isolation resistance", s.isolation.map { "\(Int($0.rounded())) kΩ" })
-                KeyValue("12V battery", s.aux12v.map { Format.n($0, 2) + " V" + (s.aux12vSource.map { " (\($0))" } ?? "") })
+                Button { showV12 = true } label: {
+                    KeyValue("12V battery", s.aux12v.map { Format.n($0, 2) + " V" + (s.aux12vSource.map { " (\($0))" } ?? "") })
+                }
+                .buttonStyle(PressStyle())
                 if let vin = car.state.vin { KeyValue("VIN", vin) }
             }
 
@@ -103,6 +113,37 @@ struct BatteryView: View {
                     KeyValue("DC fast sessions", "\(charges.filter { $0.fast }.count)")
                 }
             }
+        }
+        .sheet(isPresented: $showV12) { V12View().environmentObject(car) }
+    }
+}
+
+/// The 12V card on the Battery screen: latest and resting voltage. Tapping it opens the 12V screen.
+private struct V12Card: View {
+    @EnvironmentObject var car: Car
+
+    var body: some View {
+        let s = car.state.snapshot
+        let resting = car.v12.last { $0.resting }
+        CardBox(glow: car.state.watching ? Theme.violet : nil) {
+            HStack {
+                Text("Now").foregroundStyle(Theme.dim)
+                Spacer()
+                RollingText(text: s.aux12v.map { Format.n($0, 2) + " V" } ?? "—",
+                            color: s.aux12v.map(v12StatusColor) ?? .white, size: 22, weight: .bold)
+            }
+            KeyValue("Resting", resting.map { Format.n($0.volts, 2) + " V · " + V12Log.status($0.volts) },
+                     color: resting.map { v12StatusColor($0.volts) } ?? .white)
+            if car.state.watching {
+                Text(V12Watch.statusText).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.violet)
+            }
+            HStack {
+                Text(car.v12.isEmpty ? "No saved readings yet" : "Graph, nights and sharing")
+                    .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.aqua)
+            }
+            .padding(.top, 6)
         }
     }
 }

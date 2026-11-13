@@ -53,6 +53,8 @@ final class ElmTransport: NSObject {
     }
 
     var connected: Bool { writeChar != nil }
+    /// The adapter the link is open to, if any.
+    var connectedId: UUID? { connected ? peripheral?.identifier : nil }
 
     private func waitForPoweredOn() async throws {
         switch central.state {
@@ -112,8 +114,8 @@ final class ElmTransport: NSObject {
         }
     }
 
-    func initialize() async throws {
-        for command in Elm.initCommands {
+    func initialize(_ commands: [String] = Elm.initCommands) async throws {
+        for command in commands {
             _ = try await send(command, timeout: command == "ATZ" ? 6 : 4)
             if command == "ATZ" { try await Task.sleep(nanoseconds: 300_000_000) }
         }

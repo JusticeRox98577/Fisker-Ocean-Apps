@@ -4,6 +4,11 @@ import SwiftUI
 struct OceanLiveApp: App {
     @StateObject private var car = Car.shared
 
+    init() {
+        // Must be registered before launch finishes. Only ever asks the adapter for the 12V.
+        V12Background.register()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()

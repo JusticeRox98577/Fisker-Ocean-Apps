@@ -293,7 +293,7 @@ struct Page<Content: View>: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Header(status: car.state.status, adapter: car.state.adapterName)
+                Header(status: car.state.status, adapter: car.state.adapterName, watching: car.state.watching)
                 content()
             }
             .padding(.horizontal, 18)
@@ -307,6 +307,7 @@ struct Page<Content: View>: View {
 struct Header: View {
     let status: Status
     let adapter: String?
+    var watching = false
 
     var body: some View {
         HStack {
@@ -318,6 +319,7 @@ struct Header: View {
             Circle().fill(dot).frame(width: 10, height: 10)
                 .shadow(color: dot.opacity(0.6), radius: status == .live ? 6 : 0)
                 .animation(.easeInOut(duration: 0.5), value: status)
+                .animation(.easeInOut(duration: 0.5), value: watching)
         }
         .padding(.vertical, 12)
     }
@@ -328,7 +330,7 @@ struct Header: View {
         case .connecting: return "Connecting"
         case .reconnecting: return "Reconnecting"
         case .scanning: return "Looking for adapters"
-        case .idle, .error: return "Not connected"
+        case .idle, .error: return watching ? V12Watch.statusText : "Not connected"
         }
     }
 
@@ -336,7 +338,7 @@ struct Header: View {
         switch status {
         case .live: return Theme.aqua
         case .connecting, .reconnecting, .scanning: return Theme.warn
-        default: return Theme.dim
+        default: return watching ? Theme.violet : Theme.dim
         }
     }
 }

@@ -23,6 +23,7 @@ struct LiveView: View {
 
 private struct Dashboard: View {
     @EnvironmentObject var car: Car
+    @State private var showV12 = false
 
     var body: some View {
         let state = car.state
@@ -101,9 +102,13 @@ private struct Dashboard: View {
                      captionColor: snap.cellSpread.map(Theme.balanceColor) ?? Theme.dim)
             }
             HStack(spacing: 10) {
-                Tile(label: "12V battery", value: snap.aux12v.map { Format.n($0, 2) + " V" },
-                     caption: snap.aux12v.map { auxStatus($0) + (snap.aux12vSource.map { " · " + $0 } ?? "") },
-                     accent: Theme.good, captionColor: auxColor(snap.aux12v))
+                Button { showV12 = true } label: {
+                    Tile(label: "12V battery", value: snap.aux12v.map { Format.n($0, 2) + " V" },
+                         caption: snap.aux12v.map { auxStatus($0) + (snap.aux12vSource.map { " · " + $0 } ?? "") },
+                         accent: state.watching ? Theme.violet : Theme.good, captionColor: auxColor(snap.aux12v))
+                }
+                .buttonStyle(PressStyle())
+                .sheet(isPresented: $showV12) { V12View().environmentObject(car) }
                 Tile(label: "Odometer", value: Format.distance(snap.odometerKm, settings),
                      caption: Format.efficiency(Format.whPerKm(car.history), settings).map { "avg " + $0 }, accent: Theme.violet)
             }
@@ -121,6 +126,7 @@ private struct Dashboard: View {
     }
 
     private func pill(_ state: CarState) -> Pill {
+        if state.watching { return Pill(text: V12Watch.statusText, color: Theme.violet, pulse: true) }
         if state.status == .reconnecting { return Pill(text: "Reconnecting", color: Theme.warn, pulse: true) }
         if state.status != .live {
             let last = state.lastUpdate.map { "Last seen " + Format.date($0).formatted(date: .omitted, time: .shortened) } ?? "Offline"
@@ -174,6 +180,9 @@ private struct StartCard: View {
                 Text("Plug a Bluetooth LE OBD adapter into the car, turn the car on, then connect.")
                     .foregroundStyle(Theme.dim).padding(.top, 6)
             }
+            if car.state.watching {
+                Text(watchNote).font(.system(size: 13)).foregroundStyle(Theme.dim).padding(.top, 6)
+            }
             if let m = car.state.message {
                 Text(m).foregroundStyle(Theme.bad).padding(.top, 10)
             }
@@ -184,10 +193,20 @@ private struct StartCard: View {
                 } else {
                     GradientButton(title: "Find adapter") { car.scan() }
                 }
+                if car.state.watching {
+                    GhostButton(title: "Stop watching 12V", color: Theme.dim) { car.disconnect() }
+                }
             }
             .padding(.top, 18)
         }
         .padding(.top, 24)
+    }
+}
+
+private extension StartCard {
+    var watchNote: String {
+        let next = car.state.nextWatch.map { " Next check about " + Format.date($0).formatted(date: .omitted, time: .shortened) + "." } ?? ""
+        return "The adapter stays connected and only its own 12V reading is asked for, so the car stays asleep." + next
     }
 }
 

@@ -1,3 +1,4 @@
+import BackgroundTasks
 import Foundation
 import UIKit
 
@@ -17,6 +18,10 @@ struct CarState: Equatable {
     /// Why the app stopped reading on its own (the car went to sleep, or it sat parked with the app
     /// in the background). Nil while connected, and after the user disconnects.
     var stopped: String?
+    /// The car is asleep and the app only asks the adapter for the 12V now and then.
+    var watching = false
+    /// When the next 12V check is due while watching.
+    var nextWatch: Int64?
 
     var connected: Bool { status == .live }
 }
@@ -104,6 +109,8 @@ final class Car: ObservableObject {
     @Published private(set) var versions = VersionRead()
     /// The last 30 parked periods, oldest first.
     @Published private(set) var drains: [ParkedDrain] = []
+    /// Saved 12V readings, last 90 days, oldest first.
+    @Published private(set) var v12: [V12Sample] = []
 
     private let transport = ElmTransport()
     private let bus = AsyncLock()
@@ -129,6 +136,15 @@ final class Car: ObservableObject {
     /// Reconnect attempts since the adapter dropped. Back to 0 once the car answers.
     private var adapterRetries = 0
 
+    /// The next 12V reading of this connection is its first.
+    private var v12FirstOfConnection = true
+    private var v12Alert = V12LowAlert(level: V12Store.loadAlertLevel())
+    /// Watching the 12V while the car sleeps, or nil.
+    private var watch: V12Watch?
+    private var watchNextAt: Int64 = 0
+    private var watchLastAt: Int64 = 0
+    private var watchBusy = false
+
     /// Seconds between readings: every second while CarPlay is showing, every two otherwise.
     private var pollInterval: Double { carPlayConnected ? 1 : 2 }
 
@@ -137,7 +153,13 @@ final class Car: ObservableObject {
     /// The phone app went off screen or came back. Coming back connects again if auto-connect is on,
     /// unless the user disconnected. Nothing reconnects while the app stays in the background.
     func setInBackground(_ on: Bool) {
-        if !on && !userStopped { autoStart() }
+        guard !on else { return }
+        // While watching the 12V, coming back on screen only asks the adapter for the 12V, so the car stays asleep.
+        if watch != nil {
+            if nowMs() - watchLastAt >= 60_000 { watchSoon() }
+        } else if !userStopped {
+            autoStart()
+        }
     }
 
     /// Whether the phone app is on screen. Asked of the scenes themselves, not remembered, so a launch
@@ -154,9 +176,14 @@ final class Car: ObservableObject {
         history = HistoryStore.load()
         pastScans = FaultHistoryStore.load()
         drains = ParkedStore.loadDrains()
+        v12 = V12Store.load()
         loadDescriptions()
         location.setEnabled(settings.abrpEnabled && settings.abrpLocation)
-        transport.onDisconnected = { [weak self] in self?.onLost("Adapter disconnected.") }
+        transport.onDisconnected = { [weak self] in self?.adapterDropped() }
+        // iPhone ended the app while it was watching the 12V: carry on, without connecting until it gets time.
+        if settings.v12Watch && V12Background.active && settings.adapterId != nil {
+            beginWatch(carStoppedAnswering: true, at: nowMs() - V12Watch.settleMs)
+        }
     }
 
     func updateSettings(_ change: (inout Settings) -> Void) {
@@ -166,12 +193,20 @@ final class Car: ObservableObject {
         next.save()
         location.setEnabled(next.abrpEnabled && next.abrpLocation)
         updateScreenLock()
+        if !next.v12Watch && watch != nil {
+            // Turned off while watching: let go of the adapter, as before this setting existed.
+            stopTask()
+            transport.disconnect()
+            endWatch()
+            state.stopped = SleepPolicy.asleepMessage
+        }
     }
 
     // MARK: Connection
 
     func scan() {
         stopTask()
+        endWatch()
         transport.disconnect()
         found = []
         state.status = .scanning
@@ -204,6 +239,7 @@ final class Car: ObservableObject {
 
     func connect(id: UUID, name: String) {
         stopTask()
+        endWatch()
         wantConnected = true
         userStopped = false
         updateSettings { $0.adapterId = id.uuidString; $0.adapterName = name }
@@ -223,6 +259,7 @@ final class Car: ObservableObject {
         wantConnected = false
         userStopped = true
         stopTask()
+        endWatch()
         transport.disconnect()
         endSessions()
         state.status = .idle
@@ -272,7 +309,11 @@ final class Car: ObservableObject {
         sleepPolicy.reset()
         while wantConnected && !Task.isCancelled {
             do {
-                try await transport.connect(id: id)
+                // Watch mode may have kept the link to this adapter open.
+                if transport.connectedId != id {
+                    transport.disconnect()
+                    try await transport.connect(id: id)
+                }
                 await bus.lock()
                 do {
                     try await transport.initialize()
@@ -284,6 +325,7 @@ final class Car: ObservableObject {
                 }
                 alerts.resetHealth()
                 parkedCheckPending = true
+                v12FirstOfConnection = true
                 first = false
                 state.status = .live
                 state.message = nil
@@ -293,6 +335,11 @@ final class Car: ObservableObject {
             } catch {
                 if Task.isCancelled || !wantConnected { return }
                 if let stop = error as? CarError {
+                    if settings.v12Watch {
+                        // Stop reading the car, but keep the adapter and ask it alone for the 12V now and then.
+                        enterWatch(carStoppedAnswering: stop == .asleep)
+                        return
+                    }
                     // The car went quiet, or sat parked long enough: stop for good so it can sleep.
                     stopReading(stop.message)
                     return
@@ -310,6 +357,11 @@ final class Car: ObservableObject {
                 // The adapter dropped while the car was answering: a few short tries, then stop.
                 adapterRetries += 1
                 guard let delay = SleepPolicy.retryDelay(attempt: adapterRetries) else {
+                    if settings.v12Watch {
+                        // Watch mode tries the adapter again at most once per check interval, and only asks it for the 12V.
+                        enterWatch(carStoppedAnswering: true)
+                        return
+                    }
                     stopReading(SleepPolicy.adapterLostMessage)
                     return
                 }
@@ -319,6 +371,15 @@ final class Car: ObservableObject {
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
         }
+    }
+
+    private func adapterDropped() {
+        if watch != nil {
+            // Try the link again, no more than once per check interval.
+            watchSoon()
+            return
+        }
+        onLost("Adapter disconnected.")
     }
 
     private func onLost(_ reason: String) {
@@ -363,6 +424,7 @@ final class Car: ObservableObject {
             let cycleStart = Date()
             var answered = false
             var snap = state.snapshot
+            var fresh12v: (volts: Double, source: String)?
             let flip = settings.flipCurrent
             await bus.lock()
             do {
@@ -379,13 +441,15 @@ final class Car: ObservableObject {
                     // 12V: the BMS's own reading of the 12V terminal, else the adapter's supply voltage (OBD pin 16).
                     if let bms = try await read(Pids.aux12v).1 {
                         snap.aux12v = bms
-                        snap.aux12vSource = "BMS"
+                        snap.aux12vSource = V12Source.bms
+                        fresh12v = (bms, V12Source.bms)
                     } else {
                         // The adapter answers this itself, so it says nothing about whether the car is awake.
                         let reply = try await query("ATRV")
                         let v = reply.flatMap { Elm.adapterVoltage($0) }
                         snap.aux12v = v
-                        snap.aux12vSource = v == nil ? nil : "OBD port"
+                        snap.aux12vSource = v == nil ? nil : V12Source.port
+                        if let v { fresh12v = (v, V12Source.port) }
                     }
                 }
                 bus.unlock()
@@ -399,6 +463,8 @@ final class Car: ObservableObject {
                 misses = 0
                 adapterRetries = 0
                 onReading(snap)
+                // Saves a reading the poll took anyway; never asks the car for anything extra.
+                if let r = fresh12v { recordV12(r.volts, source: r.source, mode: V12Sample.Kind(tracker.mode)) }
             } else {
                 misses += 1
             }
@@ -427,6 +493,199 @@ final class Car: ObservableObject {
         trackParked(snap)
         maybeSendAbrp(snap)
         liveActivity.onReading(state, settings: settings, history: history)
+    }
+
+    // MARK: 12V log
+
+    /// Saves a 12V reading: about once a minute, plus any change of 0.05 V or more.
+    private func recordV12(_ volts: Double, source: String, mode: V12Sample.Kind) {
+        let now = nowMs()
+        let first = v12FirstOfConnection
+        v12FirstOfConnection = false
+        let resting = V12Log.isResting(volts: volts, mode: mode, firstOfConnection: first, now: now, in: v12)
+        let sample = V12Sample(time: now, volts: volts, source: source, mode: mode, resting: resting)
+        // Readings while the car is awake only re-arm the low-12V warning.
+        checkV12Alert(volts, asleep: mode == .asleep)
+        guard V12Log.shouldKeep(sample, after: v12.last) else { return }
+        var list = v12
+        list.append(sample)
+        if let oldest = list.first, now - oldest.time > V12Log.keepMs + 86_400_000 {
+            // Trim the file about once a day.
+            list = V12Log.capped(list, now: now)
+            V12Store.save(list)
+        } else {
+            V12Store.append(sample)
+        }
+        v12 = list
+    }
+
+    private func checkV12Alert(_ volts: Double, asleep: Bool) {
+        let before = v12Alert.level
+        let fire = v12Alert.check(volts, asleep: asleep)
+        if v12Alert.level != before { V12Store.saveAlertLevel(v12Alert.level) }
+        if fire != .none && settings.healthAlerts { alerts.v12Low(volts, veryLow: fire == .veryLow) }
+    }
+
+    // MARK: Watching the 12V while the car sleeps
+
+    /// Called from the session instead of stopReading when the setting is on. Reading the car stops
+    /// exactly as before; only the Bluetooth link to the adapter stays open.
+    private func enterWatch(carStoppedAnswering: Bool) {
+        wantConnected = false
+        endSessions()
+        sleepPolicy.reset()
+        adapterRetries = 0
+        state.abrpStatus = nil
+        beginWatch(carStoppedAnswering: carStoppedAnswering, at: nowMs())
+        // A first reading straight away marks when the car went to sleep.
+        watchNextAt = nowMs()
+        task = Task { await runWatch() } // replaces the session, which ends right after this
+        updateScreenLock()
+    }
+
+    private func beginWatch(carStoppedAnswering: Bool, at time: Int64) {
+        watch = V12Watch(startedAt: time, carStoppedAnswering: carStoppedAnswering)
+        watchNextAt = nowMs() + Int64(V12Watch.interval(settings.v12WatchMinutes)) * 60_000
+        state.status = .idle
+        state.message = nil
+        state.stopped = V12Watch.statusText
+        state.watching = true
+        state.nextWatch = watchNextAt
+        V12Background.setActive(true, minutes: settings.v12WatchMinutes)
+    }
+
+    /// Leaves watch mode. Doesn't touch the adapter link: the caller decides.
+    private func endWatch() {
+        guard watch != nil || state.watching else { return }
+        watch = nil
+        state.watching = false
+        state.nextWatch = nil
+        if state.stopped == V12Watch.statusText { state.stopped = nil }
+        V12Background.setActive(false, minutes: settings.v12WatchMinutes)
+    }
+
+    /// Takes a 12V reading now if one is due, or tries the link again (no more than V12Watch allows).
+    private func watchSoon() {
+        guard watch != nil else { return }
+        watchNextAt = Swift.min(watchNextAt, nowMs())
+        task?.cancel()
+        task = Task { await runWatch() }
+    }
+
+    private func runWatch() async {
+        while watch != nil && !Task.isCancelled {
+            let wait = watchNextAt - nowMs()
+            if wait > 0 || watchBusy {
+                try? await Task.sleep(nanoseconds: UInt64(Swift.max(wait, 1000)) * 1_000_000)
+                continue
+            }
+            await watchReading()
+        }
+    }
+
+    /// One check: open the Bluetooth link if it dropped (at most once per interval), then ATRV and nothing else.
+    /// ATRV is answered by the adapter itself from OBD pin 16; it puts nothing on the car's network.
+    private func watchReading() async {
+        guard watch != nil, !watchBusy else { return }
+        watchBusy = true
+        defer { watchBusy = false }
+        let minutes = settings.v12WatchMinutes
+        let intervalMs = Int64(V12Watch.interval(minutes)) * 60_000
+        guard let raw = settings.adapterId, let id = UUID(uuidString: raw) else {
+            endWatch()
+            return
+        }
+        if transport.connectedId != id {
+            guard var w = watch else { return }
+            let allowed = w.mayReconnect(now: nowMs(), intervalMinutes: minutes)
+            watch = w
+            guard allowed else {
+                watchNextAt = (w.lastReconnect ?? nowMs()) + intervalMs
+                state.nextWatch = watchNextAt
+                return
+            }
+            do {
+                transport.disconnect()
+                try await transport.connect(id: id)
+                // Only how the adapter formats its replies: no reset, no protocol search, nothing to the car.
+                await bus.lock()
+                do {
+                    try await transport.initialize(Elm.watchInitCommands)
+                    bus.unlock()
+                } catch {
+                    bus.unlock()
+                    throw error
+                }
+            } catch {
+                transport.disconnect()
+                guard watch != nil else { return }
+                watchNextAt = nowMs() + intervalMs
+                state.nextWatch = watchNextAt
+                return
+            }
+            guard watch != nil else { return } // the user disconnected meanwhile
+        }
+        await bus.lock()
+        let reply = try? await query(Elm.voltageCommand)
+        bus.unlock()
+        guard var w = watch else { return }
+        let now = nowMs()
+        watchLastAt = now
+        guard let volts = reply.flatMap({ Elm.adapterVoltage($0) }) else {
+            watchNextAt = now + intervalMs
+            state.nextWatch = watchNextAt
+            return
+        }
+        recordV12(volts, source: V12Source.asleep, mode: .asleep)
+        state.snapshot.aux12v = volts
+        state.snapshot.aux12vSource = V12Source.asleep
+        let decision = w.afterReading(volts, now: now)
+        watch = w
+        if decision == .carWoke {
+            resumeAfterWake(id: id)
+            return
+        }
+        watchNextAt = now + w.nextDelayMs(intervalMinutes: minutes)
+        state.nextWatch = watchNextAt
+    }
+
+    /// The 12V stayed at 13.0 V or more: the car woke up by itself, so read it as usual again.
+    private func resumeAfterWake(id: UUID) {
+        endWatch()
+        wantConnected = true
+        userStopped = false
+        state.status = .connecting
+        state.stopped = nil
+        task = Task { await runSession(id: id, firstAttempt: false) }
+    }
+
+    /// A background refresh from iPhone: reconnect the Bluetooth link if needed and ask the adapter for the 12V.
+    /// Never starts reading the car on its own.
+    func handleV12Refresh(_ bgTask: BGTask) {
+        let finish = BackgroundFinish(bgTask)
+        guard settings.v12Watch, V12Background.active, settings.adapterId != nil else {
+            finish.finish(true)
+            return
+        }
+        V12Background.schedule(minutes: settings.v12WatchMinutes)
+        // Already reading the car: nothing to do.
+        if state.status != .idle && state.status != .error {
+            finish.finish(true)
+            return
+        }
+        if watch == nil { beginWatch(carStoppedAnswering: true, at: nowMs() - V12Watch.settleMs) }
+        task?.cancel()
+        task = nil
+        let work = Task {
+            for _ in 0..<50 where watchBusy { try? await Task.sleep(nanoseconds: 200_000_000) }
+            if nowMs() - watchLastAt >= 60_000 { await watchReading() }
+            if watch != nil && task == nil { task = Task { await runWatch() } }
+            finish.finish(true)
+        }
+        bgTask.expirationHandler = {
+            work.cancel()
+            Task { @MainActor in finish.finish(false) }
+        }
     }
 
     // MARK: Parked drain

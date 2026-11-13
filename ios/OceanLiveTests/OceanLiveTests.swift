@@ -681,3 +681,210 @@ final class SleepPolicyTests: XCTestCase {
         XCTAssertTrue(CarError.parkedIdle.message.contains("10 minutes"))
     }
 }
+
+/// The 12V log: thinning, the 90-day cap, resting readings, watch mode and the low-12V warning.
+final class TwelveVoltTests: XCTestCase {
+    private let t0: Int64 = 1_700_000_000_000
+    private let minute: Int64 = 60_000
+    private let hour: Int64 = 3_600_000
+
+    private func s(_ time: Int64, _ volts: Double, _ mode: V12Sample.Kind = .parked, resting: Bool = false) -> V12Sample {
+        V12Sample(time: time, volts: volts, source: mode == .asleep ? V12Source.asleep : V12Source.bms, mode: mode, resting: resting)
+    }
+
+    // MARK: Thinning
+
+    func testSteadyReadingsKeptAboutOnceAMinute() {
+        // A reading every 10 seconds for 5 minutes, all the same.
+        let raw = (0...30).map { s(t0 + Int64($0) * 10_000, 12.60) }
+        let kept = V12Log.thin(raw)
+        XCTAssertEqual(kept.map(\.time), (Int64(0)...5).map { t0 + $0 * minute })
+    }
+
+    func testChangeOfFiveHundredthsIsKept() {
+        let base = s(t0, 12.60)
+        XCTAssertTrue(V12Log.shouldKeep(s(t0 + 10_000, 12.65), after: base))
+        XCTAssertTrue(V12Log.shouldKeep(s(t0 + 10_000, 12.55), after: base))
+        XCTAssertFalse(V12Log.shouldKeep(s(t0 + 10_000, 12.64), after: base))
+        XCTAssertTrue(V12Log.shouldKeep(s(t0 + minute, 12.60), after: base))
+    }
+
+    func testModeChangeAndRestingAreAlwaysKept() {
+        let base = s(t0, 12.60)
+        XCTAssertTrue(V12Log.shouldKeep(s(t0 + 5_000, 12.60, .charging), after: base))
+        XCTAssertTrue(V12Log.shouldKeep(s(t0 + 5_000, 12.60, resting: true), after: base))
+        XCTAssertFalse(V12Log.shouldKeep(s(t0, 12.90), after: base), "same time is never saved twice")
+        XCTAssertTrue(V12Log.shouldKeep(s(t0, 12.60), after: nil))
+    }
+
+    // MARK: 90 days
+
+    func testCapKeepsNinetyDays() {
+        let now = t0 + 100 * 86_400_000
+        let list = [s(t0, 12.5), s(now - 91 * 86_400_000, 12.5), s(now - 89 * 86_400_000, 12.6), s(now, 12.7)]
+        let kept = V12Log.capped(list, now: now)
+        XCTAssertEqual(kept.map(\.volts), [12.6, 12.7])
+    }
+
+    // MARK: Resting
+
+    func testFirstReadingAfterTwoHoursIsResting() {
+        let before = [s(t0, 14.1, .driving), s(t0 + minute, 13.9)]
+        let later = t0 + minute + 2 * hour
+        XCTAssertTrue(V12Log.isResting(volts: 12.55, mode: .parked, firstOfConnection: true, now: later, in: before))
+        // Not the first reading of the connection.
+        XCTAssertFalse(V12Log.isResting(volts: 12.55, mode: .parked, firstOfConnection: false, now: later, in: before))
+        // Too soon after the car was last awake.
+        XCTAssertFalse(V12Log.isResting(volts: 12.55, mode: .parked, firstOfConnection: true, now: t0 + hour, in: before))
+        // The DC-DC is already charging the 12V: says nothing about rest.
+        XCTAssertFalse(V12Log.isResting(volts: 13.4, mode: .parked, firstOfConnection: true, now: later, in: before))
+        // Nothing saved before: nothing to compare with.
+        XCTAssertFalse(V12Log.isResting(volts: 12.55, mode: .parked, firstOfConnection: true, now: later, in: []))
+    }
+
+    func testRestingWhileAsleepOncePerSleep() {
+        var list = [s(t0, 13.8, .parked)]
+        // Asleep readings in the first two hours are not resting.
+        XCTAssertFalse(V12Log.isResting(volts: 12.7, mode: .asleep, firstOfConnection: false, now: t0 + hour, in: list))
+        list.append(s(t0 + hour, 12.7, .asleep))
+        // The first one two hours after the car was last awake is.
+        XCTAssertTrue(V12Log.isResting(volts: 12.6, mode: .asleep, firstOfConnection: false, now: t0 + 2 * hour, in: list))
+        list.append(s(t0 + 2 * hour, 12.6, .asleep, resting: true))
+        // Only once per sleep.
+        XCTAssertFalse(V12Log.isResting(volts: 12.6, mode: .asleep, firstOfConnection: false, now: t0 + 3 * hour, in: list))
+    }
+
+    func testStatusLabels() {
+        XCTAssertEqual(V12Log.status(12.6), "Good")
+        XCTAssertEqual(V12Log.status(12.4), "Good")
+        XCTAssertEqual(V12Log.status(12.2), "Low")
+        XCTAssertEqual(V12Log.status(11.9), "Very low")
+    }
+
+    // MARK: File and CSV
+
+    func testFileRoundTrip() {
+        let list = [s(t0, 12.61), s(t0 + minute, 14.02, .driving), s(t0 + 3 * hour, 12.48, .asleep, resting: true),
+                    V12Sample(time: t0 + 4 * hour, volts: 12.5, source: V12Source.port, mode: .charging)]
+        let back = V12Log.decode(V12Log.encode(list))
+        XCTAssertEqual(back.count, 4)
+        for (a, b) in zip(list, back) {
+            XCTAssertEqual(a.time, b.time)
+            XCTAssertEqual(a.volts, b.volts, accuracy: 0.001)
+            XCTAssertEqual(a.source, b.source)
+            XCTAssertEqual(a.mode, b.mode)
+            XCTAssertEqual(a.resting, b.resting)
+        }
+        // A half-written last line is skipped.
+        XCTAssertEqual(V12Log.decode(V12Log.encode(list) + "1700000000\n").count, 4)
+    }
+
+    func testCsv() {
+        let csv = V12Log.csv([s(0, 12.614, .asleep, resting: true)])
+        XCTAssertEqual(csv, "time,volts,source,mode,resting\n1970-01-01T00:00:00Z,12.61,OBD port while asleep,asleep,true\n")
+    }
+
+    // MARK: Stats
+
+    func testNightDropAndLastCharged() {
+        var list = [s(t0, 14.0, .driving), s(t0 + minute, 13.5)]
+        // Asleep all night, resting at 12.70, morning reading 12.55.
+        list.append(s(t0 + 2 * hour, 12.70, .asleep, resting: true))
+        list.append(s(t0 + 6 * hour, 12.62, .asleep))
+        list.append(s(t0 + 10 * hour, 12.55, .asleep))
+        list.append(s(t0 + 10 * hour + 30 * minute, 14.1, .driving))
+        let stats = V12Log.stats(list, from: t0)
+        XCTAssertEqual(stats.nights.count, 1)
+        XCTAssertEqual(stats.averageDrop ?? 0, 0.15, accuracy: 0.001)
+        XCTAssertEqual(stats.lastCharged, t0 + 10 * hour + 30 * minute)
+        XCTAssertEqual(stats.latestResting?.volts, 12.70)
+        XCTAssertEqual(stats.lowestResting ?? 0, 12.70, accuracy: 0.001)
+    }
+
+    // MARK: Watching the 12V while the car sleeps
+
+    func testWatchOnlyWhenSettingOnAndReadingStops() {
+        XCTAssertTrue(V12Watch.shouldEnter(settingOn: true, stop: .carAsleep))
+        XCTAssertTrue(V12Watch.shouldEnter(settingOn: true, stop: .parkedIdle))
+        XCTAssertFalse(V12Watch.shouldEnter(settingOn: true, stop: .keepReading))
+        XCTAssertFalse(V12Watch.shouldEnter(settingOn: false, stop: .carAsleep))
+    }
+
+    func testCarWokeAfterTwoHighReadingsInARow() {
+        var w = V12Watch(startedAt: t0, carStoppedAnswering: true)
+        XCTAssertEqual(w.afterReading(12.6, now: t0), .keepWatching)
+        XCTAssertEqual(w.afterReading(13.1, now: t0 + 10 * minute), .keepWatching)
+        XCTAssertEqual(w.nextDelayMs(intervalMinutes: 10), V12Watch.confirmMs, "a first high reading is checked again soon")
+        XCTAssertEqual(w.afterReading(13.0, now: t0 + 11 * minute), .carWoke)
+    }
+
+    func testOneHighReadingIsNotAWake() {
+        var w = V12Watch(startedAt: t0, carStoppedAnswering: true)
+        _ = w.afterReading(12.6, now: t0)
+        XCTAssertEqual(w.afterReading(13.3, now: t0 + minute), .keepWatching)
+        XCTAssertEqual(w.afterReading(12.9, now: t0 + 2 * minute), .keepWatching)
+        XCTAssertEqual(w.afterReading(13.3, now: t0 + 3 * minute), .keepWatching)
+        XCTAssertEqual(w.nextDelayMs(intervalMinutes: 30), V12Watch.confirmMs)
+        _ = w.afterReading(12.9, now: t0 + 4 * minute)
+        XCTAssertEqual(w.nextDelayMs(intervalMinutes: 30), 30 * minute)
+    }
+
+    func testParkedIdleNeedsALowReadingBeforeAWake() {
+        // Entered after 10 min parked in the background: the car may still be awake and charging the 12V.
+        var w = V12Watch(startedAt: t0, carStoppedAnswering: false)
+        XCTAssertEqual(w.afterReading(13.5, now: t0), .keepWatching)
+        XCTAssertEqual(w.afterReading(13.5, now: t0 + minute), .keepWatching)
+        XCTAssertEqual(w.afterReading(13.5, now: t0 + 2 * minute), .keepWatching)
+        // Low readings during the first stretch still don't count as asleep.
+        _ = w.afterReading(12.7, now: t0 + 5 * minute)
+        XCTAssertFalse(w.seenAsleep)
+        _ = w.afterReading(12.6, now: t0 + 40 * minute)
+        XCTAssertTrue(w.seenAsleep)
+        XCTAssertEqual(w.afterReading(13.6, now: t0 + 50 * minute), .keepWatching)
+        XCTAssertEqual(w.afterReading(13.6, now: t0 + 51 * minute), .carWoke)
+    }
+
+    func testReconnectAtMostOncePerInterval() {
+        var w = V12Watch(startedAt: t0, carStoppedAnswering: true)
+        XCTAssertTrue(w.mayReconnect(now: t0, intervalMinutes: 10))
+        XCTAssertFalse(w.mayReconnect(now: t0 + 9 * minute, intervalMinutes: 10))
+        XCTAssertTrue(w.mayReconnect(now: t0 + 10 * minute, intervalMinutes: 10))
+    }
+
+    func testIntervals() {
+        XCTAssertEqual(V12Watch.interval(5), 5)
+        XCTAssertEqual(V12Watch.interval(30), 30)
+        XCTAssertEqual(V12Watch.interval(7), 10)
+        XCTAssertEqual(Settings().v12WatchMinutes, 10)
+        XCTAssertFalse(Settings().v12Watch, "off by default")
+    }
+
+    func testWatchSendsOnlyAdapterCommands() {
+        XCTAssertEqual(Elm.voltageCommand, "ATRV")
+        // Nothing that resets the adapter or sets up a protocol, so nothing reaches the car.
+        for c in Elm.watchInitCommands { XCTAssertTrue(["ATE0", "ATL0", "ATS0"].contains(c)) }
+    }
+
+    // MARK: Low-12V warning
+
+    func testLowWarningFiresTwiceThenRearms() {
+        var a = V12LowAlert()
+        XCTAssertEqual(a.check(12.3, asleep: true), .none)
+        XCTAssertEqual(a.check(12.1, asleep: true), .low)
+        XCTAssertEqual(a.check(12.0, asleep: true), .none)
+        XCTAssertEqual(a.check(11.7, asleep: true), .veryLow)
+        XCTAssertEqual(a.check(11.6, asleep: true), .none)
+        XCTAssertEqual(a.check(12.5, asleep: true), .none, "not above 12.6 V yet")
+        XCTAssertEqual(a.check(11.7, asleep: true), .none)
+        XCTAssertEqual(a.check(12.7, asleep: false), .none)
+        XCTAssertEqual(a.level, 0)
+        XCTAssertEqual(a.check(12.1, asleep: true), .low)
+    }
+
+    func testLowWarningOnlyWhileAsleep() {
+        var a = V12LowAlert()
+        XCTAssertEqual(a.check(11.5, asleep: false), .none)
+        XCTAssertEqual(a.check(11.5, asleep: true), .veryLow, "straight past both levels warns once, as very low")
+        XCTAssertEqual(a.check(12.1, asleep: true), .none)
+    }
+}

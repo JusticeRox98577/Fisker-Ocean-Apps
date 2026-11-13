@@ -47,6 +47,10 @@ struct Settings: Codable, Equatable {
     var homePrice = 0.0
     /// Price per kWh at DC fast chargers. 0 means not set.
     var dcPrice = 0.0
+    /// Keep the adapter connected while the car sleeps and ask it (only it) for the 12V now and then.
+    var v12Watch = false
+    /// Minutes between those readings: 5, 10 or 30.
+    var v12WatchMinutes = 10
 
     var usableKwh: Double { model == .custom ? customKwh : model.usableKwh }
     var abrpEnabled: Bool {
@@ -98,5 +102,7 @@ struct Settings: Codable, Equatable {
         currency = try c.decodeIfPresent(String.self, forKey: .currency) ?? d.currency
         homePrice = try c.decodeIfPresent(Double.self, forKey: .homePrice) ?? d.homePrice
         dcPrice = try c.decodeIfPresent(Double.self, forKey: .dcPrice) ?? d.dcPrice
+        v12Watch = try c.decodeIfPresent(Bool.self, forKey: .v12Watch) ?? d.v12Watch
+        v12WatchMinutes = V12Watch.interval(try c.decodeIfPresent(Int.self, forKey: .v12WatchMinutes) ?? d.v12WatchMinutes)
     }
 }

@@ -72,6 +72,38 @@ struct SettingsView: View {
                 }
             }
 
+            SectionTitle("12V battery")
+            CardBox {
+                ToggleRow(label: "Watch 12V while the car sleeps", value: s.v12Watch) { v in
+                    // The low-12V warning while the car sleeps needs notifications.
+                    if v && s.healthAlerts { Alerts.requestPermission() }
+                    car.updateSettings { $0.v12Watch = v }
+                }
+                Note(V12Watch.settingNote)
+                Note(V12Watch.iPhoneNote)
+                if s.v12Watch {
+                    Text("Check every").font(.system(size: 15)).foregroundStyle(.white).padding(.top, 12)
+                    HStack(spacing: 8) {
+                        ForEach(V12Watch.intervals, id: \.self) { m in
+                            let selected = s.v12WatchMinutes == m
+                            Button { car.updateSettings { $0.v12WatchMinutes = m } } label: {
+                                Text("\(m) min")
+                                    .font(.system(size: 14, weight: selected ? .semibold : .regular))
+                                    .foregroundStyle(selected ? Theme.aqua : .white)
+                                    .frame(maxWidth: .infinity, minHeight: 36)
+                                    .background(selected ? Theme.aqua.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 12))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(selected ? Theme.aqua.opacity(0.6) : Theme.edge, lineWidth: 1))
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                    }
+                    .padding(.top, 6)
+                    .animation(.snappy, value: s.v12WatchMinutes)
+                    Note("Shorter means more readings, but the adapter stays busier.")
+                    Note("With Battery warnings on, you get a notification when the 12V drops below 12.2 V while the car sleeps, and again below 11.8 V.")
+                }
+            }
+
             SectionTitle("Alerts")
             CardBox {
                 ToggleRow(label: "Charge alerts", value: s.alertsOn) { v in

@@ -48,6 +48,10 @@ targets:
         UIUserInterfaceStyle: Dark
         UIBackgroundModes:
           - bluetooth-central
+          # Watching the 12V while the car sleeps: an occasional refresh that only asks the adapter for its voltage.
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.justice.OceanABRP.v12refresh
         NSBluetoothAlwaysUsageDescription: Ocean Live reads your car's battery and fault codes through your Bluetooth OBD adapter.
         NSLocationWhenInUseUsageDescription: Only used when you turn on location sharing for A Better Route Planner, so ABRP can plan from where you are.
         ITSAppUsesNonExemptEncryption: false

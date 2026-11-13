@@ -140,6 +140,11 @@ struct ElmReply {
 enum Elm {
     /// AT commands sent once after connecting.
     static let initCommands = ["ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATCAF1", "ATSP6", "ATAT1", "ATST20"]
+    /// Set-up after the adapter reconnects while the car sleeps: only how the adapter formats its replies.
+    /// No reset and no protocol set-up, so nothing reaches the car.
+    static let watchInitCommands = ["ATE0", "ATL0", "ATS0"]
+    /// The only command sent while the car sleeps: the adapter measures OBD pin 16 itself.
+    static let voltageCommand = "ATRV"
 
     static func isHex(_ c: Character) -> Bool {
         ("0"..."9").contains(c) || ("A"..."F").contains(c)

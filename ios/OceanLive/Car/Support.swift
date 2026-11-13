@@ -109,6 +109,14 @@ final class Alerts {
         notify("stop", "Charging stopped", soc + String(format: "Added %.1f kWh.", entry.kwh))
     }
 
+    /// Low 12V while the car sleeps. V12LowAlert decides when; this only sends it.
+    func v12Low(_ volts: Double, veryLow: Bool) {
+        let title = veryLow ? "12V battery is very low" : "12V battery is low"
+        let body = String(format: "It reads %.2f V while the car sleeps. ", volts)
+            + (veryLow ? "The Ocean may not wake up. Drive it or charge the 12V soon." : "Something may be drawing power while the car is parked.")
+        notify("health-12v-asleep", title, body)
+    }
+
     /// Called on each new connection so health warnings can fire again for a new day.
     func resetHealth() { healthSent.removeAll() }
 
