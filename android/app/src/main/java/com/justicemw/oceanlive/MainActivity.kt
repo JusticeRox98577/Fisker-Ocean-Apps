@@ -127,6 +127,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     val action by Car.action.collectAsState()
     val versions by Car.versions.collectAsState()
     val pastScans by Car.pastScans.collectAsState()
+    val v12Misses by Car.v12Misses.collectAsState()
     val importedCount by Car.importedDescriptions.collectAsState()
     val v12 by Car.v12.collectAsState()
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -177,7 +178,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
 
     Box(Modifier.fillMaxSize().background(Bg).background(BackgroundBrush)) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Header(state.status, state.adapterName)
+            Header(state.status, state.adapterName, state.watchStatus)
             AnimatedContent(
                 targetState = tab,
                 transitionSpec = {
@@ -211,7 +212,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                             Column {
                                 if (open) {
                                     V12Screen(
-                                        state, v12,
+                                        state, v12, v12Misses,
                                         onBack = { show12v = false },
                                         onShare = { range, kind ->
                                             try {
@@ -288,7 +289,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
 }
 
 @Composable
-private fun Header(status: Status, adapter: String?) {
+private fun Header(status: Status, adapter: String?, @androidx.annotation.StringRes watchStatus: Int) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.app_name), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
@@ -299,7 +300,7 @@ private fun Header(status: Status, adapter: String?) {
                 Status.Scanning -> stringResource(R.string.header_scanning)
                 Status.Error -> stringResource(R.string.status_not_connected)
                 Status.Idle -> stringResource(R.string.status_not_connected)
-                Status.Watching -> stringResource(R.string.v12_watch_status)
+                Status.Watching -> stringResource(watchStatus)
             }
             Text(text, color = Dim, fontSize = 13.sp)
         }

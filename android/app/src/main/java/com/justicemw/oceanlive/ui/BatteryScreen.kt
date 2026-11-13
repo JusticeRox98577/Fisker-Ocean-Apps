@@ -97,7 +97,7 @@ fun BatteryScreen(
         s.aux12vSource?.let { Text(stringResource(v12SourceLabel(it)), color = Dim, fontSize = 12.sp) }
         val rest = v12.lastOrNull { it.atRest }
         KeyValue(stringResource(R.string.v12_latest_resting), rest?.let { Format.n(it.volts, 2) + " V · " + stringResource(V12Log.restLabel(it.volts)) }, rest?.let { V12Chart.restColor(it.volts) } ?: Color.White)
-        if (state.status == Status.Watching) Text(stringResource(R.string.v12_watch_status), color = Violet, fontSize = 12.sp)
+        if (state.status == Status.Watching) Text(stringResource(state.watchStatus), color = Violet, fontSize = 12.sp)
         Text(stringResource(R.string.battery_see_12v), color = Aqua, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
     }
 

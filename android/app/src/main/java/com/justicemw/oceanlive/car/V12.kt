@@ -23,10 +23,23 @@ enum class V12Mode(val code: Char, val csv: String) {
     }
 }
 
+/** How a reading was taken while the car slept. */
+enum class V12Method(val code: Char, val csv: String) {
+    /** Connected briefly for the reading, then let go so the adapter could sleep. */
+    Quick('q', "quick"),
+    /** The adapter stayed connected (and awake) between readings. */
+    KeptOpen('k', "kept open");
+
+    companion object {
+        fun fromCode(c: Char) = entries.firstOrNull { it.code == c }
+    }
+}
+
 /**
  * One 12V reading. [source] is "BMS", "OBD port" or "OBD port while asleep".
  * [resting] marks the first reading after the car slept for 2 hours or more,
- * the best sign of the 12V battery's health.
+ * the best sign of the 12V battery's health. [method] says how an asleep
+ * reading was taken; see [watchMethod].
  */
 data class V12Sample(
     val time: Long,
@@ -34,9 +47,13 @@ data class V12Sample(
     val source: String,
     val mode: V12Mode,
     val resting: Boolean = false,
+    val method: V12Method? = null,
 ) {
     /** A reading taken with the car at rest: flagged resting, or asleep with the DC-DC off. */
     val atRest: Boolean get() = resting || (mode == V12Mode.Asleep && volts < V12Log.CHARGING_VOLTS - 0.2)
+
+    /** How an asleep reading was taken. Readings stored before this was recorded were all kept open. */
+    val watchMethod: V12Method? get() = if (mode == V12Mode.Asleep) method ?: V12Method.KeptOpen else null
 }
 
 /** Storing and thinning 12V readings. Pure logic so it can be unit tested. */
@@ -96,7 +113,8 @@ object V12Log {
     }
 
     fun encode(s: V12Sample): String =
-        "${s.time},${String.format(Locale.US, "%.2f", s.volts)},${sourceCode(s.source)},${s.mode.code},${if (s.resting) 1 else 0}"
+        "${s.time},${String.format(Locale.US, "%.2f", s.volts)},${sourceCode(s.source)},${s.mode.code},${if (s.resting) 1 else 0}" +
+            (s.method?.let { ",${it.code}" } ?: "")
 
     fun decode(line: String): V12Sample? {
         val p = line.trim().split(',')
@@ -104,22 +122,24 @@ object V12Log {
         val time = p[0].toLongOrNull() ?: return null
         val volts = p[1].toDoubleOrNull() ?: return null
         val mode = p[3].singleOrNull()?.let { V12Mode.fromCode(it) } ?: return null
-        return V12Sample(time, volts, sourceOf(p[2]), mode, p[4] == "1")
+        val method = p.getOrNull(5)?.singleOrNull()?.let { V12Method.fromCode(it) }
+        return V12Sample(time, volts, sourceOf(p[2]), mode, p[4] == "1", method)
     }
 
     fun decodeAll(text: String): List<V12Sample> = text.lineSequence().mapNotNull { decode(it) }.sortedBy { it.time }.toList()
 
-    /** CSV for sharing: time (ISO-8601), volts, source, mode, resting. */
+    /** CSV for sharing: time (ISO-8601), volts, source, mode, resting, method (asleep readings only). */
     fun csv(samples: List<V12Sample>, zone: TimeZone = TimeZone.getDefault()): String {
         val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US).apply { timeZone = zone }
         return buildString {
-            append("time,volts,source,mode,resting\n")
+            append("time,volts,source,mode,resting,method\n")
             for (s in samples) {
                 append(fmt.format(Date(s.time))).append(',')
                 append(String.format(Locale.US, "%.2f", s.volts)).append(',')
                 append(s.source).append(',')
                 append(s.mode.csv).append(',')
-                append(s.resting).append('\n')
+                append(s.resting).append(',')
+                append(s.watchMethod?.csv ?: "").append('\n')
             }
         }
     }
@@ -146,7 +166,7 @@ class V12Recorder {
     }
 
     /** Returns the sample to store, or null if it is too close to the last one. */
-    fun add(time: Long, volts: Double, source: String, mode: V12Mode): V12Sample? {
+    fun add(time: Long, volts: Double, source: String, mode: V12Mode, method: V12Method? = null): V12Sample? {
         val asleep = mode == V12Mode.Asleep
         var resting = false
         if (!asleep) {
@@ -156,7 +176,7 @@ class V12Recorder {
             firstOfSession = false
             lastAwake = time
         }
-        val sample = V12Sample(time, volts, source, mode, resting)
+        val sample = V12Sample(time, volts, source, mode, resting, if (asleep) method else null)
         if (!V12Log.shouldKeep(last, sample)) return null
         last = sample
         return sample
@@ -271,7 +291,7 @@ fun thinForGraph(samples: List<V12Sample>, from: Long, to: Long, maxPoints: Int 
 object V12Watch {
     /** Check-interval choices in minutes. */
     val INTERVALS = listOf(5, 10, 30)
-    const val DEFAULT_INTERVAL = 10
+    const val DEFAULT_INTERVAL = 30
     /** Never try to reconnect the Bluetooth link more often than this. */
     const val RECONNECT_MS = 10 * 60_000L
     /** After one reading that looks awake, check again this soon to confirm. */
@@ -280,19 +300,76 @@ object V12Watch {
     const val WAKE_READINGS = 2
     /** Readings asked for by opening the app are skipped if the last one is this recent. */
     const val MIN_SPACING_MS = 60_000L
+    /** A quick check (connect, read, disconnect) gives up after this long. */
+    const val QUICK_TIMEOUT_MS = 15_000L
+    /** Quick checks in a row that can't reach the adapter before the status says so. */
+    const val UNREACHABLE_AFTER = 2
+    /** Unreachable checks are remembered this long. */
+    const val MISSES_KEEP_MS = 14L * 24 * 3_600_000
+    private const val MISSES_MAX = 2_000
 
     /** Whether the app should watch the 12V instead of letting go of the adapter when it stops reading. */
     fun shouldWatch(settingOn: Boolean, userStopped: Boolean): Boolean = settingOn && !userStopped
 
     fun intervalMs(minutes: Int): Long = (if (minutes in INTERVALS) minutes else DEFAULT_INTERVAL) * 60_000L
 
-    /** How long to wait before the next step of watch mode. */
+    /**
+     * How a reading is taken: a quick check (connect, ATRV, disconnect, so the adapter
+     * sleeps between readings) unless the user chose to keep the adapter connected.
+     */
+    fun method(keepConnected: Boolean): V12Method = if (keepConnected) V12Method.KeptOpen else V12Method.Quick
+
+    /** How long to wait before the next step of watch mode with the adapter kept connected. */
     fun nextDelay(intervalMin: Int, connected: Boolean, confirmingWake: Boolean): Long = when {
         !connected -> maxOf(intervalMs(intervalMin), RECONNECT_MS)
         confirmingWake -> CONFIRM_MS
         else -> intervalMs(intervalMin)
     }
+
+    /**
+     * How long to wait after a quick check. Unreachable checks are retried at the chosen
+     * interval too (only a Bluetooth connect is tried, never anything on the car).
+     */
+    fun quickDelay(intervalMin: Int, confirmingWake: Boolean): Long =
+        if (confirmingWake) CONFIRM_MS else intervalMs(intervalMin)
+
+    /** Whole minutes (at least 1) until a check due at [due], for "next check in N min". */
+    fun minutesUntil(due: Long, now: Long): Int = ((due - now + 59_999) / 60_000).coerceAtLeast(1).toInt()
+
+    /** Whether the status should say the adapter can't be reached, after this many unreachable quick checks in a row. */
+    fun unreachable(missesInARow: Int): Boolean = missesInARow >= UNREACHABLE_AFTER
+
+    // ── Unreachable quick checks, remembered for the 12V screen ──
+
+    fun encodeMisses(misses: List<Long>): String = misses.joinToString(",")
+
+    fun decodeMisses(text: String?): List<Long> =
+        text?.split(',')?.mapNotNull { it.trim().toLongOrNull() }?.sorted() ?: emptyList()
+
+    /** Adds an unreachable check and drops ones older than 14 days. */
+    fun addMiss(misses: List<Long>, time: Long): List<Long> =
+        (misses.filter { it >= time - MISSES_KEEP_MS } + time).takeLast(MISSES_MAX)
+
+    /**
+     * How the latest night was watched, for the 12V screen: the method of the latest
+     * asleep reading, and how many quick checks couldn't reach the adapter that night.
+     * The night runs from the last awake reading before it to the first awake reading after it.
+     */
+    fun latestNight(samples: List<V12Sample>, misses: List<Long>): NightChecks? {
+        val lastAsleep = samples.lastOrNull { it.mode == V12Mode.Asleep }
+        val lastMiss = misses.maxOrNull()
+        if (lastAsleep == null && lastMiss == null) return null
+        val anchor = maxOf(lastAsleep?.time ?: Long.MIN_VALUE, lastMiss ?: Long.MIN_VALUE)
+        val start = samples.lastOrNull { it.mode != V12Mode.Asleep && it.time < anchor }?.time ?: Long.MIN_VALUE
+        val end = samples.firstOrNull { it.mode != V12Mode.Asleep && it.time > anchor }?.time ?: Long.MAX_VALUE
+        val method = samples.lastOrNull { it.mode == V12Mode.Asleep && it.time > start && it.time < end }?.watchMethod
+        val unreachable = misses.count { it > start && it < end }
+        return NightChecks(method, unreachable)
+    }
 }
+
+/** How the latest night's 12V checks went: [method] is null when none of them reached the adapter. */
+data class NightChecks(val method: V12Method?, val unreachable: Int)
 
 /**
  * Spots the car waking up by itself: two readings in a row at 13.0 V or more

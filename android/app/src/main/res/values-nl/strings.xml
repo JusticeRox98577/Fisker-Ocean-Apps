@@ -53,6 +53,7 @@
     <string name="v12_source_port">OBD-poort</string>
     <string name="v12_source_asleep">OBD-poort in slaap</string>
     <string name="v12_watch_status">Auto slaapt · 12V in de gaten</string>
+    <string name="v12_watch_unreachable">Auto slaapt · adapter niet bereikbaar</string>
     <string name="v12_battery">12V-accu</string>
     <string name="live_last_seen">Laatst gezien %1$s</string>
     <string name="live_offline">Offline</string>
@@ -181,9 +182,12 @@
     <string name="settings_no_adapter">Nog geen adapter opgeslagen.</string>
     <string name="settings_forget_adapter">Opgeslagen adapter vergeten</string>
     <string name="settings_watch_12v">12V in de gaten houden terwijl de auto slaapt</string>
+    <string name="settings_watch_quick_note">Elke 30 minuten (of zoals je kiest) maakt Ocean Live even verbinding met de adapter, leest de 12V uit en verbreekt de verbinding weer, zodat de adapter kan slapen. Het netwerk van de auto wordt niet aangeraakt, dus de auto blijft slapen.</string>
     <string name="settings_check_every">Controleren elke</string>
     <string name="settings_check_note">Korter betekent meer metingen, maar de adapter heeft het drukker.</string>
     <string name="settings_watch_warn_note">Met accuwaarschuwingen aan hoor je het als de 12V onder 12,2 V zakt en nog eens onder 11,8 V.</string>
+    <string name="settings_watch_keep">Adapter verbonden houden</string>
+    <string name="settings_watch_keep_note">Gebruik dit alleen als je adapter niet via Bluetooth te wekken is. De adapter blijft dan wakker en gebruikt ongeveer 50 mA (zo\'n 1,2 Ah per dag).</string>
     <string name="settings_alerts">Meldingen</string>
     <string name="settings_charge_alerts">Laadmeldingen</string>
     <string name="settings_notify_high">Melden als het laden bereikt</string>
@@ -224,6 +228,7 @@
     <string name="notif_connected">Verbonden</string>
     <string name="notif_12v">12V-accu %1$s V</string>
     <string name="notif_watching">12V in de gaten houden terwijl de auto slaapt</string>
+    <string name="notif_watching_next">12V in de gaten · volgende controle over %1$d min</string>
     <string name="notif_reconnecting_to">Opnieuw verbinden met %1$s</string>
     <string name="auto_open_phone">Open Ocean Live op je telefoon om met de adapter te verbinden.</string>
     <string name="auto_charge">Lading %1$s</string>
@@ -383,6 +388,8 @@
     <string name="v12_overnight_drop">Daling per nacht</string>
     <string name="v12_night_drop">−%1$s V per nacht</string>
     <string name="v12_night_line">%1$s: %2$s → %3$s V in %4$s</string>
+    <string name="v12_checks_quick">Nachtelijke controles: kort (adapter slaapt tussendoor)</string>
+    <string name="v12_checks_kept">Nachtelijke controles: verbonden gehouden</string>
     <string name="v12_no_readings">Nog geen 12V-metingen in de %1$s</string>
     <string name="v12_no_readings_hint">Ocean Live bewaart de 12V-metingen die het tijdens de verbinding doet. Er wordt niets extra aan de auto gevraagd.</string>
     <string name="v12_awake">Wakker</string>
@@ -529,8 +536,8 @@
         <item quantity="one">Gewist, %1$d terug (storing nog aanwezig)</item>
         <item quantity="other">Gewist, %1$d terug (storing nog aanwezig)</item>
     </plurals>
-    <plurals name="settings_watch_note">
-        <item quantity="one">Houdt de adapter verbonden en vraagt hem elke %1$d minuut om de 12V. Het netwerk van de auto wordt niet aangeraakt, dus de auto blijft slapen, maar de adapter zelf gebruikt een beetje stroom (ongeveer 20–50 mA, afhankelijk van de adapter).</item>
-        <item quantity="other">Houdt de adapter verbonden en vraagt hem elke %1$d minuten om de 12V. Het netwerk van de auto wordt niet aangeraakt, dus de auto blijft slapen, maar de adapter zelf gebruikt een beetje stroom (ongeveer 20–50 mA, afhankelijk van de adapter).</item>
+    <plurals name="v12_checks_unreachable">
+        <item quantity="one">Afgelopen nacht: %1$d controle kon de adapter niet bereiken</item>
+        <item quantity="other">Afgelopen nacht: %1$d controles konden de adapter niet bereiken</item>
     </plurals>
 </resources>

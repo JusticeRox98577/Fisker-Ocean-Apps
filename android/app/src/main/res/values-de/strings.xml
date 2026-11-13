@@ -53,6 +53,7 @@
     <string name="v12_source_port">OBD-Buchse</string>
     <string name="v12_source_asleep">OBD-Buchse im Schlaf</string>
     <string name="v12_watch_status">Auto schläft · 12 V im Blick</string>
+    <string name="v12_watch_unreachable">Auto schläft · Adapter nicht erreichbar</string>
     <string name="v12_battery">12-V-Batterie</string>
     <string name="live_last_seen">Zuletzt gesehen %1$s</string>
     <string name="live_offline">Offline</string>
@@ -181,9 +182,12 @@
     <string name="settings_no_adapter">Noch kein Adapter gespeichert.</string>
     <string name="settings_forget_adapter">Gespeicherten Adapter vergessen</string>
     <string name="settings_watch_12v">12 V im Blick behalten, während das Auto schläft</string>
+    <string name="settings_watch_quick_note">Alle 30 Minuten (oder in deinem gewählten Abstand) verbindet sich Ocean Live kurz mit dem Adapter, liest die 12 V und trennt die Verbindung wieder, damit der Adapter weiterschlafen kann. Das Netz des Autos bleibt unberührt, das Auto schläft also weiter.</string>
     <string name="settings_check_every">Prüfen alle</string>
     <string name="settings_check_note">Kürzer heißt mehr Messwerte, aber der Adapter ist mehr beschäftigt.</string>
     <string name="settings_watch_warn_note">Mit Batteriewarnungen bekommst du Bescheid, wenn die 12 V unter 12,2 V fällt und noch einmal unter 11,8 V.</string>
+    <string name="settings_watch_keep">Adapter verbunden lassen</string>
+    <string name="settings_watch_keep_note">Nur verwenden, wenn sich dein Adapter nicht über Bluetooth wecken lässt. Der Adapter bleibt dann wach und braucht etwa 50 mA (rund 1,2 Ah am Tag).</string>
     <string name="settings_alerts">Benachrichtigungen</string>
     <string name="settings_charge_alerts">Ladebenachrichtigungen</string>
     <string name="settings_notify_high">Melden, wenn die Ladung erreicht</string>
@@ -224,6 +228,7 @@
     <string name="notif_connected">Verbunden</string>
     <string name="notif_12v">12-V-Batterie %1$s V</string>
     <string name="notif_watching">12 V im Blick, während das Auto schläft</string>
+    <string name="notif_watching_next">12 V im Blick · nächste Prüfung in %1$d min</string>
     <string name="notif_reconnecting_to">Verbinde neu mit %1$s</string>
     <string name="auto_open_phone">Öffne Ocean Live auf deinem Handy, um dich mit dem Adapter zu verbinden.</string>
     <string name="auto_charge">Ladung %1$s</string>
@@ -383,6 +388,8 @@
     <string name="v12_overnight_drop">Verlust über Nacht</string>
     <string name="v12_night_drop">−%1$s V pro Nacht</string>
     <string name="v12_night_line">%1$s: %2$s → %3$s V in %4$s</string>
+    <string name="v12_checks_quick">Prüfungen über Nacht: kurz (Adapter schläft dazwischen)</string>
+    <string name="v12_checks_kept">Prüfungen über Nacht: dauerhaft verbunden</string>
     <string name="v12_no_readings">Noch keine 12-V-Messwerte in den %1$s</string>
     <string name="v12_no_readings_hint">Ocean Live speichert die 12-V-Messwerte, die es während der Verbindung nimmt. Vom Auto wird nichts zusätzlich abgefragt.</string>
     <string name="v12_awake">Wach</string>
@@ -529,8 +536,8 @@
         <item quantity="one">Gelöscht, %1$d wieder da (Fehler besteht noch)</item>
         <item quantity="other">Gelöscht, %1$d wieder da (Fehler besteht noch)</item>
     </plurals>
-    <plurals name="settings_watch_note">
-        <item quantity="one">Hält den Adapter verbunden und fragt ihn jede Minute nach der 12-V-Spannung (%1$d). Das Netz des Autos bleibt unberührt, das Auto schläft also weiter, aber der Adapter selbst braucht etwas Strom (etwa 20–50 mA, je nach Adapter).</item>
-        <item quantity="other">Hält den Adapter verbunden und fragt ihn alle %1$d Minuten nach der 12-V-Spannung. Das Netz des Autos bleibt unberührt, das Auto schläft also weiter, aber der Adapter selbst braucht etwas Strom (etwa 20–50 mA, je nach Adapter).</item>
+    <plurals name="v12_checks_unreachable">
+        <item quantity="one">Letzte Nacht: %1$d Prüfung hat den Adapter nicht erreicht</item>
+        <item quantity="other">Letzte Nacht: %1$d Prüfungen haben den Adapter nicht erreicht</item>
     </plurals>
 </resources>

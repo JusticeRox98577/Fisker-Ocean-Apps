@@ -14,6 +14,12 @@ object Elm {
      */
     val watchInitCommands = listOf("ATE0", "ATL0", "ATS0")
 
+    /**
+     * Set-up for a quick 12V check while the car sleeps (connect, read, disconnect):
+     * echo and spaces off, nothing more. Adapter-local; nothing goes on the car's network.
+     */
+    val quickCheckCommands = listOf("ATE0", "ATS0")
+
     /** The adapter's own measurement of its supply (OBD pin 16). Puts nothing on the car's network. */
     const val READ_VOLTAGE = "ATRV"
 

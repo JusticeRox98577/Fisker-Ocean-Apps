@@ -53,6 +53,7 @@
     <string name="v12_source_port">prise OBD</string>
     <string name="v12_source_asleep">prise OBD en veille</string>
     <string name="v12_watch_status">Voiture en veille · surveillance 12 V</string>
+    <string name="v12_watch_unreachable">Voiture en veille · adaptateur injoignable</string>
     <string name="v12_battery">Batterie 12 V</string>
     <string name="live_last_seen">Vue à %1$s</string>
     <string name="live_offline">Hors ligne</string>
@@ -181,9 +182,12 @@
     <string name="settings_no_adapter">Aucun adaptateur enregistré.</string>
     <string name="settings_forget_adapter">Oublier l\'adaptateur enregistré</string>
     <string name="settings_watch_12v">Surveiller la 12 V pendant la veille</string>
+    <string name="settings_watch_quick_note">Toutes les 30 minutes (ou selon votre choix), Ocean Live se connecte brièvement à l\'adaptateur, lit la 12 V puis se déconnecte pour que l\'adaptateur puisse se remettre en veille. Le réseau de la voiture n\'est pas sollicité, la voiture reste donc en veille.</string>
     <string name="settings_check_every">Vérifier toutes les</string>
     <string name="settings_check_note">Plus court donne plus de mesures, mais l\'adaptateur est plus sollicité.</string>
     <string name="settings_watch_warn_note">Avec les alertes batterie activées, vous êtes prévenu quand la 12 V passe sous 12,2 V, puis sous 11,8 V.</string>
+    <string name="settings_watch_keep">Garder l\'adaptateur connecté</string>
+    <string name="settings_watch_keep_note">À utiliser seulement si votre adaptateur ne peut pas être réveillé par Bluetooth. L\'adaptateur reste alors éveillé et consomme environ 50 mA (environ 1,2 Ah par jour).</string>
     <string name="settings_alerts">Alertes</string>
     <string name="settings_charge_alerts">Alertes de charge</string>
     <string name="settings_notify_high">Prévenir quand la charge atteint</string>
@@ -224,6 +228,7 @@
     <string name="notif_connected">Connecté</string>
     <string name="notif_12v">Batterie 12 V %1$s V</string>
     <string name="notif_watching">Surveillance de la 12 V pendant la veille</string>
+    <string name="notif_watching_next">Surveillance 12 V · prochaine mesure dans %1$d min</string>
     <string name="notif_reconnecting_to">Reconnexion à %1$s</string>
     <string name="auto_open_phone">Ouvrez Ocean Live sur votre téléphone pour vous connecter à l\'adaptateur.</string>
     <string name="auto_charge">Charge %1$s</string>
@@ -383,6 +388,8 @@
     <string name="v12_overnight_drop">Baisse nocturne</string>
     <string name="v12_night_drop">−%1$s V par nuit</string>
     <string name="v12_night_line">%1$s : %2$s → %3$s V en %4$s</string>
+    <string name="v12_checks_quick">Mesures de nuit : rapides (l\'adaptateur dort entre deux)</string>
+    <string name="v12_checks_kept">Mesures de nuit : connexion maintenue</string>
     <string name="v12_no_readings">Aucune mesure 12 V sur les %1$s</string>
     <string name="v12_no_readings_hint">Ocean Live conserve les mesures 12 V prises pendant la connexion. Rien de plus n\'est demandé à la voiture.</string>
     <string name="v12_awake">Éveillée</string>
@@ -546,9 +553,9 @@
         <item quantity="many">Effacé, %1$d revenus (défaut toujours présent)</item>
         <item quantity="other">Effacé, %1$d revenus (défaut toujours présent)</item>
     </plurals>
-    <plurals name="settings_watch_note">
-        <item quantity="one">Garde l\'adaptateur connecté et lui demande la tension 12 V toutes les %1$d minute. Le réseau de la voiture n\'est pas sollicité, la voiture reste donc en veille, mais l\'adaptateur consomme un peu (environ 20–50 mA selon le modèle).</item>
-        <item quantity="many">Garde l\'adaptateur connecté et lui demande la tension 12 V toutes les %1$d minutes. Le réseau de la voiture n\'est pas sollicité, la voiture reste donc en veille, mais l\'adaptateur consomme un peu (environ 20–50 mA selon le modèle).</item>
-        <item quantity="other">Garde l\'adaptateur connecté et lui demande la tension 12 V toutes les %1$d minutes. Le réseau de la voiture n\'est pas sollicité, la voiture reste donc en veille, mais l\'adaptateur consomme un peu (environ 20–50 mA selon le modèle).</item>
+    <plurals name="v12_checks_unreachable">
+        <item quantity="one">Dernière nuit : %1$d mesure n\'a pas pu joindre l\'adaptateur</item>
+        <item quantity="many">Dernière nuit : %1$d mesures n\'ont pas pu joindre l\'adaptateur</item>
+        <item quantity="other">Dernière nuit : %1$d mesures n\'ont pas pu joindre l\'adaptateur</item>
     </plurals>
 </resources>

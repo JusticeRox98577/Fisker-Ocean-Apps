@@ -21,11 +21,13 @@ import com.justicemw.oceanlive.car.Car
 import com.justicemw.oceanlive.car.CarState
 import com.justicemw.oceanlive.car.Mode
 import com.justicemw.oceanlive.car.Status
+import com.justicemw.oceanlive.car.V12Watch
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -44,7 +46,14 @@ class OceanService : Service() {
         Car.init(this)
         startInForeground(Car.state.value)
         scope.launch {
-            Car.state.map { notificationText(it) }.distinctUntilChanged().collect {
+            // Ticks so "next check in N min" counts down while watching the 12V.
+            val tick = flow {
+                while (true) {
+                    emit(Unit)
+                    delay(30_000)
+                }
+            }
+            Car.state.combine(tick) { st, _ -> notificationText(st) }.distinctUntilChanged().collect {
                 if (hasNotificationPermission()) {
                     try {
                         NotificationManagerCompat.from(this@OceanService).notify(ID, build(it))
@@ -109,7 +118,12 @@ class OceanService : Service() {
                 }
                 (soc?.let { getString(R.string.notif_ocean_soc, it) } ?: appName) to what
             }
-            Status.Watching -> (s.snapshot.aux12v?.let { getString(R.string.notif_12v, Format.n(it, 2)) } ?: appName) to getString(R.string.notif_watching)
+            Status.Watching -> {
+                val title = if (s.watchUnreachable) getString(R.string.v12_watch_unreachable)
+                else s.snapshot.aux12v?.let { getString(R.string.notif_12v, Format.n(it, 2)) } ?: appName
+                val next = s.nextCheckAt?.let { V12Watch.minutesUntil(it, System.currentTimeMillis()) }
+                title to (next?.let { getString(R.string.notif_watching_next, it) } ?: getString(R.string.notif_watching))
+            }
             Status.Reconnecting -> appName to getString(R.string.notif_reconnecting_to, adapter)
             else -> appName to getString(R.string.connecting_to, adapter)
         }

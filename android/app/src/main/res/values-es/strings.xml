@@ -53,6 +53,7 @@
     <string name="v12_source_port">puerto OBD</string>
     <string name="v12_source_asleep">puerto OBD en reposo</string>
     <string name="v12_watch_status">Coche dormido · vigilando 12 V</string>
+    <string name="v12_watch_unreachable">Coche dormido · adaptador sin respuesta</string>
     <string name="v12_battery">Batería de 12 V</string>
     <string name="live_last_seen">Visto a las %1$s</string>
     <string name="live_offline">Sin conexión</string>
@@ -181,9 +182,12 @@
     <string name="settings_no_adapter">Aún no hay ningún adaptador guardado.</string>
     <string name="settings_forget_adapter">Olvidar el adaptador guardado</string>
     <string name="settings_watch_12v">Vigilar la de 12 V mientras el coche duerme</string>
+    <string name="settings_watch_quick_note">Cada 30 minutos (o el intervalo que elijas), Ocean Live se conecta un momento al adaptador, lee la de 12 V y se desconecta para que el adaptador pueda volver a dormir. La red del coche no se toca, así que el coche sigue dormido.</string>
     <string name="settings_check_every">Comprobar cada</string>
     <string name="settings_check_note">Más corto da más lecturas, pero el adaptador trabaja más.</string>
     <string name="settings_watch_warn_note">Con los avisos de batería activados, se te avisa cuando la de 12 V baja de 12,2 V y otra vez de 11,8 V.</string>
+    <string name="settings_watch_keep">Mantener el adaptador conectado</string>
+    <string name="settings_watch_keep_note">Úsalo solo si tu adaptador no se puede despertar por Bluetooth. El adaptador se queda despierto y gasta unos 50 mA (alrededor de 1,2 Ah al día).</string>
     <string name="settings_alerts">Avisos</string>
     <string name="settings_charge_alerts">Avisos de carga</string>
     <string name="settings_notify_high">Avisar cuando la carga llegue a</string>
@@ -224,6 +228,7 @@
     <string name="notif_connected">Conectado</string>
     <string name="notif_12v">Batería de 12 V %1$s V</string>
     <string name="notif_watching">Vigilando la de 12 V mientras el coche duerme</string>
+    <string name="notif_watching_next">Vigilando 12 V · próxima comprobación en %1$d min</string>
     <string name="notif_reconnecting_to">Reconectando a %1$s</string>
     <string name="auto_open_phone">Abre Ocean Live en tu móvil para conectarte al adaptador.</string>
     <string name="auto_charge">Carga %1$s</string>
@@ -383,6 +388,8 @@
     <string name="v12_overnight_drop">Bajada nocturna</string>
     <string name="v12_night_drop">−%1$s V por noche</string>
     <string name="v12_night_line">%1$s: %2$s → %3$s V en %4$s</string>
+    <string name="v12_checks_quick">Comprobaciones nocturnas: rápidas (el adaptador duerme entre ellas)</string>
+    <string name="v12_checks_kept">Comprobaciones nocturnas: conectado todo el tiempo</string>
     <string name="v12_no_readings">Aún no hay lecturas de 12 V en los %1$s</string>
     <string name="v12_no_readings_hint">Ocean Live guarda las lecturas de 12 V que toma mientras está conectado. No se le pide nada más al coche.</string>
     <string name="v12_awake">Despierto</string>
@@ -546,9 +553,9 @@
         <item quantity="many">Borrado, %1$d volvieron (la avería sigue)</item>
         <item quantity="other">Borrado, %1$d volvieron (la avería sigue)</item>
     </plurals>
-    <plurals name="settings_watch_note">
-        <item quantity="one">Mantiene el adaptador conectado y le pide la tensión de 12 V cada %1$d minuto. La red del coche no se toca, así que el coche sigue dormido, pero el propio adaptador gasta un poco (unos 20–50 mA, según el adaptador).</item>
-        <item quantity="many">Mantiene el adaptador conectado y le pide la tensión de 12 V cada %1$d minutos. La red del coche no se toca, así que el coche sigue dormido, pero el propio adaptador gasta un poco (unos 20–50 mA, según el adaptador).</item>
-        <item quantity="other">Mantiene el adaptador conectado y le pide la tensión de 12 V cada %1$d minutos. La red del coche no se toca, así que el coche sigue dormido, pero el propio adaptador gasta un poco (unos 20–50 mA, según el adaptador).</item>
+    <plurals name="v12_checks_unreachable">
+        <item quantity="one">Última noche: %1$d comprobación no pudo contactar con el adaptador</item>
+        <item quantity="many">Última noche: %1$d comprobaciones no pudieron contactar con el adaptador</item>
+        <item quantity="other">Última noche: %1$d comprobaciones no pudieron contactar con el adaptador</item>
     </plurals>
 </resources>

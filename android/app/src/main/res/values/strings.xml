@@ -55,6 +55,7 @@
     <string name="v12_source_port">OBD port</string>
     <string name="v12_source_asleep">OBD port while asleep</string>
     <string name="v12_watch_status">Car asleep · watching 12V</string>
+    <string name="v12_watch_unreachable">Car asleep · adapter not reachable</string>
     <string name="v12_battery">12V battery</string>
     <string name="live_last_seen">Last seen %1$s</string>
     <string name="live_offline">Offline</string>
@@ -184,9 +185,12 @@
     <string name="settings_no_adapter">No saved adapter yet.</string>
     <string name="settings_forget_adapter">Forget saved adapter</string>
     <string name="settings_watch_12v">Watch 12V while the car sleeps</string>
+    <string name="settings_watch_quick_note">Every 30 minutes (or your choice), Ocean Live briefly connects to the adapter, reads the 12V and disconnects so the adapter can sleep again. The car\'s network isn\'t touched, so the car stays asleep.</string>
     <string name="settings_check_every">Check every</string>
     <string name="settings_check_note">Shorter means more readings, but the adapter stays busier.</string>
     <string name="settings_watch_warn_note">With Battery warnings on, you\'re told when the 12V drops under 12.2 V and again under 11.8 V.</string>
+    <string name="settings_watch_keep">Keep the adapter connected</string>
+    <string name="settings_watch_keep_note">Use this only if your adapter can\'t be woken over Bluetooth. The adapter stays awake and uses about 50 mA (around 1.2 Ah a day).</string>
     <string name="settings_alerts">Alerts</string>
     <string name="settings_charge_alerts">Charge alerts</string>
     <string name="settings_notify_high">Notify when charging reaches</string>
@@ -229,6 +233,7 @@
     <string name="notif_ocean_soc" translatable="false">Ocean %1$s</string>
     <string name="notif_12v">12V battery %1$s V</string>
     <string name="notif_watching">Watching 12V while the car sleeps</string>
+    <string name="notif_watching_next">Watching 12V · next check in %1$d min</string>
     <string name="notif_reconnecting_to">Reconnecting to %1$s</string>
     <string name="auto_open_phone">Open Ocean Live on your phone to connect to the adapter.</string>
     <string name="auto_charge">Charge %1$s</string>
@@ -389,6 +394,8 @@
     <string name="v12_overnight_drop">Overnight drop</string>
     <string name="v12_night_drop">−%1$s V a night</string>
     <string name="v12_night_line">%1$s: %2$s → %3$s V over %4$s</string>
+    <string name="v12_checks_quick">Overnight checks: quick (adapter sleeps between)</string>
+    <string name="v12_checks_kept">Overnight checks: kept connected</string>
     <string name="v12_no_readings">No 12V readings in the %1$s yet</string>
     <string name="v12_no_readings_hint">Ocean Live keeps the 12V readings it takes while connected. Nothing extra is asked of the car.</string>
     <string name="v12_awake">Awake</string>
@@ -536,8 +543,8 @@
         <item quantity="one">Cleared, %1$d came back (fault still present)</item>
         <item quantity="other">Cleared, %1$d came back (fault still present)</item>
     </plurals>
-    <plurals name="settings_watch_note">
-        <item quantity="one">Keeps the adapter connected and asks it for the 12V every %1$d minute. The car\'s network isn\'t touched, so the car stays asleep, but the adapter itself uses a little power (about 20–50 mA, depending on the adapter).</item>
-        <item quantity="other">Keeps the adapter connected and asks it for the 12V every %1$d minutes. The car\'s network isn\'t touched, so the car stays asleep, but the adapter itself uses a little power (about 20–50 mA, depending on the adapter).</item>
+    <plurals name="v12_checks_unreachable">
+        <item quantity="one">Latest night: %1$d check couldn\'t reach the adapter</item>
+        <item quantity="other">Latest night: %1$d checks couldn\'t reach the adapter</item>
     </plurals>
 </resources>

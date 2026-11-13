@@ -28,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -98,7 +97,7 @@ fun SettingsScreen(
             if (v) onNeedNotifications()
             update { it.copy(watch12v = v) }
         }
-        Text(pluralStringResource(R.plurals.settings_watch_note, s.watchEveryMin, s.watchEveryMin), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        Text(stringResource(R.string.settings_watch_quick_note), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
         if (s.watch12v) {
             Text(stringResource(R.string.settings_check_every), color = Color.White, fontSize = 15.sp, modifier = Modifier.padding(top = 12.dp, bottom = 8.dp))
             Chips(V12Watch.INTERVALS.map { "$it min" }, V12Watch.INTERVALS.indexOf(s.watchEveryMin).coerceAtLeast(0)) { i ->
@@ -107,6 +106,8 @@ fun SettingsScreen(
             Text(stringResource(R.string.settings_check_note), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
             Text(stringResource(R.string.settings_watch_warn_note),
                 color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+            Toggle(stringResource(R.string.settings_watch_keep), s.watchKeepConnected) { v -> update { it.copy(watchKeepConnected = v) } }
+            Text(stringResource(R.string.settings_watch_keep_note), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
         }
     }
 

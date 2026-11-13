@@ -1,6 +1,9 @@
 package com.justicemw.oceanlive
 
 import com.justicemw.oceanlive.car.LowVoltAlarm
+import com.justicemw.oceanlive.car.Settings
+import com.justicemw.oceanlive.car.V12Method
+import com.justicemw.oceanlive.obd.Elm
 import com.justicemw.oceanlive.car.Mode
 import com.justicemw.oceanlive.car.V12Log
 import com.justicemw.oceanlive.car.V12Mode
@@ -100,9 +103,39 @@ class V12Test {
             listOf(V12Sample(0L, 12.5, V12Log.SOURCE_ASLEEP, V12Mode.Asleep), V12Sample(60_000L, 12.48, port, V12Mode.Parked, true)),
             TimeZone.getTimeZone("UTC"),
         ).lines()
-        assertEquals("time,volts,source,mode,resting", csv[0])
-        assertEquals("1970-01-01T00:00:00Z,12.50,OBD port while asleep,asleep,false", csv[1])
-        assertEquals("1970-01-01T00:01:00Z,12.48,OBD port,parked,true", csv[2])
+        assertEquals("time,volts,source,mode,resting,method", csv[0])
+        // An asleep reading stored before the method was recorded reads as kept open.
+        assertEquals("1970-01-01T00:00:00Z,12.50,OBD port while asleep,asleep,false,kept open", csv[1])
+        assertEquals("1970-01-01T00:01:00Z,12.48,OBD port,parked,true,", csv[2])
+        val quick = V12Log.csv(
+            listOf(V12Sample(0L, 12.5, V12Log.SOURCE_ASLEEP, V12Mode.Asleep, method = V12Method.Quick)),
+            TimeZone.getTimeZone("UTC"),
+        ).lines()
+        assertEquals("1970-01-01T00:00:00Z,12.50,OBD port while asleep,asleep,false,quick", quick[1])
+    }
+
+    @Test fun methodIsStoredAndOldLinesReadAsKeptOpen() {
+        val quick = V12Sample(t0, 12.5, V12Log.SOURCE_ASLEEP, V12Mode.Asleep, method = V12Method.Quick)
+        val kept = V12Sample(t0 + min, 12.5, V12Log.SOURCE_ASLEEP, V12Mode.Asleep, method = V12Method.KeptOpen)
+        assertEquals("${t0},12.50,S,a,0,q", V12Log.encode(quick))
+        assertEquals(V12Method.Quick, V12Log.decode(V12Log.encode(quick))?.watchMethod)
+        assertEquals(V12Method.KeptOpen, V12Log.decode(V12Log.encode(kept))?.watchMethod)
+        // A line written by an older version: five fields, no method.
+        val old = V12Log.decode("${t0},12.48,S,a,0")
+        assertNotNull(old)
+        assertNull(old!!.method)
+        assertEquals(V12Method.KeptOpen, old.watchMethod)
+        // Awake readings have no watch method, and an older version still reads the new lines.
+        assertNull(V12Log.decode("${t0},13.50,O,d,0")?.watchMethod)
+        assertEquals("${t0},13.50,O,d,0", V12Log.encode(V12Sample(t0, 13.5, port, V12Mode.Driving)))
+        // An unknown method code is ignored rather than dropping the reading.
+        assertEquals(V12Method.KeptOpen, V12Log.decode("${t0},12.48,S,a,0,x")?.watchMethod)
+    }
+
+    @Test fun recorderKeepsTheMethodOnAsleepReadingsOnly() {
+        val r = V12Recorder()
+        assertEquals(V12Method.Quick, r.add(t0, 12.5, V12Log.SOURCE_ASLEEP, V12Mode.Asleep, V12Method.Quick)?.method)
+        assertNull(r.add(t0 + 2 * min, 13.6, port, V12Mode.Driving, V12Method.Quick)?.method)
     }
 
     // ── Resting detection ─────────────────────────────────────
@@ -217,13 +250,88 @@ class V12Test {
         assertEquals(10 * min, V12Watch.intervalMs(10))
         assertEquals(5 * min, V12Watch.intervalMs(5))
         assertEquals(30 * min, V12Watch.intervalMs(30))
-        assertEquals(10 * min, V12Watch.intervalMs(7))
+        assertEquals(30 * min, V12Watch.intervalMs(7))
         assertEquals(5 * min, V12Watch.nextDelay(5, connected = true, confirmingWake = false))
         assertEquals(V12Watch.CONFIRM_MS, V12Watch.nextDelay(30, connected = true, confirmingWake = true))
         // The Bluetooth link is never retried more often than every 10 minutes.
         assertEquals(10 * min, V12Watch.nextDelay(5, connected = false, confirmingWake = false))
         assertEquals(30 * min, V12Watch.nextDelay(30, connected = false, confirmingWake = false))
-        assertTrue(EnStrings.plural(R.plurals.settings_watch_note, 10, 10).contains("every 10 minutes"))
+    }
+
+    @Test fun defaultsAreThirtyMinutesAndQuickChecks() {
+        assertEquals(30, V12Watch.DEFAULT_INTERVAL)
+        assertEquals(listOf(5, 10, 30), V12Watch.INTERVALS)
+        assertEquals(30, Settings().watchEveryMin)
+        assertFalse(Settings().watchKeepConnected)
+        assertFalse(Settings().watch12v)
+    }
+
+    @Test fun quickCheckUnlessKeptConnected() {
+        assertEquals(V12Method.Quick, V12Watch.method(keepConnected = false))
+        assertEquals(V12Method.KeptOpen, V12Watch.method(keepConnected = true))
+        // Quick checks follow the chosen interval, even after an unreachable one, and confirm a wake-up after a minute.
+        assertEquals(30 * min, V12Watch.quickDelay(30, confirmingWake = false))
+        assertEquals(5 * min, V12Watch.quickDelay(5, confirmingWake = false))
+        assertEquals(V12Watch.CONFIRM_MS, V12Watch.quickDelay(30, confirmingWake = true))
+        // The whole check stays short.
+        assertTrue(V12Watch.QUICK_TIMEOUT_MS <= 15_000L)
+    }
+
+    @Test fun quickCheckSendsOnlyAdapterCommands() {
+        val sent = Elm.quickCheckCommands + Elm.READ_VOLTAGE
+        assertEquals(listOf("ATE0", "ATS0", "ATRV"), sent)
+        // Nothing that resets the adapter, searches for a protocol or puts a frame on the car's network.
+        for (c in sent) {
+            assertTrue(c, c.startsWith("AT"))
+            assertFalse(c, c in listOf("ATZ", "ATWS", "ATD") || c.startsWith("ATSP") || c.startsWith("ATSH"))
+        }
+    }
+
+    @Test fun unreachableStatusAfterTwoMissesInARow() {
+        assertFalse(V12Watch.unreachable(0))
+        assertFalse(V12Watch.unreachable(1))
+        assertTrue(V12Watch.unreachable(2))
+        assertTrue(V12Watch.unreachable(5))
+        assertEquals("Car asleep · adapter not reachable", EnStrings.get(R.string.v12_watch_unreachable))
+        assertEquals("Watching 12V · next check in 30 min", EnStrings.get(R.string.notif_watching_next, 30))
+        assertTrue(EnStrings.get(R.string.settings_watch_quick_note).startsWith("Every 30 minutes (or your choice)"))
+    }
+
+    @Test fun minutesUntilTheNextCheck() {
+        assertEquals(30, V12Watch.minutesUntil(t0 + 30 * min, t0))
+        assertEquals(1, V12Watch.minutesUntil(t0 + 10 * sec, t0))
+        assertEquals(1, V12Watch.minutesUntil(t0 - min, t0))
+        assertEquals(2, V12Watch.minutesUntil(t0 + 61 * sec, t0))
+    }
+
+    @Test fun missesAreStoredAndTrimmed() {
+        assertEquals(emptyList<Long>(), V12Watch.decodeMisses(null))
+        assertEquals(emptyList<Long>(), V12Watch.decodeMisses(""))
+        val list = V12Watch.addMiss(V12Watch.addMiss(emptyList(), t0 - 20 * day), t0)
+        assertEquals(listOf(t0), list)
+        val two = V12Watch.addMiss(list, t0 + hour)
+        assertEquals(two, V12Watch.decodeMisses(V12Watch.encodeMisses(two)))
+    }
+
+    @Test fun latestNightSaysHowItWasWatched() {
+        assertNull(V12Watch.latestNight(emptyList(), emptyList()))
+        // Last night: quick checks with two that couldn't reach the adapter. The night before had one more.
+        val samples = listOf(
+            s(t0 - day, 12.6),
+            s(t0 - day + hour, 12.55, V12Mode.Asleep),
+            s(t0 - 2 * hour, 12.7, V12Mode.Parked),
+            V12Sample(t0, 12.6, V12Log.SOURCE_ASLEEP, V12Mode.Asleep, method = V12Method.Quick),
+            V12Sample(t0 + 2 * hour, 12.58, V12Log.SOURCE_ASLEEP, V12Mode.Asleep, method = V12Method.Quick),
+            s(t0 + 8 * hour, 13.8, V12Mode.Driving),
+        )
+        val misses = listOf(t0 - day + 2 * hour, t0 + hour, t0 + 3 * hour)
+        assertEquals(com.justicemw.oceanlive.car.NightChecks(V12Method.Quick, 2), V12Watch.latestNight(samples, misses))
+        // An old file without methods reads as kept connected.
+        assertEquals(V12Method.KeptOpen, V12Watch.latestNight(samples.take(2), emptyList())?.method)
+        // Tonight nothing has reached the adapter yet: no method, one miss counted.
+        val tonight = V12Watch.latestNight(samples, misses + (t0 + 9 * hour))
+        assertNull(tonight?.method)
+        assertEquals(1, tonight?.unreachable)
     }
 
     @Test fun wakeNeedsTwoHighReadingsInARow() {

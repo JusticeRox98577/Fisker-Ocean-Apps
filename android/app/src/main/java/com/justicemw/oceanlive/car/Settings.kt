@@ -37,10 +37,15 @@ data class Settings(
     val homePrice: Double = 0.0,
     /** DC fast charging price per kWh. 0 means not set. */
     val dcPrice: Double = 0.0,
-    /** Keep the adapter connected while the car sleeps and ask it (only it) for the 12V. */
+    /** Check the 12V while the car sleeps by asking the adapter (only it); see [watchKeepConnected]. */
     val watch12v: Boolean = false,
     /** Minutes between 12V checks while the car sleeps: 5, 10 or 30. */
     val watchEveryMin: Int = V12Watch.DEFAULT_INTERVAL,
+    /**
+     * Keep the adapter connected (and awake) between 12V checks instead of connecting
+     * briefly for each one. Only for adapters that can't be woken over Bluetooth.
+     */
+    val watchKeepConnected: Boolean = false,
 ) {
     val usableKwh: Double get() = if (model == CarModel.Custom) customKwh else model.usableKwh
     val abrpEnabled: Boolean get() = abrpToken.isNotBlank() && abrpKey.isNotBlank()
@@ -70,6 +75,7 @@ data class Settings(
             dcPrice = p.getFloat("dc_price", 0f).toString().toDouble(),
             watch12v = p.getBoolean("watch_12v", false),
             watchEveryMin = p.getInt("watch_every", V12Watch.DEFAULT_INTERVAL).takeIf { it in V12Watch.INTERVALS } ?: V12Watch.DEFAULT_INTERVAL,
+            watchKeepConnected = p.getBoolean("watch_keep_connected", false),
         )
 
         fun prefs(context: Context): SharedPreferences =
@@ -100,5 +106,6 @@ data class Settings(
         putFloat("dc_price", dcPrice.toFloat())
         putBoolean("watch_12v", watch12v)
         putInt("watch_every", watchEveryMin)
+        putBoolean("watch_keep_connected", watchKeepConnected)
     }
 }

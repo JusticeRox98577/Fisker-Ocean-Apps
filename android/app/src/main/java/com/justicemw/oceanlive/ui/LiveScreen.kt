@@ -82,7 +82,7 @@ fun LiveScreen(
         Spacer(Modifier.height(8.dp))
         val pill = when {
             state.status == Status.Reconnecting -> Triple(stringResource(R.string.status_reconnecting), Warn, true)
-            state.status == Status.Watching -> Triple(stringResource(R.string.v12_watch_status), Violet, true)
+            state.status == Status.Watching -> Triple(stringResource(state.watchStatus), Violet, true)
             state.status != Status.Live -> Triple(
                 state.lastUpdate?.let { stringResource(R.string.live_last_seen, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it))) }
                     ?: stringResource(R.string.live_offline),

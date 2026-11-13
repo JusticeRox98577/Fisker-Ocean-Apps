@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,8 @@ import com.justicemw.oceanlive.rememberStrings
 import com.justicemw.oceanlive.car.CarState
 import com.justicemw.oceanlive.car.Status
 import com.justicemw.oceanlive.car.V12Log
+import com.justicemw.oceanlive.car.V12Method
+import com.justicemw.oceanlive.car.V12Watch
 import com.justicemw.oceanlive.car.V12Night
 import com.justicemw.oceanlive.car.V12Sample
 import com.justicemw.oceanlive.car.V12Stats
@@ -90,6 +93,7 @@ fun nightLine(s: Strings, n: V12Night): String {
 fun V12Screen(
     state: CarState,
     samples: List<V12Sample>,
+    misses: List<Long>,
     onBack: () -> Unit,
     onShare: (V12Range, V12ShareKind) -> Unit,
 ) {
@@ -100,6 +104,7 @@ fun V12Screen(
     val from = now - range.ms
     val stats = remember(samples, range) { V12Stats.of(samples, from) }
     val points = remember(samples, range) { thinForGraph(samples, from, now) }
+    val night = remember(samples, misses) { V12Watch.latestNight(samples, misses) }
 
     Row(
         Modifier.fillMaxWidth().padding(top = 4.dp).clip(CircleShape).clickable(onClick = onBack).padding(vertical = 8.dp, horizontal = 4.dp),
@@ -110,7 +115,7 @@ fun V12Screen(
     Text(stringResource(R.string.v12_battery), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
     if (state.status == Status.Watching) {
         Spacer(Modifier.height(8.dp))
-        Pill(stringResource(R.string.v12_watch_status), Violet, pulse = true)
+        Pill(stringResource(state.watchStatus), Violet, pulse = true)
     }
 
     Spacer(Modifier.height(14.dp))
@@ -151,6 +156,13 @@ fun V12Screen(
     SectionTitle(stringResource(R.string.v12_stats) + " · " + stringResource(range.words))
     Card {
         v12StatLines(strings, stats, now).forEach { KeyValue(it.key, it.value, it.color) }
+        night?.method?.let { m ->
+            val text = if (m == V12Method.Quick) R.string.v12_checks_quick else R.string.v12_checks_kept
+            Text(stringResource(text), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+        }
+        night?.unreachable?.takeIf { it > 0 }?.let { n ->
+            Text(pluralStringResource(R.plurals.v12_checks_unreachable, n, n), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+        }
     }
 
     if (stats.nights.isNotEmpty()) {
