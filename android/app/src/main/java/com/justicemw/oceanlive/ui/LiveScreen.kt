@@ -238,8 +238,9 @@ private fun LiveLandscape(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val compact = maxHeight < 420.dp
         val leftWidth = maxWidth * 0.4f
-        // Room for the pill above the ring and the power under it.
-        val around = if (compact) 72.dp else 96.dp
+        // Room for the pill above the ring and the power under it (pill ~26, gap 4, kW ~24, label ~15),
+        // plus some slack for a larger system font or a pill that wraps in a narrow pane.
+        val around = if (compact) 84.dp else 100.dp
         val ring = minOf(maxHeight - around, leftWidth - 8.dp).coerceIn(96.dp, 320.dp)
         Row(Modifier.fillMaxSize()) {
             Column(
@@ -263,7 +264,9 @@ private fun LiveLandscape(
                                 StartCard(state, settings, bluetoothOn, onScan, onConnectSaved, buttonsFirst = true)
                                 Spacer(Modifier.height(10.dp))
                             }
-                            if (showDash) LandscapeDash(state, settings, history, parked, paneWidth, paneHeight, compact, onDisconnect, onOpen12v)
+                            // Same rule as portrait: the dash shows unless idle with nothing known yet,
+                            // so while watching the 12V before the first reading the pane is not left empty.
+                            if (showDash || !idle) LandscapeDash(state, settings, history, parked, paneWidth, paneHeight, compact, onDisconnect, onOpen12v)
                         }
                     }
                 }
