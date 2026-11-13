@@ -167,9 +167,9 @@ class V12Test {
         assertEquals(t0 + 2 * min, st.lastCharged)
         // 2 of the counted minutes were at 13.2 V or more; the long gap counts as 5 min at most.
         assertEquals(2.0 / 9.0, st.chargedShare!!, 1e-9)
-        assertEquals("Low", V12Log.restLabel(12.30))
-        assertEquals("Good", V12Log.restLabel(12.40))
-        assertEquals("Very low", V12Log.restLabel(11.9))
+        assertEquals("Low", EnStrings.get(V12Log.restLabel(12.30)))
+        assertEquals("Good", EnStrings.get(V12Log.restLabel(12.40)))
+        assertEquals("Very low", EnStrings.get(V12Log.restLabel(11.9)))
     }
 
     @Test fun overnightDropFromSleepingReadings() {
@@ -223,7 +223,7 @@ class V12Test {
         // The Bluetooth link is never retried more often than every 10 minutes.
         assertEquals(10 * min, V12Watch.nextDelay(5, connected = false, confirmingWake = false))
         assertEquals(30 * min, V12Watch.nextDelay(30, connected = false, confirmingWake = false))
-        assertTrue(V12Watch.settingNote(10).contains("every 10 minutes"))
+        assertTrue(EnStrings.plural(R.plurals.settings_watch_note, 10, 10).contains("every 10 minutes"))
     }
 
     @Test fun wakeNeedsTwoHighReadingsInARow() {

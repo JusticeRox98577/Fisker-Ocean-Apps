@@ -1,5 +1,6 @@
 package com.justicemw.oceanlive.obd
 
+import com.justicemw.oceanlive.R
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -77,7 +78,7 @@ class ElmTransport(context: Context) {
     /** Connects and finds the UART characteristics. Retries the usual Android GATT 133 failures. */
     suspend fun connect(address: String) {
         stopScan()
-        val device = adapter?.getRemoteDevice(address) ?: error("Bluetooth is not available.")
+        val device = adapter?.getRemoteDevice(address) ?: error(appContext.getString(R.string.elm_no_bluetooth))
         var lastError: Throwable? = null
         for (attempt in 1..3) {
             try {
@@ -89,7 +90,7 @@ class ElmTransport(context: Context) {
                 delay(600L * attempt)
             }
         }
-        throw lastError ?: IllegalStateException("Could not connect to the adapter.")
+        throw lastError ?: IllegalStateException(appContext.getString(R.string.elm_could_not_connect))
     }
 
     private suspend fun connectOnce(device: BluetoothDevice) {
@@ -101,8 +102,8 @@ class ElmTransport(context: Context) {
 
     /** Sends one command and waits for the ELM327 ">" prompt. Commands never overlap. */
     suspend fun send(command: String, timeoutMs: Long = 4_000): String = commandMutex.withLock {
-        val g = gatt ?: error("Not connected.")
-        val c = writeChar ?: error("Not connected.")
+        val g = gatt ?: error(appContext.getString(R.string.elm_not_connected))
+        val c = writeChar ?: error(appContext.getString(R.string.elm_not_connected))
         val waiter = CompletableDeferred<String>()
         synchronized(lock) {
             buffer.setLength(0)
@@ -118,7 +119,7 @@ class ElmTransport(context: Context) {
         }
         if (!ok) {
             synchronized(lock) { reply = null }
-            error("Write to adapter failed.")
+            error(appContext.getString(R.string.elm_write_failed))
         }
         try {
             withTimeout(timeoutMs) { waiter.await() }
@@ -154,7 +155,7 @@ class ElmTransport(context: Context) {
         } catch (_: Exception) {
         }
         synchronized(lock) {
-            reply?.completeExceptionally(IllegalStateException("Disconnected."))
+            reply?.completeExceptionally(IllegalStateException(appContext.getString(R.string.elm_disconnected)))
             reply = null
         }
     }
@@ -178,7 +179,7 @@ class ElmTransport(context: Context) {
                 g.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED || status != BluetoothGatt.GATT_SUCCESS) {
                 val wasConnected = writeChar != null
-                ready?.completeExceptionally(IllegalStateException("Adapter disconnected (status $status)."))
+                ready?.completeExceptionally(IllegalStateException(appContext.getString(R.string.elm_disconnected_status, status)))
                 closeGatt()
                 if (wasConnected) onDisconnected?.invoke()
             }
@@ -186,7 +187,7 @@ class ElmTransport(context: Context) {
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                ready?.completeExceptionally(IllegalStateException("Service discovery failed."))
+                ready?.completeExceptionally(IllegalStateException(appContext.getString(R.string.elm_discovery_failed)))
                 return
             }
             var notify: BluetoothGattCharacteristic? = null
@@ -212,7 +213,7 @@ class ElmTransport(context: Context) {
                 }
             }
             if (notify == null || write == null) {
-                ready?.completeExceptionally(IllegalStateException("This doesn't look like an OBD adapter."))
+                ready?.completeExceptionally(IllegalStateException(appContext.getString(R.string.elm_not_obd)))
                 return
             }
             writeType = if (write.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) {
@@ -247,7 +248,7 @@ class ElmTransport(context: Context) {
                 writeChar = pendingWrite
                 ready?.complete(Unit)
             } else {
-                ready?.completeExceptionally(IllegalStateException("Could not subscribe to the adapter."))
+                ready?.completeExceptionally(IllegalStateException(appContext.getString(R.string.elm_subscribe_failed)))
             }
         }
 

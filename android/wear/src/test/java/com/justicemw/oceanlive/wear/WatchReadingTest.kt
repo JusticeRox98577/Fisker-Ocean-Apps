@@ -36,7 +36,7 @@ class WatchReadingTest {
         assertFalse(charging.liveAt(t0 + 4 * min))
         assertEquals("DC fast charging", WatchFormat.status(charging, t0 + min))
         assertEquals("Not connected", WatchFormat.status(charging, t0 + 10 * min))
-        assertNull(WatchFormat.toTarget(charging, t0 + 10 * min))
+        assertNull(WatchFormat.toTarget(EnStrings, charging, t0 + 10 * min))
     }
 
     @Test fun formatsValues() {
@@ -44,25 +44,35 @@ class WatchReadingTest {
         assertEquals("—", WatchFormat.soc(null))
         assertEquals("≈ 320 km", WatchFormat.range(charging))
         assertEquals("≈ 199 mi", WatchFormat.range(charging.copy(miles = true)))
-        assertEquals("To 80% ≈ 25 min", WatchFormat.toTarget(charging, t0))
-        assertEquals("To 80% ≈ 1 h 30 min", WatchFormat.toTarget(charging.copy(minutesToTarget = 90), t0))
-        assertTrue(WatchFormat.aux(13.6)!!.endsWith("Charging"))
-        assertTrue(WatchFormat.aux(11.8)!!.endsWith("Very low"))
+        assertEquals("To 80% ≈ 25 min", WatchFormat.toTarget(EnStrings, charging, t0))
+        assertEquals("To 80% ≈ 1 h 30 min", WatchFormat.toTarget(EnStrings, charging.copy(minutesToTarget = 90), t0))
+        assertTrue(WatchFormat.aux(EnStrings, 13.6)!!.endsWith("Charging"))
+        assertTrue(WatchFormat.aux(EnStrings, 11.8)!!.endsWith("Very low"))
     }
 
     @Test fun powerDirection() {
-        assertEquals("into the battery", WatchFormat.powerLabel(charging))
-        assertEquals("regenerating", WatchFormat.powerLabel(charging.copy(charging = false)))
-        assertEquals("from the battery", WatchFormat.powerLabel(charging.copy(powerKw = -12.0)))
-        assertEquals("idle", WatchFormat.powerLabel(charging.copy(powerKw = 0.1)))
-        assertEquals("power", WatchFormat.powerLabel(charging.copy(powerKw = null)))
+        assertEquals("into the battery", EnStrings.get(WatchFormat.powerLabel(charging)))
+        assertEquals("regenerating", EnStrings.get(WatchFormat.powerLabel(charging.copy(charging = false))))
+        assertEquals("from the battery", EnStrings.get(WatchFormat.powerLabel(charging.copy(powerKw = -12.0))))
+        assertEquals("idle", EnStrings.get(WatchFormat.powerLabel(charging.copy(powerKw = 0.1))))
+        assertEquals("power", EnStrings.get(WatchFormat.powerLabel(charging.copy(powerKw = null))))
     }
 
     @Test fun updatedAgo() {
-        assertEquals("Updated just now", WatchFormat.ago(t0, t0 + 30_000))
-        assertEquals("Updated 5 min ago", WatchFormat.ago(t0, t0 + 5 * min))
-        assertEquals("Updated 3 h ago", WatchFormat.ago(t0, t0 + 190 * min))
-        assertEquals("Updated 3 days ago", WatchFormat.ago(t0, t0 + 72 * 60 * min))
-        assertEquals("No reading yet", WatchFormat.ago(0, t0))
+        assertEquals("Updated just now", WatchFormat.ago(EnStrings, t0, t0 + 30_000))
+        assertEquals("Updated 5 min ago", WatchFormat.ago(EnStrings, t0, t0 + 5 * min))
+        assertEquals("Updated 3 h ago", WatchFormat.ago(EnStrings, t0, t0 + 190 * min))
+        assertEquals("Updated 3 days ago", WatchFormat.ago(EnStrings, t0, t0 + 72 * 60 * min))
+        assertEquals("No reading yet", WatchFormat.ago(EnStrings, 0, t0))
+    }
+
+    @Test fun phoneStatusInTheWatchLanguage() {
+        assertEquals("DC fast charging", WatchFormat.statusText(EnStrings, charging, t0))
+        assertEquals("Not connected", WatchFormat.statusText(EnStrings, charging, t0 + 10 * min))
+        // Every status the phone sends has a translation; anything else is shown as sent.
+        for (s in listOf("DC fast charging", "Charging", "Driving", "Parked", "Reconnecting", "Not connected")) {
+            assertEquals(s, EnStrings.get(WatchFormat.statusRes(s)!!))
+        }
+        assertEquals("Something new", WatchFormat.statusText(EnStrings, charging.copy(status = "Something new"), t0))
     }
 }

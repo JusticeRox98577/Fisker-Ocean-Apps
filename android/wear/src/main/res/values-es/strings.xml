@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_desc">Carga y autonomía de tu Ocean</string>
+    <string name="complication_label">Batería del Ocean</string>
+    <string name="complication_description">Batería del Ocean %1$s</string>
+    <string name="status_charging">Cargando</string>
+    <string name="status_dc_fast">Carga rápida DC</string>
+    <string name="status_driving">Conduciendo</string>
+    <string name="status_parked">Aparcado</string>
+    <string name="status_reconnecting">Reconectando</string>
+    <string name="status_not_connected">No conectado</string>
+    <string name="power_label">potencia</string>
+    <string name="power_into_battery">hacia la batería</string>
+    <string name="power_regenerating">regenerando</string>
+    <string name="power_from_battery">desde la batería</string>
+    <string name="power_idle">en reposo</string>
+    <string name="aux_charging">Cargando</string>
+    <string name="aux_good">Bien</string>
+    <string name="aux_low">Baja</string>
+    <string name="aux_very_low">Muy baja</string>
+    <string name="range_unknown">autonomía desconocida</string>
+    <string name="to_target">Hasta %1$d %% ≈ %2$s</string>
+    <string name="no_reading_yet">Aún sin lectura</string>
+    <string name="updated_just_now">Actualizado ahora mismo</string>
+    <string name="updated_min_ago">Actualizado hace %1$d min</string>
+    <string name="updated_h_ago">Actualizado hace %1$d h</string>
+    <string name="open_on_phone_connect">Abre Ocean Live en tu móvil y conéctate al coche.</string>
+    <string name="tile_open_app">Abre Ocean Live</string>
+    <string name="tile_on_phone">en tu móvil</string>
+    <plurals name="updated_days_ago">
+        <item quantity="one">Actualizado hace %d día</item>
+        <item quantity="many">Actualizado hace %d días</item>
+        <item quantity="other">Actualizado hace %d días</item>
+    </plurals>
+</resources>

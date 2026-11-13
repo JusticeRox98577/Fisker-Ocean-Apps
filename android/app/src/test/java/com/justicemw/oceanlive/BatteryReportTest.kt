@@ -18,6 +18,7 @@ class BatteryReportTest {
     private val t0 = 1_700_000_000_000L
     private val settings = Settings(useFahrenheit = false, model = CarModel.Big)
     private fun date(t: Long) = "D$t"
+    private val notMeasured = EnStrings.get(BatteryReports.NOT_MEASURED)
 
     private fun charge(start: Long, socStart: Double, socEnd: Double, kwh: Double, fast: Boolean = false) =
         HistoryEntry(EntryKind.Charge, start, start + hour, socStart, socEnd, kwh, fast = fast)
@@ -28,7 +29,7 @@ class BatteryReportTest {
         parked: List<ParkedDrain> = emptyList(),
         scans: List<SavedScan> = emptyList(),
         vin: String? = null,
-    ) = BatteryReports.build(t0, vin, snapshot, settings, history, parked, scans, ::date) { "Desc ${it.code}" }
+    ) = BatteryReports.build(EnStrings, t0, vin, snapshot, settings, history, parked, scans, ::date) { "Desc ${it.code}" }
 
     private fun BatteryReport.value(section: String, label: String) =
         (sections + faults).first { it.title == section }.rows.first { it.label == label }.value
@@ -38,17 +39,17 @@ class BatteryReportTest {
         val r = build()
         assertEquals("Ocean Live battery report", r.title)
         assertEquals("D$t0", r.date)
-        assertEquals(BatteryReports.NOT_MEASURED, r.value("Car", "VIN"))
+        assertEquals(notMeasured, r.value("Car", "VIN"))
         assertEquals("106.5 kWh", r.value("Car", "Rated usable"))
-        assertEquals(BatteryReports.NOT_MEASURED, r.value("Battery health", "Measured usable"))
-        assertEquals(BatteryReports.NOT_MEASURED, r.value("Cells", "Spread"))
-        assertEquals(BatteryReports.NOT_MEASURED, r.value("Temperatures", "Coolant in"))
-        assertEquals(BatteryReports.NOT_MEASURED, r.value("Insulation and 12V", "12V battery"))
-        assertEquals(BatteryReports.NOT_MEASURED, r.value("Parked drain", "Average per day"))
-        assertEquals(BatteryReports.NOT_MEASURED, r.value("Charging totals", "Sessions"))
+        assertEquals(notMeasured, r.value("Battery health", "Measured usable"))
+        assertEquals(notMeasured, r.value("Cells", "Spread"))
+        assertEquals(notMeasured, r.value("Temperatures", "Coolant in"))
+        assertEquals(notMeasured, r.value("Insulation and 12V", "12V battery"))
+        assertEquals(notMeasured, r.value("Parked drain", "Average per day"))
+        assertEquals(notMeasured, r.value("Charging totals", "Sessions"))
         assertEquals("not run yet", r.value("Latest fault scan", "Last scan"))
         assertTrue(r.tiles.all { it.tone == ReportTone.Missing })
-        assertEquals(BatteryReports.FOOTER, r.footer)
+        assertEquals(EnStrings.raw("report_footer"), r.footer)
     }
 
     @Test fun fullReport() {

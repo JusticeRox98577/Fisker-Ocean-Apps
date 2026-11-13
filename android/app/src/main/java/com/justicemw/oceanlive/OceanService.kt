@@ -21,7 +21,6 @@ import com.justicemw.oceanlive.car.Car
 import com.justicemw.oceanlive.car.CarState
 import com.justicemw.oceanlive.car.Mode
 import com.justicemw.oceanlive.car.Status
-import com.justicemw.oceanlive.car.V12Watch
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
@@ -90,7 +89,7 @@ class OceanService : Service() {
         .setOngoing(true)
         .setOnlyAlertOnce(true)
         .setContentIntent(Alerts.openApp(this))
-        .addAction(0, "Disconnect", android.app.PendingIntent.getBroadcast(
+        .addAction(0, getString(R.string.disconnect), android.app.PendingIntent.getBroadcast(
             this, 1, Intent(this, StopReceiver::class.java),
             android.app.PendingIntent.FLAG_IMMUTABLE,
         ))
@@ -98,19 +97,21 @@ class OceanService : Service() {
 
     private fun notificationText(s: CarState): Pair<String, String> {
         val soc = s.snapshot.soc?.let { "${it.roundToInt()}%" }
+        val appName = getString(R.string.app_name)
+        val adapter = s.adapterName ?: getString(R.string.adapter_generic)
         return when (s.status) {
             Status.Live -> {
                 val power = s.snapshot.powerKw
                 val what = when (s.mode) {
-                    Mode.Charging -> "Charging" + (power?.let { " at %.1f kW".format(it) } ?: "")
-                    Mode.Driving -> "Driving"
-                    Mode.Parked -> "Connected"
+                    Mode.Charging -> power?.let { getString(R.string.notif_charging_at, Format.n(it, 1)) } ?: getString(R.string.status_charging)
+                    Mode.Driving -> getString(R.string.status_driving)
+                    Mode.Parked -> getString(R.string.notif_connected)
                 }
-                (soc?.let { "Ocean $it" } ?: "Ocean Live") to what
+                (soc?.let { getString(R.string.notif_ocean_soc, it) } ?: appName) to what
             }
-            Status.Watching -> (s.snapshot.aux12v?.let { "12V battery %.2f V".format(it) } ?: "Ocean Live") to V12Watch.NOTIFICATION
-            Status.Reconnecting -> "Ocean Live" to "Reconnecting to ${s.adapterName ?: "adapter"}"
-            else -> "Ocean Live" to "Connecting to ${s.adapterName ?: "adapter"}"
+            Status.Watching -> (s.snapshot.aux12v?.let { getString(R.string.notif_12v, Format.n(it, 2)) } ?: appName) to getString(R.string.notif_watching)
+            Status.Reconnecting -> appName to getString(R.string.notif_reconnecting_to, adapter)
+            else -> appName to getString(R.string.connecting_to, adapter)
         }
     }
 

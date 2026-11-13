@@ -28,11 +28,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.justicemw.oceanlive.R
 import com.justicemw.oceanlive.car.CarModel
 import com.justicemw.oceanlive.car.Settings
 import com.justicemw.oceanlive.car.V12Watch
@@ -46,110 +49,109 @@ fun SettingsScreen(
     onNeedNotifications: () -> Unit,
     onNeedLocation: () -> Unit,
 ) {
-    SectionTitle("Car")
+    SectionTitle(stringResource(R.string.settings_car))
     Card {
         CarModel.entries.forEach { m ->
-            Choice(m.label + if (m.usableKwh > 0) " · ${m.usableKwh} kWh" else "", s.model == m) { update { it.copy(model = m) } }
+            Choice(stringResource(m.label) + if (m.usableKwh > 0) " · ${m.usableKwh} kWh" else "", s.model == m) { update { it.copy(model = m) } }
         }
         if (s.model == CarModel.Custom) {
             var text by remember { mutableStateOf(s.customKwh.toString()) }
-            Field("Usable battery in kWh", text, KeyboardType.Decimal) {
+            Field(stringResource(R.string.settings_usable_kwh), text, KeyboardType.Decimal) {
                 text = it
                 it.toDoubleOrNull()?.takeIf { v -> v in 20.0..200.0 }?.let { v -> update { st -> st.copy(customKwh = v) } }
             }
         }
-        Text("Published usable capacity: 106.5 kWh for One, Extreme and Ultra, about 75 kWh for the Sport. Used for range and charge-time estimates.",
+        Text(stringResource(R.string.settings_car_note),
             color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
     }
 
-    SectionTitle("Charging cost")
+    SectionTitle(stringResource(R.string.settings_charging_cost))
     Card {
         var currency by remember { mutableStateOf(s.currency) }
-        Field("Currency symbol", currency) {
+        Field(stringResource(R.string.settings_currency), currency) {
             currency = it
             if (it.length <= 4) update { st -> st.copy(currency = it.trim()) }
         }
-        PriceField("Home price per kWh", s.homePrice) { v -> update { it.copy(homePrice = v) } }
-        PriceField("DC fast price per kWh", s.dcPrice) { v -> update { it.copy(dcPrice = v) } }
-        Text("Used to show what each charge costs in Trips. Leave a price empty to skip it.",
+        PriceField(stringResource(R.string.settings_home_price), s.homePrice) { v -> update { it.copy(homePrice = v) } }
+        PriceField(stringResource(R.string.settings_dc_price), s.dcPrice) { v -> update { it.copy(dcPrice = v) } }
+        Text(stringResource(R.string.settings_cost_note),
             color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
     }
 
-    SectionTitle("Units and screen")
+    SectionTitle(stringResource(R.string.settings_units))
     Card {
-        Toggle("Use miles", s.useMiles) { v -> update { it.copy(useMiles = v) } }
-        Toggle("Use Fahrenheit", s.useFahrenheit) { v -> update { it.copy(useFahrenheit = v) } }
-        Toggle("Keep the screen on while connected", s.keepScreenOn) { v -> update { it.copy(keepScreenOn = v) } }
+        Toggle(stringResource(R.string.settings_miles), s.useMiles) { v -> update { it.copy(useMiles = v) } }
+        Toggle(stringResource(R.string.settings_fahrenheit), s.useFahrenheit) { v -> update { it.copy(useFahrenheit = v) } }
+        Toggle(stringResource(R.string.settings_screen_on), s.keepScreenOn) { v -> update { it.copy(keepScreenOn = v) } }
     }
 
-    SectionTitle("Adapter")
+    SectionTitle(stringResource(R.string.settings_adapter))
     Card {
-        Toggle("Connect automatically when the app opens", s.autoStart) { v -> update { it.copy(autoStart = v) } }
-        Text(s.adapterName?.let { "Saved adapter: $it" } ?: "No saved adapter yet.", color = Dim, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
-        if (s.adapterAddress != null) TextButton(onClick = onForget) { Text("Forget saved adapter", color = Bad) }
+        Toggle(stringResource(R.string.settings_auto_connect), s.autoStart) { v -> update { it.copy(autoStart = v) } }
+        Text(s.adapterName?.let { stringResource(R.string.settings_saved_adapter, it) } ?: stringResource(R.string.settings_no_adapter), color = Dim, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+        if (s.adapterAddress != null) TextButton(onClick = onForget) { Text(stringResource(R.string.settings_forget_adapter), color = Bad) }
     }
 
-    SectionTitle("12V battery")
+    SectionTitle(stringResource(R.string.v12_battery))
     Card {
-        Toggle("Watch 12V while the car sleeps", s.watch12v) { v ->
+        Toggle(stringResource(R.string.settings_watch_12v), s.watch12v) { v ->
             if (v) onNeedNotifications()
             update { it.copy(watch12v = v) }
         }
-        Text(V12Watch.settingNote(s.watchEveryMin), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        Text(pluralStringResource(R.plurals.settings_watch_note, s.watchEveryMin, s.watchEveryMin), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
         if (s.watch12v) {
-            Text("Check every", color = Color.White, fontSize = 15.sp, modifier = Modifier.padding(top = 12.dp, bottom = 8.dp))
+            Text(stringResource(R.string.settings_check_every), color = Color.White, fontSize = 15.sp, modifier = Modifier.padding(top = 12.dp, bottom = 8.dp))
             Chips(V12Watch.INTERVALS.map { "$it min" }, V12Watch.INTERVALS.indexOf(s.watchEveryMin).coerceAtLeast(0)) { i ->
                 update { it.copy(watchEveryMin = V12Watch.INTERVALS[i]) }
             }
-            Text("Shorter means more readings, but the adapter stays busier.", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
-            Text("With Battery warnings on, you're told when the 12V drops under 12.2 V and again under 11.8 V.",
+            Text(stringResource(R.string.settings_check_note), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+            Text(stringResource(R.string.settings_watch_warn_note),
                 color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
         }
     }
 
-    SectionTitle("Alerts")
+    SectionTitle(stringResource(R.string.settings_alerts))
     Card {
-        Toggle("Charge alerts", s.alertsOn) { v ->
+        Toggle(stringResource(R.string.settings_charge_alerts), s.alertsOn) { v ->
             if (v) onNeedNotifications()
             update { it.copy(alertsOn = v) }
         }
         if (s.alertsOn) {
-            Percent("Notify when charging reaches", s.alertHigh, 50..100) { v -> update { it.copy(alertHigh = v) } }
-            Percent("Notify when charge drops to", s.alertLow, 5..50) { v -> update { it.copy(alertLow = v) } }
-            Toggle("Notify when charging stops", s.alertStop) { v -> update { it.copy(alertStop = v) } }
+            Percent(stringResource(R.string.settings_notify_high), s.alertHigh, 50..100) { v -> update { it.copy(alertHigh = v) } }
+            Percent(stringResource(R.string.settings_notify_low), s.alertLow, 5..50) { v -> update { it.copy(alertLow = v) } }
+            Toggle(stringResource(R.string.settings_notify_stop), s.alertStop) { v -> update { it.copy(alertStop = v) } }
         }
-        Toggle("Battery warnings (12V low, uneven cells, hot pack)", s.healthAlerts) { v ->
+        Toggle(stringResource(R.string.settings_battery_warnings), s.healthAlerts) { v ->
             if (v) onNeedNotifications()
             update { it.copy(healthAlerts = v) }
         }
-        Text("Alerts work while the app is connected, including in the background.", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        Text(stringResource(R.string.settings_alerts_note), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
     }
 
-    SectionTitle("ABRP")
+    SectionTitle(stringResource(R.string.abrp))
     Card {
-        Field("ABRP generic token", s.abrpToken, secret = true) { v -> update { it.copy(abrpToken = v) } }
-        Field("Telemetry API key", s.abrpKey, secret = true) { v -> update { it.copy(abrpKey = v) } }
+        Field(stringResource(R.string.settings_abrp_token), s.abrpToken, secret = true) { v -> update { it.copy(abrpToken = v) } }
+        Field(stringResource(R.string.settings_abrp_key), s.abrpKey, secret = true) { v -> update { it.copy(abrpKey = v) } }
         if (s.abrpToken.isNotBlank() != s.abrpKey.isNotBlank()) {
-            Text("Both the token and the API key are needed to send to ABRP.", color = Warn, fontSize = 12.sp)
+            Text(stringResource(R.string.settings_abrp_both), color = Warn, fontSize = 12.sp)
         }
-        Percent("Send every", s.abrpEverySec, 5..60, suffix = " sec") { v -> update { it.copy(abrpEverySec = v) } }
-        Toggle("Include phone location", s.abrpLocation) { v ->
+        Percent(stringResource(R.string.settings_abrp_every), s.abrpEverySec, 5..60, suffix = " " + stringResource(R.string.unit_seconds)) { v -> update { it.copy(abrpEverySec = v) } }
+        Toggle(stringResource(R.string.settings_abrp_location), s.abrpLocation) { v ->
             if (v) onNeedLocation()
             update { it.copy(abrpLocation = v) }
         }
-        Text("Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. " +
-            "The API key is a free telemetry key from abetterrouteplanner.com/resources/api. This is the only thing Ocean Live ever sends over the internet.",
+        Text(stringResource(R.string.settings_abrp_note),
             color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
     }
 
-    SectionTitle("Advanced")
+    SectionTitle(stringResource(R.string.settings_advanced))
     Card {
-        Toggle("Flip current sign", s.flipCurrent) { v -> update { it.copy(flipCurrent = v) } }
-        Text("Turn on only if charging shows as using power on your car.", color = Dim, fontSize = 12.sp)
+        Toggle(stringResource(R.string.settings_flip_current), s.flipCurrent) { v -> update { it.copy(flipCurrent = v) } }
+        Text(stringResource(R.string.settings_flip_note), color = Dim, fontSize = 12.sp)
     }
 
     Spacer(Modifier.height(18.dp))
-    Text("Ocean Live 3.3 · unofficial community app. It only reads from the car, except when you clear fault codes or restart a module from the Faults tab.", color = Dim, fontSize = 12.sp)
+    Text(stringResource(R.string.settings_about, "3.3"), color = Dim, fontSize = 12.sp)
 }
 
 @Composable

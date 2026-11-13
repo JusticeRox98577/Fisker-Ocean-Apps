@@ -77,29 +77,31 @@ class DashScreen(context: CarContext) : Screen(context) {
         val settings = Car.settings.value
         val snap = state.snapshot
         val pane = Pane.Builder()
+        val c = carContext
 
         if (state.status != Status.Live && snap.soc == null) {
-            pane.addRow(row("Not connected", "Open Ocean Live on your phone to connect to the adapter."))
+            pane.addRow(row(c.getString(R.string.status_not_connected), c.getString(R.string.auto_open_phone)))
         } else {
             val range = Format.range(snap.soc, settings, Car.history.value)
-            pane.addRow(row("Charge " + (snap.soc?.let { "${Format.n(it, 1)}%" } ?: "—"), range?.let { "Range $it" } ?: ""))
+            pane.addRow(row(c.getString(R.string.auto_charge, snap.soc?.let { "${Format.n(it, 1)}%" } ?: "—"), range?.let { c.getString(R.string.auto_range, it) } ?: ""))
             val power = snap.powerKw
             val doing = when (state.mode) {
-                Mode.Charging -> "Charging" + (state.currentCharge?.let { " · %.1f kWh added".format(it.kwh) } ?: "")
-                Mode.Driving -> "Driving"
-                Mode.Parked -> "Parked"
+                Mode.Charging -> c.getString(R.string.status_charging) +
+                    (state.currentCharge?.let { " · " + c.getString(R.string.auto_kwh_added, Format.n(it.kwh, 1)) } ?: "")
+                Mode.Driving -> c.getString(R.string.status_driving)
+                Mode.Parked -> c.getString(R.string.status_parked)
             }
-            pane.addRow(row("Power " + (power?.let { "${Format.n(it, 1)} kW" } ?: "—"), doing))
+            pane.addRow(row(c.getString(R.string.auto_power, power?.let { "${Format.n(it, 1)} kW" } ?: "—"), doing))
             pane.addRow(row(
-                "Battery " + (Format.temp(snap.tempAvg, settings) ?: "—"),
-                snap.cellSpread?.let { "Cell spread ${it.roundToInt()} mV" } ?: "",
+                c.getString(R.string.auto_battery, Format.temp(snap.tempAvg, settings) ?: "—"),
+                snap.cellSpread?.let { c.getString(R.string.auto_cell_spread, it.roundToInt()) } ?: "",
             ))
             pane.addRow(row(
                 "12V " + (snap.aux12v?.let { "${Format.n(it, 2)} V" } ?: "—"),
-                if (state.status == Status.Live) "Live" else "Last reading",
+                c.getString(if (state.status == Status.Live) R.string.auto_live else R.string.last_reading),
             ))
         }
-        return PaneTemplate.Builder(pane.build()).setTitle("Ocean Live").build()
+        return PaneTemplate.Builder(pane.build()).setTitle(c.getString(R.string.app_name)).build()
     }
 
     private fun row(title: String, text: String): Row {

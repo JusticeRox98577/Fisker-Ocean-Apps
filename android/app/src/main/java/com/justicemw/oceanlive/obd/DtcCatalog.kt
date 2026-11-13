@@ -1,13 +1,16 @@
 package com.justicemw.oceanlive.obd
 
-enum class DescriptionSource(val label: String) {
-    Imported("Your description list"),
-    Ocean("Fisker Ocean"),
-    Sae("SAE standard code"),
-    Derived("Worked out from the code"),
+import androidx.annotation.StringRes
+import com.justicemw.oceanlive.R
+
+enum class DescriptionSource(@StringRes val label: Int) {
+    Imported(R.string.source_yours),
+    Ocean(R.string.source_ocean),
+    Sae(R.string.source_sae),
+    Derived(R.string.source_derived),
 }
 
-enum class DtcSeverity(val label: String) { Info("Minor"), Warning("Warning"), Critical("Critical") }
+enum class DtcSeverity(@StringRes val label: Int) { Info(R.string.severity_minor), Warning(R.string.severity_warning), Critical(R.string.severity_critical) }
 
 /**
  * What a fault code means, in plain words. [note] is extra context such as "usually harmless".
@@ -17,14 +20,16 @@ data class DtcInfo(
     val title: String,
     val source: DescriptionSource,
     val note: String? = null,
-    val from: String? = null,
+    @StringRes val from: Int? = null,
     val severity: DtcSeverity? = null,
     val module: String? = null,
     val impact: String? = null,
     val causes: List<String> = emptyList(),
     val steps: List<String> = emptyList(),
 ) {
-    val sourceLabel: String get() = from ?: source.label
+    /** Where the description came from, as a string resource. */
+    @get:StringRes
+    val sourceLabel: Int get() = from ?: source.label
     val hasDetails: Boolean get() = impact != null || causes.isNotEmpty() || steps.isNotEmpty()
 }
 
@@ -45,11 +50,12 @@ data class DtcDetail(
 
     companion object {
         const val RANK_USER = 4
-        fun rankLabel(rank: Int): String = when (rank) {
-            3 -> "Fisker service guide"
-            2 -> "Fisker diagnostic data"
-            1 -> "Community list"
-            else -> "Your description list"
+        @StringRes
+        fun rankLabel(rank: Int): Int = when (rank) {
+            3 -> R.string.source_service_guide
+            2 -> R.string.source_diagnostic_data
+            1 -> R.string.source_community
+            else -> R.string.source_yours
         }
     }
 }

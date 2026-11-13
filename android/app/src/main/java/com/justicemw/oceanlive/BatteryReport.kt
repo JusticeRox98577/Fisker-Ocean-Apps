@@ -1,5 +1,7 @@
 package com.justicemw.oceanlive
 
+import androidx.annotation.StringRes
+
 import com.justicemw.oceanlive.car.EntryKind
 import com.justicemw.oceanlive.car.HistoryEntry
 import com.justicemw.oceanlive.car.ParkedDrain
@@ -12,6 +14,7 @@ import com.justicemw.oceanlive.car.measuredCapacityKwh
 import com.justicemw.oceanlive.obd.DtcState
 import com.justicemw.oceanlive.ui.auxStatus
 import com.justicemw.oceanlive.ui.balanceLabel
+import com.justicemw.oceanlive.ui.v12SourceLabel
 import java.text.DateFormat
 import java.util.Date
 import kotlin.math.roundToInt
@@ -50,11 +53,11 @@ data class BatteryReport(
  * It never talks to the car. Pure logic so it can be unit tested.
  */
 object BatteryReports {
-    const val TITLE = "Ocean Live battery report"
-    const val NOT_MEASURED = "not measured yet"
-    const val FOOTER = "Read from the car by Ocean Live (unofficial). Values are measured, not a dealer diagnosis."
+    /** Shown for any value the app hasn't measured. */
+    val NOT_MEASURED = R.string.report_not_measured
 
     fun build(
+        s: Strings,
         now: Long,
         vin: String?,
         snapshot: Snapshot,
@@ -65,18 +68,22 @@ object BatteryReports {
         dateText: (Long) -> String = ::defaultDate,
         describe: (SavedCode) -> String = { it.toDtc().info.title },
     ): BatteryReport {
-        val s = snapshot
+        val snap = snapshot
+        val notMeasured = s.get(NOT_MEASURED)
+        fun row(@StringRes label: Int, value: String?, tone: ReportTone? = null) =
+            if (value == null) ReportRow(s.get(label), notMeasured, ReportTone.Missing) else ReportRow(s.get(label), value, tone ?: ReportTone.Normal)
+
         val rated = settings.usableKwh
         val measured = measuredCapacityKwh(history)
         val pct = if (measured != null && rated > 0) measured / rated * 100 else null
         val samples = history.count { it.impliedCapacityKwh != null }
-        val spread = s.cellSpread
-        val aux = s.aux12v
+        val spread = snap.cellSpread
+        val aux = snap.aux12v
 
         val tiles = listOf(
             ReportTile(
-                "Capacity", pct?.let { "${it.roundToInt()}%" } ?: "—",
-                measured?.let { "${Format.n(it, 1)} kWh usable" } ?: NOT_MEASURED,
+                s.get(R.string.report_capacity), pct?.let { "${it.roundToInt()}%" } ?: "—",
+                measured?.let { s.get(R.string.report_kwh_usable, Format.n(it, 1)) } ?: notMeasured,
                 when {
                     pct == null -> ReportTone.Missing
                     pct >= 85 -> ReportTone.Good
@@ -85,120 +92,117 @@ object BatteryReports {
                 },
             ),
             ReportTile(
-                "Cell spread", spread?.let { "${it.roundToInt()} mV" } ?: "—",
-                spread?.let { balanceLabel(it) } ?: NOT_MEASURED, spread?.let { balanceTone(it) } ?: ReportTone.Missing,
+                s.get(R.string.cell_spread), spread?.let { "${it.roundToInt()} mV" } ?: "—",
+                spread?.let { s.get(balanceLabel(it)) } ?: notMeasured, spread?.let { balanceTone(it) } ?: ReportTone.Missing,
             ),
             ReportTile(
-                "12V battery", aux?.let { Format.n(it, 2) + " V" } ?: "—",
-                aux?.let { auxStatus(it) } ?: NOT_MEASURED, aux?.let { auxTone(it) } ?: ReportTone.Missing,
+                s.get(R.string.v12_battery), aux?.let { Format.n(it, 2) + " V" } ?: "—",
+                aux?.let { s.get(auxStatus(it)) } ?: notMeasured, aux?.let { auxTone(it) } ?: ReportTone.Missing,
             ),
         )
 
         val car = ReportSection(
-            "Car",
+            s.get(R.string.settings_car),
             listOf(
-                row("VIN", vin),
-                row("Model", settings.model.label),
-                row("Rated usable", rated.takeIf { it > 0 }?.let { Format.n(it, 1) + " kWh" }),
-                row("Live readings from", s.time.takeIf { it > 0 }?.let(dateText)),
+                row(R.string.vin, vin),
+                row(R.string.report_model, s.get(settings.model.label)),
+                row(R.string.rated_usable, rated.takeIf { it > 0 }?.let { Format.n(it, 1) + " kWh" }),
+                row(R.string.report_live_from, snap.time.takeIf { it > 0 }?.let(dateText)),
             ),
         )
 
         val health = ReportSection(
-            "Battery health",
+            s.get(R.string.battery_health),
             listOf(
-                row("Measured usable", measured?.let { Format.n(it, 1) + " kWh" }),
-                row("Share of rated", pct?.let { "${it.roundToInt()}%" }, tiles[0].tone),
-                row("Samples", if (samples > 0) "$samples charging session${plural(samples)}" else null),
+                row(R.string.report_measured_usable, measured?.let { Format.n(it, 1) + " kWh" }),
+                row(R.string.report_share_of_rated, pct?.let { "${it.roundToInt()}%" }, tiles[0].tone),
+                row(R.string.report_samples, if (samples > 0) s.plural(R.plurals.report_sessions, samples, samples) else null),
             ),
-            note = "Each charge that adds 20% or more is measured at the battery.",
+            note = s.get(R.string.battery_measure_note, 20),
         )
 
         val cells = ReportSection(
-            "Cells",
+            s.get(R.string.cells),
             listOf(
-                row("Highest", s.cellMax?.let { "${it.roundToInt()} mV" }),
-                row("Average", s.cellAvg?.let { "${it.roundToInt()} mV" }),
-                row("Lowest", s.cellMin?.let { "${it.roundToInt()} mV" }),
-                row("Spread", spread?.let { "${it.roundToInt()} mV · ${balanceLabel(it)}" }, spread?.let { balanceTone(it) }),
+                row(R.string.highest, snap.cellMax?.let { "${it.roundToInt()} mV" }),
+                row(R.string.average, snap.cellAvg?.let { "${it.roundToInt()} mV" }),
+                row(R.string.lowest, snap.cellMin?.let { "${it.roundToInt()} mV" }),
+                row(R.string.spread, spread?.let { "${it.roundToInt()} mV · ${s.get(balanceLabel(it))}" }, spread?.let { balanceTone(it) }),
             ),
-            note = "Under 60 mV is normal.",
+            note = s.get(R.string.report_spread_note),
         )
 
         val temps = ReportSection(
-            "Temperatures",
+            s.get(R.string.temperatures),
             listOf(
-                row("Battery highest", Format.temp(s.tempMax, settings)),
-                row("Battery average", Format.temp(s.tempAvg, settings)),
-                row("Battery lowest", Format.temp(s.tempMin, settings)),
-                row("Coolant in", Format.temp(s.coolantIn, settings)),
-                row("Coolant out", Format.temp(s.coolantOut, settings)),
+                row(R.string.battery_highest, Format.temp(snap.tempMax, settings)),
+                row(R.string.battery_average, Format.temp(snap.tempAvg, settings)),
+                row(R.string.battery_lowest, Format.temp(snap.tempMin, settings)),
+                row(R.string.coolant_in, Format.temp(snap.coolantIn, settings)),
+                row(R.string.coolant_out, Format.temp(snap.coolantOut, settings)),
             ),
         )
 
         val electrical = ReportSection(
-            "Insulation and 12V",
+            s.get(R.string.report_insulation_12v),
             listOf(
-                row("Insulation resistance", s.isolation?.let { "${it.roundToInt()} kΩ" }),
-                row("12V battery", aux?.let { Format.n(it, 2) + " V" + (s.aux12vSource?.let { src -> " ($src)" } ?: "") }),
-                row("12V status", aux?.let { auxStatus(it) }, aux?.let { auxTone(it) }),
+                row(R.string.report_insulation_resistance, snap.isolation?.let { "${it.roundToInt()} kΩ" }),
+                row(R.string.v12_battery, aux?.let { Format.n(it, 2) + " V" + (snap.aux12vSource?.let { src -> " (${s.get(v12SourceLabel(src))})" } ?: "") }),
+                row(R.string.report_12v_status, aux?.let { s.get(auxStatus(it)) }, aux?.let { auxTone(it) }),
             ),
         )
 
         val perDay = ParkedDrains.averagePerDay(parked)
         val drain = ReportSection(
-            "Parked drain",
+            s.get(R.string.parked_drain),
             listOf(
-                row("Average per day", perDay?.let {
-                    "${Format.n(it, 1)}%" + (if (rated > 0) " (about ${Format.n(it / 100 * rated, 1)} kWh)" else "")
+                row(R.string.average_per_day, perDay?.let {
+                    if (rated > 0) s.get(R.string.report_drain_kwh, Format.n(it, 1), Format.n(it / 100 * rated, 1))
+                    else "${Format.n(it, 1)}%"
                 }),
-                row("Time measured", if (perDay != null) Format.span(parked.sumOf { it.hours }) else null),
+                row(R.string.time_measured, if (perDay != null) Format.span(parked.sumOf { it.hours }, s) else null),
             ),
         )
 
         val charges = history.filter { it.kind == EntryKind.Charge }
         val charging = ReportSection(
-            "Charging totals",
+            s.get(R.string.charging_totals),
             listOf(
-                row("Sessions", charges.size.takeIf { it > 0 }?.toString()),
-                row("Energy added", charges.takeIf { it.isNotEmpty() }?.let { c -> Format.n(c.sumOf { it.kwh }, 0) + " kWh" }),
-                row("DC fast sessions", charges.takeIf { it.isNotEmpty() }?.let { c -> c.count { it.fast }.toString() }),
+                row(R.string.sessions, charges.size.takeIf { it > 0 }?.toString()),
+                row(R.string.energy_added, charges.takeIf { it.isNotEmpty() }?.let { c -> Format.n(c.sumOf { it.kwh }, 0) + " kWh" }),
+                row(R.string.dc_fast_sessions, charges.takeIf { it.isNotEmpty() }?.let { c -> c.count { it.fast }.toString() }),
             ),
         )
 
         return BatteryReport(
-            title = TITLE,
+            title = s.get(R.string.report_title),
             date = dateText(now),
             carLine = listOfNotNull(
-                "Fisker " + settings.model.label,
-                rated.takeIf { it > 0 }?.let { Format.n(it, 1) + " kWh rated" },
-                vin?.let { "VIN $it" },
+                "Fisker " + s.get(settings.model.label),
+                rated.takeIf { it > 0 }?.let { s.get(R.string.report_kwh_rated, Format.n(it, 1)) },
+                vin?.let { s.get(R.string.report_vin_short, it) },
             ).joinToString(" · "),
             tiles = tiles,
             sections = listOf(car, health, cells, temps, electrical, drain, charging),
-            faults = faultSection(scans.maxByOrNull { it.time }, dateText, describe),
-            footer = FOOTER,
+            faults = faultSection(s, scans.maxByOrNull { it.time }, dateText, describe),
+            footer = s.get(R.string.report_footer),
         )
     }
 
-    private fun faultSection(scan: SavedScan?, dateText: (Long) -> String, describe: (SavedCode) -> String): ReportSection {
-        if (scan == null) return ReportSection("Latest fault scan", listOf(ReportRow("Last scan", "not run yet", ReportTone.Missing)))
+    private fun faultSection(s: Strings, scan: SavedScan?, dateText: (Long) -> String, describe: (SavedCode) -> String): ReportSection {
+        val title = s.get(R.string.report_latest_scan)
+        if (scan == null) return ReportSection(title, listOf(ReportRow(s.get(R.string.report_last_scan), s.get(R.string.report_not_run), ReportTone.Missing)))
         val active = scan.codes.filter { it.state == DtcState.Active }
         return ReportSection(
-            "Latest fault scan",
+            title,
             listOf(
-                ReportRow("Scanned", dateText(scan.time)),
-                ReportRow("Active codes", scan.active.toString(), if (scan.active > 0) ReportTone.Bad else ReportTone.Good),
-                ReportRow("Stored codes", scan.stored.toString(), if (scan.stored > 0) ReportTone.Warn else ReportTone.Normal),
+                ReportRow(s.get(R.string.report_scanned), dateText(scan.time)),
+                ReportRow(s.get(R.string.report_active_codes), scan.active.toString(), if (scan.active > 0) ReportTone.Bad else ReportTone.Good),
+                ReportRow(s.get(R.string.report_stored_codes), scan.stored.toString(), if (scan.stored > 0) ReportTone.Warn else ReportTone.Normal),
             ),
             codes = active.map { ReportCode(it.module, it.code, describe(it)) },
         )
     }
-
-    private fun row(label: String, value: String?, tone: ReportTone? = null) =
-        if (value == null) ReportRow(label, NOT_MEASURED, ReportTone.Missing) else ReportRow(label, value, tone ?: ReportTone.Normal)
-
-    private fun plural(n: Int) = if (n == 1) "" else "s"
 
     fun balanceTone(mv: Double) = when {
         mv <= 60 -> ReportTone.Good

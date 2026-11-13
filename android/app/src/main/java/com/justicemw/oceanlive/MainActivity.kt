@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.annotation.StringRes
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -57,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -108,8 +110,9 @@ fun bluetoothPermissions(): Array<String> = buildList {
     if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
 }.toTypedArray()
 
-private enum class Tab(val label: String, val glyph: String) {
-    Live("Live", "◉"), Battery("Battery", "▮"), Trips("Trips", "≋"), Faults("Faults", "⚠"), Settings("Settings", "⚙")
+private enum class Tab(@StringRes val label: Int, val glyph: String) {
+    Live(R.string.tab_live, "◉"), Battery(R.string.tab_battery, "▮"), Trips(R.string.tab_trips, "≋"),
+    Faults(R.string.tab_faults, "⚠"), Settings(R.string.tab_settings, "⚙"),
 }
 
 @Composable
@@ -163,7 +166,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
         val n = text?.let { Car.importDescriptions(it) }
         android.widget.Toast.makeText(
             context,
-            if (n == null) "No fault codes found in that file. Use CSV (code,description) or JSON." else "Imported $n descriptions",
+            if (n == null) context.getString(R.string.import_none) else context.resources.getQuantityString(R.plurals.import_done, n, n),
             android.widget.Toast.LENGTH_LONG,
         ).show()
     }
@@ -214,7 +217,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                                             try {
                                                 V12Share.share(context, v12, range, kind)
                                             } catch (_: Exception) {
-                                                android.widget.Toast.makeText(context, "Couldn't make the file to share.", android.widget.Toast.LENGTH_LONG).show()
+                                                android.widget.Toast.makeText(context, R.string.share_failed, android.widget.Toast.LENGTH_LONG).show()
                                             }
                                         },
                                     )
@@ -225,11 +228,11 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                                         onShareReport = {
                                             // Built from memory and saved history only: no car requests.
                                             val now = System.currentTimeMillis()
-                                            val report = BatteryReports.build(now, state.vin, state.snapshot, settings, history, parked, pastScans)
+                                            val report = BatteryReports.build(context.strings(), now, state.vin, state.snapshot, settings, history, parked, pastScans)
                                             try {
                                                 BatteryReportPdf.share(context, report, now)
                                             } catch (_: Exception) {
-                                                android.widget.Toast.makeText(context, "Couldn't make the report", android.widget.Toast.LENGTH_LONG).show()
+                                                android.widget.Toast.makeText(context, R.string.report_failed, android.widget.Toast.LENGTH_LONG).show()
                                             }
                                         },
                                     )
@@ -248,8 +251,8 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                             blockedReason = Car.changeBlockedReason(),
                             onScan = { Car.scanFaults() },
                             onShare = {
-                                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, faultReport(state, faults, versions.versions))
-                                context.startActivity(Intent.createChooser(send, "Share fault report"))
+                                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, faultReport(context.strings(), state, faults, versions.versions))
+                                context.startActivity(Intent.createChooser(send, context.getString(R.string.faults_share_title)))
                             },
                             onClear = { Car.clearCodes(it) },
                             onRestart = { Car.restartModule(it) },
@@ -288,15 +291,15 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
 private fun Header(status: Status, adapter: String?) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text("Ocean Live", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.app_name), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
             val text = when (status) {
-                Status.Live -> "Connected to ${adapter ?: "adapter"}"
-                Status.Connecting -> "Connecting"
-                Status.Reconnecting -> "Reconnecting"
-                Status.Scanning -> "Looking for adapters"
-                Status.Error -> "Not connected"
-                Status.Idle -> "Not connected"
-                Status.Watching -> com.justicemw.oceanlive.car.V12Watch.STATUS
+                Status.Live -> stringResource(R.string.header_connected_to, adapter ?: stringResource(R.string.adapter_generic))
+                Status.Connecting -> stringResource(R.string.header_connecting)
+                Status.Reconnecting -> stringResource(R.string.status_reconnecting)
+                Status.Scanning -> stringResource(R.string.header_scanning)
+                Status.Error -> stringResource(R.string.status_not_connected)
+                Status.Idle -> stringResource(R.string.status_not_connected)
+                Status.Watching -> stringResource(R.string.v12_watch_status)
             }
             Text(text, color = Dim, fontSize = 13.sp)
         }
@@ -328,7 +331,7 @@ private fun NavBar(selected: Int, onSelect: (Int) -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(t.glyph, color = color, fontSize = 18.sp)
-                Text(t.label, color = color, fontSize = 11.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal)
+                Text(stringResource(t.label), color = color, fontSize = 11.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal)
                 Spacer(Modifier.height(4.dp))
                 Box(
                     Modifier.width(if (on) 18.dp else 0.dp).height(3.dp).clip(RoundedCornerShape(2.dp))

@@ -2,12 +2,14 @@ package com.justicemw.oceanlive.car
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.annotation.StringRes
 import androidx.core.content.edit
+import com.justicemw.oceanlive.R
 
-enum class CarModel(val label: String, val usableKwh: Double) {
-    Big("Ocean One, Extreme or Ultra", 106.5),
-    Sport("Ocean Sport", 75.0),
-    Custom("Other or custom", 0.0),
+enum class CarModel(@StringRes val label: Int, val usableKwh: Double) {
+    Big(R.string.model_big, 106.5),
+    Sport(R.string.model_sport, 75.0),
+    Custom(R.string.model_custom, 0.0),
 }
 
 /** Everything the user can change, stored in SharedPreferences. */

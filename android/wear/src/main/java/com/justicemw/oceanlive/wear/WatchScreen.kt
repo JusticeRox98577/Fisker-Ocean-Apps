@@ -37,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -87,6 +89,8 @@ fun WatchScreen() {
         }
     }
     val listState = rememberScalingLazyListState()
+    val context = LocalContext.current
+    val strings = remember(context) { context.strings() }
     MaterialTheme {
         Scaffold(
             modifier = Modifier.background(Bg),
@@ -104,7 +108,7 @@ fun WatchScreen() {
                     item { Ring(null, charging = false, live = false) { Big("—") } }
                     item {
                         Text(
-                            "Open Ocean Live on your phone and connect to the car.",
+                            stringResource(R.string.open_on_phone_connect),
                             color = Dim, fontSize = 13.sp, textAlign = TextAlign.Center,
                             modifier = Modifier.padding(horizontal = 12.dp),
                         )
@@ -116,7 +120,7 @@ fun WatchScreen() {
                 item {
                     Ring(r.soc, charging, live) {
                         Big(WatchFormat.soc(r))
-                        Text(WatchFormat.range(r) ?: "range unknown", color = Dim, fontSize = 12.sp)
+                        Text(WatchFormat.range(r) ?: stringResource(R.string.range_unknown), color = Dim, fontSize = 12.sp)
                     }
                 }
                 if (live) item {
@@ -129,7 +133,7 @@ fun WatchScreen() {
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Rolling(WatchFormat.power(p), color, 20.sp)
-                        Text(WatchFormat.powerLabel(r), color = Dim, fontSize = 11.sp)
+                        Text(stringResource(WatchFormat.powerLabel(r)), color = Dim, fontSize = 11.sp)
                     }
                 }
                 item {
@@ -141,14 +145,14 @@ fun WatchScreen() {
                         else -> Aqua
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Pill(status, color, pulse = live)
-                        WatchFormat.toTarget(r, now)?.let {
+                        Pill(WatchFormat.statusText(strings, r, now), color, pulse = live)
+                        WatchFormat.toTarget(strings, r, now)?.let {
                             Spacer(Modifier.size(4.dp))
                             Text(it, color = Aqua, fontSize = 12.sp)
                         }
                     }
                 }
-                WatchFormat.aux(r.aux12v)?.let { aux ->
+                WatchFormat.aux(strings, r.aux12v)?.let { aux ->
                     item {
                         val v = r.aux12v ?: 0.0
                         Text(
@@ -158,7 +162,7 @@ fun WatchScreen() {
                         )
                     }
                 }
-                item { Text(WatchFormat.ago(r.updatedAt, now), color = Dim, fontSize = 11.sp) }
+                item { Text(WatchFormat.ago(strings, r.updatedAt, now), color = Dim, fontSize = 11.sp) }
             }
         }
     }

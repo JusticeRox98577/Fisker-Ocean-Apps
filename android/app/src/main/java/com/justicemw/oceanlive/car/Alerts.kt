@@ -11,6 +11,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.justicemw.oceanlive.Format
 import com.justicemw.oceanlive.MainActivity
 import com.justicemw.oceanlive.R
 import kotlin.math.roundToInt
@@ -24,8 +25,8 @@ class Alerts(private val context: Context) {
     init {
         if (Build.VERSION.SDK_INT >= 26) {
             val nm = context.getSystemService(NotificationManager::class.java)
-            nm.createNotificationChannel(NotificationChannel(CHANNEL_ALERTS, "Charge and battery alerts", NotificationManager.IMPORTANCE_HIGH))
-            nm.createNotificationChannel(NotificationChannel(CHANNEL_SERVICE, "Connection", NotificationManager.IMPORTANCE_LOW))
+            nm.createNotificationChannel(NotificationChannel(CHANNEL_ALERTS, context.getString(R.string.channel_alerts), NotificationManager.IMPORTANCE_HIGH))
+            nm.createNotificationChannel(NotificationChannel(CHANNEL_SERVICE, context.getString(R.string.channel_connection), NotificationManager.IMPORTANCE_LOW))
         }
     }
 
@@ -34,38 +35,42 @@ class Alerts(private val context: Context) {
         if (settings.alertsOn && soc != null) {
             if (mode == Mode.Charging && soc >= settings.alertHigh && !highSent) {
                 highSent = true
-                notify(1, "Charged to ${settings.alertHigh}%", "Your Ocean reached the level you set.")
+                notify(1, context.getString(R.string.alert_charged_title, settings.alertHigh), context.getString(R.string.alert_charged_body))
             }
             if (mode != Mode.Charging) highSent = false
             if (soc <= settings.alertLow && !lowSent && mode != Mode.Charging) {
                 lowSent = true
-                notify(2, "Charge is low", "The battery is at ${soc.roundToInt()}%.")
+                notify(2, context.getString(R.string.alert_low_title), context.getString(R.string.alert_low_body, soc.roundToInt()))
             }
             if (soc > settings.alertLow + 3) lowSent = false
         }
         if (settings.healthAlerts) {
-            s.aux12v?.let { if (it < 11.8 && mode != Mode.Driving) health("12v", "12V battery is low", "It reads %.2f V. A weak 12V battery can stop the Ocean from waking up.".format(it)) }
-            s.cellSpread?.let { if (it > 80) health("cells", "Cell voltages are uneven", "Highest and lowest cells differ by ${it.roundToInt()} mV.") }
-            s.tempMax?.let { if (it > 55) health("temp", "Battery is hot", "Hottest battery sensor reads ${it.roundToInt()} °C.") }
+            s.aux12v?.let {
+                if (it < 11.8 && mode != Mode.Driving) {
+                    health("12v", context.getString(R.string.alert_12v_title), context.getString(R.string.alert_12v_body, Format.n(it, 2)))
+                }
+            }
+            s.cellSpread?.let { if (it > 80) health("cells", context.getString(R.string.alert_cells_title), context.getString(R.string.alert_cells_body, it.roundToInt())) }
+            s.tempMax?.let { if (it > 55) health("temp", context.getString(R.string.alert_hot_title), context.getString(R.string.alert_hot_body, it.roundToInt())) }
         }
     }
 
     /** Low 12V seen while the car sleeps (see [LowVoltAlarm]); uses the Battery warnings switch. */
     fun low12v(level: LowVoltAlarm.Level, volts: Double, settings: Settings) {
         if (!settings.healthAlerts) return
-        val v = "%.2f V".format(volts)
+        val v = Format.n(volts, 2)
         when (level) {
-            LowVoltAlarm.Level.Low -> notify(20, "12V battery is getting low",
-                "It reads $v while the car sleeps. Something may be drawing power, or the 12V battery is weak.")
-            LowVoltAlarm.Level.VeryLow -> notify(21, "12V battery is very low",
-                "It reads $v while the car sleeps. The Ocean may not wake up. Drive it or charge the 12V soon.")
+            LowVoltAlarm.Level.Low -> notify(20, context.getString(R.string.alert_12v_low_title), context.getString(R.string.alert_12v_low_body, v))
+            LowVoltAlarm.Level.VeryLow -> notify(21, context.getString(R.string.alert_12v_very_low_title), context.getString(R.string.alert_12v_very_low_body, v))
         }
     }
 
     fun chargingStopped(entry: HistoryEntry, settings: Settings) {
         if (!settings.alertsOn || !settings.alertStop) return
         val soc = entry.socEnd?.roundToInt()
-        notify(3, "Charging stopped", (if (soc != null) "Charge is at $soc%. " else "") + "Added %.1f kWh.".format(entry.kwh))
+        val added = context.getString(R.string.alert_stopped_added, Format.n(entry.kwh, 1))
+        val body = if (soc != null) context.getString(R.string.alert_stopped_at, soc) + " " + added else added
+        notify(3, context.getString(R.string.alert_stopped_title), body)
     }
 
     /** Called on each new connection so health warnings can fire again for a new day. */

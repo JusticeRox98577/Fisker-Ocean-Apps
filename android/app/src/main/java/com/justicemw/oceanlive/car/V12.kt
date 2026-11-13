@@ -1,5 +1,7 @@
 package com.justicemw.oceanlive.car
 
+import androidx.annotation.StringRes
+import com.justicemw.oceanlive.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -72,10 +74,11 @@ object V12Log {
     }
 
     /** Health label for a resting voltage. */
-    fun restLabel(volts: Double): String = when {
-        volts >= LOW_VOLTS -> "Good"
-        volts >= VERY_LOW_VOLTS -> "Low"
-        else -> "Very low"
+    @StringRes
+    fun restLabel(volts: Double): Int = when {
+        volts >= LOW_VOLTS -> R.string.aux_good
+        volts >= VERY_LOW_VOLTS -> R.string.aux_low
+        else -> R.string.aux_very_low
     }
 
     // ── File format: one compact line per reading ──────────────
@@ -277,13 +280,6 @@ object V12Watch {
     const val WAKE_READINGS = 2
     /** Readings asked for by opening the app are skipped if the last one is this recent. */
     const val MIN_SPACING_MS = 60_000L
-
-    const val STATUS = "Car asleep · watching 12V"
-    const val NOTIFICATION = "Watching 12V while the car sleeps"
-    /** The setting's note, with the chosen check interval. */
-    fun settingNote(minutes: Int) = "Keeps the adapter connected and asks it for the 12V every $minutes minutes. " +
-        "The car's network isn't touched, so the car stays asleep, but the adapter itself uses a little power " +
-        "(about 20-50 mA, depending on the adapter)."
 
     /** Whether the app should watch the 12V instead of letting go of the adapter when it stops reading. */
     fun shouldWatch(settingOn: Boolean, userStopped: Boolean): Boolean = settingOn && !userStopped

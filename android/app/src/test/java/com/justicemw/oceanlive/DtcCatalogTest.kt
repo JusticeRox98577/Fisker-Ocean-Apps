@@ -101,7 +101,7 @@ class DtcCatalogTest {
         DtcCatalog.setImported(DtcCatalog.parseImport(DtcCatalog.toJson(merged))) // through the saved form
         val i = DtcCatalog.describe("U178B11", Ecus.BCM)
         assertEquals("Cellular antenna 1 circuit short to ground", i.title)
-        assertEquals("Fisker service guide", i.sourceLabel)
+        assertEquals("Fisker service guide", EnStrings.get(i.sourceLabel))
         assertEquals(DtcSeverity.Critical, i.severity)
         assertEquals("No mobile data", i.impact)
         assertEquals(listOf("Replace external antenna or/and antenna cable"), i.steps)

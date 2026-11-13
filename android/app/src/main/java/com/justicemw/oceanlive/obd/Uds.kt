@@ -1,10 +1,15 @@
 package com.justicemw.oceanlive.obd
 
+import androidx.annotation.StringRes
+import com.justicemw.oceanlive.R
+
 /** Outcome of a UDS request that changes something (clear codes, restart a module). */
 sealed interface UdsResult {
     data object Done : UdsResult
     data class Refused(val nrc: Int) : UdsResult {
-        val reason: String get() = Uds.nrcText(nrc)
+        /** Why the module said no, as a string resource with the code as its argument. */
+        @get:StringRes
+        val reason: Int get() = Uds.nrcText(nrc)
         val needsSecurity: Boolean get() = nrc == 0x33 || nrc == 0x35 || nrc == 0x36 || nrc == 0x37
     }
     data object NoAnswer : UdsResult
@@ -45,20 +50,22 @@ object Uds {
     private fun positiveAt(b: List<Int>, service: Int): Boolean =
         b.indices.any { i -> b[i] == service + 0x40 && (i == 0 || (i >= 3 && b[i - 3] == 0x7F && b[i - 1] == 0x78)) }
 
-    fun nrcText(nrc: Int): String = when (nrc) {
-        0x10 -> "the module rejected the request"
-        0x11 -> "the module doesn't support this"
-        0x12 -> "the module doesn't support this kind of request"
-        0x13 -> "the request was malformed"
-        0x14 -> "the reply was too long"
-        0x21 -> "the module is busy, try again"
-        0x22 -> "conditions not right (car must be on, in Park, not charging)"
-        0x24 -> "request out of sequence"
-        0x31 -> "value out of range"
-        0x33 -> "security access required"
-        0x35, 0x36, 0x37 -> "security access was refused"
-        0x72 -> "the module failed to write its memory"
-        0x7E, 0x7F -> "not allowed in the current diagnostic session"
-        else -> "refused (code 0x%02X)".format(nrc)
+    /** A negative response code in plain words. [R.string.nrc_other] takes the code as hex text. */
+    @StringRes
+    fun nrcText(nrc: Int): Int = when (nrc) {
+        0x10 -> R.string.nrc_rejected
+        0x11 -> R.string.nrc_not_supported
+        0x12 -> R.string.nrc_not_supported_kind
+        0x13 -> R.string.nrc_malformed
+        0x14 -> R.string.nrc_too_long
+        0x21 -> R.string.nrc_busy
+        0x22 -> R.string.nrc_conditions
+        0x24 -> R.string.nrc_sequence
+        0x31 -> R.string.nrc_out_of_range
+        0x33 -> R.string.nrc_security_required
+        0x35, 0x36, 0x37 -> R.string.nrc_security_refused
+        0x72 -> R.string.nrc_write_failed
+        0x7E, 0x7F -> R.string.nrc_session
+        else -> R.string.nrc_other
     }
 }

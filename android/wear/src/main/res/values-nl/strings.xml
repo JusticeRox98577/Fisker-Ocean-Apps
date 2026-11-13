@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_desc">Lading en bereik van je Ocean</string>
+    <string name="complication_label">Ocean-accu</string>
+    <string name="complication_description">Ocean-accu %1$s</string>
+    <string name="status_charging">Laden</string>
+    <string name="status_dc_fast">DC-snelladen</string>
+    <string name="status_driving">Rijden</string>
+    <string name="status_parked">Geparkeerd</string>
+    <string name="status_reconnecting">Opnieuw verbinden</string>
+    <string name="status_not_connected">Niet verbonden</string>
+    <string name="power_label">vermogen</string>
+    <string name="power_into_battery">de accu in</string>
+    <string name="power_regenerating">regenereren</string>
+    <string name="power_from_battery">uit de accu</string>
+    <string name="power_idle">inactief</string>
+    <string name="aux_charging">Wordt geladen</string>
+    <string name="aux_good">Goed</string>
+    <string name="aux_low">Laag</string>
+    <string name="aux_very_low">Zeer laag</string>
+    <string name="range_unknown">bereik onbekend</string>
+    <string name="to_target">Tot %1$d%% ≈ %2$s</string>
+    <string name="no_reading_yet">Nog geen meting</string>
+    <string name="updated_just_now">Zojuist bijgewerkt</string>
+    <string name="updated_min_ago">%1$d min geleden bijgewerkt</string>
+    <string name="updated_h_ago">%1$d u geleden bijgewerkt</string>
+    <string name="open_on_phone_connect">Open Ocean Live op je telefoon en maak verbinding met de auto.</string>
+    <string name="tile_open_app">Open Ocean Live</string>
+    <string name="tile_on_phone">op je telefoon</string>
+    <plurals name="updated_days_ago">
+        <item quantity="one">%d dag geleden bijgewerkt</item>
+        <item quantity="other">%d dagen geleden bijgewerkt</item>
+    </plurals>
+</resources>

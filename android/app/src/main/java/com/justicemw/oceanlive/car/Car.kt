@@ -1,5 +1,9 @@
 package com.justicemw.oceanlive.car
 
+import androidx.annotation.StringRes
+import com.justicemw.oceanlive.R
+import com.justicemw.oceanlive.obd.displayName
+import com.justicemw.oceanlive.strings
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -89,7 +93,7 @@ data class VersionRun(
     val finishedAt: Long? = null,
 )
 
-enum class CarAction(val label: String) { Clear("Clear codes"), Restart("Restart") }
+enum class CarAction(@StringRes val label: Int) { Clear(R.string.clear_codes), Restart(R.string.restart) }
 
 data class ActionOutcome(
     val ecu: Ecu,
@@ -209,7 +213,7 @@ object Car {
             pending12v.clear()
             waiting.forEach { record12v(it.time, it.volts, it.source, it.mode) }
         }
-        transport.onDisconnected = { scope.launch { onLost("Adapter disconnected.") } }
+        transport.onDisconnected = { scope.launch { onLost(app.getString(R.string.msg_adapter_disconnected)) } }
         // Mirror what the phone already has to a paired watch. Only follows the state; never connects or reads.
         watch = WatchLink(app)
         scope.launch { _state.collect { watch.update(WatchSync.reading(it, _settings.value, _history.value)) } }
@@ -254,7 +258,7 @@ object Car {
             // Watching switched off: let go of the adapter like any other stop.
             stopJob()
             transport.disconnect()
-            rest(SleepPolicy.ASLEEP_MESSAGE)
+            rest(app.getString(SleepPolicy.ASLEEP_MESSAGE))
         } else if (next.watchEveryMin != prev.watchEveryMin && _state.value.status == Status.Watching) {
             watchPoke.trySend(Unit)
         }
@@ -302,7 +306,7 @@ object Car {
 
     fun connectSaved() {
         val s = _settings.value
-        if (s.adapterAddress != null) connect(s.adapterAddress, s.adapterName ?: "Adapter")
+        if (s.adapterAddress != null) connect(s.adapterAddress, s.adapterName ?: app.getString(R.string.adapter_name_fallback))
     }
 
     fun disconnect() {
@@ -353,7 +357,7 @@ object Car {
                     if (!watch12v(address)) {
                         if (wantConnected) {
                             transport.disconnect()
-                            rest(e.message ?: SleepPolicy.ASLEEP_MESSAGE)
+                            rest(e.message ?: app.getString(SleepPolicy.ASLEEP_MESSAGE))
                         }
                         return
                     }
@@ -361,20 +365,20 @@ object Car {
                     first = false
                     reconnects = 0
                     idleTimer.reset()
-                    _state.update { it.copy(status = Status.Connecting, message = "The car woke up. Reading it again.", watchedAt = null) }
+                    _state.update { it.copy(status = Status.Connecting, message = app.getString(R.string.msg_car_woke), watchedAt = null) }
                     continue
                 }
                 // Release the adapter straight away. endSessions saves the parked-drain mark too.
                 transport.disconnect()
                 endSessions()
                 if (e is StopReading) {
-                    rest(e.message ?: SleepPolicy.ASLEEP_MESSAGE)
+                    rest(e.message ?: app.getString(SleepPolicy.ASLEEP_MESSAGE))
                     return
                 }
                 if (first) {
                     // A first attempt that fails is usually the wrong adapter or the car being off.
                     wantConnected = false
-                    _state.update { it.copy(status = Status.Error, message = e.message ?: "Could not connect.") }
+                    _state.update { it.copy(status = Status.Error, message = e.message ?: app.getString(R.string.msg_could_not_connect)) }
                     OceanService.stop(app)
                     return
                 }
@@ -382,7 +386,7 @@ object Car {
                 val wait = SleepPolicy.reconnectDelay(++reconnects)
                 if (wait == null) {
                     wantConnected = false
-                    _state.update { it.copy(status = Status.Error, message = SleepPolicy.GAVE_UP_MESSAGE, abrpStatus = null) }
+                    _state.update { it.copy(status = Status.Error, message = app.getString(SleepPolicy.GAVE_UP_MESSAGE), abrpStatus = null) }
                     OceanService.stop(app)
                     refreshWidget(force = true)
                     return
@@ -472,11 +476,11 @@ object Car {
                 // Keeps the 12V reading just taken; never asks the car for anything extra.
                 if (fresh12v) record12v(snap.time, snap.aux12v!!, snap.aux12vSource ?: V12Log.SOURCE_PORT, V12Mode.of(tracker.mode))
                 if (idleTimer.shouldStop(tracker.mode, inForeground, carScreen, snap.time)) {
-                    throw StopReading(SleepPolicy.PARKED_MESSAGE)
+                    throw StopReading(app.getString(SleepPolicy.PARKED_MESSAGE))
                 }
             } else if (SleepPolicy.carAsleep(++misses)) {
                 // Asleep or switched off. Asking again would only keep it awake.
-                throw StopReading(SleepPolicy.ASLEEP_MESSAGE)
+                throw StopReading(app.getString(SleepPolicy.ASLEEP_MESSAGE))
             }
             cycle++
             delay(POLL_MS)
@@ -554,7 +558,8 @@ object Car {
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) throw e
                     transport.disconnect()
-                    _state.update { it.copy(message = "Can't reach the adapter. Trying again every ${V12Watch.nextDelay(every, connected = false, confirmingWake = false) / 60_000} min.") }
+                    val minutes = V12Watch.nextDelay(every, connected = false, confirmingWake = false) / 60_000
+                    _state.update { it.copy(message = app.getString(R.string.msg_watch_unreachable, minutes)) }
                     continue
                 }
             }
@@ -658,8 +663,8 @@ object Car {
         lastAbrp = now
         val tlm = Abrp.telemetry(snap, tracker.mode, tracker.currentCharge?.fast == true, settings, location)
         scope.launch {
-            val error = Abrp.send(tlm, settings)
-            _state.update { it.copy(abrpStatus = error ?: "Sent to ABRP") }
+            val error = Abrp.send(tlm, settings, app.strings())
+            _state.update { it.copy(abrpStatus = error ?: app.getString(R.string.abrp_sent)) }
         }
     }
 
@@ -696,7 +701,7 @@ object Car {
                     val codes = mutableListOf<Dtc>()
                     val modules = linkedMapOf<String, String>()
                     Ecus.scanList.forEachIndexed { index, ecu ->
-                        _faults.update { it.copy(progress = index, current = ecu.name) }
+                        _faults.update { it.copy(progress = index, current = ecu.displayName(app.strings())) }
                         selectEcu(ecu)
                         var result: DtcReadResult = DtcReadResult.NoAnswer
                         for (attempt in 1..3) {
@@ -729,7 +734,7 @@ object Car {
                     _faults.update { it.copy(running = false, progress = it.total, current = null, finishedAt = now, diff = diff) }
                 }
             } catch (e: Exception) {
-                _faults.update { it.copy(running = false, error = e.message ?: "Scan stopped.") }
+                _faults.update { it.copy(running = false, error = e.message ?: app.getString(R.string.msg_scan_stopped)) }
             }
         }
     }
@@ -752,7 +757,7 @@ object Car {
                 bus.withLock {
                     query("ATST96")
                     ecus.forEachIndexed { index, ecu ->
-                        _versions.update { it.copy(progress = index, current = ecu.name) }
+                        _versions.update { it.copy(progress = index, current = ecu.displayName(app.strings())) }
                         selectEcu(ecu)
                         val first = query("22${Ident.SOFTWARE_VERSION}", 3_000)
                         // A module that doesn't answer at all is skipped so a silent one costs one timeout, not three.
@@ -784,11 +789,11 @@ object Car {
     fun changeBlockedReason(): String? {
         val s = _state.value
         return when {
-            !s.connected -> "Connect to the car first."
-            s.mode == Mode.Driving -> "The car is moving. Park it first."
-            s.mode == Mode.Charging -> "The car is charging. Unplug it first."
-            _faults.value.running || _versions.value.running -> "Wait for the scan to finish."
-            _action.value.running -> "Another action is still running."
+            !s.connected -> app.getString(R.string.blocked_not_connected)
+            s.mode == Mode.Driving -> app.getString(R.string.blocked_driving)
+            s.mode == Mode.Charging -> app.getString(R.string.blocked_charging)
+            _faults.value.running || _versions.value.running -> app.getString(R.string.blocked_scan_running)
+            _action.value.running -> app.getString(R.string.blocked_action_running)
             else -> null
         }
     }
@@ -810,7 +815,7 @@ object Car {
                     ecus.forEachIndexed { index, ecu ->
                         // Stop if the car starts moving or charging part way through.
                         if (_state.value.mode != Mode.Parked) return@forEachIndexed
-                        _action.update { it.copy(current = ecu.name, done = index) }
+                        _action.update { it.copy(current = ecu.displayName(app.strings()), done = index) }
                         selectEcu(ecu)
                         query(Uds.EXTENDED_SESSION) // some modules refuse this and still accept the request
                         val result = when (action) {

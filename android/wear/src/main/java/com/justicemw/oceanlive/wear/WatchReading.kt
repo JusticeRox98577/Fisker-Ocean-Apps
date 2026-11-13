@@ -1,5 +1,6 @@
 package com.justicemw.oceanlive.wear
 
+import androidx.annotation.StringRes
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -17,7 +18,7 @@ data class WatchReading(
     val minutesToTarget: Long? = null,
     val targetPercent: Int? = null,
     val aux12v: Double? = null,
-    val status: String = "Not connected",
+    val status: String = WatchFormat.NOT_CONNECTED,
     val live: Boolean = false,
     val miles: Boolean = true,
     val updatedAt: Long = 0,
@@ -57,7 +58,7 @@ data class WatchReading(
                 minutesToTarget = (m["minutesToTarget"] as? Number)?.toLong(),
                 targetPercent = (m["targetPercent"] as? Number)?.toInt(),
                 aux12v = (m["aux12v"] as? Number)?.toDouble(),
-                status = m["status"] as? String ?: "Not connected",
+                status = m["status"] as? String ?: WatchFormat.NOT_CONNECTED,
                 live = m["live"] as? Boolean ?: false,
                 miles = m["miles"] as? Boolean ?: true,
                 updatedAt = updatedAt,
@@ -81,49 +82,70 @@ object WatchFormat {
     fun power(kw: Double?): String = kw?.let { n(abs(it), 1) + " kW" } ?: "— kW"
 
     /** Which way the energy flows, as on the phone's Live screen. */
-    fun powerLabel(r: WatchReading): String {
+    @StringRes
+    fun powerLabel(r: WatchReading): Int {
         val p = r.powerKw
         return when {
-            p == null -> "power"
-            p > 0.3 -> if (r.charging) "into the battery" else "regenerating"
-            p < -0.3 -> "from the battery"
-            else -> "idle"
+            p == null -> R.string.power_label
+            p > 0.3 -> if (r.charging) R.string.power_into_battery else R.string.power_regenerating
+            p < -0.3 -> R.string.power_from_battery
+            else -> R.string.power_idle
         }
     }
 
-    /** The phone's status, or "Not connected" if it went quiet without saying so. */
-    fun status(r: WatchReading, now: Long): String = if (r.live && !r.liveAt(now)) "Not connected" else r.status
+    /** The phone's status, or "Not connected" if it went quiet without saying so. In English, as the phone sends it. */
+    fun status(r: WatchReading, now: Long): String = if (r.live && !r.liveAt(now)) NOT_CONNECTED else r.status
+
+    /** [status] in the watch's language. A status this app doesn't know is shown as sent. */
+    fun statusText(s: Strings, r: WatchReading, now: Long): String {
+        val status = status(r, now)
+        return statusRes(status)?.let { s.get(it) } ?: status
+    }
+
+    /** The phone's English status values, as string resources. */
+    @StringRes
+    fun statusRes(status: String): Int? = when (status) {
+        "DC fast charging" -> R.string.status_dc_fast
+        "Charging" -> R.string.status_charging
+        "Driving" -> R.string.status_driving
+        "Parked" -> R.string.status_parked
+        "Reconnecting" -> R.string.status_reconnecting
+        NOT_CONNECTED -> R.string.status_not_connected
+        else -> null
+    }
+
+    const val NOT_CONNECTED = "Not connected"
 
     fun duration(minutes: Long): String = when {
         minutes < 60 -> "$minutes min"
         else -> "${minutes / 60} h ${minutes % 60} min"
     }
 
-    fun toTarget(r: WatchReading, now: Long): String? {
+    fun toTarget(s: Strings, r: WatchReading, now: Long): String? {
         if (!r.charging || !r.liveAt(now)) return null
         val m = r.minutesToTarget ?: return null
         val target = r.targetPercent ?: return null
-        return "To $target% ≈ ${duration(m)}"
+        return s.get(R.string.to_target, target, duration(m))
     }
 
-    fun aux(volts: Double?): String? = volts?.let {
+    fun aux(s: Strings, volts: Double?): String? = volts?.let {
         val state = when {
-            it >= 13.2 -> "Charging"
-            it >= 12.4 -> "Good"
-            it >= 12.0 -> "Low"
-            else -> "Very low"
+            it >= 13.2 -> R.string.aux_charging
+            it >= 12.4 -> R.string.aux_good
+            it >= 12.0 -> R.string.aux_low
+            else -> R.string.aux_very_low
         }
-        "12V " + n(it, 1) + " V · " + state
+        "12V " + n(it, 1) + " V · " + s.get(state)
     }
 
-    fun ago(updatedAt: Long, now: Long): String {
-        if (updatedAt <= 0) return "No reading yet"
+    fun ago(s: Strings, updatedAt: Long, now: Long): String {
+        if (updatedAt <= 0) return s.get(R.string.no_reading_yet)
         val min = (now - updatedAt).coerceAtLeast(0) / 60_000
         return when {
-            min < 1 -> "Updated just now"
-            min < 60 -> "Updated $min min ago"
-            min < 48 * 60 -> "Updated ${min / 60} h ago"
-            else -> "Updated ${min / (24 * 60)} days ago"
+            min < 1 -> s.get(R.string.updated_just_now)
+            min < 60 -> s.get(R.string.updated_min_ago, min)
+            min < 48 * 60 -> s.get(R.string.updated_h_ago, min / 60)
+            else -> (min / (24 * 60)).toInt().let { days -> s.plural(R.plurals.updated_days_ago, days, days) }
         }
     }
 }

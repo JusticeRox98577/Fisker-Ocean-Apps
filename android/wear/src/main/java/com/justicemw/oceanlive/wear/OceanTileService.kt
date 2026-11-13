@@ -51,14 +51,15 @@ class OceanTileService : TileService() {
             (r?.soc ?: 100.0) < 20 -> Palette.BAD
             else -> Palette.AQUA
         }
+        val s = context.strings()
         val status = when {
-            r == null -> "Open Ocean Live"
-            else -> WatchFormat.status(r, now)
+            r == null -> s.get(R.string.tile_open_app)
+            else -> WatchFormat.statusText(s, r, now)
         }
         val detail = when {
-            r == null -> "on your phone"
+            r == null -> s.get(R.string.tile_on_phone)
             live -> listOfNotNull(WatchFormat.range(r), WatchFormat.power(r.powerKw)).joinToString(" · ")
-            else -> WatchFormat.range(r) ?: WatchFormat.ago(r.updatedAt, now)
+            else -> WatchFormat.range(r) ?: WatchFormat.ago(s, r.updatedAt, now)
         }
         val content = EdgeContentLayout.Builder(device)
             .setResponsiveContentInsetEnabled(true)

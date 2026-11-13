@@ -1,11 +1,14 @@
 package com.justicemw.oceanlive.obd
 
-enum class DtcState(val label: String) {
-    Active("Active now"),
-    Pending("Pending"),
-    Stored("Stored (history)"),
-    Lamp("Warning lamp"),
-    Other("Other"),
+import androidx.annotation.StringRes
+import com.justicemw.oceanlive.R
+
+enum class DtcState(@StringRes val label: Int) {
+    Active(R.string.dtc_active),
+    Pending(R.string.dtc_pending),
+    Stored(R.string.dtc_stored),
+    Lamp(R.string.dtc_lamp),
+    Other(R.string.dtc_other),
 }
 
 /** One fault code from a UDS ReadDTCInformation (19 02) reply. */

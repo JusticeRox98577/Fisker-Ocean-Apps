@@ -60,7 +60,7 @@ object BatteryReportPdf {
             .putExtra(Intent.EXTRA_SUBJECT, report.title)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         send.clipData = ClipData.newRawUri(report.title, uri)
-        context.startActivity(Intent.createChooser(send, "Share battery report"))
+        context.startActivity(Intent.createChooser(send, context.getString(R.string.battery_share_report)))
     }
 
     fun write(context: Context, report: BatteryReport, now: Long): File {
@@ -71,7 +71,7 @@ object BatteryReportPdf {
         try {
             val (w, h) = pageSize()
             val page = doc.startPage(PdfDocument.PageInfo.Builder(w, h, 1).create())
-            draw(page.canvas, report, w.toFloat(), h.toFloat())
+            draw(context.strings(), page.canvas, report, w.toFloat(), h.toFloat())
             doc.finishPage(page)
             file.outputStream().use { doc.writeTo(it) }
         } finally {
@@ -94,7 +94,7 @@ object BatteryReportPdf {
         }
     }
 
-    private fun draw(c: Canvas, r: BatteryReport, w: Float, h: Float) {
+    private fun draw(s: Strings, c: Canvas, r: BatteryReport, w: Float, h: Float) {
         val content = w - 2 * MARGIN
 
         // Title band.
@@ -108,7 +108,7 @@ object BatteryReportPdf {
         c.drawRect(0f, BAND, w, BAND + 4f, stripe)
 
         val eyebrow = paint(8f, AQUA, bold = true).apply { letterSpacing = 0.2f }
-        c.drawText("OCEAN LIVE", MARGIN, MARGIN + 2f, eyebrow)
+        c.drawText(s.get(R.string.app_name).uppercase(), MARGIN, MARGIN + 2f, eyebrow)
         val title = paint(22f, 0xFFFFFFFF.toInt(), bold = true).apply {
             shader = LinearGradient(MARGIN, 0f, MARGIN + 320f, 0f, intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFBFF7EE.toInt()), null, Shader.TileMode.CLAMP)
         }
@@ -144,7 +144,7 @@ object BatteryReportPdf {
         r.sections.drop(split).forEach { right = drawSection(c, it, MARGIN + colW + COLUMN_GAP, right, colW) }
         y = maxOf(left, right) + 2f
 
-        drawFaults(c, r.faults, MARGIN, y, content, footerTop - 8f)
+        drawFaults(s, c, r.faults, MARGIN, y, content, footerTop - 8f)
 
         // Footer.
         c.drawLine(MARGIN, footerTop, w - MARGIN, footerTop, Paint().apply { color = RULE; strokeWidth = 0.8f })
@@ -191,7 +191,7 @@ object BatteryReportPdf {
     }
 
     /** The latest fault scan, full width: the counts side by side, then active codes as fit above [bottom]. */
-    private fun drawFaults(c: Canvas, s: ReportSection, x: Float, top: Float, width: Float, bottom: Float) {
+    private fun drawFaults(strings: Strings, c: Canvas, s: ReportSection, x: Float, top: Float, width: Float, bottom: Float) {
         drawSectionTitle(c, s.title, x, top)
         var y = top + SECTION_TITLE
         val gap = 18f
@@ -214,7 +214,7 @@ object BatteryReportPdf {
             y += heights[i]
         }
         val more = s.codes.size - shown
-        if (more > 0) c.drawText("+ $more more active code${if (more == 1) "" else "s"}. The full list is in the app.", x, y + 9f, paint(8.5f, INK_DIM))
+        if (more > 0) c.drawText(strings.plural(R.plurals.report_more_codes, more, more), x, y + 9f, paint(8.5f, INK_DIM))
     }
 
     private fun accent(tone: ReportTone) = when (tone) {

@@ -9,7 +9,11 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import androidx.compose.ui.graphics.toArgb
+import androidx.annotation.StringRes
 import androidx.core.content.FileProvider
+import com.justicemw.oceanlive.R
+import com.justicemw.oceanlive.Strings
+import com.justicemw.oceanlive.strings
 import com.justicemw.oceanlive.car.V12Log
 import com.justicemw.oceanlive.car.V12Sample
 import com.justicemw.oceanlive.car.V12Stats
@@ -18,10 +22,10 @@ import java.io.File
 import java.text.DateFormat
 import java.util.Date
 
-enum class V12ShareKind(val label: String) {
-    Csv("Readings (CSV)"),
-    Picture("Graph and stats (picture)"),
-    Pdf("Graph and stats (PDF)"),
+enum class V12ShareKind(@StringRes val label: Int) {
+    Csv(R.string.v12_share_csv),
+    Picture(R.string.v12_share_picture),
+    Pdf(R.string.v12_share_pdf),
 }
 
 /** Builds the 12V file to share and hands it to the share sheet. Works only with readings already stored. */
@@ -32,6 +36,7 @@ object V12Share {
     fun share(context: Context, all: List<V12Sample>, range: V12Range, kind: V12ShareKind) {
         val now = System.currentTimeMillis()
         val from = now - range.ms
+        val s = context.strings()
         val dir = File(context.cacheDir, "share").apply { mkdirs() }
         val (file, type) = when (kind) {
             V12ShareKind.Csv -> File(dir, "ocean-12v.csv").also {
@@ -39,7 +44,7 @@ object V12Share {
             } to "text/csv"
             V12ShareKind.Picture -> File(dir, "ocean-12v.png").also { f ->
                 val bmp = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
-                drawReport(Canvas(bmp), WIDTH.toFloat(), HEIGHT.toFloat(), 2.6f, all, range, from, now)
+                drawReport(s, Canvas(bmp), WIDTH.toFloat(), HEIGHT.toFloat(), 2.6f, all, range, from, now)
                 f.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
                 bmp.recycle()
             } to "image/png"
@@ -47,7 +52,7 @@ object V12Share {
                 // A4 in points.
                 val doc = PdfDocument()
                 val page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, 1).create())
-                drawReport(page.canvas, 595f, 842f, 1.3f, all, range, from, now)
+                drawReport(s, page.canvas, 595f, 842f, 1.3f, all, range, from, now)
                 doc.finishPage(page)
                 f.outputStream().use { doc.writeTo(it) }
                 doc.close()
@@ -57,14 +62,14 @@ object V12Share {
         val send = Intent(Intent.ACTION_SEND)
             .setType(type)
             .putExtra(Intent.EXTRA_STREAM, uri)
-            .putExtra(Intent.EXTRA_SUBJECT, "Ocean 12V battery · ${range.words}")
+            .putExtra(Intent.EXTRA_SUBJECT, s.get(R.string.v12_share_title) + " · " + s.get(range.words))
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         send.clipData = ClipData.newRawUri("", uri)
-        context.startActivity(Intent.createChooser(send, "Share 12V data"))
+        context.startActivity(Intent.createChooser(send, s.get(R.string.v12_share)))
     }
 
     /** The graph with the stats under it, on the app's dark background. [d] scales sizes like density. */
-    private fun drawReport(c: Canvas, w: Float, h: Float, d: Float, all: List<V12Sample>, range: V12Range, from: Long, now: Long) {
+    private fun drawReport(s: Strings, c: Canvas, w: Float, h: Float, d: Float, all: List<V12Sample>, range: V12Range, from: Long, now: Long) {
         c.drawColor(Bg.toArgb())
         val pad = 16 * d
         val text = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -73,13 +78,13 @@ object V12Share {
         text.color = android.graphics.Color.WHITE
         text.textSize = 22 * d
         text.typeface = Typeface.DEFAULT_BOLD
-        c.drawText("Ocean 12V battery", pad, y, text)
+        c.drawText(s.get(R.string.v12_share_title), pad, y, text)
         y += 18 * d
         text.color = Dim.toArgb()
         text.textSize = 12 * d
         text.typeface = Typeface.DEFAULT
         val fmt = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
-        c.drawText(range.words.replaceFirstChar { it.uppercase() } + ": ${fmt.format(Date(from))} to ${fmt.format(Date(now))}", pad, y, text)
+        c.drawText(s.get(R.string.v12_share_period, s.get(range.words), fmt.format(Date(from)), fmt.format(Date(now))), pad, y, text)
         y += 14 * d
 
         // Card behind the graph.
@@ -92,7 +97,7 @@ object V12Share {
         c.restore()
         y += cardH + 16 * d
 
-        val legend = listOf("Awake" to Aqua, "Asleep" to Violet, "Resting" to Good)
+        val legend = listOf(s.get(R.string.v12_awake) to Aqua, s.get(R.string.v12_asleep) to Violet, s.get(R.string.v12_resting) to Good)
         var x = pad
         text.textSize = 11 * d
         for ((label, color) in legend) {
@@ -107,7 +112,7 @@ object V12Share {
         val stats = V12Stats.of(all, from)
         text.textSize = 14 * d
         val value = Paint(text).apply { textAlign = Paint.Align.RIGHT; typeface = Typeface.DEFAULT_BOLD }
-        for (line in v12StatLines(stats, now)) {
+        for (line in v12StatLines(s, stats, now)) {
             text.color = Dim.toArgb()
             c.drawText(line.key, pad, y, text)
             value.color = line.color.toArgb()
@@ -120,7 +125,7 @@ object V12Share {
         // The plain-English note, wrapped to the page width.
         text.textSize = 11 * d
         text.color = Dim.toArgb()
-        for (row in wrap(V12_NOTE, text, w - 2 * pad)) {
+        for (row in wrap(s.get(R.string.v12_note), text, w - 2 * pad)) {
             if (y > h - pad) break
             c.drawText(row, pad, y, text)
             y += 16 * d

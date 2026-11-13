@@ -37,10 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.justicemw.oceanlive.R
+import com.justicemw.oceanlive.Strings
 import com.justicemw.oceanlive.car.ActionOutcome
 import com.justicemw.oceanlive.car.ActionRun
 import com.justicemw.oceanlive.car.CarAction
@@ -56,6 +60,7 @@ import com.justicemw.oceanlive.obd.Ecu
 import com.justicemw.oceanlive.obd.Ecus
 import com.justicemw.oceanlive.obd.ModuleVersion
 import com.justicemw.oceanlive.obd.UdsResult
+import com.justicemw.oceanlive.obd.displayName
 import java.text.DateFormat
 import java.util.Date
 
@@ -88,19 +93,19 @@ fun FaultsScreen(
 ) {
     var confirm by remember { mutableStateOf<Pending?>(null) }
 
-    SectionTitle("Fault codes")
+    SectionTitle(stringResource(R.string.faults_title))
     Card(Modifier.animateContentSize()) {
-        Text("Reads stored fault codes from ${Ecus.scanList.size} modules in the car. Reading changes nothing.", color = Dim, fontSize = 13.sp)
+        Text(pluralStringResource(R.plurals.faults_intro, Ecus.scanList.size, Ecus.scanList.size), color = Dim, fontSize = 13.sp)
         Spacer(Modifier.height(14.dp))
         when {
             scan.running -> {
-                Text("Checking ${scan.current ?: "…"}", color = Color.White)
+                Text(stringResource(R.string.faults_checking, scan.current ?: "…"), color = Color.White)
                 Spacer(Modifier.height(8.dp))
                 MeterBar(scan.progress.toFloat() / scan.total)
-                Text("${scan.progress} of ${scan.total} · about a minute", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                Text(stringResource(R.string.faults_progress, scan.progress, scan.total), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             }
-            !state.connected -> Text("Connect to the car first.", color = Warn)
-            else -> GradientButton(if (scan.finishedAt == null) "Scan all modules" else "Scan again", onScan, enabled = !action.running && !versions.running)
+            !state.connected -> Text(stringResource(R.string.blocked_not_connected), color = Warn)
+            else -> GradientButton(stringResource(if (scan.finishedAt == null) R.string.faults_scan_all else R.string.faults_scan_again), onScan, enabled = !action.running && !versions.running)
         }
         scan.error?.let { Text(it, color = Bad, modifier = Modifier.padding(top = 8.dp)) }
     }
@@ -115,19 +120,14 @@ fun FaultsScreen(
 
     PastScans(pastScans.filter { it.time != scan.finishedAt })
 
-    SectionTitle("Code descriptions")
+    SectionTitle(stringResource(R.string.faults_descriptions))
     Card {
-        Text(
-            "Standard codes and the Ocean codes documented from real cars have built-in descriptions. Other Fisker-specific codes are described " +
-                "from the code itself: which module reported it and how it failed. Import a description list (CSV, or JSON with names, causes and repair steps) " +
-                    "and it takes priority. You can import several; the more detailed source wins for each code. Lists stay on this phone.",
-            color = Dim, fontSize = 13.sp,
-        )
+        Text(stringResource(R.string.faults_descriptions_explain), color = Dim, fontSize = 13.sp)
         Spacer(Modifier.height(12.dp))
-        GhostButton(if (importedCount > 0) "Import more descriptions" else "Import descriptions", onImport)
+        GhostButton(stringResource(if (importedCount > 0) R.string.faults_import_more else R.string.faults_import), onImport)
         if (importedCount > 0) {
-            Text("$importedCount imported descriptions loaded.", color = Good, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
-            TextButton(onClick = onClearImported) { Text("Remove imported descriptions", color = Bad, fontSize = 13.sp) }
+            Text(pluralStringResource(R.plurals.faults_imported_loaded, importedCount, importedCount), color = Good, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+            TextButton(onClick = onClearImported) { Text(stringResource(R.string.faults_remove_imported), color = Bad, fontSize = 13.sp) }
         }
     }
 
@@ -154,44 +154,45 @@ private fun Results(
     val answered = scan.modules.count { it.value == "ok" || it.value == "incomplete" }
     val canSort = scan.finishedAt != null && !scan.running && active > 0
     val byActive = activeFirst && canSort
-    SectionTitle("Results")
+    SectionTitle(stringResource(R.string.faults_results))
     TileRow {
         Tile(
-            "Active now", active.toString(), Modifier.weight(1f), accent = if (active > 0) Bad else Good,
-            caption = if (!canSort) null else if (byActive) "listed first" else "tap to list",
+            stringResource(R.string.dtc_active), active.toString(), Modifier.weight(1f), accent = if (active > 0) Bad else Good,
+            caption = if (!canSort) null else stringResource(if (byActive) R.string.faults_listed_first else R.string.faults_tap_to_list),
             captionColor = if (byActive) Bad else Dim,
             selected = byActive, onClick = if (canSort) ({ activeFirst = !activeFirst }) else null,
         )
-        Tile("Stored", (codes.size - active).toString(), Modifier.weight(1f), accent = Warn)
-        Tile("Modules", "$answered", Modifier.weight(1f), accent = Cyan, caption = "answered")
+        Tile(stringResource(R.string.faults_stored), (codes.size - active).toString(), Modifier.weight(1f), accent = Warn)
+        Tile(stringResource(R.string.faults_modules), "$answered", Modifier.weight(1f), accent = Cyan, caption = stringResource(R.string.faults_answered))
     }
-    scan.finishedAt?.let { Text("Scanned " + dateTime(it), color = Dim, fontSize = 12.sp) }
+    scan.finishedAt?.let { Text(stringResource(R.string.faults_scanned_at, dateTime(it)), color = Dim, fontSize = 12.sp) }
     val diff = scan.diff
     if (!scan.running) diff.previousTime?.let { prev ->
         val changes = listOfNotNull(
-            diff.newKeys.size.takeIf { it > 0 }?.let { "$it new" },
-            diff.cleared.size.takeIf { it > 0 }?.let { "$it cleared" },
+            diff.newKeys.size.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.faults_n_new, it, it) },
+            diff.cleared.size.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.faults_n_cleared, it, it) },
         )
         Text(
-            if (changes.isEmpty()) "No changes since the scan on ${dateTime(prev)}." else "Since the scan on ${dateTime(prev)}: ${changes.joinToString(", ")}.",
+            if (changes.isEmpty()) stringResource(R.string.faults_no_changes, dateTime(prev))
+            else stringResource(R.string.faults_changes, dateTime(prev), changes.joinToString(", ")),
             color = if (diff.newKeys.isNotEmpty()) Violet else Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp),
         )
     }
     val incomplete = scan.modules.filterValues { it == "incomplete" }.keys
     if (incomplete.isNotEmpty()) {
-        Text("Some lists may be incomplete (${incomplete.joinToString()}). Scanning again usually fills them in.", color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+        Text(stringResource(R.string.faults_incomplete, incomplete.joinToString()), color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
     }
 
     if (codes.isEmpty() && scan.finishedAt != null) {
         Spacer(Modifier.height(12.dp))
-        Card(glow = Good) { Text("No fault codes stored in any module that answered.", color = Good) }
+        Card(glow = Good) { Text(stringResource(R.string.faults_none), color = Good) }
     }
 
     val groups = codes.groupBy { it.ecu }.entries.sortedByDescending { e -> e.value.count { it.state == DtcState.Active } }
     if (groups.isNotEmpty() && !scan.running) {
         Spacer(Modifier.height(14.dp))
         GradientButton(
-            "Clear codes in all ${groups.size} modules",
+            pluralStringResource(R.plurals.faults_clear_all_groups, groups.size, groups.size),
             { onConfirm(Pending(CarAction.Clear, groups.map { it.key })) },
             enabled = blockedReason == null, brush = DangerBrush,
         )
@@ -203,7 +204,7 @@ private fun Results(
             enabled = blockedReason == null,
             modifier = Modifier.padding(top = if (groups.isEmpty()) 8.dp else 0.dp),
         ) {
-            Text("Clear every module (${Ecus.scanList.size}), including ones that showed nothing", color = if (blockedReason == null) Bad else Dim, fontSize = 13.sp)
+            Text(stringResource(R.string.faults_clear_every, Ecus.scanList.size), color = if (blockedReason == null) Bad else Dim, fontSize = 13.sp)
         }
     }
 
@@ -215,10 +216,10 @@ private fun Results(
         Column(Modifier.fillMaxWidth()) {
             if (sorted) {
                 val now = codes.filter { it.state == DtcState.Active }.sortedBy { moduleOrder(it.ecu) }
-                Text("ACTIVE NOW · ${now.size}", color = Bad, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp,
+                Text(stringResource(R.string.dtc_active).uppercase() + " · ${now.size}", color = Bad, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp,
                     modifier = Modifier.padding(top = 18.dp, bottom = 6.dp, start = 4.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    now.forEach { CodeRow(it, module = it.ecu.name, isNew = FaultHistory.key(it) in scan.diff.newKeys) }
+                    now.forEach { CodeRow(it, module = it.ecu.displayName(), isNew = FaultHistory.key(it) in scan.diff.newKeys) }
                 }
                 val rest = codes.filter { it.state != DtcState.Active }.groupBy { it.ecu }.entries.sortedBy { moduleOrder(it.key) }
                 rest.forEach { (ecu, list) -> ModuleGroup(ecu, list, scan, blockedReason, onConfirm) }
@@ -229,9 +230,9 @@ private fun Results(
     }
 
     if (diff.cleared.isNotEmpty() && !scan.running) {
-        SectionTitle("Cleared since last scan")
+        SectionTitle(stringResource(R.string.faults_cleared_since))
         Card(glow = Good) {
-            Text("These codes were there last time and are gone now.", color = Dim, fontSize = 13.sp)
+            Text(stringResource(R.string.faults_cleared_explain), color = Dim, fontSize = 13.sp)
             Spacer(Modifier.height(6.dp))
             diff.cleared.forEach { c ->
                 val info = c.toDtc().info
@@ -240,10 +241,10 @@ private fun Results(
                         Text(info.title, color = Color.White, fontSize = 14.sp)
                         Row {
                             Text(c.code, color = Aqua, fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                            Text("  ·  " + c.ecu.name, color = Dim, fontSize = 11.sp)
+                            Text("  ·  " + c.ecu.displayName(), color = Dim, fontSize = 11.sp)
                         }
                     }
-                    Text("Cleared", color = Good, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.faults_cleared), color = Good, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -253,21 +254,21 @@ private fun Results(
     val reachable = Ecus.scanList.filter { it.canRestart && (scan.modules[it.code] == "ok" || scan.modules[it.code] == "incomplete") }
     if (reachable.isNotEmpty() && !scan.running) {
         var open by remember { mutableStateOf(false) }
-        SectionTitle("Restart a module")
+        SectionTitle(stringResource(R.string.faults_restart_title))
         Card(Modifier.animateContentSize()) {
             Row(Modifier.fillMaxWidth().clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
-                Text("For a frozen screen or a module that stopped working. A restart is not a repair.", color = Dim, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                Text(if (open) "Hide" else "Show", color = Aqua, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.faults_restart_explain), color = Dim, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                Text(stringResource(if (open) R.string.hide else R.string.show), color = Aqua, fontWeight = FontWeight.SemiBold)
             }
             if (open) {
                 Spacer(Modifier.height(8.dp))
                 reachable.forEach { ecu ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(ecu.name, color = Color.White)
-                            Text(ecu.code + if (ecu.hardRestart) " · full restart" else "", color = Dim, fontSize = 11.sp)
+                            Text(ecu.displayName(), color = Color.White)
+                            Text(ecu.code + if (ecu.hardRestart) " · " + stringResource(R.string.faults_full_restart) else "", color = Dim, fontSize = 11.sp)
                         }
-                        SmallAction("Restart", Cyan, blockedReason == null) { onConfirm(Pending(CarAction.Restart, listOf(ecu))) }
+                        SmallAction(stringResource(R.string.restart), Cyan, blockedReason == null) { onConfirm(Pending(CarAction.Restart, listOf(ecu))) }
                     }
                 }
                 blockedReason?.let { Text(it, color = Warn, fontSize = 12.sp) }
@@ -277,19 +278,19 @@ private fun Results(
 
     if (!scan.running && (codes.isNotEmpty() || diff.cleared.isNotEmpty() || versions.isNotEmpty())) {
         Spacer(Modifier.height(18.dp))
-        GhostButton("Share report", onShare)
+        GhostButton(stringResource(R.string.faults_share_report), onShare)
     }
 }
 
 @Composable
 private fun ModuleGroup(ecu: Ecu, list: List<Dtc>, scan: FaultScan, blockedReason: String?, onConfirm: (Pending) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("${ecu.name.uppercase()} · ${list.size}", color = Dim, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+        Text("${ecu.displayName().uppercase()} · ${list.size}", color = Dim, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
             letterSpacing = 1.2.sp, modifier = Modifier.weight(1f).padding(start = 4.dp))
-        SmallAction("Clear", Bad, blockedReason == null) { onConfirm(Pending(CarAction.Clear, listOf(ecu))) }
+        SmallAction(stringResource(R.string.clear), Bad, blockedReason == null) { onConfirm(Pending(CarAction.Clear, listOf(ecu))) }
         if (ecu.canRestart) {
             Spacer(Modifier.width(6.dp))
-            SmallAction("Restart", Cyan, blockedReason == null) { onConfirm(Pending(CarAction.Restart, listOf(ecu))) }
+            SmallAction(stringResource(R.string.restart), Cyan, blockedReason == null) { onConfirm(Pending(CarAction.Restart, listOf(ecu))) }
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -299,32 +300,35 @@ private fun ModuleGroup(ecu: Ecu, list: List<Dtc>, scan: FaultScan, blockedReaso
 
 @Composable
 private fun VersionsSection(state: CarState, scan: FaultScan, action: ActionRun, run: VersionRun, onRead: () -> Unit) {
-    SectionTitle("Module versions")
+    SectionTitle(stringResource(R.string.versions_title))
     Card(Modifier.animateContentSize()) {
-        Text("Reads each module's software version and part number. Reading changes nothing.", color = Dim, fontSize = 13.sp)
+        Text(stringResource(R.string.versions_intro), color = Dim, fontSize = 13.sp)
         Spacer(Modifier.height(14.dp))
         when {
             run.running -> {
-                Text("Reading ${run.current ?: "…"}", color = Color.White)
+                Text(stringResource(R.string.versions_reading, run.current ?: "…"), color = Color.White)
                 Spacer(Modifier.height(8.dp))
                 MeterBar(if (run.total == 0) 0f else run.progress.toFloat() / run.total)
-                Text("${run.progress} of ${run.total}", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                Text(stringResource(R.string.progress_of, run.progress, run.total), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             }
-            !state.connected -> if (run.versions.isEmpty()) Text("Connect to the car first.", color = Warn)
-            scan.running || action.running -> Text("Wait for the scan to finish.", color = Warn, fontSize = 13.sp)
-            else -> GhostButton(if (run.finishedAt == null) "Read module versions" else "Read again", onRead)
+            !state.connected -> if (run.versions.isEmpty()) Text(stringResource(R.string.blocked_not_connected), color = Warn)
+            scan.running || action.running -> Text(stringResource(R.string.blocked_scan_running), color = Warn, fontSize = 13.sp)
+            else -> GhostButton(stringResource(if (run.finishedAt == null) R.string.versions_read else R.string.versions_read_again), onRead)
         }
         if (!run.running && run.finishedAt != null && run.versions.isEmpty()) {
-            Text("No module sent its version details.", color = Dim, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+            Text(stringResource(R.string.versions_none), color = Dim, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
         }
         if (run.versions.isNotEmpty()) Spacer(Modifier.height(6.dp))
         run.versions.forEach { v ->
             Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(v.ecu.name, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Text(v.ecu.displayName(), color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
                     Text(v.softwareVersion ?: "—", color = Aqua, fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
-                val details = listOfNotNull(v.partNumber?.let { "Part $it" }, v.softwareNumber?.let { "Software no. $it" })
+                val details = listOfNotNull(
+                    v.partNumber?.let { stringResource(R.string.versions_part, it) },
+                    v.softwareNumber?.let { stringResource(R.string.versions_software_no, it) },
+                )
                 if (details.isNotEmpty()) Text(details.joinToString("  ·  "), color = Dim, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
             }
         }
@@ -336,12 +340,12 @@ private fun PastScans(scans: List<SavedScan>) {
     if (scans.isEmpty()) return
     var showAll by remember { mutableStateOf(false) }
     val newest = scans.sortedByDescending { it.time }
-    SectionTitle("Past scans")
+    SectionTitle(stringResource(R.string.faults_past_scans))
     Card(Modifier.animateContentSize()) {
         (if (showAll) newest else newest.take(PAST_SHOWN)).forEach { PastScanRow(it) }
         if (newest.size > PAST_SHOWN) {
             TextButton(onClick = { showAll = !showAll }) {
-                Text(if (showAll) "Show fewer" else "Show all ${newest.size}", color = Aqua, fontSize = 13.sp)
+                Text(if (showAll) stringResource(R.string.show_fewer) else stringResource(R.string.show_all, newest.size), color = Aqua, fontSize = 13.sp)
             }
         }
     }
@@ -360,19 +364,19 @@ private fun PastScanRow(s: SavedScan) {
             Column(Modifier.weight(1f)) {
                 Text(dateTime(s.time), color = Color.White, fontSize = 14.sp)
                 Row {
-                    Text("${s.active} active", color = if (s.active > 0) Bad else Good, fontSize = 12.sp)
-                    Text("  ·  ${s.stored} stored", color = if (s.stored > 0) Warn else Dim, fontSize = 12.sp)
+                    Text(pluralStringResource(R.plurals.faults_n_active, s.active, s.active), color = if (s.active > 0) Bad else Good, fontSize = 12.sp)
+                    Text("  ·  " + pluralStringResource(R.plurals.faults_n_stored, s.stored, s.stored), color = if (s.stored > 0) Warn else Dim, fontSize = 12.sp)
                 }
             }
-            Text(if (open) "Hide" else "Show", color = Aqua, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(if (open) R.string.hide else R.string.show), color = Aqua, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         }
         AnimatedVisibility(open, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
             Column(Modifier.padding(bottom = 8.dp)) {
                 if (s.codes.isEmpty()) {
-                    Text("No fault codes in this scan.", color = Good, fontSize = 13.sp, modifier = Modifier.padding(vertical = 4.dp))
+                    Text(stringResource(R.string.faults_none_in_scan), color = Good, fontSize = 13.sp, modifier = Modifier.padding(vertical = 4.dp))
                 }
                 s.codes.map { it.toDtc() }.groupBy { it.ecu }.entries.sortedBy { moduleOrder(it.key) }.forEach { (ecu, list) ->
-                    Text("${ecu.name.uppercase()} · ${list.size}", color = Dim, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                    Text("${ecu.displayName().uppercase()} · ${list.size}", color = Dim, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
                         letterSpacing = 1.2.sp, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp, start = 4.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         list.sortedBy { it.state.ordinal }.forEach { CodeRow(it, inCard = true) }
@@ -387,18 +391,15 @@ private fun PastScanRow(s: SavedScan) {
 private fun ConfirmDialog(p: Pending, onCancel: () -> Unit, onConfirm: () -> Unit) {
     val (title, body, button) = when (p.action) {
         CarAction.Clear -> Triple(
-            if (p.ecus.size == 1) "Clear codes in ${p.ecus[0].name}?" else "Clear codes in ${p.ecus.size} modules?",
-            (if (p.ecus.size > 15) "This goes through every module one by one and takes a couple of minutes.\n\n" else "") +
-                "This erases the stored fault history a workshop would use, so do it after the problem is fixed or after you've shared the report.\n\n" +
-                "Codes for faults that are still there will come back straight away.\n\n" +
-                "Car on and in Park, foot on the brake, charging cable unplugged.",
-            "Clear codes",
+            if (p.ecus.size == 1) stringResource(R.string.confirm_clear_one, p.ecus[0].displayName())
+            else pluralStringResource(R.plurals.confirm_clear_many, p.ecus.size, p.ecus.size),
+            (if (p.ecus.size > 15) stringResource(R.string.confirm_clear_slow) + "\n\n" else "") + stringResource(R.string.confirm_clear_body),
+            stringResource(R.string.clear_codes),
         )
         CarAction.Restart -> Triple(
-            "Restart ${p.ecus[0].name}?",
-            "The module turns off and back on. Its features stop for a few seconds and screens or warning lights may flicker. " +
-                "It's a restart, not a repair, and settings normally stay as they are.\n\nOnly while parked: car in Park, foot on the brake.",
-            "Restart",
+            stringResource(R.string.confirm_restart, p.ecus[0].displayName()),
+            stringResource(R.string.confirm_restart_body),
+            stringResource(R.string.restart),
         )
     }
     AlertDialog(
@@ -406,7 +407,7 @@ private fun ConfirmDialog(p: Pending, onCancel: () -> Unit, onConfirm: () -> Uni
         title = { Text(title) },
         text = { Text(body) },
         confirmButton = { TextButton(onClick = onConfirm) { Text(button, color = if (p.action == CarAction.Clear) Bad else Cyan, fontWeight = FontWeight.Bold) } },
-        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel", color = Dim) } },
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel), color = Dim) } },
         containerColor = CardBg,
     )
 }
@@ -415,20 +416,20 @@ private fun ConfirmDialog(p: Pending, onCancel: () -> Unit, onConfirm: () -> Uni
 private fun ActionCard(run: ActionRun, onDismiss: () -> Unit) {
     AnimatedVisibility(run.running || run.outcomes.isNotEmpty(), enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
         Column {
-            SectionTitle(if (run.action == CarAction.Restart) "Restart" else "Clearing codes")
+            SectionTitle(stringResource(if (run.action == CarAction.Restart) R.string.restart else R.string.action_clearing))
             Card(Modifier.animateContentSize(), glow = if (run.running) Cyan else null) {
                 if (run.running) {
-                    Text("${run.action?.label ?: "Working"}: ${run.current ?: "…"}", color = Color.White)
+                    Text(stringResource(run.action?.label ?: R.string.action_working) + ": " + (run.current ?: "…"), color = Color.White)
                     Spacer(Modifier.height(8.dp))
                     MeterBar(if (run.total == 0) 0f else run.done.toFloat() / run.total)
-                    Text("Keep the car parked until this finishes.", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text(stringResource(R.string.action_keep_parked), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                 }
                 run.outcomes.forEach { OutcomeRow(it) }
                 if (!run.running) {
                     if (run.outcomes.size < run.total) {
-                        Text("Stopped early because the car started moving or charging.", color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                        Text(stringResource(R.string.action_stopped_early), color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                     }
-                    TextButton(onClick = onDismiss) { Text("Done", color = Aqua) }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.done), color = Aqua) }
                 }
             }
         }
@@ -439,20 +440,26 @@ private fun ActionCard(run: ActionRun, onDismiss: () -> Unit) {
 private fun OutcomeRow(o: ActionOutcome) {
     val (text, color) = when (val r = o.result) {
         UdsResult.Done -> when {
-            o.action == CarAction.Restart -> "Restarted" + (o.remaining?.let { if (it > 0) " · $it codes stored" else "" } ?: "") to Good
-            o.remaining == null -> "Cleared · scan again to confirm" to Good
-            o.remaining == 0 -> "Cleared" to Good
-            else -> "Cleared, ${o.remaining} came back (fault still present)" to Warn
+            o.action == CarAction.Restart -> stringResource(R.string.outcome_restarted) +
+                (o.remaining?.let { if (it > 0) " · " + pluralStringResource(R.plurals.outcome_codes_stored, it, it) else "" } ?: "") to Good
+            o.remaining == null -> stringResource(R.string.outcome_cleared_check) to Good
+            o.remaining == 0 -> stringResource(R.string.faults_cleared) to Good
+            else -> pluralStringResource(R.plurals.outcome_came_back, o.remaining, o.remaining) to Warn
         }
-        is UdsResult.Refused -> (if (r.needsSecurity) "Needs a security key Ocean Live doesn't have" else r.reason.replaceFirstChar { it.uppercase() }) to Bad
-        UdsResult.NoAnswer -> "No answer" to Bad
-        UdsResult.Unclear -> "Unclear reply · scan again to check" to Warn
+        is UdsResult.Refused -> (if (r.needsSecurity) stringResource(R.string.outcome_needs_key) else refusedText(r)) to Bad
+        UdsResult.NoAnswer -> stringResource(R.string.outcome_no_answer) to Bad
+        UdsResult.Unclear -> stringResource(R.string.outcome_unclear) to Warn
     }
     Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(o.ecu.name, color = Color.White, modifier = Modifier.weight(1f), fontSize = 14.sp)
+        Text(o.ecu.displayName(), color = Color.White, modifier = Modifier.weight(1f), fontSize = 14.sp)
         Text(text, color = color, fontSize = 12.sp, fontWeight = FontWeight.Medium)
     }
 }
+
+/** A module's refusal in plain words; an unknown code is shown in hex. */
+@Composable
+private fun refusedText(r: UdsResult.Refused): String =
+    if (r.reason == R.string.nrc_other) stringResource(R.string.nrc_other, "0x%02X".format(r.nrc)) else stringResource(r.reason)
 
 @Composable
 private fun SmallAction(text: String, color: Color, enabled: Boolean, onClick: () -> Unit) {
@@ -487,33 +494,33 @@ private fun CodeRow(d: Dtc, module: String? = null, isNew: Boolean = false, inCa
                 Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(d.code, color = Aqua, fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    Text("  ·  " + (module ?: info.sourceLabel), color = Dim, fontSize = 11.sp)
+                    Text("  ·  " + (module ?: stringResource(info.sourceLabel)), color = Dim, fontSize = 11.sp)
                     info.severity?.takeIf { it != DtcSeverity.Info }?.let {
-                        Text("  ·  " + it.label, color = if (it == DtcSeverity.Critical) Bad else Warn, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        Text("  ·  " + stringResource(it.label), color = if (it == DtcSeverity.Critical) Bad else Warn, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 info.note?.let { Text(it, color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 3.dp)) }
-                if (info.hasDetails && !open) Text("Tap for causes and fixes", color = Cyan, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                if (info.hasDetails && !open) Text(stringResource(R.string.code_tap_details), color = Cyan, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
             }
             Spacer(Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Box(Modifier.clip(RoundedCornerShape(50)).background(color.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                    Text(d.state.label, color = color, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(d.state.label), color = color, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 }
                 if (isNew) {
                     Spacer(Modifier.height(4.dp))
                     Box(Modifier.clip(RoundedCornerShape(50)).background(Violet.copy(alpha = 0.18f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                        Text("New", color = Violet, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.code_new), color = Violet, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
         }
         AnimatedVisibility(open, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
             Column(Modifier.padding(top = 10.dp)) {
-                info.impact?.let { DetailBlock("What it affects", listOf(it), numbered = false) }
-                if (info.causes.isNotEmpty()) DetailBlock("Possible causes", info.causes, numbered = false)
-                if (info.steps.isNotEmpty()) DetailBlock("How it's fixed", info.steps, numbered = info.steps.size > 1)
-                Text("Repair steps are for a qualified technician. High-voltage parts are dangerous to work on.", color = Dim, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                info.impact?.let { DetailBlock(stringResource(R.string.code_affects), listOf(it), numbered = false) }
+                if (info.causes.isNotEmpty()) DetailBlock(stringResource(R.string.code_causes), info.causes, numbered = false)
+                if (info.steps.isNotEmpty()) DetailBlock(stringResource(R.string.code_fixed), info.steps, numbered = info.steps.size > 1)
+                Text(stringResource(R.string.code_technician), color = Dim, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }
     }
@@ -535,41 +542,56 @@ private fun DetailBlock(heading: String, items: List<String>, numbered: Boolean)
 }
 
 
-fun faultReport(state: CarState, scan: FaultScan, versions: List<ModuleVersion> = emptyList()): String = buildString {
-    append("Ocean Live fault scan\n")
-    state.vin?.let { append("VIN: $it\n") }
-    scan.finishedAt?.let { append("Date: ${DateFormat.getDateTimeInstance().format(Date(it))}\n") }
+fun faultReport(s: Strings, state: CarState, scan: FaultScan, versions: List<ModuleVersion> = emptyList()): String = buildString {
+    val fmt = DateFormat.getDateTimeInstance()
+    append(s.get(R.string.report_fault_title)).append("\n")
+    state.vin?.let { append(s.get(R.string.report_vin, it)).append("\n") }
+    scan.finishedAt?.let { append(s.get(R.string.report_date, fmt.format(Date(it)))).append("\n") }
     val diff = scan.diff
     diff.previousTime?.let {
-        append("Compared with the scan on ${DateFormat.getDateTimeInstance().format(Date(it))}: ${diff.newKeys.size} new, ${diff.cleared.size} cleared\n")
+        val changes = s.plural(R.plurals.faults_n_new, diff.newKeys.size, diff.newKeys.size) + ", " +
+            s.plural(R.plurals.faults_n_cleared, diff.cleared.size, diff.cleared.size)
+        append(s.get(R.string.report_compared, fmt.format(Date(it)), changes)).append("\n")
     }
     append("\n")
     scan.codes.groupBy { it.ecu }.forEach { (ecu, list) ->
-        append("${ecu.name} (${ecu.request}):\n")
+        append("${ecu.displayName(s)} (${ecu.request}):\n")
         list.forEach {
             val info = it.info
-            val new = if (FaultHistory.key(it) in diff.newKeys) " [NEW]" else ""
-            append("  ${it.code}  ${it.state.label}$new · ${info.title}${info.note?.let { n -> " ($n)" } ?: ""}\n")
-            info.impact?.let { t -> append("      Affects: $t\n") }
-            if (info.causes.isNotEmpty()) append("      Causes: ${info.causes.joinToString("; ")}\n")
-            if (info.steps.isNotEmpty()) append("      Fix: ${info.steps.joinToString("; ")}\n")
+            val new = if (FaultHistory.key(it) in diff.newKeys) " [" + s.get(R.string.code_new).uppercase() + "]" else ""
+            append("  ${it.code}  ${s.get(it.state.label)}$new · ${info.title}${info.note?.let { n -> " ($n)" } ?: ""}\n")
+            info.impact?.let { t -> append("      ").append(s.get(R.string.report_affects, t)).append("\n") }
+            if (info.causes.isNotEmpty()) append("      ").append(s.get(R.string.report_causes, info.causes.joinToString("; "))).append("\n")
+            if (info.steps.isNotEmpty()) append("      ").append(s.get(R.string.report_fix, info.steps.joinToString("; "))).append("\n")
         }
     }
     if (diff.cleared.isNotEmpty()) {
-        append("\nCleared since last scan:\n")
-        diff.cleared.forEach { append("  ${it.code}  ${it.ecu.name} · ${it.toDtc().info.title}\n") }
+        append("\n").append(s.get(R.string.faults_cleared_since)).append(":\n")
+        diff.cleared.forEach { append("  ${it.code}  ${it.ecu.displayName(s)} · ${it.toDtc().info.title}\n") }
     }
     val silent = scan.modules.filterValues { it != "ok" }
-    if (silent.isNotEmpty()) append("\nNo complete answer from: ${silent.entries.joinToString { "${it.key} (${it.value})" }}\n")
+    if (silent.isNotEmpty()) {
+        val list = silent.entries.joinToString { "${it.key} (${moduleStatusLabel(it.value)?.let { id -> s.get(id) } ?: it.value})" }
+        append("\n").append(s.get(R.string.report_no_answer_from, list)).append("\n")
+    }
     if (versions.isNotEmpty()) {
-        append("\nModule versions:\n")
+        append("\n").append(s.get(R.string.versions_title)).append(":\n")
         versions.forEach { v ->
             val parts = listOfNotNull(
-                v.softwareVersion?.let { "software $it" },
-                v.softwareNumber?.let { "software no. $it" },
-                v.partNumber?.let { "part $it" },
+                v.softwareVersion?.let { s.get(R.string.report_software, it) },
+                v.softwareNumber?.let { s.get(R.string.versions_software_no, it) },
+                v.partNumber?.let { s.get(R.string.versions_part, it) },
             )
-            append("  ${v.ecu.name} (${v.ecu.code}): ${parts.joinToString(" · ")}\n")
+            append("  ${v.ecu.displayName(s)} (${v.ecu.code}): ${parts.joinToString(" · ")}\n")
         }
     }
+}
+
+/** What a module did during the scan ("no answer", "incomplete", ...), as stored in [FaultScan.modules]. */
+private fun moduleStatusLabel(status: String): Int? = when (status) {
+    "incomplete" -> R.string.module_incomplete
+    "no answer" -> R.string.module_no_answer
+    "refused" -> R.string.module_refused
+    "unreadable" -> R.string.module_unreadable
+    else -> null
 }

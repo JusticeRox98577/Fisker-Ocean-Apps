@@ -16,6 +16,7 @@ data class WatchReading(
     val minutesToTarget: Long?,
     val targetPercent: Int,
     val aux12v: Double?,
+    /** In English: a fixed value the watch app turns into its own language. */
     val status: String,
     /** The phone is reading the car right now. */
     val live: Boolean,

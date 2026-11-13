@@ -1,5 +1,8 @@
 package com.justicemw.oceanlive.car
 
+import androidx.annotation.StringRes
+import com.justicemw.oceanlive.R
+
 /**
  * When Ocean Live should stop talking to the car so it can go to sleep.
  * Every request on the OBD bus keeps the car's modules awake and drains the
@@ -18,9 +21,10 @@ object SleepPolicy {
 
     val maxReconnects: Int get() = RECONNECT_DELAYS_MS.size
 
-    const val ASLEEP_MESSAGE = "The car is asleep. Ocean Live stopped reading so it can sleep."
-    const val PARKED_MESSAGE = "The car was parked with the app closed for 10 minutes. Ocean Live stopped reading so it can sleep."
-    const val GAVE_UP_MESSAGE = "Lost the adapter. Ocean Live stopped trying so the car can sleep."
+    /** Why reading stopped, as string resources. */
+    @StringRes val ASLEEP_MESSAGE = R.string.sleep_asleep
+    @StringRes val PARKED_MESSAGE = R.string.sleep_parked
+    @StringRes val GAVE_UP_MESSAGE = R.string.sleep_gave_up
 
     /** True once the car has missed enough polls in a row to count as asleep or off. */
     fun carAsleep(misses: Int): Boolean = misses >= MISSES_BEFORE_ASLEEP

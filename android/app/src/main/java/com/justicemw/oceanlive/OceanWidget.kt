@@ -36,12 +36,13 @@ class OceanWidget : AppWidgetProvider() {
             v.setTextViewText(R.id.widget_range, range ?: "")
             val status = when {
                 state.status == Status.Live && state.mode == Mode.Charging ->
-                    "Charging" + (snap.powerKw?.let { " · %.1f kW".format(it) } ?: "")
-                state.status == Status.Live && state.mode == Mode.Driving -> "Driving"
-                state.status == Status.Live -> "Live"
-                state.status == Status.Watching -> "Car asleep" + (snap.aux12v?.let { " · 12V %.2f V".format(it) } ?: "")
-                state.lastUpdate != null -> "As of " + DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(state.lastUpdate))
-                else -> "Tap to connect"
+                    context.getString(R.string.status_charging) + (snap.powerKw?.let { " · " + Format.n(it, 1) + " kW" } ?: "")
+                state.status == Status.Live && state.mode == Mode.Driving -> context.getString(R.string.status_driving)
+                state.status == Status.Live -> context.getString(R.string.auto_live)
+                state.status == Status.Watching ->
+                    context.getString(R.string.widget_asleep) + (snap.aux12v?.let { " · 12V " + Format.n(it, 2) + " V" } ?: "")
+                state.lastUpdate != null -> context.getString(R.string.widget_as_of, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(state.lastUpdate)))
+                else -> context.getString(R.string.widget_tap_to_connect)
             }
             v.setTextViewText(R.id.widget_status, status)
             v.setOnClickPendingIntent(R.id.widget_root, com.justicemw.oceanlive.car.Alerts.openApp(context))

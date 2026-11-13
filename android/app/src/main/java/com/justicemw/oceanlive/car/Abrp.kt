@@ -1,5 +1,7 @@
 package com.justicemw.oceanlive.car
 
+import com.justicemw.oceanlive.R
+import com.justicemw.oceanlive.Strings
 import android.location.Location
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -40,7 +42,7 @@ object Abrp {
     }
 
     /** Returns null on success or a short message for the UI. */
-    suspend fun send(tlm: JSONObject, settings: Settings): String? = withContext(Dispatchers.IO) {
+    suspend fun send(tlm: JSONObject, settings: Settings, s: Strings): String? = withContext(Dispatchers.IO) {
         val query = "token=" + enc(settings.abrpToken.trim()) + "&api_key=" + enc(settings.abrpKey.trim())
         val body = "tlm=" + enc(tlm.toString())
         var conn: HttpURLConnection? = null
@@ -56,15 +58,15 @@ object Abrp {
             val code = conn.responseCode
             val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
             when {
-                code == 401 || code == 403 -> "ABRP rejected the token or API key"
-                code !in 200..299 -> "ABRP error $code"
+                code == 401 || code == 403 -> s.get(R.string.abrp_rejected)
+                code !in 200..299 -> s.get(R.string.abrp_error, code)
                 text.contains("\"status\": \"ok\"") || text.contains("\"status\":\"ok\"") -> null
-                else -> JSONObject(text).optString("error", "ABRP did not accept the data").ifBlank { "ABRP did not accept the data" }
+                else -> JSONObject(text).optString("error").ifBlank { s.get(R.string.abrp_not_accepted) }
             }
         } catch (_: UnknownHostException) {
-            "No internet"
+            s.get(R.string.abrp_no_internet)
         } catch (e: Exception) {
-            e.message ?: "Could not reach ABRP"
+            e.message ?: s.get(R.string.abrp_unreachable)
         } finally {
             conn?.disconnect()
         }
