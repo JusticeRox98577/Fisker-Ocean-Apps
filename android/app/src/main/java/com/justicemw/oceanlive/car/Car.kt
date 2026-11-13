@@ -658,6 +658,8 @@ object Car {
             reached to volts
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) throw e
+            // Stopped (Disconnect, setting off) as the check timed out: not an unreachable adapter.
+            currentCoroutineContext().ensureActive()
             reached to null
         } finally {
             transport.disconnect()
@@ -675,19 +677,27 @@ object Car {
      * adapter kept connected, only while it is connected) or a watch setting changed.
      */
     private suspend fun watchWait(ms: Long, needLink: Boolean) {
-        val until = System.currentTimeMillis() + ms
+        var until = System.currentTimeMillis() + ms
         _state.update { it.copy(nextCheckAt = until) }
         while (true) {
             val left = until - System.currentTimeMillis()
             if (left <= 0) return
             val poked = withTimeoutOrNull(left) { watchPoke.receive() } != null
             if (!poked) return
-            if (watchForce) {
-                watchForce = false
-                return
-            }
             if (!wantConnected || !_settings.value.watch12v) return
             val quick = V12Watch.method(_settings.value.watchKeepConnected) == V12Method.Quick
+            if (watchForce) {
+                watchForce = false
+                // A link that is open but no longer wanted is let go (or a kept link made) straight away.
+                // With quick checks and the link already closed, a new interval only moves the next
+                // check: no extra Bluetooth connect, however often the setting is changed.
+                if (!quick || transport.connected) return
+                if (!wakeDetector.confirming) {
+                    until = V12Watch.quickDue(lastWatchRead, _settings.value.watchEveryMin)
+                    _state.update { it.copy(nextCheckAt = until) }
+                }
+                continue
+            }
             if (!needLink && (quick || transport.connected) && System.currentTimeMillis() - lastWatchRead >= V12Watch.MIN_SPACING_MS) return
         }
     }

@@ -277,6 +277,13 @@ class V12Test {
         assertTrue(V12Watch.QUICK_TIMEOUT_MS <= 15_000L)
     }
 
+    @Test fun changingTheIntervalMovesTheNextQuickCheck() {
+        // Measured from the last check, not from the change, so changing it never adds a connect.
+        assertEquals(t0 + 10 * min, V12Watch.quickDue(t0, 10))
+        assertEquals(t0 + 30 * min, V12Watch.quickDue(t0, 30))
+        assertEquals(t0 + 30 * min, V12Watch.quickDue(t0, 7))
+    }
+
     @Test fun quickCheckSendsOnlyAdapterCommands() {
         val sent = Elm.quickCheckCommands + Elm.READ_VOLTAGE
         assertEquals(listOf("ATE0", "ATS0", "ATRV"), sent)

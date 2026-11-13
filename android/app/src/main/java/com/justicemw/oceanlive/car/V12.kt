@@ -333,6 +333,9 @@ object V12Watch {
     fun quickDelay(intervalMin: Int, confirmingWake: Boolean): Long =
         if (confirmingWake) CONFIRM_MS else intervalMs(intervalMin)
 
+    /** When the next quick check is due after the interval changes: the new interval from the last check. */
+    fun quickDue(lastCheck: Long, intervalMin: Int): Long = lastCheck + intervalMs(intervalMin)
+
     /** Whole minutes (at least 1) until a check due at [due], for "next check in N min". */
     fun minutesUntil(due: Long, now: Long): Int = ((due - now + 59_999) / 60_000).coerceAtLeast(1).toInt()
 
