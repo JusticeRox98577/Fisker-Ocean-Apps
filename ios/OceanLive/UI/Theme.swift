@@ -88,18 +88,22 @@ struct Tile: View {
     var caption: String? = nil
     var accent: Color = Theme.aqua
     var captionColor: Color = Theme.dim
+    /// Smaller paddings and text, for the landscape Live screen in a short window.
+    var compact = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: compact ? 3 : 6) {
             HStack(spacing: 6) {
                 Circle().fill(accent).frame(width: 6, height: 6)
-                Text(label).font(.system(size: 12)).foregroundStyle(Theme.dim)
+                Text(label).font(.system(size: compact ? 11 : 12)).foregroundStyle(Theme.dim).lineLimit(compact ? 1 : nil)
             }
-            RollingText(text: value ?? "—")
-            if let caption { Text(caption).font(.system(size: 12)).foregroundStyle(captionColor) }
+            RollingText(text: value ?? "—", size: compact ? 17 : 20)
+            if let caption {
+                Text(caption).font(.system(size: compact ? 11 : 12)).foregroundStyle(captionColor).lineLimit(compact ? 1 : nil)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        .padding(compact ? 10 : 14)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.edge, lineWidth: 1))
     }
@@ -285,20 +289,37 @@ struct PressStyle: ButtonStyle {
     }
 }
 
+/// Widest a single-column page gets, so a landscape screen reads like a column instead of stretching edge to edge.
+let readableWidth: CGFloat = 720
+
+/// True when the window is wider than it is tall: every iPhone in landscape has a compact height.
+extension EnvironmentValues {
+    var isLandscape: Bool { verticalSizeClass == .compact }
+}
+
+extension View {
+    /// Centres the content in a column no wider than `readableWidth`. On a phone in portrait it changes nothing.
+    func readableColumn() -> some View {
+        frame(maxWidth: readableWidth).frame(maxWidth: .infinity)
+    }
+}
+
 /// Scrolling page with the app header.
 struct Page<Content: View>: View {
     @EnvironmentObject var car: Car
+    @Environment(\.isLandscape) private var landscape
     @ViewBuilder let content: () -> Content
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Header(status: car.state.status, adapter: car.state.adapterName, watching: car.state.watching,
-                       watchStatus: car.state.watchStatus)
+                       watchStatus: car.state.watchStatus, compact: landscape)
                 content()
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 24)
+            .readableColumn()
         }
         .scrollIndicators(.hidden)
         .background(Theme.background.ignoresSafeArea())
@@ -310,20 +331,36 @@ struct Header: View {
     let adapter: String?
     var watching = false
     var watchStatus = V12Watch.statusText
+    /// One short line (title, status dot, connection text) to save height in landscape.
+    var compact = false
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Ocean Live").font(.system(size: 26, weight: .bold)).foregroundStyle(.white)
-                Text(subtitle).font(.system(size: 13)).foregroundStyle(Theme.dim)
+        if compact {
+            HStack(spacing: 10) {
+                Text("Ocean Live").font(.system(size: 18, weight: .bold)).foregroundStyle(.white).lineLimit(1)
+                statusDot
+                Text(subtitle).font(.system(size: 13)).foregroundStyle(Theme.dim).lineLimit(1)
+                Spacer(minLength: 0)
             }
-            Spacer()
-            Circle().fill(dot).frame(width: 10, height: 10)
-                .shadow(color: dot.opacity(0.6), radius: status == .live ? 6 : 0)
-                .animation(.easeInOut(duration: 0.5), value: status)
-                .animation(.easeInOut(duration: 0.5), value: watching)
+            .padding(.vertical, 6)
+        } else {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ocean Live").font(.system(size: 26, weight: .bold)).foregroundStyle(.white)
+                    Text(subtitle).font(.system(size: 13)).foregroundStyle(Theme.dim)
+                }
+                Spacer()
+                statusDot
+            }
+            .padding(.vertical, 12)
         }
-        .padding(.vertical, 12)
+    }
+
+    private var statusDot: some View {
+        Circle().fill(dot).frame(width: 10, height: 10)
+            .shadow(color: dot.opacity(0.6), radius: status == .live ? 6 : 0)
+            .animation(.easeInOut(duration: 0.5), value: status)
+            .animation(.easeInOut(duration: 0.5), value: watching)
     }
 
     private var subtitle: String {

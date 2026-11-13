@@ -98,6 +98,7 @@ struct V12View: View {
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 24)
+            .readableColumn()
         }
         .scrollIndicators(.hidden)
         .background(Theme.background.ignoresSafeArea())

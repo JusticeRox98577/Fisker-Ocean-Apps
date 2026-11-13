@@ -51,8 +51,11 @@ targets:
         UILaunchScreen:
           UIColorName: ""
         UIApplicationSupportsIndirectInputEvents: true
+        # Landscape too, for a phone mounted sideways in the car: the Live screen gets its own two-pane layout.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         UIUserInterfaceStyle: Dark
         UIBackgroundModes:
           - bluetooth-central

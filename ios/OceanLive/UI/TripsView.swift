@@ -22,6 +22,7 @@ struct TripsView: View {
     @State private var filter: EntryKind? = nil
     @State private var confirmClear = false
     @State private var exporting = false
+    @Environment(\.isLandscape) private var landscape
 
     var body: some View {
         Page {
@@ -37,17 +38,19 @@ struct TripsView: View {
             let drives = history.filter { $0.kind == .Drive }
             if !drives.isEmpty {
                 SectionTitle(String(localized: "Totals"))
+                let regenDrives = drives.filter { $0.regenKwh != nil }
+                let regen = regenDrives.reduce(0) { $0 + ($1.regenKwh ?? 0) }
+                let used = regenDrives.reduce(0) { $0 + $1.kwh }
+                let regenTile = Tile(label: String(localized: "Regen"), value: "+" + Format.n(regen, 1) + " kWh",
+                                     caption: used > 0.05 ? Self.ofEnergyUsed(regen / used * 100) : nil, accent: Theme.violet)
                 HStack(spacing: 10) {
                     Tile(label: String(localized: "Distance"), value: Format.distance(drives.reduce(0) { $0 + ($1.distanceKm ?? 0) }, settings), accent: Theme.cyan)
                     Tile(label: String(localized: "Average"), value: Format.efficiency(Format.whPerKm(history), settings), accent: Theme.aqua)
+                    // Landscape has room for three across.
+                    if landscape && !regenDrives.isEmpty { regenTile }
                 }
-                let regenDrives = drives.filter { $0.regenKwh != nil }
-                if !regenDrives.isEmpty {
-                    let regen = regenDrives.reduce(0) { $0 + ($1.regenKwh ?? 0) }
-                    let used = regenDrives.reduce(0) { $0 + $1.kwh }
-                    Tile(label: String(localized: "Regen"), value: "+" + Format.n(regen, 1) + " kWh",
-                         caption: used > 0.05 ? Self.ofEnergyUsed(regen / used * 100) : nil, accent: Theme.violet)
-                        .padding(.top, 10)
+                if !landscape && !regenDrives.isEmpty {
+                    regenTile.padding(.top, 10)
                 }
             }
 
