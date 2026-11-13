@@ -154,6 +154,8 @@ final class Car: ObservableObject {
     private var watchBusy = false
     /// The quick check in progress, so its time limit and its disconnect never touch a later connection.
     private var quickToken: UUID?
+    /// Extra time asked of iPhone for the quick check in progress, so the app isn't paused with the link open.
+    private var quickBackgroundTask: UIBackgroundTaskIdentifier = .invalid
 
     /// Seconds between readings: every second while CarPlay is showing, every two otherwise.
     private var pollInterval: Double { carPlayConnected ? 1 : 2 }
@@ -655,6 +657,12 @@ final class Car: ObservableObject {
         }
     }
 
+    private func endQuickBackgroundTask() {
+        guard quickBackgroundTask != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(quickBackgroundTask)
+        quickBackgroundTask = .invalid
+    }
+
     private func markChecked(_ time: Int64) {
         watchLastAt = time
         V12Store.saveLastCheck(time)
@@ -666,6 +674,17 @@ final class Car: ObservableObject {
     private func quickCheck(id: UUID) async {
         let token = UUID()
         quickToken = token
+        // Ask iPhone for time to finish, even if the app leaves the screen meanwhile, so it is never paused
+        // halfway with the link still open (which would keep the adapter awake). Out of time: let go now.
+        endQuickBackgroundTask()
+        quickBackgroundTask = UIApplication.shared.beginBackgroundTask(withName: "12V check") { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                if self.quickToken == token { self.transport.abandon() }
+                self.endQuickBackgroundTask()
+            }
+        }
+        defer { endQuickBackgroundTask() }
         let deadline = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(V12Watch.quickCheckTimeoutMs) * 1_000_000)
             guard let self, !Task.isCancelled, self.quickToken == token else { return }
