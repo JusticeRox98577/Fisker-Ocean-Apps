@@ -37,7 +37,7 @@ jobs:
           VERSION=$(grep -o 'versionName = "[^"]*"' app/build.gradle.kts | head -1 | cut -d'"' -f2)
           test -n "$VERSION" || { echo "versionName not found in app/build.gradle.kts"; exit 1; }
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "SHORT=${VERSION%.*}" >> "$GITHUB_ENV"
+          echo "SHORT=${VERSION%.0}" >> "$GITHUB_ENV"
       - name: Unit tests
         run: ./gradlew testDebugUnitTest
       - name: Build APK

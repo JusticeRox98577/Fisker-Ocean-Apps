@@ -13,7 +13,7 @@ val upload = Properties()
 val uploadFile = rootProject.file("keystore.properties")
 if (uploadFile.exists()) uploadFile.inputStream().use { upload.load(it) }
 val uploadStore: String? = upload.getProperty("storeFile") ?: System.getenv("ANDROID_STORE_FILE")
-val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 3300
+val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 3310
 
 android {
     namespace = "com.justicemw.oceanlive"
@@ -24,7 +24,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = buildNumber
-        versionName = "3.3.0"
+        versionName = "3.3.1"
     }
     signingConfigs {
         create("public") {

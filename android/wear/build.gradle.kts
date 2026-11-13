@@ -13,7 +13,7 @@ val upload = Properties()
 val uploadFile = rootProject.file("keystore.properties")
 if (uploadFile.exists()) uploadFile.inputStream().use { upload.load(it) }
 val uploadStore: String? = upload.getProperty("storeFile") ?: System.getenv("ANDROID_STORE_FILE")
-val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 3300
+val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 3310
 
 android {
     namespace = "com.justicemw.oceanlive.wear"
@@ -28,7 +28,7 @@ android {
         // for the watch (two uploads of one app can't share a version code).
         versionCode = 100_000 + buildNumber
         // Keep in step with versionName in app/build.gradle.kts.
-        versionName = "3.3.0"
+        versionName = "3.3.1"
     }
     signingConfigs {
         create("public") {
