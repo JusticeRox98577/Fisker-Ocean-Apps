@@ -156,7 +156,7 @@ private struct V12Card: View {
             KeyValue(String(localized: "Resting"), resting.map { Format.n($0.volts, 2) + " V · " + V12Log.status($0.volts) },
                      color: resting.map { v12StatusColor($0.volts) } ?? .white)
             if car.state.watching {
-                Text(V12Watch.statusText).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.violet)
+                Text(car.state.watchStatus).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.violet)
             }
             HStack {
                 Text(car.v12.isEmpty ? String(localized: "No saved readings yet") : String(localized: "Graph, nights and sharing"))

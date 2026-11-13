@@ -143,6 +143,9 @@ enum Elm {
     /// Set-up after the adapter reconnects while the car sleeps: only how the adapter formats its replies.
     /// No reset and no protocol set-up, so nothing reaches the car.
     static let watchInitCommands = ["ATE0", "ATL0", "ATS0"]
+    /// Set-up for a quick 12V check (connect, read, disconnect): echo and spaces off, nothing else.
+    /// Never ATZ, ATWS, a protocol search or any request that would put a frame on the car's network.
+    static let quickCheckCommands = ["ATE0", "ATS0"]
     /// The only command sent while the car sleeps: the adapter measures OBD pin 16 itself.
     static let voltageCommand = "ATRV"
 

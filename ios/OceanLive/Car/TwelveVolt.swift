@@ -11,6 +11,9 @@ struct V12Sample: Equatable, Identifiable {
     var mode: Kind
     /// The first reading after the car had slept for 2 hours or more: the best sign of the battery's health.
     var resting = false
+    /// How the reading was taken: a quick check (the adapter sleeps between checks) or over a link kept open.
+    /// Readings saved before this existed count as kept open, which is how they were taken.
+    var method: V12Method = .keptOpen
 
     var id: Int64 { time }
     var asleep: Bool { mode == .asleep }
@@ -24,6 +27,14 @@ extension V12Sample.Kind {
         case .charging: self = .charging
         }
     }
+}
+
+/// How a 12V reading was taken. The saved value stays in English.
+enum V12Method: String {
+    /// Connect, read the 12V, disconnect: the adapter sleeps between checks.
+    case quick = "quick"
+    /// The Bluetooth link stayed open (always the case while reading the car).
+    case keptOpen = "kept open"
 }
 
 enum V12Source {
@@ -141,14 +152,16 @@ enum V12Log {
         return mode == .asleep ? !restedSince : firstOfConnection
     }
 
-    // MARK: File format: one reading per line, "time,volts,source,mode,resting"
+    // MARK: File format: one reading per line, "time,volts,source,mode,resting,method"
+    // The method field ("q" quick, "k" kept open) came later; lines without it read as kept open.
 
     private static let sourceCodes = [V12Source.bms: "B", V12Source.port: "O", V12Source.asleep: "S"]
     private static let modeCodes: [V12Sample.Kind: String] = [.parked: "p", .driving: "d", .charging: "c", .asleep: "a"]
 
     static func line(_ s: V12Sample) -> String {
         let source = sourceCodes[s.source] ?? s.source.replacingOccurrences(of: ",", with: " ")
-        return "\(s.time),\(String(format: "%.3f", s.volts)),\(source),\(modeCodes[s.mode] ?? "p"),\(s.resting ? 1 : 0)"
+        let method = s.method == .quick ? "q" : "k"
+        return "\(s.time),\(String(format: "%.3f", s.volts)),\(source),\(modeCodes[s.mode] ?? "p"),\(s.resting ? 1 : 0),\(method)"
     }
 
     static func parse(_ line: Substring) -> V12Sample? {
@@ -157,7 +170,8 @@ enum V12Log {
         let code = String(f[2])
         let source = sourceCodes.first { $0.value == code }?.key ?? code
         guard let mode = modeCodes.first(where: { $0.value == String(f[3]) })?.key else { return nil }
-        return V12Sample(time: time, volts: volts, source: source, mode: mode, resting: String(f[4]) == "1")
+        let method: V12Method = f.count >= 6 && String(f[5]) == "q" ? .quick : .keptOpen
+        return V12Sample(time: time, volts: volts, source: source, mode: mode, resting: String(f[4]) == "1", method: method)
     }
 
     static func encode(_ samples: [V12Sample]) -> String {
@@ -173,10 +187,10 @@ enum V12Log {
     static func csv(_ samples: [V12Sample]) -> String {
         let fmt = ISO8601DateFormatter()
         fmt.formatOptions = [.withInternetDateTime]
-        var out = "time,volts,source,mode,resting\n"
+        var out = "time,volts,source,mode,resting,method\n"
         for s in samples {
             let time = fmt.string(from: Date(timeIntervalSince1970: Double(s.time) / 1000))
-            out += "\(time),\(String(format: "%.2f", s.volts)),\(s.source),\(s.mode.rawValue),\(s.resting)\n"
+            out += "\(time),\(String(format: "%.2f", s.volts)),\(s.source),\(s.mode.rawValue),\(s.resting),\(s.method.rawValue)\n"
         }
         return out
     }
@@ -287,10 +301,20 @@ enum V12Log {
 }
 
 /// Watching the 12V while the car sleeps: the decisions, kept pure so they can be unit tested.
-/// Watch mode only ever sends the adapter its own voltage command (ATRV), which puts nothing on the car's network.
+/// Watch mode only ever sends the adapter its own commands (ATE0, ATS0 and the voltage, ATRV), which put
+/// nothing on the car's network.
+///
+/// Normally each check is a quick one: connect over Bluetooth, read the 12V, disconnect, so the adapter can
+/// go back to sleep (a vLinker FD uses about 51 mA awake and about 3 mA asleep). With "Keep the adapter
+/// connected" on, the link stays open between checks instead, as it did before.
 struct V12Watch {
     static let intervals = [5, 10, 30]
-    static let defaultMinutes = 10
+    static let defaultMinutes = 30
+    /// A quick check that can't reach the adapter this many times in a row: it has probably turned its own
+    /// Bluetooth off while sleeping. The app keeps trying at the chosen interval and says so.
+    static let unreachableAfter = 2
+    /// The whole quick check (connect, read, disconnect) gives up after this long.
+    static let quickCheckTimeoutMs: Int64 = 15_000
     /// Two readings in a row at or above this: the car woke up by itself.
     static let wakeVolts = 13.0
     static let wakeReadings = 2
@@ -300,8 +324,10 @@ struct V12Watch {
     /// After a first high reading, check again this soon to confirm.
     static let confirmMs: Int64 = 30_000
     static let statusText = String(localized: "Car asleep · watching 12V")
-    static let settingNote = String(localized: "Keeps the adapter connected and asks it for the 12V every 10 minutes. The car's network isn't touched, so the car stays asleep, but the adapter itself uses a little power (about 20-50 mA, depending on the adapter).")
+    static let unreachableText = String(localized: "Car asleep · adapter not reachable")
+    static let settingNote = String(localized: "Every 30 minutes (or your choice), Ocean Live briefly connects to the adapter, reads the 12V and disconnects so the adapter can sleep again. The car's network isn't touched, so the car stays asleep.")
     static let iPhoneNote = String(localized: "iPhone only lets apps check occasionally in the background, so overnight readings will be irregular.")
+    static let keepConnectedNote = String(localized: "Use this only if your adapter can't be woken over Bluetooth. The adapter stays awake and uses about 50 mA (around 1.2 Ah a day).")
 
     enum Decision: Equatable { case keepWatching, carWoke }
 
@@ -311,10 +337,16 @@ struct V12Watch {
     private(set) var seenAsleep = false
     private(set) var highInRow = 0
     private(set) var lastReconnect: Int64?
+    /// Quick checks in a row that couldn't reach the adapter.
+    private(set) var missedInRow: Int
+    /// Quick checks this night (this stretch of watching) that couldn't reach the adapter.
+    private(set) var missedTotal: Int
 
-    init(startedAt: Int64, carStoppedAnswering: Bool) {
+    init(startedAt: Int64, carStoppedAnswering: Bool, missedInRow: Int = 0, missedTotal: Int = 0) {
         self.startedAt = startedAt
         self.carStoppedAnswering = carStoppedAnswering
+        self.missedInRow = Swift.max(missedInRow, 0)
+        self.missedTotal = Swift.max(missedTotal, self.missedInRow)
     }
 
     /// Whether to switch to watching instead of letting go of the adapter.
@@ -323,6 +355,39 @@ struct V12Watch {
     }
 
     static func interval(_ minutes: Int) -> Int { intervals.contains(minutes) ? minutes : defaultMinutes }
+
+    /// Quick check (the normal way) unless the user chose to keep the adapter connected.
+    static func method(keepConnected: Bool) -> V12Method { keepConnected ? .keptOpen : .quick }
+
+    /// The status line while watching.
+    static func status(unreachable: Bool) -> String { unreachable ? unreachableText : statusText }
+
+    /// The adapter couldn't be reached for the last two quick checks or more.
+    var adapterUnreachable: Bool { missedInRow >= Self.unreachableAfter }
+
+    /// A quick check got no reading (Bluetooth connect failed or the adapter didn't answer in time).
+    /// Returns whether the adapter now counts as not reachable. Watching carries on either way, at the
+    /// chosen interval and with Bluetooth connect attempts only; it never switches to keeping the link open.
+    mutating func quickCheckFailed() -> Bool {
+        missedInRow += 1
+        missedTotal += 1
+        return adapterUnreachable
+    }
+
+    /// A quick check got a reading: the adapter is reachable again.
+    mutating func quickCheckWorked() { missedInRow = 0 }
+
+    /// Whether a quick check is due when iPhone gives the app a moment (a background refresh or the app
+    /// coming on screen). A minute early still counts, since iPhone's timing is loose.
+    static func checkDue(now: Int64, lastCheck: Int64?, intervalMinutes: Int) -> Bool {
+        guard let lastCheck, lastCheck > 0 else { return true }
+        return now - lastCheck >= Int64(interval(intervalMinutes)) * 60_000 - 60_000
+    }
+
+    /// How the latest overnight reading was taken, for the 12V screen. Nil without any asleep reading.
+    static func overnightMethod(_ samples: [V12Sample]) -> V12Method? {
+        samples.last { $0.asleep }?.method
+    }
 
     mutating func afterReading(_ volts: Double, now: Int64) -> Decision {
         if volts >= Self.wakeVolts {

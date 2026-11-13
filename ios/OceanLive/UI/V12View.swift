@@ -84,6 +84,10 @@ struct V12View: View {
                 }
                 .padding(.top, 12)
                 V12StatsCard(report: report)
+                if let line = overnightLine {
+                    Text(line).font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 8)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if !report.stats.nights.isEmpty { V12NightsCard(nights: report.stats.nights) }
                 shareMenu.padding(.top, 18)
                 SectionTitle(String(localized: "What the numbers mean"))
@@ -116,9 +120,25 @@ struct V12View: View {
         .padding(.top, 20)
     }
 
+    /// How the overnight readings are taken, from the latest asleep reading, and how many quick checks
+    /// couldn't reach the adapter during the latest night.
+    private var overnightLine: String? {
+        var parts: [String] = []
+        switch V12Watch.overnightMethod(car.v12) {
+        case .quick?: parts.append(String(localized: "Overnight checks: quick (adapter sleeps between)"))
+        case .keptOpen?: parts.append(String(localized: "Overnight checks: kept connected"))
+        case nil: break
+        }
+        let missed = car.v12Missed
+        if missed > 0 {
+            parts.append(String(localized: "Checks that couldn't reach the adapter on the latest night: \(missed)"))
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     private var watchCard: some View {
         HStack {
-            Pill(text: V12Watch.statusText, color: Theme.violet, pulse: true)
+            Pill(text: car.state.watchStatus, color: Theme.violet, pulse: true)
             Spacer()
             if let next = car.state.nextWatch {
                 Text("Next check \(Format.date(next).formatted(date: .omitted, time: .shortened))")

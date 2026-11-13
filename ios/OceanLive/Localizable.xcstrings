@@ -2303,6 +2303,34 @@
         }
       }
     },
+    "Between checks Ocean Live disconnects so the adapter can sleep. Only the adapter's own 12V reading is asked for, so the car stays asleep.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwischen den Messungen trennt Ocean Live die Verbindung, damit der Adapter schlafen kann. Es wird nur die eigene 12-V-Messung des Adapters abgefragt, damit das Auto weiterschläft."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre comprobaciones, Ocean Live se desconecta para que el adaptador pueda dormir. Solo se pide la lectura de 12 V del propio adaptador, así que el coche sigue dormido."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre deux mesures, Ocean Live se déconnecte pour que l’adaptateur puisse dormir. Seule la mesure 12 V de l’adaptateur lui-même est demandée, la voiture reste donc en veille."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tussen de metingen verbreekt Ocean Live de verbinding, zodat de adapter kan slapen. Alleen de eigen 12V-meting van de adapter wordt opgevraagd, zodat de auto blijft slapen."
+          }
+        }
+      }
+    },
     "Bluetooth is off or not allowed for Ocean Live.": {
       "localizations": {
         "de": {
@@ -2439,6 +2467,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Auto"
+          }
+        }
+      }
+    },
+    "Car asleep · adapter not reachable": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto schläft · Adapter nicht erreichbar"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coche dormido · adaptador no disponible"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voiture en veille · adaptateur injoignable"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto slaapt · adapter niet bereikbaar"
           }
         }
       }
@@ -3083,6 +3139,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Controleren: %@"
+          }
+        }
+      }
+    },
+    "Checks that couldn't reach the adapter on the latest night: %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messungen, bei denen der Adapter in der letzten Nacht nicht erreichbar war: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobaciones sin respuesta del adaptador la última noche: %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesures sans réponse de l’adaptateur la nuit dernière : %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metingen waarbij de adapter afgelopen nacht niet bereikbaar was: %lld"
           }
         }
       }
@@ -4571,6 +4655,34 @@
         }
       }
     },
+    "Every 30 minutes (or your choice), Ocean Live briefly connects to the adapter, reads the 12V and disconnects so the adapter can sleep again. The car's network isn't touched, so the car stays asleep.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle 30 Minuten (oder wie du es einstellst) verbindet sich Ocean Live kurz mit dem Adapter, liest die 12 V und trennt die Verbindung wieder, damit der Adapter weiterschlafen kann. Das Netzwerk des Autos wird nicht berührt, das Auto schläft also weiter."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada 30 minutos (o lo que elijas), Ocean Live se conecta un momento al adaptador, lee los 12 V y se desconecta para que el adaptador vuelva a dormir. No se toca la red del coche, así que el coche sigue dormido."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toutes les 30 minutes (ou selon votre choix), Ocean Live se connecte brièvement à l’adaptateur, lit le 12 V puis se déconnecte pour que l’adaptateur se rendorme. Le réseau de la voiture n’est pas sollicité, la voiture reste donc en veille."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elke 30 minuten (of wat je kiest) maakt Ocean Live even verbinding met de adapter, leest de 12V en verbreekt de verbinding weer, zodat de adapter weer kan slapen. Het netwerk van de auto wordt niet aangeraakt, dus de auto blijft slapen."
+          }
+        }
+      }
+    },
     "Export CSV": {
       "localizations": {
         "de": {
@@ -5553,6 +5665,34 @@
         }
       }
     },
+    "Keep the adapter connected": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adapter verbunden lassen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantener el adaptador conectado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garder l’adaptateur connecté"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adapter verbonden houden"
+          }
+        }
+      }
+    },
     "Keep the car parked until this finishes.": {
       "localizations": {
         "de": {
@@ -5605,34 +5745,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scherm aan houden tijdens verbinding"
-          }
-        }
-      }
-    },
-    "Keeps the adapter connected and asks it for the 12V every 10 minutes. The car's network isn't touched, so the car stays asleep, but the adapter itself uses a little power (about 20-50 mA, depending on the adapter).": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hält den Adapter verbunden und fragt ihn alle 10 Minuten nach den 12 V. Das Netzwerk des Autos wird nicht berührt, das Auto schläft also weiter, aber der Adapter selbst braucht etwas Strom (etwa 20–50 mA, je nach Adapter)."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mantiene el adaptador conectado y le pide los 12 V cada 10 minutos. No se toca la red del coche, así que sigue dormido, pero el adaptador gasta algo de energía (unos 20-50 mA, según el adaptador)."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garde l’adaptateur connecté et lui demande la 12 V toutes les 10 minutes. Le réseau de la voiture n’est pas sollicité, elle reste donc en veille, mais l’adaptateur consomme un peu (environ 20-50 mA selon l’adaptateur)."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Houdt de adapter verbonden en vraagt elke 10 minuten de 12V op. Het netwerk van de auto wordt niet aangeraakt, dus de auto blijft slapen, maar de adapter zelf verbruikt wat stroom (ongeveer 20-50 mA, afhankelijk van de adapter)."
           }
         }
       }
@@ -7481,6 +7593,62 @@
           "stringUnit": {
             "state": "translated",
             "value": "Anders of eigen"
+          }
+        }
+      }
+    },
+    "Overnight checks: kept connected": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messungen über Nacht: dauerhaft verbunden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobaciones nocturnas: conexión mantenida"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesures de nuit : connexion maintenue"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachtelijke metingen: verbonden gehouden"
+          }
+        }
+      }
+    },
+    "Overnight checks: quick (adapter sleeps between)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messungen über Nacht: kurz (Adapter schläft dazwischen)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobaciones nocturnas: rápidas (el adaptador duerme entre ellas)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesures de nuit : rapides (l’adaptateur dort entre deux)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachtelijke metingen: kort (adapter slaapt ertussen)"
           }
         }
       }
@@ -10795,6 +10963,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mijlen gebruiken"
+          }
+        }
+      }
+    },
+    "Use this only if your adapter can't be woken over Bluetooth. The adapter stays awake and uses about 50 mA (around 1.2 Ah a day).": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nutze das nur, wenn sich dein Adapter nicht über Bluetooth wecken lässt. Der Adapter bleibt dann wach und braucht etwa 50 mA (rund 1,2 Ah am Tag)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Úsalo solo si tu adaptador no se puede despertar por Bluetooth. El adaptador se queda despierto y consume unos 50 mA (alrededor de 1,2 Ah al día)."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À utiliser seulement si votre adaptateur ne peut pas être réveillé par Bluetooth. L’adaptateur reste alors éveillé et consomme environ 50 mA (près de 1,2 Ah par jour)."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruik dit alleen als je adapter niet via Bluetooth te wekken is. De adapter blijft dan wakker en gebruikt ongeveer 50 mA (zo'n 1,2 Ah per dag)."
           }
         }
       }

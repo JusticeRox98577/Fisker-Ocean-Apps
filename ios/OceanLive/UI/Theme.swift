@@ -293,7 +293,8 @@ struct Page<Content: View>: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Header(status: car.state.status, adapter: car.state.adapterName, watching: car.state.watching)
+                Header(status: car.state.status, adapter: car.state.adapterName, watching: car.state.watching,
+                       watchStatus: car.state.watchStatus)
                 content()
             }
             .padding(.horizontal, 18)
@@ -308,6 +309,7 @@ struct Header: View {
     let status: Status
     let adapter: String?
     var watching = false
+    var watchStatus = V12Watch.statusText
 
     var body: some View {
         HStack {
@@ -330,7 +332,7 @@ struct Header: View {
         case .connecting: return String(localized: "Connecting")
         case .reconnecting: return String(localized: "Reconnecting")
         case .scanning: return String(localized: "Looking for adapters")
-        case .idle, .error: return watching ? V12Watch.statusText : String(localized: "Not connected")
+        case .idle, .error: return watching ? watchStatus : String(localized: "Not connected")
         }
     }
 

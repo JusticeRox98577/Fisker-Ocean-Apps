@@ -121,6 +121,15 @@ final class ElmTransport: NSObject {
         }
     }
 
+    /// Ends everything still waiting: a connect (also one waiting for Bluetooth to come on) and a command.
+    /// Used by the time limit of a quick 12V check, so it can always end.
+    func abandon() {
+        let waiters = poweredOnWaiters
+        poweredOnWaiters = []
+        for w in waiters { w.resume(throwing: ElmError.timeout) }
+        disconnect()
+    }
+
     func disconnect() {
         stopScan()
         let p = peripheral

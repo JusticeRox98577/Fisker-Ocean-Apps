@@ -126,7 +126,7 @@ private struct Dashboard: View {
     }
 
     private func pill(_ state: CarState) -> Pill {
-        if state.watching { return Pill(text: V12Watch.statusText, color: Theme.violet, pulse: true) }
+        if state.watching { return Pill(text: state.watchStatus, color: Theme.violet, pulse: true) }
         if state.status == .reconnecting { return Pill(text: String(localized: "Reconnecting"), color: Theme.warn, pulse: true) }
         if state.status != .live {
             let last = state.lastUpdate.map { String(localized: "Last seen \(Format.date($0).formatted(date: .omitted, time: .shortened))") } ?? String(localized: "Offline")
@@ -205,7 +205,9 @@ private struct StartCard: View {
 
 private extension StartCard {
     var watchNote: String {
-        let note = String(localized: "The adapter stays connected and only its own 12V reading is asked for, so the car stays asleep.")
+        let note = car.settings.v12WatchKeepConnected
+            ? String(localized: "The adapter stays connected and only its own 12V reading is asked for, so the car stays asleep.")
+            : String(localized: "Between checks Ocean Live disconnects so the adapter can sleep. Only the adapter's own 12V reading is asked for, so the car stays asleep.")
         guard let next = car.state.nextWatch else { return note }
         return note + " " + String(localized: "Next check about \(Format.date(next).formatted(date: .omitted, time: .shortened)).")
     }

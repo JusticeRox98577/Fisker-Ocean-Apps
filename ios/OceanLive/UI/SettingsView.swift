@@ -101,6 +101,11 @@ struct SettingsView: View {
                     .animation(.snappy, value: s.v12WatchMinutes)
                     Note(String(localized: "Shorter means more readings, but the adapter stays busier."))
                     Note(String(localized: "With Battery warnings on, you get a notification when the 12V drops below 12.2 V while the car sleeps, and again below 11.8 V."))
+                    ToggleRow(label: "Keep the adapter connected", value: s.v12WatchKeepConnected) { v in
+                        car.updateSettings { $0.v12WatchKeepConnected = v }
+                    }
+                    .padding(.top, 8)
+                    Note(V12Watch.keepConnectedNote)
                 }
             }
 

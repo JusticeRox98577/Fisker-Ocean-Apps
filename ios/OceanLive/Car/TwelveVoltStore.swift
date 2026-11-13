@@ -38,11 +38,31 @@ enum V12Store {
 
     static func loadAlertLevel() -> Int { UserDefaults.standard.integer(forKey: alertKey) }
     static func saveAlertLevel(_ level: Int) { UserDefaults.standard.set(level, forKey: alertKey) }
+
+    private static let missedInRowKey = "v12_missed_in_row"
+    private static let missedTotalKey = "v12_missed_total"
+    private static let lastCheckKey = "v12_last_check"
+
+    /// Quick checks that couldn't reach the adapter: in a row, and over the latest night.
+    /// Kept so the count survives iPhone closing the app overnight.
+    static func loadMissed() -> (inRow: Int, total: Int) {
+        (UserDefaults.standard.integer(forKey: missedInRowKey), UserDefaults.standard.integer(forKey: missedTotalKey))
+    }
+
+    static func saveMissed(inRow: Int, total: Int) {
+        UserDefaults.standard.set(inRow, forKey: missedInRowKey)
+        UserDefaults.standard.set(total, forKey: missedTotalKey)
+    }
+
+    /// When the last watch check ran (whether or not it reached the adapter), or 0.
+    static func loadLastCheck() -> Int64 { Int64(UserDefaults.standard.double(forKey: lastCheckKey)) }
+    static func saveLastCheck(_ time: Int64) { UserDefaults.standard.set(Double(time), forKey: lastCheckKey) }
 }
 
 /// iPhone gives an app in the background only occasional time. While the app is watching the 12V,
-/// this asks iOS for a background refresh now and then. The refresh only reconnects the Bluetooth link
-/// to the adapter and asks it for its voltage (ATRV); it never talks to the car.
+/// this asks iOS for a background refresh now and then. Each refresh does at most one check: connect the
+/// Bluetooth link to the adapter, ask it for its voltage (ATRV) and disconnect again (or, with "Keep the
+/// adapter connected" on, reopen the kept link if it dropped). It never talks to the car.
 enum V12Background {
     static let id = "com.justice.OceanABRP.v12refresh"
     private static let activeKey = "v12_watch_active"

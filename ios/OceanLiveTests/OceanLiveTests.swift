@@ -892,8 +892,34 @@ final class TwelveVoltTests: XCTestCase {
     }
 
     func testCsv() {
-        let csv = V12Log.csv([s(0, 12.614, .asleep, resting: true)])
-        XCTAssertEqual(csv, "time,volts,source,mode,resting\n1970-01-01T00:00:00Z,12.61,OBD port while asleep,asleep,true\n")
+        var quick = s(minute, 12.58, .asleep)
+        quick.method = .quick
+        let csv = V12Log.csv([s(0, 12.614, .asleep, resting: true), quick])
+        XCTAssertEqual(csv, "time,volts,source,mode,resting,method\n"
+                       + "1970-01-01T00:00:00Z,12.61,OBD port while asleep,asleep,true,kept open\n"
+                       + "1970-01-01T00:01:00Z,12.58,OBD port while asleep,asleep,false,quick\n")
+    }
+
+    func testMethodSavedAndOldLinesReadAsKeptOpen() {
+        var quick = s(t0, 12.6, .asleep)
+        quick.method = .quick
+        let kept = s(t0 + hour, 12.55, .asleep)
+        let back = V12Log.decode(V12Log.encode([quick, kept]))
+        XCTAssertEqual(back.map(\.method), [.quick, .keptOpen])
+        // Lines saved before the method existed have five fields: they were taken over a kept link.
+        let old = V12Log.decode("\(t0),12.610,S,a,1\n\(t0 + hour),12.580,S,a,0\n")
+        XCTAssertEqual(old.count, 2)
+        XCTAssertEqual(old.map(\.method), [.keptOpen, .keptOpen])
+        XCTAssertTrue(old[0].resting)
+        XCTAssertEqual(V12Sample(time: t0, volts: 12.6, source: V12Source.asleep, mode: .asleep).method, .keptOpen)
+    }
+
+    func testOvernightMethodFromLatestAsleepReading() {
+        XCTAssertNil(V12Watch.overnightMethod([s(t0, 14.0, .driving)]))
+        var quick = s(t0 + hour, 12.6, .asleep)
+        quick.method = .quick
+        XCTAssertEqual(V12Watch.overnightMethod([s(t0, 12.7, .asleep), quick, s(t0 + 2 * hour, 14.0, .driving)]), .quick)
+        XCTAssertEqual(V12Watch.overnightMethod([quick, s(t0 + 2 * hour, 12.5, .asleep)]), .keptOpen)
     }
 
     // MARK: Stats
@@ -966,15 +992,84 @@ final class TwelveVoltTests: XCTestCase {
     func testIntervals() {
         XCTAssertEqual(V12Watch.interval(5), 5)
         XCTAssertEqual(V12Watch.interval(30), 30)
-        XCTAssertEqual(V12Watch.interval(7), 10)
-        XCTAssertEqual(Settings().v12WatchMinutes, 10)
+        XCTAssertEqual(V12Watch.interval(10), 10)
+        XCTAssertEqual(V12Watch.interval(7), 30)
+        XCTAssertEqual(V12Watch.defaultMinutes, 30)
+        XCTAssertEqual(Settings().v12WatchMinutes, 30)
         XCTAssertFalse(Settings().v12Watch, "off by default")
+        XCTAssertFalse(Settings().v12WatchKeepConnected, "quick checks by default")
+    }
+
+    func testSavedIntervalKeptAndNewFieldsDefault() throws {
+        // Saved by 3.3 before quick checks: the chosen 10 minutes stays, keeping the link stays off.
+        let old = try JSONDecoder().decode(Settings.self, from: Data(#"{"v12Watch":true,"v12WatchMinutes":10}"#.utf8))
+        XCTAssertEqual(old.v12WatchMinutes, 10)
+        XCTAssertTrue(old.v12Watch)
+        XCTAssertFalse(old.v12WatchKeepConnected)
+        // Nothing saved yet: 30 minutes.
+        XCTAssertEqual(try JSONDecoder().decode(Settings.self, from: Data("{}".utf8)).v12WatchMinutes, 30)
+        // Round trip of the new option.
+        var s = Settings()
+        s.v12WatchKeepConnected = true
+        let back = try JSONDecoder().decode(Settings.self, from: JSONEncoder().encode(s))
+        XCTAssertTrue(back.v12WatchKeepConnected)
+    }
+
+    func testQuickCheckUnlessKeepConnected() {
+        XCTAssertEqual(V12Watch.method(keepConnected: false), .quick)
+        XCTAssertEqual(V12Watch.method(keepConnected: true), .keptOpen)
+        XCTAssertEqual(V12Method.quick.rawValue, "quick")
+        XCTAssertEqual(V12Method.keptOpen.rawValue, "kept open")
+    }
+
+    func testTwoUnreachableQuickChecksChangeTheStatus() {
+        var w = V12Watch(startedAt: t0, carStoppedAnswering: true)
+        XCTAssertFalse(w.adapterUnreachable)
+        XCTAssertFalse(w.quickCheckFailed(), "one miss is not enough")
+        XCTAssertEqual(V12Watch.status(unreachable: w.adapterUnreachable), V12Watch.statusText)
+        XCTAssertTrue(w.quickCheckFailed(), "two in a row")
+        XCTAssertEqual(V12Watch.status(unreachable: w.adapterUnreachable), V12Watch.unreachableText)
+        XCTAssertEqual(V12Watch.unreachableText, "Car asleep · adapter not reachable")
+        // Still watching and still trying at the chosen interval.
+        XCTAssertTrue(w.quickCheckFailed())
+        XCTAssertEqual(w.nextDelayMs(intervalMinutes: 30), 30 * minute)
+        XCTAssertEqual(w.missedTotal, 3)
+        // A reading again: reachable, but the night's count stays.
+        w.quickCheckWorked()
+        XCTAssertFalse(w.adapterUnreachable)
+        XCTAssertEqual(w.missedInRow, 0)
+        XCTAssertEqual(w.missedTotal, 3)
+        XCTAssertFalse(w.quickCheckFailed(), "one miss after a reading is not enough again")
+        // Carried on after iPhone closed the app.
+        let resumed = V12Watch(startedAt: t0, carStoppedAnswering: true, missedInRow: 2, missedTotal: 2)
+        XCTAssertTrue(resumed.adapterUnreachable)
+    }
+
+    func testQuickCheckDueAfterTheInterval() {
+        XCTAssertTrue(V12Watch.checkDue(now: t0, lastCheck: nil, intervalMinutes: 30))
+        XCTAssertTrue(V12Watch.checkDue(now: t0, lastCheck: 0, intervalMinutes: 30))
+        XCTAssertFalse(V12Watch.checkDue(now: t0 + 20 * minute, lastCheck: t0, intervalMinutes: 30))
+        XCTAssertTrue(V12Watch.checkDue(now: t0 + 29 * minute, lastCheck: t0, intervalMinutes: 30), "a minute early counts")
+        XCTAssertTrue(V12Watch.checkDue(now: t0 + 5 * minute, lastCheck: t0, intervalMinutes: 5))
+        XCTAssertLessThanOrEqual(V12Watch.quickCheckTimeoutMs, 15_000)
+    }
+
+    func testQuickChecksStillDetectAWake() {
+        var w = V12Watch(startedAt: t0, carStoppedAnswering: true)
+        _ = w.quickCheckFailed()
+        XCTAssertEqual(w.afterReading(12.6, now: t0 + 30 * minute), .keepWatching)
+        XCTAssertEqual(w.afterReading(13.2, now: t0 + 60 * minute), .keepWatching)
+        XCTAssertEqual(w.afterReading(13.2, now: t0 + 61 * minute), .carWoke)
     }
 
     func testWatchSendsOnlyAdapterCommands() {
         XCTAssertEqual(Elm.voltageCommand, "ATRV")
         // Nothing that resets the adapter or sets up a protocol, so nothing reaches the car.
         for c in Elm.watchInitCommands { XCTAssertTrue(["ATE0", "ATL0", "ATS0"].contains(c)) }
+        // A quick check: at most echo and spaces off before ATRV.
+        for c in Elm.quickCheckCommands { XCTAssertTrue(["ATE0", "ATS0"].contains(c)) }
+        XCTAssertFalse(Elm.quickCheckCommands.contains("ATZ"))
+        XCTAssertFalse(Elm.quickCheckCommands.contains("ATWS"))
     }
 
     // MARK: Low-12V warning

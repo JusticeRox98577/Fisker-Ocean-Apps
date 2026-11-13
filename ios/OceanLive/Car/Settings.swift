@@ -47,10 +47,13 @@ struct Settings: Codable, Equatable {
     var homePrice = 0.0
     /// Price per kWh at DC fast chargers. 0 means not set.
     var dcPrice = 0.0
-    /// Keep the adapter connected while the car sleeps and ask it (only it) for the 12V now and then.
+    /// While the car sleeps, ask the adapter (only it) for the 12V now and then.
     var v12Watch = false
-    /// Minutes between those readings: 5, 10 or 30.
-    var v12WatchMinutes = 10
+    /// Minutes between those readings: 5, 10 or 30. Settings saved earlier keep their choice.
+    var v12WatchMinutes = V12Watch.defaultMinutes
+    /// Keep the Bluetooth link open between those readings instead of a quick connect, read and disconnect.
+    /// Only for adapters that can't be woken over Bluetooth: it keeps the adapter awake (about 50 mA).
+    var v12WatchKeepConnected = false
 
     var usableKwh: Double { model == .custom ? customKwh : model.usableKwh }
     var abrpEnabled: Bool {
@@ -104,5 +107,6 @@ struct Settings: Codable, Equatable {
         dcPrice = try c.decodeIfPresent(Double.self, forKey: .dcPrice) ?? d.dcPrice
         v12Watch = try c.decodeIfPresent(Bool.self, forKey: .v12Watch) ?? d.v12Watch
         v12WatchMinutes = V12Watch.interval(try c.decodeIfPresent(Int.self, forKey: .v12WatchMinutes) ?? d.v12WatchMinutes)
+        v12WatchKeepConnected = try c.decodeIfPresent(Bool.self, forKey: .v12WatchKeepConnected) ?? d.v12WatchKeepConnected
     }
 }
