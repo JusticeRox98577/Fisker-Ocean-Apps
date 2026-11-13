@@ -540,4 +540,7 @@
         <item quantity="one">Afgelopen nacht: %1$d controle kon de adapter niet bereiken</item>
         <item quantity="other">Afgelopen nacht: %1$d controles konden de adapter niet bereiken</item>
     </plurals>
+    <!-- Landscape layout -->
+    <string name="connect">Verbinden</string>
+    <string name="live_range">Bereik</string>
 </resources>

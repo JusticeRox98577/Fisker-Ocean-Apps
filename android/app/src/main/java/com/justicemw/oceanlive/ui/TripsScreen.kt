@@ -68,15 +68,16 @@ fun TripsScreen(history: List<HistoryEntry>, settings: Settings, onExport: () ->
     val drives = history.filter { it.kind == EntryKind.Drive }
     if (drives.isNotEmpty()) {
         SectionTitle(stringResource(R.string.trips_totals))
+        // In landscape the regen tile joins the same row: three across.
+        val wide = LocalLandscape.current
+        val regen = regenTotals(history)
         TileRow {
             Tile(stringResource(R.string.distance), Format.distance(drives.sumOf { it.distanceKm ?: 0.0 }, settings), Modifier.weight(1f), accent = Cyan)
             Tile(stringResource(R.string.average), Format.efficiency(Format.whPerKm(history), settings), Modifier.weight(1f), accent = Aqua)
+            if (wide) regen?.let { RegenTile(it, Modifier.weight(1f)) }
         }
-        regenTotals(history)?.let { (regen, used) ->
-            val share = regenPercent(regen, used)?.roundToInt()
-            TileRow {
-                Tile(stringResource(R.string.regen), "+" + Format.n(regen, 1) + " kWh", Modifier.weight(1f), caption = share?.let { stringResource(R.string.regen_share, it) }, accent = Good)
-            }
+        if (!wide) regen?.let {
+            TileRow { RegenTile(it, Modifier.weight(1f)) }
         }
     }
 
@@ -128,6 +129,13 @@ fun TripsScreen(history: List<HistoryEntry>, settings: Settings, onExport: () ->
             containerColor = CardBg,
         )
     }
+}
+
+@Composable
+private fun RegenTile(totals: Pair<Double, Double>, modifier: Modifier) {
+    val (regen, used) = totals
+    val share = regenPercent(regen, used)?.roundToInt()
+    Tile(stringResource(R.string.regen), "+" + Format.n(regen, 1) + " kWh", modifier, caption = share?.let { stringResource(R.string.regen_share, it) }, accent = Good)
 }
 
 @Composable

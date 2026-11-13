@@ -558,4 +558,7 @@
         <item quantity="many">Última noche: %1$d comprobaciones no pudieron contactar con el adaptador</item>
         <item quantity="other">Última noche: %1$d comprobaciones no pudieron contactar con el adaptador</item>
     </plurals>
+    <!-- Landscape layout -->
+    <string name="connect">Conectar</string>
+    <string name="live_range">Autonomía</string>
 </resources>

@@ -547,4 +547,7 @@
         <item quantity="one">Latest night: %1$d check couldn\'t reach the adapter</item>
         <item quantity="other">Latest night: %1$d checks couldn\'t reach the adapter</item>
     </plurals>
+    <!-- Landscape layout -->
+    <string name="connect">Connect</string>
+    <string name="live_range">Range</string>
 </resources>

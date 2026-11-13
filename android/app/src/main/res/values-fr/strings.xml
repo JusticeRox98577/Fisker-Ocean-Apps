@@ -558,4 +558,7 @@
         <item quantity="many">Dernière nuit : %1$d mesures n\'ont pas pu joindre l\'adaptateur</item>
         <item quantity="other">Dernière nuit : %1$d mesures n\'ont pas pu joindre l\'adaptateur</item>
     </plurals>
+    <!-- Landscape layout -->
+    <string name="connect">Connecter</string>
+    <string name="live_range">Autonomie</string>
 </resources>

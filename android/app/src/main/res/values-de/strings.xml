@@ -540,4 +540,7 @@
         <item quantity="one">Letzte Nacht: %1$d Prüfung hat den Adapter nicht erreicht</item>
         <item quantity="other">Letzte Nacht: %1$d Prüfungen haben den Adapter nicht erreicht</item>
     </plurals>
+    <!-- Landscape layout -->
+    <string name="connect">Verbinden</string>
+    <string name="live_range">Reichweite</string>
 </resources>

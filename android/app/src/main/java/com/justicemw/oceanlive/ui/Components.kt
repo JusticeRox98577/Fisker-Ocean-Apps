@@ -36,6 +36,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +50,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -70,6 +72,12 @@ val Bad = Color(0xFFFB7185)
 val OceanBrush = Brush.linearGradient(listOf(Aqua, Cyan, Violet))
 val ChargeBrush = Brush.linearGradient(listOf(Good, Aqua))
 
+/**
+ * True when the app window is wider than it is tall: a phone turned sideways, a tablet,
+ * or the app in split screen under another app on the car's display.
+ */
+val LocalLandscape = compositionLocalOf { false }
+
 /** Screen background: a faint vertical glow from the top. */
 val BackgroundBrush = Brush.verticalGradient(listOf(BgTop, Bg, Bg))
 
@@ -87,10 +95,10 @@ fun Card(modifier: Modifier = Modifier, glow: Color? = null, content: @Composabl
 }
 
 @Composable
-fun SectionTitle(text: String) {
+fun SectionTitle(text: String, compact: Boolean = false) {
     Text(
         text.uppercase(), color = Dim, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp,
-        modifier = Modifier.padding(top = 22.dp, bottom = 10.dp, start = 4.dp),
+        modifier = Modifier.padding(top = if (compact) 12.dp else 22.dp, bottom = if (compact) 6.dp else 10.dp, start = 4.dp),
     )
 }
 
@@ -109,11 +117,12 @@ fun RollingText(text: String, color: Color = Color.White, size: TextUnit = 20.sp
 
 /**
  * A small stat tile. With [onClick] it becomes a toggle: [selected] tints it with its accent.
+ * [compact] tiles use less padding and smaller text, for short landscape windows.
  */
 @Composable
 fun Tile(
     label: String, value: String?, modifier: Modifier, caption: String? = null, accent: Color = Aqua, captionColor: Color = Dim,
-    selected: Boolean = false, onClick: (() -> Unit)? = null,
+    selected: Boolean = false, onClick: (() -> Unit)? = null, compact: Boolean = false,
 ) {
     val edge by animateColorAsState(if (selected) accent.copy(alpha = 0.7f) else CardEdge, tween(300), label = "tileEdge")
     val fill by animateColorAsState(if (selected) accent.copy(alpha = 0.12f) else Color.Transparent, tween(300), label = "tileFill")
@@ -123,22 +132,39 @@ fun Tile(
             .background(fill)
             .border(1.dp, edge, RoundedCornerShape(18.dp))
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(14.dp),
+            .padding(if (compact) 9.dp else 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(6.dp).clip(CircleShape).background(accent))
             Spacer(Modifier.width(6.dp))
-            Text(label, color = Dim, fontSize = 12.sp)
+            if (compact) Text(label, color = Dim, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            else Text(label, color = Dim, fontSize = 12.sp)
         }
-        Spacer(Modifier.height(6.dp))
-        RollingText(value ?: "—")
-        if (caption != null) Text(caption, color = captionColor, fontSize = 12.sp)
+        Spacer(Modifier.height(if (compact) 3.dp else 6.dp))
+        RollingText(value ?: "—", size = if (compact) 17.sp else 20.sp)
+        if (caption != null) {
+            if (compact) Text(caption, color = captionColor, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            else Text(caption, color = captionColor, fontSize = 12.sp)
+        }
     }
 }
 
 @Composable
 fun TileRow(content: @Composable RowScope.() -> Unit) {
     Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), content = content)
+}
+
+/** Tiles laid out [columns] per row; a short last row keeps the same tile width. */
+@Composable
+fun TileGrid(columns: Int, tiles: List<@Composable (Modifier) -> Unit>, gap: Dp = 10.dp) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(gap)) {
+        tiles.chunked(columns.coerceAtLeast(1)).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                row.forEach { it(Modifier.weight(1f)) }
+                repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
 }
 
 @Composable
