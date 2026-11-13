@@ -84,11 +84,11 @@ jobs:
         run: |
           rm -rf Payload && mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/OceanLive.app Payload/
-          zip -qry OceanLive-3.2-iOS-unsigned.ipa Payload
+          zip -qry OceanLive-3.3-iOS-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
           name: OceanLive-iOS-unsigned
-          path: ios/OceanLive-3.2-iOS-unsigned.ipa
+          path: ios/OceanLive-3.3-iOS-unsigned.ipa
       - name: Archive, sign and upload to TestFlight
         if: github.event_name == 'workflow_dispatch'
         env:
