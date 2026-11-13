@@ -24,7 +24,7 @@ struct StatusProvider: TimelineProvider {
 }
 
 extension WidgetData {
-    static let sample = WidgetData(soc: 76, rangeText: "≈ 230 mi", aux12v: 12.6, status: "Parked",
+    static let sample = WidgetData(soc: 76, rangeText: "≈ 230 mi", aux12v: 12.6, status: String(localized: "Parked"),
                                    charging: false, live: true, updatedAt: Date())
 }
 
@@ -64,7 +64,7 @@ struct StatusWidgetView: View {
                             .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                             .minimumScaleFactor(0.6)
-                        Text(data.rangeText ?? "range unknown")
+                        Text(data.rangeText ?? String(localized: "range unknown"))
                             .font(.system(size: 10))
                             .foregroundStyle(OceanPalette.dim)
                             .lineLimit(1)
@@ -102,8 +102,8 @@ struct StatusWidgetView: View {
                         statusDot(data)
                         Text(data.status).font(.system(size: 13, weight: .semibold)).foregroundStyle(statusColor(data))
                     }
-                    row("Range", data.rangeText ?? "—", OceanPalette.cyan)
-                    row("12V battery", OceanShared.volts(data.aux12v), OceanPalette.good)
+                    row(String(localized: "Range"), data.rangeText ?? "—", OceanPalette.cyan)
+                    row(String(localized: "12V battery"), OceanShared.volts(data.aux12v), OceanPalette.good)
                     Spacer(minLength: 0)
                     updated(data)
                 }
@@ -178,7 +178,7 @@ struct StatusWidgetView: View {
             }
             .gaugeStyle(.accessoryLinearCapacity)
             .widgetAccentable()
-            Text(data.map { "\($0.status) · \($0.updatedAt.formatted(date: .omitted, time: .shortened))" } ?? "Open Ocean Live")
+            Text(data.map { "\($0.status) · \($0.updatedAt.formatted(date: .omitted, time: .shortened))" } ?? String(localized: "Open Ocean Live"))
                 .font(.caption2)
                 .lineLimit(1)
         }

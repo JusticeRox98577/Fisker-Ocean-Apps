@@ -51,10 +51,10 @@ final class CarPlayDashboard {
         self.car = car
         // Every row starts with its final layout (text, detail and a fixed-size image), so later
         // updates only swap content and never change a row's height. That is what made CarPlay jump.
-        charge = CPListItem(text: "—", detailText: "Connecting…",
+        charge = CPListItem(text: "—", detailText: String(localized: "Connecting…"),
                             image: CarPlayDashboard.ring(soc: nil, charging: false, live: false))
-        power = CPListItem(text: "— kW", detailText: "power", image: CarPlayDashboard.symbol("bolt.circle.fill", Theme.aqua))
-        session = CPListItem(text: "Parked", detailText: "No charge or drive in progress", image: CarPlayDashboard.symbol("car.fill", Theme.aqua))
+        power = CPListItem(text: "— kW", detailText: String(localized: "power"), image: CarPlayDashboard.symbol("bolt.circle.fill", Theme.aqua))
+        session = CPListItem(text: String(localized: "Parked"), detailText: String(localized: "No charge or drive in progress"), image: CarPlayDashboard.symbol("car.fill", Theme.aqua))
 
         func tile(_ symbol: String, _ color: Color, value: @escaping (CarState, Settings, [HistoryEntry]) -> String,
                   caption: @escaping (CarState, Settings, [HistoryEntry]) -> String) -> Tile {
@@ -64,31 +64,31 @@ final class CarPlayDashboard {
         tiles = [
             tile("bolt.fill", Theme.violet,
                  value: { s, _, _ in s.snapshot.packV.map { Format.n($0, 1) + " V" } ?? "—" },
-                 caption: { _, _, _ in "Pack voltage" }),
+                 caption: { _, _, _ in String(localized: "Pack voltage") }),
             tile("arrow.left.arrow.right", Theme.cyan,
                  value: { s, _, _ in s.snapshot.packA.map { Format.n($0, 1) + " A" } ?? "—" },
-                 caption: { _, _, _ in "Current" }),
+                 caption: { _, _, _ in String(localized: "Current") }),
             tile("thermometer.medium", Theme.warn,
                  value: { s, settings, _ in Format.temp(s.snapshot.tempAvg, settings) ?? "—" },
                  caption: { s, settings, _ in
-                     "Battery temp" + (Format.temp(s.snapshot.tempMax, settings).map { " · max " + $0 } ?? "")
+                     String(localized: "Battery temp") + (Format.temp(s.snapshot.tempMax, settings).map { " · " + String(localized: "max \($0)") } ?? "")
                  }),
             tile("chart.bar.fill", Theme.aqua,
                  value: { s, _, _ in s.snapshot.cellSpread.map { "\(Int($0.rounded())) mV" } ?? "—" },
-                 caption: { s, _, _ in "Cell spread" + (s.snapshot.cellSpread.map { " · " + balanceLabel($0) } ?? "") }),
+                 caption: { s, _, _ in String(localized: "Cell spread") + (s.snapshot.cellSpread.map { " · " + balanceLabel($0) } ?? "") }),
             tile("minus.plus.batteryblock.fill", Theme.good,
                  value: { s, _, _ in s.snapshot.aux12v.map { Format.n($0, 2) + " V" } ?? "—" },
-                 caption: { s, _, _ in "12V battery" + (s.snapshot.aux12v.map { " · " + auxStatus($0) } ?? "") }),
+                 caption: { s, _, _ in String(localized: "12V battery") + (s.snapshot.aux12v.map { " · " + auxStatus($0) } ?? "") }),
             tile("road.lanes", Theme.violet,
                  value: { s, settings, _ in Format.distance(s.snapshot.odometerKm, settings) ?? "—" },
                  caption: { _, settings, history in
-                     "Odometer" + (Format.efficiency(Format.whPerKm(history), settings).map { " · avg " + $0 } ?? "")
+                     String(localized: "Odometer") + (Format.efficiency(Format.whPerKm(history), settings).map { " · " + String(localized: "avg \($0)") } ?? "")
                  }),
         ]
 
         template = CPListTemplate(title: "Ocean Live", sections: [
             CPListSection(items: [charge, power, session]),
-            CPListSection(items: tiles.map(\.item), header: "Battery", sectionIndexTitle: nil),
+            CPListSection(items: tiles.map(\.item), header: String(localized: "Battery"), sectionIndexTitle: nil),
         ])
 
         // Tapping the charge row connects when the app isn't connected yet.
@@ -143,15 +143,15 @@ final class CarPlayDashboard {
         if charging, let c = state.currentCharge {
             // Kept short so the line never wraps (a wrap would change the row height and make the list jump).
             var parts = [Format.duration(c.minutes)]
-            if let t = timeToTarget(snap.soc, p, settings) { parts.append("to \(settings.alertHigh)% " + t) }
-            set(session, text: (c.fast ? "DC fast charging" : "Charging") + " · +" + Format.n(c.kwh, 1) + " kWh",
+            if let t = timeToTarget(snap.soc, p, settings) { parts.append(OceanShared.toTarget(settings.alertHigh) + " " + t) }
+            set(session, text: (c.fast ? String(localized: "DC fast charging") : String(localized: "Charging")) + " · +" + Format.n(c.kwh, 1) + " kWh",
                 detail: parts.joined(separator: " · "))
         } else if state.mode == .driving, let d = state.currentDrive {
             let parts = [Format.n(d.kwh, 1) + " kWh", Format.efficiency(d.whPerKm, settings), Format.duration(d.minutes)].compactMap { $0 }
-            set(session, text: "Drive · " + (Format.distance(d.distanceKm, settings, decimals: 1) ?? "—"),
+            set(session, text: String(localized: "Drive") + " · " + (Format.distance(d.distanceKm, settings, decimals: 1) ?? "—"),
                 detail: parts.joined(separator: " · "))
         } else {
-            set(session, text: "Parked", detail: "No charge or drive in progress")
+            set(session, text: String(localized: "Parked"), detail: String(localized: "No charge or drive in progress"))
         }
 
         for t in tiles {
@@ -167,23 +167,23 @@ final class CarPlayDashboard {
     private func statusText(_ s: CarState) -> String {
         switch s.status {
         case .live:
-            if s.mode == .charging { return s.currentCharge?.fast == true ? "DC fast charging" : "Charging" }
-            if s.mode == .driving { return "Driving" }
-            return "Parked · live"
-        case .reconnecting: return "Reconnecting"
-        case .connecting: return "Connecting"
-        case .scanning: return "Looking for adapter"
+            if s.mode == .charging { return s.currentCharge?.fast == true ? String(localized: "DC fast charging") : String(localized: "Charging") }
+            if s.mode == .driving { return String(localized: "Driving") }
+            return String(localized: "Parked · live")
+        case .reconnecting: return String(localized: "Reconnecting")
+        case .connecting: return String(localized: "Connecting")
+        case .scanning: return String(localized: "Looking for adapter")
         case .idle, .error:
-            if s.stopped != nil && car.settings.adapterId != nil { return "Car left to sleep · tap to connect" }
-            return car.settings.adapterId != nil ? "Not connected · tap to connect" : "No adapter set up"
+            if s.stopped != nil && car.settings.adapterId != nil { return String(localized: "Car left to sleep · tap to connect") }
+            return car.settings.adapterId != nil ? String(localized: "Not connected · tap to connect") : String(localized: "No adapter set up")
         }
     }
 
     private func powerLabel(_ p: Double?, charging: Bool) -> String {
-        guard let p else { return "power" }
-        if p > 0.3 { return charging ? "into the battery" : "regenerating" }
-        if p < -0.3 { return "from the battery" }
-        return "idle"
+        guard let p else { return String(localized: "power") }
+        if p > 0.3 { return charging ? String(localized: "into the battery") : String(localized: "regenerating") }
+        if p < -0.3 { return String(localized: "from the battery") }
+        return String(localized: "idle")
     }
 
     private func timeToTarget(_ soc: Double?, _ powerKw: Double?, _ s: Settings) -> String? {

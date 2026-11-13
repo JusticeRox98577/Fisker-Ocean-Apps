@@ -42,7 +42,7 @@ struct ChargeActivityWidget: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
-                        Label("To \(s.targetPercent)%" as String, systemImage: "flag.checkered")
+                        Label(s.toTargetLabel, systemImage: "flag.checkered")
                             .foregroundStyle(OceanPalette.dim)
                         Text(s.toTargetText).foregroundStyle(OceanPalette.aqua)
                         Spacer()
@@ -129,8 +129,8 @@ private struct ChargeBanner: View {
                         .foregroundStyle(.white)
                 }
                 HStack(spacing: 10) {
-                    fact("To \(state.targetPercent)%", state.toTargetText, OceanPalette.aqua)
-                    fact("Range", state.rangeText ?? "—", OceanPalette.cyan)
+                    fact(state.toTargetLabel, state.toTargetText, OceanPalette.aqua)
+                    fact(String(localized: "Range"), state.rangeText ?? "—", OceanPalette.cyan)
                 }
             }
         }

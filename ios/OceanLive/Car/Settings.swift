@@ -7,9 +7,9 @@ enum CarModel: String, Codable, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .big: return "Ocean One, Extreme or Ultra"
+        case .big: return String(localized: "Ocean One, Extreme or Ultra")
         case .sport: return "Ocean Sport"
-        case .custom: return "Other or custom"
+        case .custom: return String(localized: "Other or custom")
         }
     }
 

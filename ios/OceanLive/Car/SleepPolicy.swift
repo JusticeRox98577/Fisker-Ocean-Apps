@@ -12,9 +12,9 @@ struct SleepPolicy {
     /// Reconnect attempts after the adapter drops while the car was still answering.
     static let maxRetries = 3
 
-    static let asleepMessage = "The car is asleep. Ocean Live stopped reading so it can sleep."
-    static let parkedIdleMessage = "The car has been parked for 10 minutes with Ocean Live in the background. Ocean Live stopped reading so the car can sleep."
-    static let adapterLostMessage = "Lost the adapter. Ocean Live stopped trying so the car can sleep."
+    static let asleepMessage = String(localized: "The car is asleep. Ocean Live stopped reading so it can sleep.")
+    static let parkedIdleMessage = String(localized: "The car has been parked for 10 minutes with Ocean Live in the background. Ocean Live stopped reading so the car can sleep.")
+    static let adapterLostMessage = String(localized: "Lost the adapter. Ocean Live stopped trying so the car can sleep.")
 
     enum Decision: Equatable { case keepReading, carAsleep, parkedIdle }
 

@@ -1,0 +1,74 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSBluetoothAlwaysUsageDescription": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live liest Akku und Fehlercodes deines Autos über deinen Bluetooth-OBD-Adapter."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live reads your car's battery and fault codes through your Bluetooth OBD adapter."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live lee la batería y los códigos de avería de tu coche a través de tu adaptador OBD Bluetooth."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live lit la batterie et les codes défaut de votre voiture via votre adaptateur OBD Bluetooth."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live leest de accu en foutcodes van je auto via je Bluetooth OBD-adapter."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird nur genutzt, wenn du die Standortfreigabe für A Better Route Planner einschaltest, damit ABRP von deinem Standort aus planen kann."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only used when you turn on location sharing for A Better Route Planner, so ABRP can plan from where you are."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo se usa si activas compartir la ubicación con A Better Route Planner, para que ABRP planifique desde donde estás."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisée uniquement si vous activez le partage de position pour A Better Route Planner, afin qu’ABRP planifie depuis votre position."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen gebruikt als je locatie delen voor A Better Route Planner aanzet, zodat ABRP kan plannen vanaf waar je bent."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

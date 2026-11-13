@@ -10,7 +10,7 @@ struct SettingsView: View {
         Page {
             let s = car.settings
 
-            SectionTitle("Car")
+            SectionTitle(String(localized: "Car"))
             CardBox {
                 VStack(spacing: 8) {
                     ForEach(CarModel.allCases) { m in
@@ -37,10 +37,10 @@ struct SettingsView: View {
                         }
                         .padding(.top, 8)
                 }
-                Note("Published usable capacity: 106.5 kWh for One, Extreme and Ultra, about 75 kWh for the Sport. Used for range and charge-time estimates.")
+                Note(String(localized: "Published usable capacity: 106.5 kWh for One, Extreme and Ultra, about 75 kWh for the Sport. Used for range and charge-time estimates."))
             }
 
-            SectionTitle("Charging cost")
+            SectionTitle(String(localized: "Charging cost"))
             CardBox {
                 Field(label: "Currency symbol", text: binding(\.currency))
                 Field(label: "Home price per kWh", text: $homePrice, keyboard: .decimalPad)
@@ -53,26 +53,26 @@ struct SettingsView: View {
                     .onChange(of: dcPrice) { _, v in
                         if let d = Self.price(v) { car.updateSettings { $0.dcPrice = d } }
                     }
-                Note("Shows what each charge cost in Trips, using these prices. Leave a price empty to hide costs for that kind of charge.")
+                Note(String(localized: "Shows what each charge cost in Trips, using these prices. Leave a price empty to hide costs for that kind of charge."))
             }
 
-            SectionTitle("Units and screen")
+            SectionTitle(String(localized: "Units and screen"))
             CardBox {
                 ToggleRow(label: "Use miles", value: s.useMiles) { v in car.updateSettings { $0.useMiles = v } }
                 ToggleRow(label: "Use Fahrenheit", value: s.useFahrenheit) { v in car.updateSettings { $0.useFahrenheit = v } }
                 ToggleRow(label: "Keep the screen on while connected", value: s.keepScreenOn) { v in car.updateSettings { $0.keepScreenOn = v } }
             }
 
-            SectionTitle("Adapter")
+            SectionTitle(String(localized: "Adapter"))
             CardBox {
                 ToggleRow(label: "Connect automatically when the app opens", value: s.autoStart) { v in car.updateSettings { $0.autoStart = v } }
-                Note(s.adapterName.map { "Saved adapter: \($0)" } ?? "No saved adapter yet.")
+                Note(s.adapterName.map { String(localized: "Saved adapter: \($0)") } ?? String(localized: "No saved adapter yet."))
                 if s.adapterId != nil {
                     Button("Forget saved adapter") { car.forgetAdapter() }.foregroundStyle(Theme.bad).padding(.top, 8)
                 }
             }
 
-            SectionTitle("12V battery")
+            SectionTitle(String(localized: "12V battery"))
             CardBox {
                 ToggleRow(label: "Watch 12V while the car sleeps", value: s.v12Watch) { v in
                     // The low-12V warning while the car sleeps needs notifications.
@@ -87,7 +87,7 @@ struct SettingsView: View {
                         ForEach(V12Watch.intervals, id: \.self) { m in
                             let selected = s.v12WatchMinutes == m
                             Button { car.updateSettings { $0.v12WatchMinutes = m } } label: {
-                                Text("\(m) min")
+                                Text(verbatim: "\(m) min")
                                     .font(.system(size: 14, weight: selected ? .semibold : .regular))
                                     .foregroundStyle(selected ? Theme.aqua : .white)
                                     .frame(maxWidth: .infinity, minHeight: 36)
@@ -99,12 +99,12 @@ struct SettingsView: View {
                     }
                     .padding(.top, 6)
                     .animation(.snappy, value: s.v12WatchMinutes)
-                    Note("Shorter means more readings, but the adapter stays busier.")
-                    Note("With Battery warnings on, you get a notification when the 12V drops below 12.2 V while the car sleeps, and again below 11.8 V.")
+                    Note(String(localized: "Shorter means more readings, but the adapter stays busier."))
+                    Note(String(localized: "With Battery warnings on, you get a notification when the 12V drops below 12.2 V while the car sleeps, and again below 11.8 V."))
                 }
             }
 
-            SectionTitle("Alerts")
+            SectionTitle(String(localized: "Alerts"))
             CardBox {
                 ToggleRow(label: "Charge alerts", value: s.alertsOn) { v in
                     if v { Alerts.requestPermission() }
@@ -119,10 +119,10 @@ struct SettingsView: View {
                     if v { Alerts.requestPermission() }
                     car.updateSettings { $0.healthAlerts = v }
                 }
-                Note("Alerts work while the app is open or connected in the background. iPhone may pause the connection when the app has been in the background for a long time.")
+                Note(String(localized: "Alerts work while the app is open or connected in the background. iPhone may pause the connection when the app has been in the background for a long time."))
             }
 
-            SectionTitle("ABRP")
+            SectionTitle(String(localized: "ABRP"))
             CardBox {
                 Field(label: "ABRP generic token", text: binding(\.abrpToken), secret: true)
                 Field(label: "Telemetry API key", text: binding(\.abrpKey), secret: true)
@@ -131,13 +131,13 @@ struct SettingsView: View {
                 }
                 SliderRow(label: "Send every", value: s.abrpEverySec, range: 5...60, suffix: " sec") { v in car.updateSettings { $0.abrpEverySec = v } }
                 ToggleRow(label: "Include phone location", value: s.abrpLocation) { v in car.updateSettings { $0.abrpLocation = v } }
-                Note("Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. This is the only thing Ocean Live ever sends over the internet.")
+                Note(String(localized: "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. This is the only thing Ocean Live ever sends over the internet."))
             }
 
-            SectionTitle("Advanced")
+            SectionTitle(String(localized: "Advanced"))
             CardBox {
                 ToggleRow(label: "Flip current sign", value: s.flipCurrent) { v in car.updateSettings { $0.flipCurrent = v } }
-                Note("Turn on only if charging shows as using power on your car.")
+                Note(String(localized: "Turn on only if charging shows as using power on your car."))
             }
 
             Text("Ocean Live 3.3 · unofficial community app. It only reads from the car, except when you clear fault codes or restart a module from the Faults tab.")
@@ -169,7 +169,7 @@ private struct Note: View {
 }
 
 private struct ToggleRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: Bool
     let onChange: (Bool) -> Void
 
@@ -183,7 +183,7 @@ private struct ToggleRow: View {
 }
 
 private struct SliderRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: Int
     let range: ClosedRange<Int>
     var suffix = "%"
@@ -205,7 +205,7 @@ private struct SliderRow: View {
 }
 
 private struct Field: View {
-    let label: String
+    let label: LocalizedStringKey
     @Binding var text: String
     var keyboard: UIKeyboardType = .default
     var secret = false

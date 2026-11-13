@@ -8,6 +8,16 @@ enum V12Range: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Short label in the user's language, e.g. "7 d" or "7 T".
+    var label: String {
+        switch self {
+        case .day: return String(localized: "24 h")
+        case .week: return String(localized: "7 d")
+        case .month: return String(localized: "30 d")
+        case .quarter: return String(localized: "90 d")
+        }
+    }
+
     var ms: Int64 {
         switch self {
         case .day: return 86_400_000
@@ -76,7 +86,7 @@ struct V12View: View {
                 V12StatsCard(report: report)
                 if !report.stats.nights.isEmpty { V12NightsCard(nights: report.stats.nights) }
                 shareMenu.padding(.top, 18)
-                SectionTitle("What the numbers mean")
+                SectionTitle(String(localized: "What the numbers mean"))
                 CardBox {
                     Text(V12Text.meaning).font(.system(size: 13)).foregroundStyle(Theme.dim)
                         .fixedSize(horizontal: false, vertical: true)
@@ -95,7 +105,7 @@ struct V12View: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("12V battery").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
-                Text("\(car.v12.count) saved reading\(car.v12.count == 1 ? "" : "s") · last 90 days")
+                Text("\(car.v12.count) saved readings · last 90 days")
                     .font(.system(size: 13)).foregroundStyle(Theme.dim)
             }
             Spacer()
@@ -111,7 +121,7 @@ struct V12View: View {
             Pill(text: V12Watch.statusText, color: Theme.violet, pulse: true)
             Spacer()
             if let next = car.state.nextWatch {
-                Text("Next check " + Format.date(next).formatted(date: .omitted, time: .shortened))
+                Text("Next check \(Format.date(next).formatted(date: .omitted, time: .shortened))")
                     .font(.system(size: 12)).foregroundStyle(Theme.dim)
             }
         }
@@ -126,7 +136,7 @@ struct V12View: View {
                 Button {
                     withAnimation(.snappy) { range = r }
                 } label: {
-                    Text(r.rawValue)
+                    Text(r.label)
                         .font(.system(size: 13, weight: selected ? .semibold : .regular))
                         .foregroundStyle(selected ? Theme.aqua : .white)
                         .frame(maxWidth: .infinity, minHeight: 34)
@@ -161,7 +171,7 @@ struct V12View: View {
 }
 
 enum V12Text {
-    static let meaning = "Resting voltage is the first reading after the car has slept for 2 hours or more, before the car starts charging the 12V. It is the best sign of the 12V battery's health. 12.4 V or more is good. Resting under 12.4 V means the 12V battery is weak or the car is drawing power while parked. Under 12.0 V the car may not wake up. 13.2 V or more means the car's DC-DC converter is charging the 12V, which it does while driving, charging and now and then while parked.\n\nReadings come from the BMS or the OBD port while the app reads the car, and from the adapter alone while the car sleeps if Watch 12V while the car sleeps is on in Settings."
+    static var meaning: String { String(localized: "Resting voltage is the first reading after the car has slept for 2 hours or more, before the car starts charging the 12V. It is the best sign of the 12V battery's health. 12.4 V or more is good. Resting under 12.4 V means the 12V battery is weak or the car is drawing power while parked. Under 12.0 V the car may not wake up. 13.2 V or more means the car's DC-DC converter is charging the 12V, which it does while driving, charging and now and then while parked.\n\nReadings come from the BMS or the OBD port while the app reads the car, and from the adapter alone while the car sleeps if Watch 12V while the car sleeps is on in Settings.") }
 }
 
 /// One point on the graph.
@@ -275,14 +285,14 @@ private struct V12Legend: View {
         let hasResting = report.samples.contains { $0.resting }
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 14) {
-                item(Theme.aqua, "Awake", line: true)
-                if hasAsleep { item(Theme.violet, "Asleep", line: true) }
-                if hasResting { item(.white, "Resting", line: false) }
+                item(Theme.aqua, String(localized: "Awake"), line: true)
+                if hasAsleep { item(Theme.violet, String(localized: "Asleep"), line: true) }
+                if hasResting { item(.white, String(localized: "Resting"), line: false) }
             }
             if hasCharging || hasDriving {
                 HStack(spacing: 14) {
-                    if hasCharging { band(Theme.good, "Charging") }
-                    if hasDriving { band(Theme.cyan, "Driving") }
+                    if hasCharging { band(Theme.good, String(localized: "Charging")) }
+                    if hasDriving { band(Theme.cyan, String(localized: "Driving")) }
                 }
             }
         }
@@ -314,7 +324,7 @@ struct V12StatsCard: View {
         let s = report.stats
         let now = report.to
         VStack(spacing: 0) {
-            SectionTitle("Stats · " + report.range.rawValue)
+            SectionTitle(String(localized: "Stats") + " · " + report.range.label)
             CardBox {
                 if let latest = s.latest {
                     HStack(alignment: .firstTextBaseline) {
@@ -322,22 +332,25 @@ struct V12StatsCard: View {
                         Spacer()
                         RollingText(text: Format.n(latest.volts, 2) + " V", color: v12StatusColor(latest.volts), size: 22, weight: .bold)
                     }
-                    Text(latest.source + " · " + ago(latest.time, now: now))
+                    Text(V12Source.label(latest.source) + " · " + ago(latest.time, now: now))
                         .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.bottom, 6)
                 }
-                KeyValue("Latest resting", s.latestResting.map { Format.n($0.volts, 2) + " V · " + V12Log.status($0.volts) },
+                KeyValue(String(localized: "Latest resting"), s.latestResting.map { Format.n($0.volts, 2) + " V · " + V12Log.status($0.volts) },
                          color: s.latestResting.map { v12StatusColor($0.volts) } ?? .white)
                 if let r = s.latestResting {
                     Text(ago(r.time, now: now)).font(.system(size: 12)).foregroundStyle(Theme.dim)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
-                KeyValue("Lowest resting", s.lowestResting.map { Format.n($0, 2) + " V" },
+                KeyValue(String(localized: "Lowest resting"), s.lowestResting.map { Format.n($0, 2) + " V" },
                          color: s.lowestResting.map(v12StatusColor) ?? .white)
-                KeyValue("Average resting", s.averageResting.map { Format.n($0, 2) + " V" })
-                KeyValue("Charged by the car", s.chargedShare.map { "\(Int(($0 * 100).rounded()))% of connected time" })
-                KeyValue("Last charged by the car", s.lastCharged.map { ago($0, now: now) }, color: Theme.good)
-                KeyValue("Overnight drop", s.averageDrop.map {
-                    Format.n($0, 2) + " V a night (\(s.nights.count) night\(s.nights.count == 1 ? "" : "s"))"
+                KeyValue(String(localized: "Average resting"), s.averageResting.map { Format.n($0, 2) + " V" })
+                KeyValue(String(localized: "Charged by the car"), s.chargedShare.map { share -> String in
+                    let pct = "\(Int((share * 100).rounded()))%"
+                    return String(localized: "\(pct) of connected time")
+                })
+                KeyValue(String(localized: "Last charged by the car"), s.lastCharged.map { ago($0, now: now) }, color: Theme.good)
+                KeyValue(String(localized: "Overnight drop"), s.averageDrop.map {
+                    String(localized: "\(Format.n($0, 2)) V a night") + " (" + String(localized: "\(s.nights.count) nights") + ")"
                 }, color: Theme.violet)
             }
         }
@@ -345,7 +358,7 @@ struct V12StatsCard: View {
 
     private func ago(_ time: Int64, now: Int64) -> String {
         let hours = Double(Swift.max(now - time, 0)) / 3_600_000
-        return hours < 1 / 60 ? "just now" : Format.span(hours) + " ago"
+        return hours < 1 / 60 ? String(localized: "just now") : String(localized: "\(Format.span(hours)) ago")
     }
 }
 
@@ -353,14 +366,14 @@ private struct V12NightsCard: View {
     let nights: [V12Night]
 
     var body: some View {
-        SectionTitle("Nights")
+        SectionTitle(String(localized: "Nights"))
         CardBox {
             ForEach(Array(nights.suffix(7).reversed())) { n in
                 HStack {
                     Text(Format.date(n.start).formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))
                         .font(.system(size: 14)).foregroundStyle(Theme.dim)
                     Spacer()
-                    Text(Format.n(n.from, 2) + " → " + Format.n(n.to, 2) + " V")
+                    Text(verbatim: Format.n(n.from, 2) + " → " + Format.n(n.to, 2) + " V")
                         .font(.system(size: 14, weight: .medium, design: .rounded)).foregroundStyle(.white)
                     Text((n.drop >= 0 ? "−" : "+") + Format.n(abs(n.drop), 2))
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
@@ -430,8 +443,7 @@ private struct V12PdfPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Ocean Live · 12V battery").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
-            Text(Format.date(report.from).formatted(date: .abbreviated, time: .shortened) + " to "
-                 + Format.date(report.to).formatted(date: .abbreviated, time: .shortened))
+            Text("\(Format.date(report.from).formatted(date: .abbreviated, time: .shortened)) to \(Format.date(report.to).formatted(date: .abbreviated, time: .shortened))")
                 .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 2)
             CardBox {
                 V12Chart(report: report, animated: false).frame(height: 230)

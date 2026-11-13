@@ -38,6 +38,12 @@ enum OceanShared {
     static func duration(_ minutes: Int) -> String {
         minutes < 60 ? "\(minutes) min" : "\(minutes / 60) h \(minutes % 60) min"
     }
+
+    /// "To 80%", the label for the time left to the charge target.
+    static func toTarget(_ percent: Int) -> String {
+        let target = "\(percent)%"
+        return String(localized: "To \(target)")
+    }
 }
 
 /// The latest reading, written by the app to the App Group for the home-screen widget.
@@ -78,15 +84,18 @@ struct ChargeActivityAttributes: ActivityAttributes {
         var updatedAt: Date
 
         var title: String {
-            if !charging { return "Charge finished" }
-            return fast ? "DC fast charging" : "Charging"
+            if !charging { return String(localized: "Charge finished") }
+            return fast ? String(localized: "DC fast charging") : String(localized: "Charging")
         }
 
         /// "≈ 35 min", "Reached", or "—" when it can't be worked out.
         var toTargetText: String {
-            if let soc, soc >= Double(targetPercent) { return "Reached" }
+            if let soc, soc >= Double(targetPercent) { return String(localized: "Reached") }
             return minutesToTarget.map { "≈ " + OceanShared.duration($0) } ?? "—"
         }
+
+        /// "To 80%"
+        var toTargetLabel: String { OceanShared.toTarget(targetPercent) }
     }
 
     var carName: String

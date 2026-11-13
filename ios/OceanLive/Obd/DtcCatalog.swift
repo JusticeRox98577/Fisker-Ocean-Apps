@@ -18,9 +18,9 @@ enum DtcSeverity: String {
 
     var label: String {
         switch self {
-        case .info: return "Minor"
-        case .warning: return "Warning"
-        case .critical: return "Critical"
+        case .info: return String(localized: "Minor")
+        case .warning: return String(localized: "Warning")
+        case .critical: return String(localized: "Critical")
         }
     }
 }

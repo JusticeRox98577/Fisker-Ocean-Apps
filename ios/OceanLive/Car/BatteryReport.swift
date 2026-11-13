@@ -49,9 +49,16 @@ struct BatteryReport: Equatable, Sendable {
 /// Builds the battery report from data the app already has in memory and history.
 /// It never talks to the car. Pure logic so it can be unit tested.
 extension BatteryReport {
-    static let reportTitle = "Ocean Live battery report"
-    static let notMeasured = "not measured yet"
-    static let reportFooter = "Read from the car by Ocean Live (unofficial). Values are measured, not a dealer diagnosis."
+    static var reportTitle: String { String(localized: "Ocean Live battery report") }
+    static var notMeasured: String { String(localized: "not measured yet") }
+    static var reportFooter: String {
+        String(localized: "Read from the car by Ocean Live (unofficial). Values are measured, not a dealer diagnosis.")
+    }
+    /// "Each charge that adds 20% or more is measured at the battery."
+    static var measuredNote: String {
+        let share = "20%"
+        return String(localized: "Each charge that adds \(share) or more is measured at the battery.")
+    }
 
     static func make(
         now: Int64,
@@ -75,66 +82,66 @@ extension BatteryReport {
         let spreadTone: ReportTone? = spread.map { balanceTone($0) }
         let twelveTone: ReportTone? = aux.map { auxTone($0) }
         let tiles = [
-            ReportTile(label: "Capacity", value: pct.map { "\(Int($0.rounded()))%" } ?? "—",
-                       caption: measured.map { Format.n($0, 1) + " kWh usable" } ?? notMeasured, tone: capacityTone),
-            ReportTile(label: "Cell spread", value: spread.map { "\(Int($0.rounded())) mV" } ?? "—",
+            ReportTile(label: String(localized: "Capacity"), value: pct.map { "\(Int($0.rounded()))%" } ?? "—",
+                       caption: measured.map { String(localized: "\(Format.n($0, 1)) kWh usable") } ?? notMeasured, tone: capacityTone),
+            ReportTile(label: String(localized: "Cell spread"), value: spread.map { "\(Int($0.rounded())) mV" } ?? "—",
                        caption: spread.map { balanceLabel($0) } ?? notMeasured, tone: spreadTone ?? .missing),
-            ReportTile(label: "12V battery", value: aux.map { Format.n($0, 2) + " V" } ?? "—",
+            ReportTile(label: String(localized: "12V battery"), value: aux.map { Format.n($0, 2) + " V" } ?? "—",
                        caption: aux.map { auxStatus($0) } ?? notMeasured, tone: twelveTone ?? .missing),
         ]
 
-        let car = ReportSection(title: "Car", rows: [
-            row("VIN", vin),
-            row("Model", settings.model.label),
-            row("Rated usable", rated > 0 ? Format.n(rated, 1) + " kWh" : nil),
-            row("Live readings from", s.time > 0 ? dateText(s.time) : nil),
+        let car = ReportSection(title: String(localized: "Car"), rows: [
+            row(String(localized: "VIN"), vin),
+            row(String(localized: "Model"), settings.model.label),
+            row(String(localized: "Rated usable"), rated > 0 ? Format.n(rated, 1) + " kWh" : nil),
+            row(String(localized: "Live readings from"), s.time > 0 ? dateText(s.time) : nil),
         ])
 
-        let health = ReportSection(title: "Battery health", rows: [
-            row("Measured usable", measured.map { Format.n($0, 1) + " kWh" }),
-            row("Share of rated", pct.map { "\(Int($0.rounded()))%" }, capacityTone),
-            row("Samples", samples > 0 ? "\(samples) charging session\(plural(samples))" : nil),
-        ], note: "Each charge that adds 20% or more is measured at the battery.")
+        let health = ReportSection(title: String(localized: "Battery health"), rows: [
+            row(String(localized: "Measured usable"), measured.map { Format.n($0, 1) + " kWh" }),
+            row(String(localized: "Share of rated"), pct.map { "\(Int($0.rounded()))%" }, capacityTone),
+            row(String(localized: "Samples"), samples > 0 ? String(localized: "\(samples) charging sessions") : nil),
+        ], note: measuredNote)
 
-        let cells = ReportSection(title: "Cells", rows: [
-            row("Highest", s.cellMax.map { "\(Int($0.rounded())) mV" }),
-            row("Average", s.cellAvg.map { "\(Int($0.rounded())) mV" }),
-            row("Lowest", s.cellMin.map { "\(Int($0.rounded())) mV" }),
-            row("Spread", spread.map { "\(Int($0.rounded())) mV · \(balanceLabel($0))" }, spreadTone),
-        ], note: "Under 60 mV is normal.")
+        let cells = ReportSection(title: String(localized: "Cells"), rows: [
+            row(String(localized: "Highest"), s.cellMax.map { "\(Int($0.rounded())) mV" }),
+            row(String(localized: "Average"), s.cellAvg.map { "\(Int($0.rounded())) mV" }),
+            row(String(localized: "Lowest"), s.cellMin.map { "\(Int($0.rounded())) mV" }),
+            row(String(localized: "Spread"), spread.map { "\(Int($0.rounded())) mV · \(balanceLabel($0))" }, spreadTone),
+        ], note: String(localized: "Under 60 mV is normal."))
 
-        let temps = ReportSection(title: "Temperatures", rows: [
-            row("Battery highest", Format.temp(s.tempMax, settings)),
-            row("Battery average", Format.temp(s.tempAvg, settings)),
-            row("Battery lowest", Format.temp(s.tempMin, settings)),
-            row("Coolant in", Format.temp(s.coolantIn, settings)),
-            row("Coolant out", Format.temp(s.coolantOut, settings)),
+        let temps = ReportSection(title: String(localized: "Temperatures"), rows: [
+            row(String(localized: "Battery highest"), Format.temp(s.tempMax, settings)),
+            row(String(localized: "Battery average"), Format.temp(s.tempAvg, settings)),
+            row(String(localized: "Battery lowest"), Format.temp(s.tempMin, settings)),
+            row(String(localized: "Coolant in"), Format.temp(s.coolantIn, settings)),
+            row(String(localized: "Coolant out"), Format.temp(s.coolantOut, settings)),
         ])
 
-        let electrical = ReportSection(title: "Insulation and 12V", rows: [
-            row("Insulation resistance", s.isolation.map { "\(Int($0.rounded())) kΩ" }),
-            row("12V battery", aux.map { v -> String in Format.n(v, 2) + " V" + (s.aux12vSource.map { " (\($0))" } ?? "") }),
-            row("12V status", aux.map { auxStatus($0) }, twelveTone),
+        let electrical = ReportSection(title: String(localized: "Insulation and 12V"), rows: [
+            row(String(localized: "Insulation resistance"), s.isolation.map { "\(Int($0.rounded())) kΩ" }),
+            row(String(localized: "12V battery"), aux.map { v -> String in Format.n(v, 2) + " V" + (s.aux12vSource.map { " (\(V12Source.label($0)))" } ?? "") }),
+            row(String(localized: "12V status"), aux.map { auxStatus($0) }, twelveTone),
         ])
 
         let perDay = averageDrainPerDay(drains)
-        let drain = ReportSection(title: "Parked drain", rows: [
-            row("Average per day", perDay.map { p -> String in
-                Format.n(p, 1) + "%" + (rated > 0 ? " (about " + Format.n(p / 100 * rated, 1) + " kWh)" : "")
+        let drain = ReportSection(title: String(localized: "Parked drain"), rows: [
+            row(String(localized: "Average per day"), perDay.map { p -> String in
+                Format.n(p, 1) + "%" + (rated > 0 ? " (" + String(localized: "about \(Format.n(p / 100 * rated, 1)) kWh") + ")" : "")
             }),
-            row("Time measured", perDay != nil ? Format.span(drains.reduce(0) { $0 + $1.hours }) : nil),
+            row(String(localized: "Time measured"), perDay != nil ? Format.span(drains.reduce(0) { $0 + $1.hours }) : nil),
         ])
 
         let charges = history.filter { $0.kind == .Charge }
-        let charging = ReportSection(title: "Charging totals", rows: [
-            row("Sessions", charges.isEmpty ? nil : "\(charges.count)"),
-            row("Energy added", charges.isEmpty ? nil : Format.n(charges.reduce(0) { $0 + $1.kwh }, 0) + " kWh"),
-            row("DC fast sessions", charges.isEmpty ? nil : "\(charges.filter { $0.fast }.count)"),
+        let charging = ReportSection(title: String(localized: "Charging totals"), rows: [
+            row(String(localized: "Sessions"), charges.isEmpty ? nil : "\(charges.count)"),
+            row(String(localized: "Energy added"), charges.isEmpty ? nil : Format.n(charges.reduce(0) { $0 + $1.kwh }, 0) + " kWh"),
+            row(String(localized: "DC fast sessions"), charges.isEmpty ? nil : "\(charges.filter { $0.fast }.count)"),
         ])
 
         let parts: [String?] = [
             "Fisker " + settings.model.label,
-            rated > 0 ? Format.n(rated, 1) + " kWh rated" : nil,
+            rated > 0 ? String(localized: "\(Format.n(rated, 1)) kWh rated") : nil,
             vin.map { "VIN " + $0 },
         ]
 
@@ -153,16 +160,16 @@ extension BatteryReport {
     private static func faultSection(_ scan: SavedScan?, dateText: (Int64) -> String,
                                      describe: (SavedCode) -> String) -> ReportSection {
         guard let scan else {
-            return ReportSection(title: "Latest fault scan",
-                                 rows: [ReportRow(label: "Last scan", value: "not run yet", tone: .missing)])
+            return ReportSection(title: String(localized: "Latest fault scan"),
+                                 rows: [ReportRow(label: String(localized: "Last scan"), value: String(localized: "not run yet"), tone: .missing)])
         }
         let active = scan.codes.filter { Dtcs.state($0.status) == .active }
         return ReportSection(
-            title: "Latest fault scan",
+            title: String(localized: "Latest fault scan"),
             rows: [
-                ReportRow(label: "Scanned", value: dateText(scan.time)),
-                ReportRow(label: "Active codes", value: "\(scan.active)", tone: scan.active > 0 ? .bad : .good),
-                ReportRow(label: "Stored codes", value: "\(scan.stored)", tone: scan.stored > 0 ? .warn : .normal),
+                ReportRow(label: String(localized: "Scanned"), value: dateText(scan.time)),
+                ReportRow(label: String(localized: "Active codes"), value: "\(scan.active)", tone: scan.active > 0 ? .bad : .good),
+                ReportRow(label: String(localized: "Stored codes"), value: "\(scan.stored)", tone: scan.stored > 0 ? .warn : .normal),
             ],
             codes: active.map { ReportCode(module: $0.ecu, code: $0.code, description: describe($0)) }
         )
@@ -172,8 +179,6 @@ extension BatteryReport {
         guard let value else { return ReportRow(label: label, value: notMeasured, tone: .missing) }
         return ReportRow(label: label, value: value, tone: tone ?? .normal)
     }
-
-    private static func plural(_ n: Int) -> String { n == 1 ? "" : "s" }
 
     static func balanceTone(_ mv: Double) -> ReportTone { mv <= 60 ? .good : (mv <= 100 ? .warn : .bad) }
 

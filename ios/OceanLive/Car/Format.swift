@@ -53,13 +53,15 @@ enum Format {
     static func span(_ hours: Double) -> String {
         if hours < 1 { return "\(Int((hours * 60).rounded())) min" }
         if hours < 48 { return "\(Int(hours.rounded())) h" }
-        return "\(Int((hours / 24).rounded())) days"
+        let days = Int((hours / 24).rounded())
+        return String(localized: "\(days) days")
     }
 
     /// "−2.1% over 19 h · about 2.2 kWh"
     static func drain(_ d: ParkedDrain, _ s: Settings) -> String {
-        let kwh = d.kwh(s.usableKwh).map { " · about " + n($0, 1) + " kWh" } ?? ""
-        return "−" + n(d.drop, 1) + "% over " + span(d.hours) + kwh
+        let kwh = d.kwh(s.usableKwh).map { " · " + String(localized: "about \(n($0, 1)) kWh") } ?? ""
+        let drop = "−" + n(d.drop, 1) + "%"
+        return String(localized: "\(drop) over \(span(d.hours))") + kwh
     }
 
     /// "≈ 2.7% · 2.9 kWh" for a drain rate in percent per day.
@@ -73,28 +75,28 @@ enum Format {
 
 func balanceLabel(_ mv: Double) -> String {
     switch mv {
-    case ...30: return "Well balanced"
-    case ...60: return "Normal"
-    case ...100: return "Uneven"
-    default: return "Very uneven"
+    case ...30: return String(localized: "Well balanced")
+    case ...60: return String(localized: "Normal")
+    case ...100: return String(localized: "Uneven")
+    default: return String(localized: "Very uneven")
     }
 }
 
 /// Rough reading of a 12V voltage. Above ~13.2 V the car's DC-DC converter is charging it.
 func auxStatus(_ volts: Double) -> String {
     switch volts {
-    case 13.2...: return "Charging"
-    case 12.4...: return "Good"
-    case 12.0...: return "Low"
-    default: return "Very low"
+    case 13.2...: return String(localized: "Charging")
+    case 12.4...: return String(localized: "Good")
+    case 12.0...: return String(localized: "Low")
+    default: return String(localized: "Very low")
     }
 }
 
 func tempAdvice(_ c: Double) -> String {
     switch c {
-    case ..<5: return "Cold battery: charging and regen are limited until it warms up."
-    case ..<15: return "Cool battery: DC fast charging will be slower than its best."
-    case ...40: return "Comfortable temperature for driving and charging."
-    default: return "Warm battery: the car may limit fast-charging power to cool it."
+    case ..<5: return String(localized: "Cold battery: charging and regen are limited until it warms up.")
+    case ..<15: return String(localized: "Cool battery: DC fast charging will be slower than its best.")
+    case ...40: return String(localized: "Comfortable temperature for driving and charging.")
+    default: return String(localized: "Warm battery: the car may limit fast-charging power to cool it.")
     }
 }

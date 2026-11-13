@@ -12,12 +12,12 @@ enum ElmError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .bluetoothOff: return "Bluetooth is off or not allowed for Ocean Live."
-        case .notFound: return "Adapter not found. Make sure it's plugged in and the car is on."
-        case .timeout: return "The adapter didn't respond."
-        case .notAdapter: return "This doesn't look like an OBD adapter."
-        case .disconnected: return "Adapter disconnected."
-        case .busy: return "The adapter is busy."
+        case .bluetoothOff: return String(localized: "Bluetooth is off or not allowed for Ocean Live.")
+        case .notFound: return String(localized: "Adapter not found. Make sure it's plugged in and the car is on.")
+        case .timeout: return String(localized: "The adapter didn't respond.")
+        case .notAdapter: return String(localized: "This doesn't look like an OBD adapter.")
+        case .disconnected: return String(localized: "Adapter disconnected.")
+        case .busy: return String(localized: "The adapter is busy.")
         }
     }
 }

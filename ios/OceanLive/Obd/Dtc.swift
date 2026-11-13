@@ -5,11 +5,11 @@ enum DtcState: Int, CaseIterable {
 
     var label: String {
         switch self {
-        case .active: return "Active now"
-        case .pending: return "Pending"
-        case .stored: return "Stored (history)"
-        case .lamp: return "Warning lamp"
-        case .other: return "Other"
+        case .active: return String(localized: "Active now")
+        case .pending: return String(localized: "Pending")
+        case .stored: return String(localized: "Stored (history)")
+        case .lamp: return String(localized: "Warning lamp")
+        case .other: return String(localized: "Other")
         }
     }
 }
@@ -187,20 +187,22 @@ enum Uds {
 
     static func nrcText(_ nrc: Int) -> String {
         switch nrc {
-        case 0x10: return "the module rejected the request"
-        case 0x11: return "the module doesn't support this"
-        case 0x12: return "the module doesn't support this kind of request"
-        case 0x13: return "the request was malformed"
-        case 0x14: return "the reply was too long"
-        case 0x21: return "the module is busy, try again"
-        case 0x22: return "conditions not right (car must be on, in Park, not charging)"
-        case 0x24: return "request out of sequence"
-        case 0x31: return "value out of range"
-        case 0x33: return "security access required"
-        case 0x35, 0x36, 0x37: return "security access was refused"
-        case 0x72: return "the module failed to write its memory"
-        case 0x7E, 0x7F: return "not allowed in the current diagnostic session"
-        default: return String(format: "refused (code 0x%02X)", nrc)
+        case 0x10: return String(localized: "the module rejected the request")
+        case 0x11: return String(localized: "the module doesn't support this")
+        case 0x12: return String(localized: "the module doesn't support this kind of request")
+        case 0x13: return String(localized: "the request was malformed")
+        case 0x14: return String(localized: "the reply was too long")
+        case 0x21: return String(localized: "the module is busy, try again")
+        case 0x22: return String(localized: "conditions not right (car must be on, in Park, not charging)")
+        case 0x24: return String(localized: "request out of sequence")
+        case 0x31: return String(localized: "value out of range")
+        case 0x33: return String(localized: "security access required")
+        case 0x35, 0x36, 0x37: return String(localized: "security access was refused")
+        case 0x72: return String(localized: "the module failed to write its memory")
+        case 0x7E, 0x7F: return String(localized: "not allowed in the current diagnostic session")
+        default:
+            let code = String(format: "0x%02X", nrc)
+            return String(localized: "refused (code \(code))")
         }
     }
 }

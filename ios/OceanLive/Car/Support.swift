@@ -81,39 +81,51 @@ final class Alerts {
         if settings.alertsOn, let soc = s.soc {
             if mode == .charging && soc >= Double(settings.alertHigh) && !highSent {
                 highSent = true
-                notify("high", "Charged to \(settings.alertHigh)%", "Your Ocean reached the level you set.")
+                let target = "\(settings.alertHigh)%"
+                notify("high", String(localized: "Charged to \(target)"), String(localized: "Your Ocean reached the level you set."))
             }
             if mode != .charging { highSent = false }
             if soc <= Double(settings.alertLow) && !lowSent && mode != .charging {
                 lowSent = true
-                notify("low", "Charge is low", "The battery is at \(Int(soc.rounded()))%.")
+                let level = "\(Int(soc.rounded()))%"
+                notify("low", String(localized: "Charge is low"), String(localized: "The battery is at \(level)."))
             }
             if soc > Double(settings.alertLow + 3) { lowSent = false }
         }
         if settings.healthAlerts {
             if let v = s.aux12v, v < 11.8, mode != .driving {
-                health("12v", "12V battery is low", String(format: "It reads %.2f V. A weak 12V battery can stop the Ocean from waking up.", v))
+                let volts = String(format: "%.2f", v)
+                health("12v", String(localized: "12V battery is low"),
+                       String(localized: "It reads \(volts) V. A weak 12V battery can stop the Ocean from waking up."))
             }
             if let spread = s.cellSpread, spread > 80 {
-                health("cells", "Cell voltages are uneven", "Highest and lowest cells differ by \(Int(spread.rounded())) mV.")
+                let mv = Int(spread.rounded())
+                health("cells", String(localized: "Cell voltages are uneven"), String(localized: "Highest and lowest cells differ by \(mv) mV."))
             }
             if let t = s.tempMax, t > 55 {
-                health("temp", "Battery is hot", "Hottest battery sensor reads \(Int(t.rounded())) °C.")
+                let c = Int(t.rounded())
+                health("temp", String(localized: "Battery is hot"), String(localized: "Hottest battery sensor reads \(c) °C."))
             }
         }
     }
 
     func chargingStopped(_ entry: HistoryEntry, settings: Settings) {
         guard settings.alertsOn, settings.alertStop else { return }
-        let soc = entry.socEnd.map { "Charge is at \(Int($0.rounded()))%. " } ?? ""
-        notify("stop", "Charging stopped", soc + String(format: "Added %.1f kWh.", entry.kwh))
+        let soc = entry.socEnd.map { s -> String in
+            let level = "\(Int(s.rounded()))%"
+            return String(localized: "Charge is at \(level).") + " "
+        } ?? ""
+        let kwh = String(format: "%.1f", entry.kwh)
+        notify("stop", String(localized: "Charging stopped"), soc + String(localized: "Added \(kwh) kWh."))
     }
 
     /// Low 12V while the car sleeps. V12LowAlert decides when; this only sends it.
     func v12Low(_ volts: Double, veryLow: Bool) {
-        let title = veryLow ? "12V battery is very low" : "12V battery is low"
-        let body = String(format: "It reads %.2f V while the car sleeps. ", volts)
-            + (veryLow ? "The Ocean may not wake up. Drive it or charge the 12V soon." : "Something may be drawing power while the car is parked.")
+        let title = veryLow ? String(localized: "12V battery is very low") : String(localized: "12V battery is low")
+        let reading = String(format: "%.2f", volts)
+        let body = String(localized: "It reads \(reading) V while the car sleeps.") + " "
+            + (veryLow ? String(localized: "The Ocean may not wake up. Drive it or charge the 12V soon.")
+                       : String(localized: "Something may be drawing power while the car is parked."))
         notify("health-12v-asleep", title, body)
     }
 
@@ -137,6 +149,8 @@ final class Alerts {
 /// when the user has entered both their ABRP token and a telemetry API key.
 enum Abrp {
     private static let endpoint = "https://api.iternio.com/1/tlm/send"
+    /// Shown under the Live screen after a successful send.
+    static var sentMessage: String { String(localized: "Sent to ABRP") }
 
     static func telemetry(_ s: Snapshot, mode: Mode, fast: Bool, settings: Settings, location: CLLocation?) -> [String: Any] {
         func r(_ v: Double, _ d: Int) -> Double { let f = pow(10.0, Double(d)); return (v * f).rounded() / f }
@@ -168,7 +182,7 @@ enum Abrp {
             URLQueryItem(name: "token", value: settings.abrpToken.trimmingCharacters(in: .whitespaces)),
             URLQueryItem(name: "api_key", value: settings.abrpKey.trimmingCharacters(in: .whitespaces)),
         ]
-        guard let url = comps.url, let json = try? JSONSerialization.data(withJSONObject: tlm) else { return "Could not build the ABRP request" }
+        guard let url = comps.url, let json = try? JSONSerialization.data(withJSONObject: tlm) else { return String(localized: "Could not build the ABRP request") }
         var allowed = CharacterSet.alphanumerics
         allowed.insert(charactersIn: "-._~")
         let body = "tlm=" + (String(decoding: json, as: UTF8.self).addingPercentEncoding(withAllowedCharacters: allowed) ?? "")
@@ -180,17 +194,17 @@ enum Abrp {
             let (data, response) = try await URLSession.shared.data(for: req)
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
             let text = String(decoding: data, as: UTF8.self)
-            if code == 401 || code == 403 { return "ABRP rejected the token or API key" }
-            if !(200...299).contains(code) { return "ABRP error \(code)" }
+            if code == 401 || code == 403 { return String(localized: "ABRP rejected the token or API key") }
+            if !(200...299).contains(code) { return String(localized: "ABRP error \(code)") }
             if let o = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
                 if (o["status"] as? String) == "ok" { return nil }
                 if let e = o["error"] as? String, !e.isEmpty { return e }
             }
-            return text.contains("\"ok\"") ? nil : "ABRP did not accept the data"
+            return text.contains("\"ok\"") ? nil : String(localized: "ABRP did not accept the data")
         } catch let e as URLError where e.code == .notConnectedToInternet || e.code == .cannotFindHost {
-            return "No internet"
+            return String(localized: "No internet")
         } catch {
-            return "Could not reach ABRP"
+            return String(localized: "Could not reach ABRP")
         }
     }
 }

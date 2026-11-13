@@ -4,6 +4,9 @@ options:
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
+  # English is the base language. XcodeGen adds de, nl, fr and es to the project's known regions
+  # from the String Catalogs (Localizable.xcstrings, InfoPlist.xcstrings) in each target's folder.
+  developmentLanguage: en
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -40,6 +43,8 @@ targets:
       path: OceanLive/Info.plist
       properties:
         CFBundleDisplayName: Ocean Live
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, de, nl, fr, es]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
@@ -93,6 +98,8 @@ targets:
       path: OceanLiveWidgets/Info.plist
       properties:
         CFBundleDisplayName: Ocean Live
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, de, nl, fr, es]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
@@ -118,6 +125,8 @@ targets:
       path: OceanLiveWatch/Info.plist
       properties:
         CFBundleDisplayName: Ocean Live
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, de, nl, fr, es]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         WKApplication: true

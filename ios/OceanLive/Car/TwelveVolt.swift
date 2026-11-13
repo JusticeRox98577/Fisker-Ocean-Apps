@@ -30,6 +30,16 @@ enum V12Source {
     static let bms = "BMS"
     static let port = "OBD port"
     static let asleep = "OBD port while asleep"
+
+    /// A saved source in the user's language. The saved value itself stays in English.
+    static func label(_ source: String) -> String {
+        switch source {
+        case bms: return String(localized: "BMS")
+        case port: return String(localized: "OBD port")
+        case asleep: return String(localized: "OBD port while asleep")
+        default: return source
+        }
+    }
 }
 
 /// A stretch of charging or driving, shaded on the graph.
@@ -89,7 +99,7 @@ enum V12Log {
     static let nightMs: Int64 = 4 * 3_600_000
 
     static func status(_ volts: Double) -> String {
-        volts >= low ? "Good" : volts >= veryLow ? "Low" : "Very low"
+        volts >= low ? String(localized: "Good") : volts >= veryLow ? String(localized: "Low") : String(localized: "Very low")
     }
 
     /// Whether a new reading is worth saving after the last saved one: once a minute, on a change of
@@ -289,9 +299,9 @@ struct V12Watch {
     static let settleMs: Int64 = 30 * 60_000
     /// After a first high reading, check again this soon to confirm.
     static let confirmMs: Int64 = 30_000
-    static let statusText = "Car asleep · watching 12V"
-    static let settingNote = "Keeps the adapter connected and asks it for the 12V every 10 minutes. The car's network isn't touched, so the car stays asleep, but the adapter itself uses a little power (about 20-50 mA, depending on the adapter)."
-    static let iPhoneNote = "iPhone only lets apps check occasionally in the background, so overnight readings will be irregular."
+    static let statusText = String(localized: "Car asleep · watching 12V")
+    static let settingNote = String(localized: "Keeps the adapter connected and asks it for the 12V every 10 minutes. The car's network isn't touched, so the car stays asleep, but the adapter itself uses a little power (about 20-50 mA, depending on the adapter).")
+    static let iPhoneNote = String(localized: "iPhone only lets apps check occasionally in the background, so overnight readings will be irregular.")
 
     enum Decision: Equatable { case keepWatching, carWoke }
 

@@ -18,9 +18,9 @@ struct ModuleVersion: Codable, Hashable, Identifiable {
     /// Label and value pairs for the ones the module answered, in display order.
     var lines: [(String, String)] {
         var out: [(String, String)] = []
-        if let v = softwareVersion { out.append(("Software", v)) }
-        if let v = softwareNumber { out.append(("Software no.", v)) }
-        if let v = partNumber { out.append(("Part no.", v)) }
+        if let v = softwareVersion { out.append((String(localized: "Software"), v)) }
+        if let v = softwareNumber { out.append((String(localized: "Software no."), v)) }
+        if let v = partNumber { out.append((String(localized: "Part no."), v)) }
         return out
     }
 }

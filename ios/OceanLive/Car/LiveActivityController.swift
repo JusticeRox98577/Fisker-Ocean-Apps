@@ -28,16 +28,16 @@ enum Glance {
     }
 
     static func status(_ state: CarState, connected: Bool) -> String {
-        guard connected else { return "Not connected" }
+        guard connected else { return String(localized: "Not connected") }
         switch state.status {
         case .live: break
-        case .reconnecting: return "Reconnecting"
-        default: return "Not connected"
+        case .reconnecting: return String(localized: "Reconnecting")
+        default: return String(localized: "Not connected")
         }
         switch state.mode {
-        case .charging: return state.currentCharge?.fast == true ? "DC fast charging" : "Charging"
-        case .driving: return "Driving"
-        case .parked: return "Parked"
+        case .charging: return state.currentCharge?.fast == true ? String(localized: "DC fast charging") : String(localized: "Charging")
+        case .driving: return String(localized: "Driving")
+        case .parked: return String(localized: "Parked")
         }
     }
 

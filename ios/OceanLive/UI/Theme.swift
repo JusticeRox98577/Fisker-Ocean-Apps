@@ -55,7 +55,7 @@ struct SectionTitle: View {
     init(_ text: String) { self.text = text }
 
     var body: some View {
-        Text(text.uppercased())
+        Text(text.uppercased(with: Locale.current))
             .font(.system(size: 11, weight: .semibold))
             .tracking(1.4)
             .foregroundStyle(Theme.dim)
@@ -326,11 +326,11 @@ struct Header: View {
 
     private var subtitle: String {
         switch status {
-        case .live: return "Connected to \(adapter ?? "adapter")"
-        case .connecting: return "Connecting"
-        case .reconnecting: return "Reconnecting"
-        case .scanning: return "Looking for adapters"
-        case .idle, .error: return watching ? V12Watch.statusText : "Not connected"
+        case .live: return String(localized: "Connected to \(adapter ?? String(localized: "adapter"))")
+        case .connecting: return String(localized: "Connecting")
+        case .reconnecting: return String(localized: "Reconnecting")
+        case .scanning: return String(localized: "Looking for adapters")
+        case .idle, .error: return watching ? V12Watch.statusText : String(localized: "Not connected")
         }
     }
 

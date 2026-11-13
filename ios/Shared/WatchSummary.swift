@@ -79,30 +79,34 @@ struct WatchSummary: Codable, Equatable {
     func chargingNow(now: Date = Date()) -> Bool { charging && isFresh(now: now) }
 
     func statusText(now: Date = Date()) -> String {
-        live && !isFresh(now: now) ? "Not updating" : status
+        live && !isFresh(now: now) ? String(localized: "Not updating") : status
     }
 
     /// "Updated just now", "Updated 4 min ago", "Updated 2 h ago", "Updated 3 days ago".
     func updatedText(now: Date = Date()) -> String {
         let minutes = Int(max(now.timeIntervalSince(updatedAt), 0) / 60)
-        if minutes < 1 { return "Updated just now" }
-        if minutes < 60 { return "Updated \(minutes) min ago" }
-        if minutes < 24 * 60 { return "Updated \(minutes / 60) h ago" }
+        if minutes < 1 { return String(localized: "Updated just now") }
+        if minutes < 60 { return String(localized: "Updated \(minutes) min ago") }
+        let hours = minutes / 60
+        if minutes < 24 * 60 { return String(localized: "Updated \(hours) h ago") }
         let days = minutes / (24 * 60)
-        return days == 1 ? "Updated 1 day ago" : "Updated \(days) days ago"
+        return String(localized: "Updated \(days) days ago")
     }
+
+    /// "To 80%"
+    var toTargetLabel: String { OceanShared.toTarget(targetPercent) }
 
     /// "≈ 35 min", "Reached", or "—" when it can't be worked out.
     var toTargetText: String {
-        if let soc, soc >= Double(targetPercent) { return "Reached" }
+        if let soc, soc >= Double(targetPercent) { return String(localized: "Reached") }
         return minutesToTarget.map { "≈ " + OceanShared.duration($0) } ?? "—"
     }
 
     /// Same words as the app's Live screen.
     var powerLabel: String {
-        guard let p = powerKw else { return "power" }
-        if p > 0.3 { return charging ? "into the battery" : "regenerating" }
-        if p < -0.3 { return "from the battery" }
-        return "idle"
+        guard let p = powerKw else { return String(localized: "power") }
+        if p > 0.3 { return charging ? String(localized: "into the battery") : String(localized: "regenerating") }
+        if p < -0.3 { return String(localized: "from the battery") }
+        return String(localized: "idle")
     }
 }

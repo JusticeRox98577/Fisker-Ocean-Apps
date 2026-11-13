@@ -28,40 +28,40 @@ struct TripsView: View {
             let history = car.history
             let settings = car.settings
             HStack(spacing: 8) {
-                Chip(text: "All", selected: filter == nil) { filter = nil }
-                Chip(text: "Drives", selected: filter == .Drive) { filter = .Drive }
-                Chip(text: "Charges", selected: filter == .Charge) { filter = .Charge }
+                Chip(text: String(localized: "All"), selected: filter == nil) { filter = nil }
+                Chip(text: String(localized: "Drives"), selected: filter == .Drive) { filter = .Drive }
+                Chip(text: String(localized: "Charges"), selected: filter == .Charge) { filter = .Charge }
             }
             .padding(.top, 8)
 
             let drives = history.filter { $0.kind == .Drive }
             if !drives.isEmpty {
-                SectionTitle("Totals")
+                SectionTitle(String(localized: "Totals"))
                 HStack(spacing: 10) {
-                    Tile(label: "Distance", value: Format.distance(drives.reduce(0) { $0 + ($1.distanceKm ?? 0) }, settings), accent: Theme.cyan)
-                    Tile(label: "Average", value: Format.efficiency(Format.whPerKm(history), settings), accent: Theme.aqua)
+                    Tile(label: String(localized: "Distance"), value: Format.distance(drives.reduce(0) { $0 + ($1.distanceKm ?? 0) }, settings), accent: Theme.cyan)
+                    Tile(label: String(localized: "Average"), value: Format.efficiency(Format.whPerKm(history), settings), accent: Theme.aqua)
                 }
                 let regenDrives = drives.filter { $0.regenKwh != nil }
                 if !regenDrives.isEmpty {
                     let regen = regenDrives.reduce(0) { $0 + ($1.regenKwh ?? 0) }
                     let used = regenDrives.reduce(0) { $0 + $1.kwh }
-                    Tile(label: "Regen", value: "+" + Format.n(regen, 1) + " kWh",
-                         caption: used > 0.05 ? "\(Int((regen / used * 100).rounded())) % of energy used" : nil, accent: Theme.violet)
+                    Tile(label: String(localized: "Regen"), value: "+" + Format.n(regen, 1) + " kWh",
+                         caption: used > 0.05 ? Self.ofEnergyUsed(regen / used * 100) : nil, accent: Theme.violet)
                         .padding(.top, 10)
                 }
             }
 
             if history.contains(where: { $0.kind == .Charge }) {
                 let months = monthlyCharging(history, settings)
-                SectionTitle("Charging")
+                SectionTitle(String(localized: "Charging"))
                 HStack(spacing: 10) {
-                    MonthTile(label: "This month", totals: months.this, settings: settings, accent: Theme.good)
-                    MonthTile(label: "Last month", totals: months.last, settings: settings, accent: Theme.violet)
+                    MonthTile(label: String(localized: "This month"), totals: months.this, settings: settings, accent: Theme.good)
+                    MonthTile(label: String(localized: "Last month"), totals: months.last, settings: settings, accent: Theme.violet)
                 }
             }
 
             let list = Array(history.filter { filter == nil || $0.kind == filter }.reversed().prefix(200))
-            SectionTitle(list.isEmpty ? "Nothing yet" : "Recent")
+            SectionTitle(list.isEmpty ? String(localized: "Nothing yet") : String(localized: "Recent"))
             if list.isEmpty {
                 Text("Drives and charging sessions appear here once the app has been connected through them.")
                     .font(.system(size: 13)).foregroundStyle(Theme.dim)
@@ -79,8 +79,8 @@ struct TripsView: View {
 
             if !history.isEmpty {
                 VStack(spacing: 10) {
-                    GradientButton(title: "Export CSV") { exporting = true }
-                    GhostButton(title: "Clear history", color: Theme.bad) { confirmClear = true }
+                    GradientButton(title: String(localized: "Export CSV")) { exporting = true }
+                    GhostButton(title: String(localized: "Clear history"), color: Theme.bad) { confirmClear = true }
                 }
                 .padding(.top, 20)
             }
@@ -93,6 +93,12 @@ struct TripsView: View {
         } message: {
             Text("This deletes every saved drive and charge, including the data used to measure battery capacity. It can't be undone.")
         }
+    }
+
+    /// "14 % of energy used"
+    static func ofEnergyUsed(_ percent: Double) -> String {
+        let share = "\(Int(percent.rounded())) %"
+        return String(localized: "\(share) of energy used")
     }
 
     static let dayFormat: DateFormatter = {
@@ -132,7 +138,7 @@ private struct MonthTile: View {
         if let cost = Format.money(totals.cost, settings) {
             Tile(label: label, value: cost, caption: kwh, accent: accent)
         } else {
-            Tile(label: label, value: kwh, caption: "\(totals.count) charge\(totals.count == 1 ? "" : "s")", accent: accent)
+            Tile(label: label, value: kwh, caption: String(localized: "\(totals.count) charges"), accent: accent)
         }
     }
 }
@@ -161,18 +167,18 @@ private struct EntryRow: View {
             if open {
                 VStack(alignment: .leading, spacing: 0) {
                     if e.kind == .Drive {
-                        KeyValue("Energy used", Format.n(e.kwh, 2) + " kWh")
-                        KeyValue("Efficiency", Format.efficiency(e.whPerKm, settings))
-                        if let regen = regenText { KeyValue("Regen", regen, color: Theme.violet) }
+                        KeyValue(String(localized: "Energy used"), Format.n(e.kwh, 2) + " kWh")
+                        KeyValue(String(localized: "Efficiency"), Format.efficiency(e.whPerKm, settings))
+                        if let regen = regenText { KeyValue(String(localized: "Regen"), regen, color: Theme.violet) }
                     } else {
                         let points = ChargeCurve.chart(e.samples ?? [])
                         if points.count >= 2 { ChargeCurveChart(points: points).padding(.bottom, 8) }
-                        KeyValue("Peak power", e.peakKw.map { Format.n($0, 1) + " kW" })
-                        KeyValue("Average power", e.minutes > 0 ? Format.n(e.kwh / (Double(e.minutes) / 60), 1) + " kW" : nil)
+                        KeyValue(String(localized: "Peak power"), e.peakKw.map { Format.n($0, 1) + " kW" })
+                        KeyValue(String(localized: "Average power"), e.minutes > 0 ? Format.n(e.kwh / (Double(e.minutes) / 60), 1) + " kW" : nil)
                         if let ms = ChargeCurve.time(e.samples ?? []) { KeyValue("10–80 %", Format.duration(ms / 60_000)) }
-                        if let temps = tempRange { KeyValue("Battery temp", temps) }
-                        if let cost = Format.money(chargeCost(e, settings), settings) { KeyValue("Cost", cost, color: Theme.good) }
-                        KeyValue("Implied capacity", e.impliedCapacityKwh.map { Format.n($0, 1) + " kWh" })
+                        if let temps = tempRange { KeyValue(String(localized: "Battery temp"), temps) }
+                        if let cost = Format.money(chargeCost(e, settings), settings) { KeyValue(String(localized: "Cost"), cost, color: Theme.good) }
+                        KeyValue(String(localized: "Implied capacity"), e.impliedCapacityKwh.map { Format.n($0, 1) + " kWh" })
                     }
                     Button("Delete this entry", role: .destructive, action: onDelete)
                         .font(.system(size: 13)).foregroundStyle(Theme.bad).padding(.top, 6)
@@ -193,7 +199,7 @@ private struct EntryRow: View {
         guard let regen = entry.regenKwh else { return nil }
         let text = "+" + Format.n(regen, 1) + " kWh"
         guard let pct = entry.regenPercent else { return text }
-        return text + " (\(Int(pct.rounded())) % of energy used)"
+        return text + " (" + TripsView.ofEnergyUsed(pct) + ")"
     }
 
     private var tempRange: String? {
@@ -211,9 +217,9 @@ private struct EntryRow: View {
 
     private var title: String {
         if entry.kind == .Charge {
-            return (entry.fast ? "DC charge" : "Charge") + " · +" + Format.n(entry.kwh, 1) + " kWh"
+            return (entry.fast ? String(localized: "DC charge") : String(localized: "Charge")) + " · +" + Format.n(entry.kwh, 1) + " kWh"
         }
-        return "Drive · " + (Format.distance(entry.distanceKm, settings, decimals: 1) ?? "—")
+        return String(localized: "Drive") + " · " + (Format.distance(entry.distanceKm, settings, decimals: 1) ?? "—")
     }
 }
 
@@ -244,7 +250,7 @@ private struct ChargeCurveChart: View {
                         .symbolSize(60)
                         .annotation(position: .top, alignment: .center, spacing: 4,
                                     overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))) {
-                            Text("Peak " + Format.n(peak.kw, 0) + " kW")
+                            Text(String(localized: "Peak \(Format.n(peak.kw, 0)) kW"))
                                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.aqua)
                                 .opacity(shown ? 1 : 0)
                         }
@@ -256,7 +262,7 @@ private struct ChargeCurveChart: View {
                 AxisMarks(values: [0.0, 50.0, 100.0]) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.edge)
                     AxisValueLabel {
-                        Text("\(Int(value.as(Double.self) ?? 0)) %").font(.system(size: 11)).foregroundStyle(Theme.dim)
+                        Text(verbatim: "\(Int(value.as(Double.self) ?? 0)) %").font(.system(size: 11)).foregroundStyle(Theme.dim)
                     }
                 }
             }
@@ -264,7 +270,7 @@ private struct ChargeCurveChart: View {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.edge)
                     AxisValueLabel {
-                        Text("\(Int(value.as(Double.self) ?? 0)) kW").font(.system(size: 11)).foregroundStyle(Theme.dim)
+                        Text(verbatim: "\(Int(value.as(Double.self) ?? 0)) kW").font(.system(size: 11)).foregroundStyle(Theme.dim)
                     }
                 }
             }

@@ -40,7 +40,7 @@ struct WatchView: View {
                         .contentTransition(.numericText())
                         .animation(.snappy, value: s.soc)
                         .minimumScaleFactor(0.6)
-                    Text(s.rangeText ?? "range unknown")
+                    Text(s.rangeText ?? String(localized: "range unknown"))
                         .font(.system(size: 11))
                         .foregroundStyle(OceanPalette.dim)
                         .lineLimit(1)
@@ -64,9 +64,9 @@ struct WatchView: View {
 
             VStack(spacing: 6) {
                 if charging {
-                    row("To \(s.targetPercent)%", s.toTargetText, OceanPalette.good)
+                    row(s.toTargetLabel, s.toTargetText, OceanPalette.good)
                 }
-                row("12V battery", OceanShared.volts(s.aux12v), auxColor(s.aux12v))
+                row(String(localized: "12V battery"), OceanShared.volts(s.aux12v), auxColor(s.aux12v))
             }
             .padding(10)
             .background(OceanPalette.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))

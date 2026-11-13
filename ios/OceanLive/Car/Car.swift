@@ -54,7 +54,7 @@ struct VersionRead {
 enum CarAction {
     case clear, restart
 
-    var label: String { self == .clear ? "Clear codes" : "Restart" }
+    var label: String { self == .clear ? String(localized: "Clear codes") : String(localized: "Restart") }
 }
 
 struct ActionOutcome: Identifiable {
@@ -254,7 +254,7 @@ final class Car: ObservableObject {
 
     func connectSaved() {
         guard let raw = settings.adapterId, let id = UUID(uuidString: raw) else { return }
-        connect(id: id, name: settings.adapterName ?? "Adapter")
+        connect(id: id, name: settings.adapterName ?? String(localized: "Adapter"))
     }
 
     func disconnect() {
@@ -381,7 +381,7 @@ final class Car: ObservableObject {
             watchSoon()
             return
         }
-        onLost("Adapter disconnected.")
+        onLost(String(localized: "Adapter disconnected."))
     }
 
     private func onLost(_ reason: String) {
@@ -759,7 +759,7 @@ final class Car: ObservableObject {
                                  location: s.abrpLocation ? location.latest : nil)
         Task {
             let error = await Abrp.send(tlm, settings: s)
-            state.abrpStatus = error ?? "Sent to ABRP"
+            state.abrpStatus = error ?? Abrp.sentMessage
         }
     }
 
@@ -897,12 +897,12 @@ final class Car: ObservableObject {
 
     /// Why the car can't take a clear or restart right now, or nil if it can.
     var changeBlockedReason: String? {
-        if !state.connected { return "Connect to the car first." }
-        if state.mode == .driving { return "The car is moving. Park it first." }
-        if state.mode == .charging { return "The car is charging. Unplug it first." }
-        if faults.running { return "Wait for the scan to finish." }
-        if versions.running { return "Wait for the module versions to finish." }
-        if action.running { return "Another action is still running." }
+        if !state.connected { return String(localized: "Connect to the car first.") }
+        if state.mode == .driving { return String(localized: "The car is moving. Park it first.") }
+        if state.mode == .charging { return String(localized: "The car is charging. Unplug it first.") }
+        if faults.running { return String(localized: "Wait for the scan to finish.") }
+        if versions.running { return String(localized: "Wait for the module versions to finish.") }
+        if action.running { return String(localized: "Another action is still running.") }
         return nil
     }
 

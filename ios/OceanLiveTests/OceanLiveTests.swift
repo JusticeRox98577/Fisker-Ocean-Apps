@@ -1220,3 +1220,48 @@ final class WatchTests: XCTestCase {
         XCTAssertEqual(w.toTargetText, "Reached")
     }
 }
+
+/// The String Catalog ships German, Dutch, French and Spanish, and the English text stays as it was.
+final class LocalizationTests: XCTestCase {
+    private func bundle(_ language: String) -> Bundle? {
+        Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:))
+    }
+
+    private func text(_ key: String, _ language: String) -> String? {
+        bundle(language)?.localizedString(forKey: key, value: nil, table: nil)
+    }
+
+    func testLanguagesAreBundled() {
+        for language in ["de", "nl", "fr", "es"] {
+            XCTAssertNotNil(bundle(language), "\(language).lproj missing")
+        }
+    }
+
+    func testTranslations() {
+        XCTAssertEqual(text("Battery", "de"), "Batterie")
+        XCTAssertEqual(text("Battery", "nl"), "Batterij")
+        XCTAssertEqual(text("Battery", "fr"), "Batterie")
+        XCTAssertEqual(text("Battery", "es"), "Batería")
+        XCTAssertEqual(text("Connect to %@", "de"), "Mit %@ verbinden")
+    }
+
+    func testPlurals() {
+        guard let de = bundle("de"), let fr = bundle("fr") else { return XCTFail("languages missing") }
+        let days = de.localizedString(forKey: "%lld days", value: nil, table: nil)
+        XCTAssertEqual(String.localizedStringWithFormat(days, 1), "1 Tag")
+        XCTAssertEqual(String.localizedStringWithFormat(days, 3), "3 Tage")
+        let nights = fr.localizedString(forKey: "%lld nights", value: nil, table: nil)
+        XCTAssertEqual(String.localizedStringWithFormat(nights, 2), "2 nuits")
+    }
+
+    func testEnglishText() {
+        XCTAssertEqual(OceanShared.toTarget(80), "To 80%")
+        XCTAssertEqual(V12Source.label(V12Source.port), "OBD port")
+        XCTAssertEqual(V12Source.label("Other source"), "Other source")
+        XCTAssertEqual(V12Range.week.label, "7 d")
+        XCTAssertEqual(Format.span(24), "24 h")
+        XCTAssertEqual(Format.span(30), "30 h")
+        XCTAssertEqual(Format.span(48), "2 days")
+        XCTAssertEqual(BatteryReport.measuredNote, "Each charge that adds 20% or more is measured at the battery.")
+    }
+}

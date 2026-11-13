@@ -212,7 +212,7 @@ enum BatteryReportPdf {
         }
         let more = s.codes.count - shown
         if more > 0 {
-            text("+ \(more) more active code\(more == 1 ? "" : "s"). The full list is in the app.",
+            text(String(localized: "+ \(more) more active codes. The full list is in the app."),
                  x: x, baseline: y + 9, font: font(8.5), color: inkDim)
         }
     }

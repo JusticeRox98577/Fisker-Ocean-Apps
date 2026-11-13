@@ -36,7 +36,7 @@ private struct Dashboard: View {
             pill(state).padding(.top, 8)
             SocRing(soc: snap.soc, charging: charging, live: state.status == .live) {
                 RollingText(text: snap.soc.map { Format.n($0, 1) + "%" } ?? "—", size: 46, weight: .bold)
-                Text(Format.range(snap.soc, settings, car.history) ?? "range unknown")
+                Text(Format.range(snap.soc, settings, car.history) ?? String(localized: "range unknown"))
                     .font(.system(size: 14)).foregroundStyle(Theme.dim)
             }
             .padding(.vertical, 6)
@@ -47,13 +47,13 @@ private struct Dashboard: View {
 
         if charging, let c = state.currentCharge {
             VStack(spacing: 0) {
-                SectionTitle("This charge")
+                SectionTitle(String(localized: "This charge"))
                 CardBox(glow: Theme.good) {
-                    KeyValue("Energy added", Format.n(c.kwh, 1) + " kWh", color: Theme.good)
-                    KeyValue("Charging for", Format.duration(c.minutes))
-                    if let s = c.socStart { KeyValue("Started at", "\(Int(s.rounded()))%") }
-                    KeyValue("Peak power", c.peakKw.map { Format.n($0, 1) + " kW" })
-                    if let t = timeToTarget(snap.soc, power, settings) { KeyValue("To \(settings.alertHigh)%", t, color: Theme.aqua) }
+                    KeyValue(String(localized: "Energy added"), Format.n(c.kwh, 1) + " kWh", color: Theme.good)
+                    KeyValue(String(localized: "Charging for"), Format.duration(c.minutes))
+                    if let s = c.socStart { KeyValue(String(localized: "Started at"), "\(Int(s.rounded()))%") }
+                    KeyValue(String(localized: "Peak power"), c.peakKw.map { Format.n($0, 1) + " kW" })
+                    if let t = timeToTarget(snap.soc, power, settings) { KeyValue(OceanShared.toTarget(settings.alertHigh), t, color: Theme.aqua) }
                 }
             }
             .transition(.opacity.combined(with: .move(edge: .top)))
@@ -61,12 +61,12 @@ private struct Dashboard: View {
 
         if state.mode == .driving, let d = state.currentDrive {
             VStack(spacing: 0) {
-                SectionTitle("This drive")
+                SectionTitle(String(localized: "This drive"))
                 CardBox(glow: Theme.cyan) {
-                    KeyValue("Distance", Format.distance(d.distanceKm, settings, decimals: 1))
-                    KeyValue("Energy used", Format.n(d.kwh, 1) + " kWh")
-                    KeyValue("Efficiency", Format.efficiency(d.whPerKm, settings), color: Theme.cyan)
-                    KeyValue("Time", Format.duration(d.minutes))
+                    KeyValue(String(localized: "Distance"), Format.distance(d.distanceKm, settings, decimals: 1))
+                    KeyValue(String(localized: "Energy used"), Format.n(d.kwh, 1) + " kWh")
+                    KeyValue(String(localized: "Efficiency"), Format.efficiency(d.whPerKm, settings), color: Theme.cyan)
+                    KeyValue(String(localized: "Time"), Format.duration(d.minutes))
                 }
             }
             .transition(.opacity.combined(with: .move(edge: .top)))
@@ -74,13 +74,13 @@ private struct Dashboard: View {
 
         if state.mode == .parked, let d = car.drains.last, nowMs() - d.end < parkedShowMs {
             VStack(spacing: 0) {
-                SectionTitle("While parked")
+                SectionTitle(String(localized: "While parked"))
                 CardBox(glow: Theme.violet) {
                     Text(Format.drain(d, settings))
                         .font(.system(size: 17, weight: .semibold, design: .rounded)).foregroundStyle(.white)
-                    KeyValue("Per day", Format.perDay(d.perDay, settings), color: Theme.violet)
+                    KeyValue(String(localized: "Per day"), Format.perDay(d.perDay, settings), color: Theme.violet)
                         .padding(.top, 6)
-                    KeyValue("Parked since", Format.date(d.start).formatted(date: .abbreviated, time: .shortened))
+                    KeyValue(String(localized: "Parked since"), Format.date(d.start).formatted(date: .abbreviated, time: .shortened))
                     Text("Charge the car used while you were away and the app wasn't connected.")
                         .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 4)
                 }
@@ -88,55 +88,55 @@ private struct Dashboard: View {
             .transition(.opacity.combined(with: .move(edge: .top)))
         }
 
-        SectionTitle("Battery")
+        SectionTitle(String(localized: "Battery"))
         VStack(spacing: 10) {
             HStack(spacing: 10) {
-                Tile(label: "Pack voltage", value: snap.packV.map { Format.n($0, 1) + " V" }, accent: Theme.violet)
-                Tile(label: "Current", value: snap.packA.map { Format.n($0, 1) + " A" }, accent: Theme.cyan)
+                Tile(label: String(localized: "Pack voltage"), value: snap.packV.map { Format.n($0, 1) + " V" }, accent: Theme.violet)
+                Tile(label: String(localized: "Current"), value: snap.packA.map { Format.n($0, 1) + " A" }, accent: Theme.cyan)
             }
             HStack(spacing: 10) {
-                Tile(label: "Battery temp", value: Format.temp(snap.tempAvg, settings),
-                     caption: snap.tempMax.flatMap { Format.temp($0, settings) }.map { "max " + $0 }, accent: Theme.warn)
-                Tile(label: "Cell spread", value: snap.cellSpread.map { "\(Int($0.rounded())) mV" },
+                Tile(label: String(localized: "Battery temp"), value: Format.temp(snap.tempAvg, settings),
+                     caption: snap.tempMax.flatMap { Format.temp($0, settings) }.map { String(localized: "max \($0)") }, accent: Theme.warn)
+                Tile(label: String(localized: "Cell spread"), value: snap.cellSpread.map { "\(Int($0.rounded())) mV" },
                      caption: snap.cellSpread.map(balanceLabel), accent: Theme.aqua,
                      captionColor: snap.cellSpread.map(Theme.balanceColor) ?? Theme.dim)
             }
             HStack(spacing: 10) {
                 Button { showV12 = true } label: {
-                    Tile(label: "12V battery", value: snap.aux12v.map { Format.n($0, 2) + " V" },
-                         caption: snap.aux12v.map { auxStatus($0) + (snap.aux12vSource.map { " · " + $0 } ?? "") },
+                    Tile(label: String(localized: "12V battery"), value: snap.aux12v.map { Format.n($0, 2) + " V" },
+                         caption: snap.aux12v.map { auxStatus($0) + (snap.aux12vSource.map { " · " + V12Source.label($0) } ?? "") },
                          accent: state.watching ? Theme.violet : Theme.good, captionColor: auxColor(snap.aux12v))
                 }
                 .buttonStyle(PressStyle())
                 .sheet(isPresented: $showV12) { V12View().environmentObject(car) }
-                Tile(label: "Odometer", value: Format.distance(snap.odometerKm, settings),
-                     caption: Format.efficiency(Format.whPerKm(car.history), settings).map { "avg " + $0 }, accent: Theme.violet)
+                Tile(label: String(localized: "Odometer"), value: Format.distance(snap.odometerKm, settings),
+                     caption: Format.efficiency(Format.whPerKm(car.history), settings).map { String(localized: "avg \($0)") }, accent: Theme.violet)
             }
         }
 
         if let abrp = state.abrpStatus {
             Text("ABRP: " + abrp).font(.system(size: 12))
-                .foregroundStyle(abrp.hasPrefix("Sent") ? Theme.dim : Theme.warn)
+                .foregroundStyle(abrp == Abrp.sentMessage ? Theme.dim : Theme.warn)
                 .padding(.top, 8)
         }
         if state.status == .live || state.status == .reconnecting {
-            GhostButton(title: state.status == .reconnecting ? "Stop reconnecting" : "Disconnect", color: Theme.dim) { car.disconnect() }
+            GhostButton(title: state.status == .reconnecting ? String(localized: "Stop reconnecting") : String(localized: "Disconnect"), color: Theme.dim) { car.disconnect() }
                 .padding(.top, 16)
         }
     }
 
     private func pill(_ state: CarState) -> Pill {
         if state.watching { return Pill(text: V12Watch.statusText, color: Theme.violet, pulse: true) }
-        if state.status == .reconnecting { return Pill(text: "Reconnecting", color: Theme.warn, pulse: true) }
+        if state.status == .reconnecting { return Pill(text: String(localized: "Reconnecting"), color: Theme.warn, pulse: true) }
         if state.status != .live {
-            let last = state.lastUpdate.map { "Last seen " + Format.date($0).formatted(date: .omitted, time: .shortened) } ?? "Offline"
+            let last = state.lastUpdate.map { String(localized: "Last seen \(Format.date($0).formatted(date: .omitted, time: .shortened))") } ?? String(localized: "Offline")
             return Pill(text: last, color: Theme.dim)
         }
         if state.mode == .charging {
-            return Pill(text: state.currentCharge?.fast == true ? "DC fast charging" : "Charging", color: Theme.good, pulse: true)
+            return Pill(text: state.currentCharge?.fast == true ? String(localized: "DC fast charging") : String(localized: "Charging"), color: Theme.good, pulse: true)
         }
-        if state.mode == .driving { return Pill(text: "Driving", color: Theme.cyan, pulse: true) }
-        return Pill(text: "Parked · live", color: Theme.aqua)
+        if state.mode == .driving { return Pill(text: String(localized: "Driving"), color: Theme.cyan, pulse: true) }
+        return Pill(text: String(localized: "Parked · live"), color: Theme.aqua)
     }
 
     private func powerColor(_ p: Double?) -> Color {
@@ -145,10 +145,10 @@ private struct Dashboard: View {
     }
 
     private func powerLabel(_ p: Double?, charging: Bool) -> String {
-        guard let p else { return "power" }
-        if p > 0.3 { return charging ? "into the battery" : "regenerating" }
-        if p < -0.3 { return "from the battery" }
-        return "idle"
+        guard let p else { return String(localized: "power") }
+        if p > 0.3 { return charging ? String(localized: "into the battery") : String(localized: "regenerating") }
+        if p < -0.3 { return String(localized: "from the battery") }
+        return String(localized: "idle")
     }
 
     private func auxColor(_ v: Double?) -> Color {
@@ -188,13 +188,13 @@ private struct StartCard: View {
             }
             VStack(spacing: 10) {
                 if car.settings.adapterId != nil {
-                    GradientButton(title: "Connect to \(car.settings.adapterName ?? "adapter")") { car.connectSaved() }
-                    GhostButton(title: "Choose a different adapter") { car.scan() }
+                    GradientButton(title: String(localized: "Connect to \(car.settings.adapterName ?? String(localized: "adapter"))")) { car.connectSaved() }
+                    GhostButton(title: String(localized: "Choose a different adapter")) { car.scan() }
                 } else {
-                    GradientButton(title: "Find adapter") { car.scan() }
+                    GradientButton(title: String(localized: "Find adapter")) { car.scan() }
                 }
                 if car.state.watching {
-                    GhostButton(title: "Stop watching 12V", color: Theme.dim) { car.disconnect() }
+                    GhostButton(title: String(localized: "Stop watching 12V"), color: Theme.dim) { car.disconnect() }
                 }
             }
             .padding(.top, 18)
@@ -205,8 +205,9 @@ private struct StartCard: View {
 
 private extension StartCard {
     var watchNote: String {
-        let next = car.state.nextWatch.map { " Next check about " + Format.date($0).formatted(date: .omitted, time: .shortened) + "." } ?? ""
-        return "The adapter stays connected and only its own 12V reading is asked for, so the car stays asleep." + next
+        let note = String(localized: "The adapter stays connected and only its own 12V reading is asked for, so the car stays asleep.")
+        guard let next = car.state.nextWatch else { return note }
+        return note + " " + String(localized: "Next check about \(Format.date(next).formatted(date: .omitted, time: .shortened)).")
     }
 }
 
@@ -216,7 +217,7 @@ private struct Connecting: View {
     var body: some View {
         VStack(spacing: 8) {
             ProgressView().controlSize(.large).tint(Theme.aqua)
-            Text("Connecting to \(name ?? "adapter")").font(.system(size: 17)).foregroundStyle(.white).padding(.top, 8)
+            Text("Connecting to \(name ?? String(localized: "adapter"))").font(.system(size: 17)).foregroundStyle(.white).padding(.top, 8)
             Text("Setting up the adapter and waking the car's modules")
                 .font(.system(size: 13)).foregroundStyle(Theme.dim).multilineTextAlignment(.center)
         }

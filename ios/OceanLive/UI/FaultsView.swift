@@ -12,13 +12,14 @@ struct FaultsView: View {
     @State private var confirm: PendingAction?
     @State private var importing = false
     @State private var importMessage: String?
+    @State private var importOk = false
     @State private var pastScan: SavedScan?
 
     var body: some View {
         Page {
             let scan = car.faults
             let state = car.state
-            SectionTitle("Fault codes")
+            SectionTitle(String(localized: "Fault codes"))
             CardBox {
                 Text("Reads stored fault codes from \(Ecus.scanList.count) modules in the car. Reading changes nothing.")
                     .font(.system(size: 13)).foregroundStyle(Theme.dim)
@@ -31,7 +32,7 @@ struct FaultsView: View {
                     } else if !state.connected {
                         Text("Connect to the car first.").foregroundStyle(Theme.warn)
                     } else {
-                        GradientButton(title: scan.finishedAt == nil ? "Scan all modules" : "Scan again", enabled: !car.action.running && !car.versions.running) {
+                        GradientButton(title: scan.finishedAt == nil ? String(localized: "Scan all modules") : String(localized: "Scan again"), enabled: !car.action.running && !car.versions.running) {
                             car.scanFaults()
                         }
                     }
@@ -51,14 +52,14 @@ struct FaultsView: View {
                 PastScans(open: $pastScan)
             }
 
-            SectionTitle("Code descriptions")
+            SectionTitle(String(localized: "Code descriptions"))
             CardBox {
                 Text("Standard codes and the Ocean codes documented from real cars have built-in descriptions. Other Fisker-specific codes are described from the code itself: which module reported it and how it failed. Import a description list (CSV, or JSON with names, causes and repair steps) and it takes priority. You can import several; the more detailed source wins for each code. Lists stay on this phone.")
                     .font(.system(size: 13)).foregroundStyle(Theme.dim)
-                GhostButton(title: car.importedCount > 0 ? "Import more descriptions" : "Import descriptions") { importing = true }
+                GhostButton(title: car.importedCount > 0 ? String(localized: "Import more descriptions") : String(localized: "Import descriptions")) { importing = true }
                     .padding(.top, 12)
                 if let m = importMessage {
-                    Text(m).font(.system(size: 12)).foregroundStyle(m.hasPrefix("Imported") ? Theme.good : Theme.warn).padding(.top, 8)
+                    Text(m).font(.system(size: 12)).foregroundStyle(importOk ? Theme.good : Theme.warn).padding(.top, 8)
                 }
                 if car.importedCount > 0 {
                     Text("\(car.importedCount) imported descriptions loaded.").font(.system(size: 12)).foregroundStyle(Theme.good).padding(.top, 8)
@@ -73,9 +74,11 @@ struct FaultsView: View {
             defer { if access { url.stopAccessingSecurityScopedResource() } }
             let text = (try? Data(contentsOf: url)).map { String(decoding: $0, as: UTF8.self) }
             if let n = text.flatMap({ car.importDescriptions($0) }) {
-                importMessage = "Imported \(n) descriptions"
+                importMessage = String(localized: "Imported \(n) descriptions")
+                importOk = true
             } else {
-                importMessage = "No fault codes found in that file. Use CSV (code,description) or JSON."
+                importMessage = String(localized: "No fault codes found in that file. Use CSV (code,description) or JSON.")
+                importOk = false
             }
         }
         .alert(item: $confirm) { p in confirmAlert(p) }
@@ -85,11 +88,11 @@ struct FaultsView: View {
     private func confirmAlert(_ p: PendingAction) -> Alert {
         switch p.action {
         case .clear:
-            let title = p.ecus.count == 1 ? "Clear codes in \(p.ecus[0].name)?" : "Clear codes in \(p.ecus.count) modules?"
-            let slow = p.ecus.count > 15 ? "This goes through every module one by one and takes a couple of minutes.\n\n" : ""
+            let title = p.ecus.count == 1 ? String(localized: "Clear codes in \(p.ecus[0].name)?") : String(localized: "Clear codes in \(p.ecus.count) modules?")
+            let slow = p.ecus.count > 15 ? String(localized: "This goes through every module one by one and takes a couple of minutes.") + "\n\n" : ""
             return Alert(
                 title: Text(title),
-                message: Text(slow + "This erases the stored fault history a workshop would use, so do it after the problem is fixed or after you've shared the report.\n\nCodes for faults that are still there will come back straight away.\n\nCar on and in Park, foot on the brake, charging cable unplugged."),
+                message: Text(slow + String(localized: "This erases the stored fault history a workshop would use, so do it after the problem is fixed or after you've shared the report.\n\nCodes for faults that are still there will come back straight away.\n\nCar on and in Park, foot on the brake, charging cable unplugged.")),
                 primaryButton: .destructive(Text("Clear codes")) { car.clearCodes(p.ecus) },
                 secondaryButton: .cancel()
             )
@@ -120,12 +123,12 @@ private struct Results: View {
         let split = Dtcs.activeFirst(codes)
         let newIds = scan.changes.newIds
 
-        SectionTitle("Results")
+        SectionTitle(String(localized: "Results"))
         HStack(spacing: 10) {
             Button {
                 withAnimation(.easeInOut(duration: 0.3)) { activeFirst.toggle() }
             } label: {
-                Tile(label: "Active now", value: "\(active)", caption: canSort ? (sorting ? "listed first" : "tap to list") : nil,
+                Tile(label: String(localized: "Active now"), value: "\(active)", caption: canSort ? (sorting ? String(localized: "listed first") : String(localized: "tap to list")) : nil,
                      accent: active > 0 ? Theme.bad : Theme.good, captionColor: sorting ? Theme.bad : Theme.dim)
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -135,8 +138,8 @@ private struct Results: View {
             }
             .buttonStyle(PressStyle())
             .disabled(!canSort)
-            Tile(label: "Stored", value: "\(codes.count - active)", accent: Theme.warn)
-            Tile(label: "Modules", value: "\(answered)", caption: "answered", accent: Theme.cyan)
+            Tile(label: String(localized: "Stored"), value: "\(codes.count - active)", accent: Theme.warn)
+            Tile(label: String(localized: "Modules"), value: "\(answered)", caption: String(localized: "answered"), accent: Theme.cyan)
         }
         ScanNotes(scan: scan)
 
@@ -144,7 +147,7 @@ private struct Results: View {
         if !scan.running {
             VStack(alignment: .leading, spacing: 6) {
                 if !groups.isEmpty {
-                    GradientButton(title: "Clear codes in all \(groups.count) modules", enabled: blocked == nil, gradient: Theme.danger) {
+                    GradientButton(title: String(localized: "Clear codes in all \(groups.count) modules"), enabled: blocked == nil, gradient: Theme.danger) {
                         confirm = PendingAction(action: .clear, ecus: groups.map(\.ecu))
                     }
                 }
@@ -163,7 +166,7 @@ private struct Results: View {
 
         if sorting {
             VStack(alignment: .leading, spacing: 0) {
-                Text("ACTIVE NOW · \(split.active.count)")
+                Text(verbatim: String(localized: "Active now").uppercased(with: Locale.current) + " · \(split.active.count)")
                     .font(.system(size: 11, weight: .semibold)).tracking(1.2).foregroundStyle(Theme.bad)
                     .padding(.top, 18).padding(.bottom, 6).padding(.leading, 4)
                 VStack(spacing: 8) {
@@ -175,14 +178,14 @@ private struct Results: View {
 
         ForEach(EcuGroup.from(sorting ? split.rest : codes)) { group in
             HStack {
-                Text("\(group.ecu.name.uppercased()) · \(group.codes.count)")
+                Text(verbatim: "\(group.ecu.name.uppercased()) · \(group.codes.count)")
                     .font(.system(size: 11, weight: .semibold)).tracking(1.2).foregroundStyle(Theme.dim)
                 Spacer()
-                SmallAction(text: "Clear", color: Theme.bad, enabled: blocked == nil) {
+                SmallAction(text: String(localized: "Clear"), color: Theme.bad, enabled: blocked == nil) {
                     confirm = PendingAction(action: .clear, ecus: [group.ecu])
                 }
                 if group.ecu.canRestart {
-                    SmallAction(text: "Restart", color: Theme.cyan, enabled: blocked == nil) {
+                    SmallAction(text: String(localized: "Restart"), color: Theme.cyan, enabled: blocked == nil) {
                         confirm = PendingAction(action: .restart, ecus: [group.ecu])
                     }
                 }
@@ -216,7 +219,7 @@ private struct ScanNotes: View {
     var body: some View {
         let changes = scan.changes
         if let at = scan.finishedAt {
-            Text("Scanned " + Format.date(at).formatted(date: .abbreviated, time: .shortened))
+            Text("Scanned \(Format.date(at).formatted(date: .abbreviated, time: .shortened))")
                 .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 8)
         }
         let incomplete = scan.modules.filter { $0.value == "incomplete" }.keys.sorted()
@@ -227,7 +230,7 @@ private struct ScanNotes: View {
         if !scan.running && changes.since != nil {
             Group {
                 if !changes.newIds.isEmpty {
-                    Text(changes.newIds.count == 1 ? "1 new code since the last scan." : "\(changes.newIds.count) new codes since the last scan.")
+                    Text("\(changes.newIds.count) new codes since the last scan.")
                         .foregroundStyle(Theme.aqua)
                 } else if changes.cleared.isEmpty {
                     Text("Same codes as the last scan.").foregroundStyle(Theme.dim)
@@ -255,7 +258,7 @@ private struct ClearedCard: View {
         CardBox(glow: Theme.good) {
             Text("Cleared since last scan").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.good)
             if let since {
-                Text("These were there on " + Format.date(since).formatted(date: .abbreviated, time: .shortened) + " and are gone now.")
+                Text("These were there on \(Format.date(since).formatted(date: .abbreviated, time: .shortened)) and are gone now.")
                     .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 4)
             }
             ForEach(cleared, id: \.key) { c in
@@ -286,7 +289,7 @@ private struct VersionsCard: View {
 
     var body: some View {
         let v = car.versions
-        SectionTitle("Module versions")
+        SectionTitle(String(localized: "Module versions"))
         CardBox {
             if v.running {
                 Text("Reading \(v.current ?? "…")").foregroundStyle(.white)
@@ -302,7 +305,7 @@ private struct VersionsCard: View {
             ForEach(v.list) { VersionRow(m: $0) }
             if !v.running {
                 if car.state.connected {
-                    GhostButton(title: v.list.isEmpty ? "Read module versions" : "Read versions again") { car.readModuleVersions() }
+                    GhostButton(title: v.list.isEmpty ? String(localized: "Read module versions") : String(localized: "Read versions again")) { car.readModuleVersions() }
                         .disabled(car.action.running)
                         .padding(.top, 12)
                 } else if v.list.isEmpty {
@@ -344,14 +347,14 @@ private struct PastScans: View {
     var body: some View {
         let scans = Array(car.pastScans.reversed())
         let shown = showAll ? scans : Array(scans.prefix(8))
-        SectionTitle("Past scans")
+        SectionTitle(String(localized: "Past scans"))
         CardBox {
             ForEach(shown) { s in
                 Button { open = s } label: { PastScanRow(scan: s) }
                     .buttonStyle(PressStyle())
             }
             if scans.count > 8 {
-                Button(showAll ? "Show fewer" : "Show all \(scans.count)") {
+                Button(showAll ? String(localized: "Show fewer") : String(localized: "Show all \(scans.count)")) {
                     withAnimation(.easeInOut(duration: 0.3)) { showAll.toggle() }
                 }
                 .font(.system(size: 13)).foregroundStyle(Theme.aqua).padding(.top, 6)
@@ -370,7 +373,8 @@ private struct PastScanRow: View {
                     .font(.system(size: 14)).foregroundStyle(.white)
                 HStack(spacing: 0) {
                     Text("\(scan.active) active").foregroundStyle(scan.active > 0 ? Theme.bad : Theme.dim)
-                    Text("  ·  \(scan.stored) stored").foregroundStyle(Theme.dim)
+                    Text(verbatim: "  ·  ").foregroundStyle(Theme.dim)
+                    Text("\(scan.stored) stored").foregroundStyle(Theme.dim)
                 }
                 .font(.system(size: 12))
             }
@@ -393,7 +397,7 @@ private struct PastScanSheet: View {
                 header
                 PastScanCodes(scan: scan)
                 if let versions = scan.versions, !versions.isEmpty {
-                    SectionTitle("Module versions")
+                    SectionTitle(String(localized: "Module versions"))
                     CardBox { ForEach(versions) { VersionRow(m: $0) } }
                 }
                 ShareLink(item: faultReport(vin: scan.vin, scan: FaultScan(saved: scan), versions: scan.versions ?? [])) {
@@ -422,7 +426,7 @@ private struct PastScanSheet: View {
                 Text(Format.date(scan.time).formatted(date: .abbreviated, time: .shortened))
                     .font(.system(size: 13)).foregroundStyle(Theme.dim)
                 if let vin = scan.vin {
-                    Text("VIN " + vin).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.dim)
+                    Text(verbatim: "VIN " + vin).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.dim)
                 }
             }
             Spacer()
@@ -439,16 +443,16 @@ private struct PastScanCodes: View {
         let codes = scan.dtcs
         let answered = scan.modules.values.filter { $0 == "ok" || $0 == "incomplete" }.count
         HStack(spacing: 10) {
-            Tile(label: "Active", value: "\(scan.active)", accent: scan.active > 0 ? Theme.bad : Theme.good)
-            Tile(label: "Stored", value: "\(scan.stored)", accent: Theme.warn)
-            Tile(label: "Modules", value: "\(answered)", caption: "answered", accent: Theme.cyan)
+            Tile(label: String(localized: "Active"), value: "\(scan.active)", accent: scan.active > 0 ? Theme.bad : Theme.good)
+            Tile(label: String(localized: "Stored"), value: "\(scan.stored)", accent: Theme.warn)
+            Tile(label: String(localized: "Modules"), value: "\(answered)", caption: String(localized: "answered"), accent: Theme.cyan)
         }
         if codes.isEmpty {
             CardBox(glow: Theme.good) { Text("No fault codes stored in any module that answered.").foregroundStyle(Theme.good) }
                 .padding(.top, 12)
         }
         ForEach(EcuGroup.from(codes)) { group in
-            Text("\(group.ecu.name.uppercased()) · \(group.codes.count)")
+            Text(verbatim: "\(group.ecu.name.uppercased()) · \(group.codes.count)")
                 .font(.system(size: 11, weight: .semibold)).tracking(1.2).foregroundStyle(Theme.dim)
                 .padding(.top, 18).padding(.bottom, 6).padding(.leading, 4)
             VStack(spacing: 8) {
@@ -489,10 +493,10 @@ private struct ActionCard: View {
     var body: some View {
         let run = car.action
         if run.running || !run.outcomes.isEmpty {
-            SectionTitle(run.action == .restart ? "Restart" : "Clearing codes")
+            SectionTitle(run.action == .restart ? String(localized: "Restart") : String(localized: "Clearing codes"))
             CardBox(glow: run.running ? Theme.cyan : nil) {
                 if run.running {
-                    Text("\(run.action?.label ?? "Working"): \(run.current ?? "…")").foregroundStyle(.white)
+                    Text("\(run.action?.label ?? String(localized: "Working")): \(run.current ?? "…")").foregroundStyle(.white)
                     MeterBar(fraction: run.total == 0 ? 0 : Double(run.done) / Double(run.total)).padding(.top, 8)
                     Text("Keep the car parked until this finishes.").font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.top, 6)
                 }
@@ -527,20 +531,21 @@ private struct OutcomeRow: View {
         switch o.result {
         case .done:
             if o.action == .restart {
-                let extra = (o.remaining ?? 0) > 0 ? " · \(o.remaining!) codes stored" : ""
-                return ("Restarted" + extra, Theme.good)
+                let stored = o.remaining ?? 0
+                let extra = stored > 0 ? " · " + String(localized: "\(stored) codes stored") : ""
+                return (String(localized: "Restarted") + extra, Theme.good)
             }
-            guard let remaining = o.remaining else { return ("Cleared · scan again to confirm", Theme.good) }
-            if remaining == 0 { return ("Cleared", Theme.good) }
-            return ("Cleared, \(remaining) came back (fault still present)", Theme.warn)
+            guard let remaining = o.remaining else { return (String(localized: "Cleared · scan again to confirm"), Theme.good) }
+            if remaining == 0 { return (String(localized: "Cleared"), Theme.good) }
+            return (String(localized: "Cleared, \(remaining) came back (fault still present)"), Theme.warn)
         case .refused(let nrc):
-            if o.result.needsSecurity { return ("Needs a security key Ocean Live doesn't have", Theme.bad) }
+            if o.result.needsSecurity { return (String(localized: "Needs a security key Ocean Live doesn't have"), Theme.bad) }
             let reason = Uds.nrcText(nrc)
             return (reason.prefix(1).uppercased() + reason.dropFirst(), Theme.bad)
         case .noAnswer:
-            return ("No answer", Theme.bad)
+            return (String(localized: "No answer"), Theme.bad)
         case .unclear:
-            return ("Unclear reply · scan again to check", Theme.warn)
+            return (String(localized: "Unclear reply · scan again to check"), Theme.warn)
         }
     }
 }
@@ -609,9 +614,9 @@ private struct CodeRow: View {
             }
             if open {
                 VStack(alignment: .leading, spacing: 0) {
-                    if let impact = info.impact { DetailBlock(heading: "What it affects", items: [impact], numbered: false) }
-                    if !info.causes.isEmpty { DetailBlock(heading: "Possible causes", items: info.causes, numbered: false) }
-                    if !info.steps.isEmpty { DetailBlock(heading: "How it's fixed", items: info.steps, numbered: info.steps.count > 1) }
+                    if let impact = info.impact { DetailBlock(heading: String(localized: "What it affects"), items: [impact], numbered: false) }
+                    if !info.causes.isEmpty { DetailBlock(heading: String(localized: "Possible causes"), items: info.causes, numbered: false) }
+                    if !info.steps.isEmpty { DetailBlock(heading: String(localized: "How it's fixed"), items: info.steps, numbered: info.steps.count > 1) }
                     Text("Repair steps are for a qualified technician. High-voltage parts are dangerous to work on.")
                         .font(.system(size: 11)).foregroundStyle(Theme.dim).padding(.top, 4)
                 }
@@ -638,7 +643,7 @@ private struct DetailBlock: View {
             Text(heading).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.aqua)
             ForEach(Array(items.enumerated()), id: \.offset) { i, t in
                 HStack(alignment: .top, spacing: 0) {
-                    Text(numbered ? "\(i + 1)." : "•").font(.system(size: 12)).foregroundStyle(Theme.dim).frame(width: 18, alignment: .leading)
+                    Text(verbatim: numbered ? "\(i + 1)." : "•").font(.system(size: 12)).foregroundStyle(Theme.dim).frame(width: 18, alignment: .leading)
                     Text(t).font(.system(size: 12)).foregroundStyle(.white.opacity(0.88))
                 }
             }
@@ -649,9 +654,9 @@ private struct DetailBlock: View {
 
 func faultReport(vin: String?, scan: FaultScan, versions: [ModuleVersion] = []) -> String {
     func date(_ ms: Int64) -> String { Format.date(ms).formatted(date: .abbreviated, time: .shortened) }
-    var out = "Ocean Live fault scan\n"
+    var out = String(localized: "Ocean Live fault scan") + "\n"
     if let vin { out += "VIN: \(vin)\n" }
-    if let at = scan.finishedAt { out += "Date: \(date(at))\n" }
+    if let at = scan.finishedAt { out += String(localized: "Date: \(date(at))") + "\n" }
     out += "\n"
     let changes = scan.changes
     let groups = Dictionary(grouping: scan.codes, by: { $0.ecu }).sorted { $0.key.code < $1.key.code }
@@ -659,17 +664,17 @@ func faultReport(vin: String?, scan: FaultScan, versions: [ModuleVersion] = []) 
         out += "\(ecu.name) (\(ecu.request)):\n"
         for d in list {
             let info = d.info
-            let tag = changes.newIds.contains(d.id) ? " [NEW]" : ""
+            let tag = changes.newIds.contains(d.id) ? " [" + String(localized: "NEW") + "]" : ""
             out += "  \(d.code)  \(d.state.label)\(tag) · \(info.title)" + (info.note.map { " (\($0))" } ?? "") + "\n"
-            if let impact = info.impact { out += "      Affects: \(impact)\n" }
-            if !info.causes.isEmpty { out += "      Causes: \(info.causes.joined(separator: "; "))\n" }
-            if !info.steps.isEmpty { out += "      Fix: \(info.steps.joined(separator: "; "))\n" }
+            if let impact = info.impact { out += "      " + String(localized: "Affects: \(impact)") + "\n" }
+            if !info.causes.isEmpty { out += "      " + String(localized: "Causes: \(info.causes.joined(separator: "; "))") + "\n" }
+            if !info.steps.isEmpty { out += "      " + String(localized: "Fix: \(info.steps.joined(separator: "; "))") + "\n" }
         }
     }
     if let since = changes.since {
-        out += "\nSince the scan on \(date(since)): \(changes.newIds.count) new, \(changes.cleared.count) cleared\n"
+        out += "\n" + String(localized: "Since the scan on \(date(since)): \(changes.newIds.count) new, \(changes.cleared.count) cleared") + "\n"
         if !changes.cleared.isEmpty {
-            out += "Cleared since last scan:\n"
+            out += String(localized: "Cleared since last scan") + ":\n"
             for c in changes.cleared {
                 let d = c.dtc
                 out += "  \(d.code)  \(d.ecu.name) · \(d.info.title)\n"
@@ -678,10 +683,10 @@ func faultReport(vin: String?, scan: FaultScan, versions: [ModuleVersion] = []) 
     }
     let silent = scan.modules.filter { $0.value != "ok" }.sorted { $0.key < $1.key }
     if !silent.isEmpty {
-        out += "\nNo complete answer from: " + silent.map { "\($0.key) (\($0.value))" }.joined(separator: ", ") + "\n"
+        out += "\n" + String(localized: "No complete answer from:") + " " + silent.map { "\($0.key) (\($0.value))" }.joined(separator: ", ") + "\n"
     }
     if !versions.isEmpty {
-        out += "\nModule versions:\n"
+        out += "\n" + String(localized: "Module versions") + ":\n"
         for v in versions {
             out += "  \(v.name) (\(v.ecu)): " + v.lines.map { "\($0.0) \($0.1)" }.joined(separator: " · ") + "\n"
         }
