@@ -25,8 +25,8 @@ body:
     id: version
     attributes:
       label: Ocean Live version
-      description: Shown at the bottom of Settings, for example 3.3.1
-      placeholder: "3.3.1"
+      description: Shown at the bottom of Settings, for example 3.4.0
+      placeholder: "3.4.0"
     validations:
       required: true
   - type: input

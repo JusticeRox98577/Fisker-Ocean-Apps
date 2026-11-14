@@ -152,7 +152,7 @@ fun SettingsScreen(
     }
 
     Spacer(Modifier.height(18.dp))
-    Text(stringResource(R.string.settings_about, "3.3"), color = Dim, fontSize = 12.sp)
+    Text(stringResource(R.string.settings_about, "3.4"), color = Dim, fontSize = 12.sp)
 }
 
 @Composable

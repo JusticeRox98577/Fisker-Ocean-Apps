@@ -13,7 +13,7 @@ val upload = Properties()
 val uploadFile = rootProject.file("keystore.properties")
 if (uploadFile.exists()) uploadFile.inputStream().use { upload.load(it) }
 val uploadStore: String? = upload.getProperty("storeFile") ?: System.getenv("ANDROID_STORE_FILE")
-val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 3310
+val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 3400
 
 // "Any questions?" proxy address (see ask-proxy/README.md). Not secret, but the owner's own, so it comes
 // from local.properties or the OCEAN_ASK_URL variable. Empty hides the feature.
@@ -36,7 +36,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = buildNumber
-        versionName = "3.3.1"
+        versionName = "3.4.0"
         buildConfigField("String", "ASK_URL", "\"$askUrl\"")
     }
     signingConfigs {
