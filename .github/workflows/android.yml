@@ -92,7 +92,16 @@ jobs:
           FILES="OceanLive-$SHORT-Android.apk OceanLive-$SHORT-Wear.apk"
           if [ -f OceanLive-$SHORT-Android-signed.apk ]; then FILES="$FILES OceanLive-$SHORT-Android-signed.apk"; fi
           if [ -f OceanLive-$SHORT-Wear-signed.apk ]; then FILES="$FILES OceanLive-$SHORT-Wear-signed.apk"; fi
+          # Release notes: this version's section of CHANGELOG.md, plus the standard footer.
+          awk -v v="$VERSION" '$0 == "## " v {on=1; next} /^## / {on=0} on' ../CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if [ ! -s "$RUNNER_TEMP/notes.md" ]; then echo "No CHANGELOG.md section for $VERSION." > "$RUNNER_TEMP/notes.md"; fi
+          {
+            echo
+            echo "Files: OceanLive-$SHORT-Android.apk (phone) and OceanLive-$SHORT-Wear.apk (Wear OS). The -signed versions are signed with the Play upload key."
+            echo
+            echo "No account and no cloud. The only network use is optional ABRP live data. Built from ${{ github.sha }}."
+          } >> "$RUNNER_TEMP/notes.md"
           gh release create "v$VERSION-build-${{ github.run_number }}" $FILES \
             --latest \
             --title "Ocean Live $SHORT (build ${{ github.run_number }})" \
-            --notes "The Wear OS app is OceanLive-$SHORT-Wear.apk. No account and no cloud. The only network use is optional ABRP live data. Built from ${{ github.sha }}."
+            --notes-file "$RUNNER_TEMP/notes.md"

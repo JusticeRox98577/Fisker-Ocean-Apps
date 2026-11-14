@@ -1,0 +1,103 @@
+Ocean Live Source-Available License
+Version 1.0
+
+Copyright (c) 2026 Justice MontgomeryWalkup. All rights reserved, except as
+expressly granted below.
+
+"Software" means the Ocean Live source code, documentation, build scripts and
+other files in this repository. "Official Releases" means the app files that the
+copyright holder publishes, unmodified: APK and AAB files attached to this
+repository's GitHub releases, and builds distributed through Google Play, the
+App Store or TestFlight. "You" means any person or organisation using the
+Software or Official Releases.
+
+1. WHAT YOU MAY DO
+
+   a. View, download and study the Software.
+
+   b. Modify the Software and build it for your own personal, non-commercial
+      use, on devices you own or control. Your modified versions are for you
+      alone.
+
+   c. Install and use Official Releases.
+
+   d. Share Official Releases with others, free of charge, provided the files
+      are unmodified and this license and the copyright notice are not
+      removed, hidden or altered.
+
+2. WHAT YOU MAY NOT DO
+
+   a. Share, publish, upload, distribute or otherwise make available the
+      Software or any part of it, in original or modified form. This includes
+      modified source code and any app, APK, AAB, IPA or other build made from
+      modified or unmodified source code, except as allowed in section 1(d).
+
+   b. Use the Software or Official Releases, or anything made from them, for
+      any commercial or semi-commercial purpose. That includes, without
+      limitation:
+      - selling them or charging any fee for access, download, installation,
+        setup or support;
+      - including them in, or bundling them with, any product or service that
+        is sold or rented, such as OBD adapters, vehicles or subscriptions;
+      - showing advertising in or alongside them, or using them to collect
+        data for any business purpose;
+      - requiring donations, memberships or payments to obtain them;
+      - using them to provide paid diagnostic, repair, resale or fleet
+        services, or within any business.
+
+   c. Remove, hide or alter any copyright, license or attribution notice, or
+      present the Software or any modified version as an official Ocean Live
+      release.
+
+   d. Use the name "Ocean Live" or its icon for any app, product or service
+      other than Official Releases.
+
+   Hosting a fork on GitHub solely as GitHub's Terms of Service require for
+   public repositories is permitted. It does not grant any further rights in
+   this license.
+
+3. CONTRIBUTIONS
+
+   If you submit changes, issues or other contributions to this repository,
+   you grant the copyright holder a perpetual, worldwide, royalty-free right to
+   use, modify and distribute them as part of Ocean Live under any terms.
+
+4. THIRD-PARTY COMPONENTS
+
+   Libraries and other third-party components used by the Software remain
+   under their own licenses. This license does not change those terms.
+
+5. NO WARRANTY
+
+   THE SOFTWARE AND OFFICIAL RELEASES ARE PROVIDED "AS IS", WITHOUT WARRANTY
+   OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+   WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NON-INFRINGEMENT.
+
+   Ocean Live communicates with vehicle control modules through a diagnostic
+   adapter. Reading data, clearing fault codes and restarting modules are done
+   entirely at your own risk. Values shown by the app are not a dealer
+   diagnosis.
+
+6. LIMITATION OF LIABILITY
+
+   IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   OTHER LIABILITY, INCLUDING DAMAGE TO ANY VEHICLE, BATTERY, ADAPTER OR
+   DEVICE, LOSS OF DATA, OR PERSONAL INJURY, WHETHER IN AN ACTION OF CONTRACT,
+   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+   OR OFFICIAL RELEASES OR THEIR USE.
+
+7. TERMINATION
+
+   Your rights under this license end automatically if you break any of its
+   terms. You must then stop using the Software and delete any modified
+   versions you made.
+
+8. OTHER USES
+
+   Any use not expressly permitted here requires written permission from the
+   copyright holder. To ask, open an issue in this repository.
+
+Ocean Live is an independent, owner-made app. It is not affiliated with or
+endorsed by Fisker Inc. "Fisker" and "Fisker Ocean" are trademarks of their
+respective owners and are used only to describe the vehicle the app works with.

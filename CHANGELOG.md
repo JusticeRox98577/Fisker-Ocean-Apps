@@ -1,0 +1,38 @@
+# Changelog
+
+Each `## x.y.z` section is used as the release notes for that version.
+
+## 3.3.1
+
+* Landscape and split-screen layout, like 1.9: the charge ring on the left, six readings
+  beside it and the Connect button always at the top right. Made for running Ocean Live in
+  split screen on the Ocean's display under ABRP, and for phones held sideways
+* Android: the tab bar moves to a slim strip on the left in landscape
+* iPhone: no longer locked to portrait
+
+## 3.3.0
+
+* 12V battery monitor: graph over 24 h to 90 days, resting voltage after the car has slept,
+  overnight drop, time since the car last charged it, low-voltage alerts and sharing as CSV
+  or an image
+* Optional "Watch 12V while the car sleeps": a quick check every 30 minutes that lets the
+  adapter sleep in between, without waking the car
+* Charging curve for every charge, and regen energy per drive
+* Shareable battery health report (PDF)
+* Wear OS app with tile and complication, and Apple Watch app
+* German, Dutch, French and Spanish
+
+## 3.2.0
+
+* Faults: tap "Active now" to list every active code first; new and cleared codes since the
+  last scan; scan history; module software versions
+* Parked drain tracker and charging cost per session and per month
+* iPhone: Home and Lock Screen widgets, and a charging Live Activity
+* Ocean Live no longer keeps the car awake: it stops reading when the car sleeps or after
+  10 minutes parked in the background
+
+## 3.1.0
+
+* Rebuilt app with the verified battery readings, trips and charging history, fault codes
+  from 39 modules with plain-language descriptions, clearing codes and restarting modules,
+  alerts, Android Auto, CarPlay, Android widget and optional ABRP live data

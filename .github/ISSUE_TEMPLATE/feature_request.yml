@@ -1,0 +1,25 @@
+name: Idea or feature request
+description: Suggest something Ocean Live could do
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Ocean Live to do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help you?
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Which app is it for?
+      multiple: true
+      options:
+        - Android
+        - iPhone
+        - Car display / split screen
+        - Android Auto / CarPlay
+        - Watch

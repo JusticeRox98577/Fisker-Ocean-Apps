@@ -1,0 +1,66 @@
+name: Bug report
+description: Something in Ocean Live doesn't work or looks wrong
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Screenshots or photos from the car help a lot.
+        Please don't post your full VIN.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Which app?
+      options:
+        - Android phone
+        - Android in split screen on the Ocean's display
+        - Android Auto
+        - Wear OS watch
+        - iPhone
+        - CarPlay
+        - Apple Watch
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Ocean Live version
+      description: Shown at the bottom of Settings, for example 3.3.1
+      placeholder: "3.3.1"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone or watch model and system version
+      placeholder: "Pixel 8, Android 16 / iPhone 15, iOS 26.1"
+  - type: input
+    id: adapter
+    attributes:
+      label: OBD adapter
+      placeholder: "Vgate vLinker FD+"
+  - type: input
+    id: car
+    attributes:
+      label: Car and software version
+      placeholder: "Ocean Extreme, O-Loop 2.2.3"
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen again
+      placeholder: |
+        1. Connect to the car
+        2. Open the Faults tab
+        3. ...
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots, photos or shared reports
+      description: Drag images or the shared fault/12V report here.
