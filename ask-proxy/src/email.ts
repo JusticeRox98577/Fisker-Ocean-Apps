@@ -125,6 +125,8 @@ export function emailLang(acceptLanguage: string): EmailLang {
 // Served by the site (site/site/public/email/header.png). Deploy the site first and check this URL returns
 // 200 with Content-Type image/png before deploying the worker, or every sign-in email links a missing image.
 export const HEADER_IMAGE = "https://oceanlive.org/email/header.png";
+/** The app icon (rounded, 96 px PNG for 32 px display). Served from the website like the banner. */
+export const LOGO_IMAGE = "https://oceanlive.org/icons/logo-rounded-96.png";
 const SITE = "https://oceanlive.org";
 
 // Palette (design-system/ocean-live/pages/home.md). Contrast on the surfaces used:
@@ -262,7 +264,7 @@ a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important
 <!--[if mso]><v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:560px;height:58px"><v:fill type="gradient" color="${C.deep}" color2="${C.paper}" angle="90"/><v:textbox inset="0,0,0,0"><![endif]-->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 <tr>
-<td class="px band-mark" valign="middle" style="padding:18px 28px;font-family:${SANS};font-size:15px;line-height:22px;font-weight:700;letter-spacing:3px;color:${C.ink};text-transform:uppercase;white-space:nowrap"><span aria-hidden="true" style="display:inline-block;width:18px;height:3px;background-color:${C.cyan};vertical-align:middle;border-radius:2px;box-shadow:0 0 8px ${C.cyan}"></span><span aria-hidden="true">&nbsp;&nbsp;</span><span class="ink">Ocean Live</span></td>
+<td class="px band-mark" valign="middle" style="padding:18px 28px;font-family:${SANS};font-size:15px;line-height:22px;font-weight:700;letter-spacing:3px;color:${C.ink};text-transform:uppercase;white-space:nowrap"><img src="${LOGO_IMAGE}" width="32" height="32" alt="" style="display:inline-block;width:32px;height:32px;border:0;outline:none;vertical-align:middle;border-radius:7px"><span aria-hidden="true">&nbsp;&nbsp;</span><span class="ink">Ocean Live</span></td>
 <td class="px band-label" align="right" valign="middle" style="padding:18px 28px 18px 0;font-family:${BODY};font-size:12px;line-height:16px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:${C.cyan}"><span class="cyan">${esc(t.label)}</span></td>
 </tr>
 </table>
