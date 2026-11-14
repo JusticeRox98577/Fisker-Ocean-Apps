@@ -7,8 +7,8 @@ plugins {
 }
 
 // The watch app must be signed with the same key as the phone app, or the two can't
-// share data. Same setup as app/build.gradle.kts: a Play upload key from
-// keystore.properties or CI secrets, otherwise the public dev-debug.keystore.
+// share data. Same setup as app/build.gradle.kts: only the owner's upload key,
+// from keystore.properties or CI secrets; without it release builds are unsigned.
 val upload = Properties()
 val uploadFile = rootProject.file("keystore.properties")
 if (uploadFile.exists()) uploadFile.inputStream().use { upload.load(it) }
@@ -31,12 +31,6 @@ android {
         versionName = "3.3.1"
     }
     signingConfigs {
-        create("public") {
-            storeFile = rootProject.file("dev-debug.keystore")
-            storePassword = "android"
-            keyAlias = "oceanlivedev"
-            keyPassword = "android"
-        }
         if (uploadStore != null) create("upload") {
             storeFile = rootProject.file(uploadStore)
             storePassword = upload.getProperty("storePassword") ?: System.getenv("ANDROID_STORE_PASSWORD")
@@ -47,7 +41,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName(if (uploadStore != null) "upload" else "public")
+            // Release builds are signed only with the owner's upload key. Without it they are left unsigned.
+            if (uploadStore != null) signingConfig = signingConfigs.getByName("upload")
         }
     }
     compileOptions {

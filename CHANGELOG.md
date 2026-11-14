@@ -2,6 +2,15 @@
 
 Each `## x.y.z` section is used as the release notes for that version.
 
+## Unreleased
+
+* Android APKs on GitHub are now signed only with the official Ocean Live key. APKs from
+  GitHub up to 3.3.1 used a test key that is public, so someone else could make an update
+  that installs over them. If you installed one, uninstall it once and install the new one;
+  after that, updates install over it as usual. Play Store installs are not affected
+* New SECURITY.md: how to report a security problem privately
+* License updated to version 1.1: Washington State law, and severability
+
 ## 3.3.1
 
 * Landscape and split-screen layout, like 1.9: the charge ring on the left, six readings

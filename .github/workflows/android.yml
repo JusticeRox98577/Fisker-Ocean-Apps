@@ -40,64 +40,79 @@ jobs:
           echo "SHORT=${VERSION%.0}" >> "$GITHUB_ENV"
       - name: Unit tests
         run: ./gradlew testDebugUnitTest
-      - name: Build APK
-        # Signed with the public test key in android/dev-debug.keystore, same as
-        # the 2.0 GitHub APKs, so it installs over a sideloaded 2.0.
+      - name: Build and sign with the upload key
+        # Only the owner's upload key signs Ocean Live. Without the key secrets this is a
+        # compile check only (debug builds, no APKs), and a manual release run fails.
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEYSTORE_BASE64 || '' }}
+          ANDROID_STORE_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.ANDROID_STORE_PASSWORD || '' }}
+          ANDROID_KEY_ALIAS: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEY_ALIAS || '' }}
+          ANDROID_KEY_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.ANDROID_KEY_PASSWORD || '' }}
+          RELEASE: ${{ github.event_name == 'workflow_dispatch' }}
+          # Optional repository variable: the upload certificate's SHA-256, so a wrong key fails the build.
+          EXPECTED_CERT: ${{ vars.ANDROID_CERT_SHA256 }}
         run: |
-          ./gradlew :app:assembleRelease :wear:assembleRelease
+          if [ "$RELEASE" = "true" ] && [ "$GITHUB_REF" != "refs/heads/main" ] && [[ "$GITHUB_REF" != refs/tags/release-* ]]; then
+            echo "Releases are only built from main or a release-x.y.z tag."; exit 1
+          fi
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            if [ "$RELEASE" = "true" ]; then
+              echo "A release needs the ANDROID_* upload key secrets."; exit 1
+            fi
+            echo "No upload key secrets: compile check only, no APKs." >> "$GITHUB_STEP_SUMMARY"
+            ./gradlew :app:assembleDebug :wear:assembleDebug
+            exit 0
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          TASKS=":app:assembleRelease :wear:assembleRelease"
+          if [ "$RELEASE" = "true" ]; then TASKS="$TASKS :app:bundleRelease :wear:bundleRelease"; fi
+          ANDROID_STORE_FILE="$RUNNER_TEMP/upload.jks" ./gradlew $TASKS
           cp app/build/outputs/apk/release/app-release.apk OceanLive-$SHORT-Android.apk
           cp wear/build/outputs/apk/release/wear-release.apk OceanLive-$SHORT-Wear.apk
+          if [ "$RELEASE" = "true" ]; then
+            cp app/build/outputs/bundle/release/app-release.aab OceanLive-$SHORT-Play.aab
+            # The watch app goes to Play as its own bundle (Wear OS form factor), same key.
+            cp wear/build/outputs/bundle/release/wear-release.aab OceanLive-$SHORT-Wear-Play.aab
+          fi
+          # Show which certificate signed the APKs, so a wrong key is obvious in the log.
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          for f in OceanLive-$SHORT-Android.apk OceanLive-$SHORT-Wear.apk; do
+            echo "== $f"; "$APKSIGNER" verify --print-certs "$f" | grep -E "certificate (DN|SHA-256)"
+            if [ -n "$EXPECTED_CERT" ]; then
+              GOT=$("$APKSIGNER" verify --print-certs "$f" | grep -m1 "certificate SHA-256" | awk '{print $NF}')
+              WANT=$(printf '%s' "$EXPECTED_CERT" | tr -d ': ' | tr 'A-F' 'a-f')
+              [ "$GOT" = "$WANT" ] || { echo "$f is not signed with the expected certificate."; exit 1; }
+            fi
+          done
+      - name: Remove the signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
       - uses: actions/upload-artifact@v4
         with:
           name: OceanLive-Android
           path: |
             android/OceanLive-${{ env.SHORT }}-Android.apk
             android/OceanLive-${{ env.SHORT }}-Wear.apk
-      - name: Build Play bundle and signed APK
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "No upload key secrets set, skipping the Play bundle and signed APK." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
-          ANDROID_STORE_FILE="$RUNNER_TEMP/upload.jks" ./gradlew :app:bundleRelease :app:assembleRelease :wear:bundleRelease :wear:assembleRelease
-          cp app/build/outputs/bundle/release/app-release.aab OceanLive-$SHORT-Play.aab
-          # The watch app goes to Play as its own bundle (Wear OS form factor), same key.
-          cp wear/build/outputs/bundle/release/wear-release.aab OceanLive-$SHORT-Wear-Play.aab
-          cp wear/build/outputs/apk/release/wear-release.apk OceanLive-$SHORT-Wear-signed.apk
-          # The same app signed with the upload key, for installing directly instead of through the Play Store.
-          cp app/build/outputs/apk/release/app-release.apk OceanLive-$SHORT-Android-signed.apk
-          rm -f "$RUNNER_TEMP/upload.jks"
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:
           name: OceanLive-Play-bundle
           path: |
             android/OceanLive-${{ env.SHORT }}-Play.aab
-            android/OceanLive-${{ env.SHORT }}-Android-signed.apk
             android/OceanLive-${{ env.SHORT }}-Wear-Play.aab
-            android/OceanLive-${{ env.SHORT }}-Wear-signed.apk
-          if-no-files-found: ignore
       - name: Publish GitHub release
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           FILES="OceanLive-$SHORT-Android.apk OceanLive-$SHORT-Wear.apk"
-          if [ -f OceanLive-$SHORT-Android-signed.apk ]; then FILES="$FILES OceanLive-$SHORT-Android-signed.apk"; fi
-          if [ -f OceanLive-$SHORT-Wear-signed.apk ]; then FILES="$FILES OceanLive-$SHORT-Wear-signed.apk"; fi
           # Release notes: this version's section of CHANGELOG.md, plus the standard footer.
           awk -v v="$VERSION" '$0 == "## " v {on=1; next} /^## / {on=0} on' ../CHANGELOG.md > "$RUNNER_TEMP/notes.md"
           if [ ! -s "$RUNNER_TEMP/notes.md" ]; then echo "No CHANGELOG.md section for $VERSION." > "$RUNNER_TEMP/notes.md"; fi
           {
             echo
-            echo "Files: OceanLive-$SHORT-Android.apk (phone) and OceanLive-$SHORT-Wear.apk (Wear OS). The -signed versions are signed with the Play upload key."
+            echo "Files: OceanLive-$SHORT-Android.apk (phone) and OceanLive-$SHORT-Wear.apk (Wear OS), both signed with the official Ocean Live key."
             echo
             echo "No account and no cloud. The only network use is optional ABRP live data. Built from ${{ github.sha }}."
           } >> "$RUNNER_TEMP/notes.md"

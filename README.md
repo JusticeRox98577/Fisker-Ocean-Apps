@@ -100,10 +100,10 @@ cd android
 ./gradlew testDebugUnitTest assembleRelease
 ```
 
-This builds the phone app and the Wear OS app. Release APKs are signed with the public test
-key in `android/dev-debug.keystore` so they install over earlier GitHub builds. Play Store
-bundles are signed with the private upload key, which is never committed. Locally you can put
-it in `android/keystore.properties`:
+This builds the phone app and the Wear OS app. Official builds are signed only with the
+owner's private upload key, which is never committed. Without it, release builds come out
+unsigned; for your own use, build debug (`assembleDebug`) or sign with your own key. If you
+have a key, put it in `android/keystore.properties`:
 
 ```
 storeFile=C:/path/to/ocean-upload.jks
@@ -132,7 +132,7 @@ Bundle IDs: `com.justice.OceanABRP` (app, CarPlay driving-task entitlement, App 
 
 | Workflow | On push to main | On manual run (Actions tab, Run workflow) |
 | --- | --- | --- |
-| Android | Unit tests and APK build artifacts (phone and Wear OS) | Also signed Play bundles and a GitHub release with the APKs, named from the app version, with notes from CHANGELOG.md |
+| Android | Unit tests and signed APK build artifacts (phone and Wear OS); pull requests only check that it compiles | Also Play bundles and a GitHub release with the APKs, named from the app version, with notes from CHANGELOG.md |
 | iOS | Unsigned build and IPA artifact | Also signs and uploads to TestFlight |
 
 Manual iOS runs have two switches: **Include the widgets and Live Activity** (on by default)
@@ -143,10 +143,12 @@ Each finished release is tagged `release-x.y.z`. To rebuild one, choose its tag 
 
 Secrets used by the manual runs:
 
-* Android Play bundle: `ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
+* Android signing (every APK and bundle): `ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
 * iOS TestFlight: `ASC_KEY_P8`, `ASC_KEY_ID`, `ASC_ISSUER_ID`
 
-If a secret is missing, that step is skipped and everything else still builds.
+Without the Android secrets, a push only checks that the app compiles, and a manual Android
+run fails rather than publish an unsigned release. Without the iOS secrets, the TestFlight
+upload is skipped.
 
 ## Feedback
 

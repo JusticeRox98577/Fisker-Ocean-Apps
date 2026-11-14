@@ -6,9 +6,9 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-// Same signing setup as Ocean Live 2.0 so V3 installs over it as an update:
-// a Play upload key from keystore.properties or CI secrets, otherwise the
-// public dev-debug.keystore for sideloaded GitHub builds.
+// Release signing: only the owner's upload key, from keystore.properties (local)
+// or the ANDROID_* secrets (CI). There is no public fallback key, so nobody else
+// can make a build that installs as an update over an official one.
 val upload = Properties()
 val uploadFile = rootProject.file("keystore.properties")
 if (uploadFile.exists()) uploadFile.inputStream().use { upload.load(it) }
@@ -27,12 +27,6 @@ android {
         versionName = "3.3.1"
     }
     signingConfigs {
-        create("public") {
-            storeFile = rootProject.file("dev-debug.keystore")
-            storePassword = "android"
-            keyAlias = "oceanlivedev"
-            keyPassword = "android"
-        }
         if (uploadStore != null) create("upload") {
             storeFile = rootProject.file(uploadStore)
             storePassword = upload.getProperty("storePassword") ?: System.getenv("ANDROID_STORE_PASSWORD")
@@ -43,7 +37,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName(if (uploadStore != null) "upload" else "public")
+            // Release builds are signed only with the owner's upload key. Without it they are left unsigned.
+            if (uploadStore != null) signingConfig = signingConfigs.getByName("upload")
         }
     }
     compileOptions {

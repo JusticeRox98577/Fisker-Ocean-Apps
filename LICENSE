@@ -1,5 +1,5 @@
 Ocean Live Source-Available License
-Version 1.0
+Version 1.1
 
 Copyright (c) 2026 Justice MontgomeryWalkup. All rights reserved, except as
 expressly granted below.
@@ -93,7 +93,28 @@ Software or Official Releases.
    terms. You must then stop using the Software and delete any modified
    versions you made.
 
-8. OTHER USES
+8. GOVERNING LAW
+
+   This license is governed by the laws of the State of Washington, USA,
+   without regard to its conflict-of-law rules, and by applicable United
+   States federal law, including copyright law. The state and federal courts
+   located in King County, Washington, have exclusive jurisdiction over any
+   dispute arising from or relating to this license, the Software or Official
+   Releases, and you consent to the jurisdiction of those courts. This does
+   not prevent the copyright holder from seeking injunctive relief, or using
+   takedown procedures such as those under the Digital Millennium Copyright
+   Act, in any jurisdiction.
+
+9. SEVERABILITY AND ENTIRE LICENSE
+
+   If any part of this license is held invalid or unenforceable, that part
+   shall be enforced to the maximum extent permitted and the remaining parts
+   remain in full effect. If the copyright holder does not enforce a term,
+   that is not a waiver of the right to enforce it later. This license is the
+   entire agreement about the Software and Official Releases, unless the
+   copyright holder grants other terms in writing.
+
+10. OTHER USES
 
    Any use not expressly permitted here requires written permission from the
    copyright holder. To ask, open an issue in this repository.
