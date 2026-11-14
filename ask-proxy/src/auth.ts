@@ -184,10 +184,17 @@ async function accountInfo(db: D1Database, a: Account) {
   return { id: a.id, email: a.email, name: a.name, created: a.created, providers: ids.results.map((r) => r.provider) };
 }
 
-/** Removes the account, its sign-ins, sessions, logged questions and any hand-set question limit. */
+/** Removes the account, its sign-ins, sessions, pending email codes, logged questions and any hand-set question limit. */
 async function deleteAccount(env: AuthEnv, id: string) {
   const db = env.LOG_DB!;
   await db.batch([
+    // First, while the account and identity rows still exist: pending codes for every address of the account
+    // (codes are keyed by the lower-cased address).
+    db.prepare(
+      "DELETE FROM email_codes WHERE email IN (" +
+        "SELECT lower(email) FROM accounts WHERE id = ? AND email IS NOT NULL " +
+        "UNION SELECT lower(subject) FROM identities WHERE account_id = ? AND provider = 'email')",
+    ).bind(id, id),
     db.prepare("DELETE FROM questions WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM sessions WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM identities WHERE account_id = ?").bind(id),

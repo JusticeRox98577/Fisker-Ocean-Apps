@@ -1,8 +1,10 @@
 import Accessibility
 import AuthenticationServices
+import os
 import SwiftUI
 
 private let privacyURL = URL(string: "https://oceanlive.org/privacy")!
+private let appleSignInLog = Logger(subsystem: "com.justice.OceanABRP", category: "SignInWithApple")
 
 /// Shown instead of the app until the owner signs in. Signing in needs internet once; after that the
 /// app works offline. Nothing here talks to the car.
@@ -134,7 +136,13 @@ struct SignInView: View {
                 run(.apple) { await accounts.signInWithApple(credential, nonce: nonce) }
             case .failure(let error):
                 // Closing Apple's sheet is not an error.
-                if (error as? ASAuthorizationError)?.code != .canceled { problem = .failed }
+                let code = (error as? ASAuthorizationError)?.code
+                if code == .canceled { return }
+                // Apple's own "Sign In Not Completed" sheet comes from here, before the server is called.
+                // 1000 (unknown) usually means the App ID or provisioning profile lacks Sign in with Apple;
+                // 1004 (failed) is Apple's side or the device's Apple ID. Logged so the cause shows in Console.
+                appleSignInLog.error("Sign in with Apple failed: \((error as NSError).domain, privacy: .public) \((error as NSError).code, privacy: .public)")
+                problem = .failed
             }
         }
         .signInWithAppleButtonStyle(.white)

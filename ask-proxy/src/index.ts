@@ -168,12 +168,14 @@ export default {
     }
   },
 
-  /** Daily: deletes research log entries past the retention period. */
+  /** Daily: deletes research log entries past the retention period and sign-in codes that have expired. */
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
     if (!env.LOG_DB) return;
     const days = intVar(env.LOG_RETENTION_DAYS, 90);
     const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
     await env.LOG_DB.prepare("DELETE FROM questions WHERE ts < ?").bind(cutoff).run();
+    // Expiry is an ISO timestamp, so string order is time order. Run daily, an expired code is gone within a day.
+    await env.LOG_DB.prepare("DELETE FROM email_codes WHERE expires < ?").bind(new Date().toISOString()).run();
   },
 } satisfies ExportedHandler<Env>;
 

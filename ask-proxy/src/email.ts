@@ -28,6 +28,8 @@ interface Strings {
   ignore: string;
   sentBecause: string;
   footer: string;
+  /** Banner credit (CC BY 4.0). {work}, {author} and {license} are replaced (linked in the HTML). */
+  credit: string;
   /** Plain-text body lines before the code. */
   textIntro: string;
 }
@@ -52,6 +54,7 @@ const STRINGS: Record<EmailLang, Strings> = {
     ignore: "Didn't ask for this? You can ignore this email — nobody can sign in without the code.",
     sentBecause: "Sent because someone entered this address in Ocean Live.",
     footer: "Ocean Live · independent app for the Fisker Ocean · oceanlive.org",
+    credit: "Car drawing based on “{work}” by {author}, {license}, changed.",
     textIntro: "Your Ocean Live sign-in code is:",
   },
   de: {
@@ -67,6 +70,7 @@ const STRINGS: Record<EmailLang, Strings> = {
     ignore: "Nicht angefordert? Dann kannst du diese E-Mail ignorieren – ohne den Code kann sich niemand anmelden.",
     sentBecause: "Du bekommst diese E-Mail, weil jemand diese Adresse in Ocean Live eingegeben hat.",
     footer: "Ocean Live · unabhängige App für den Fisker Ocean · oceanlive.org",
+    credit: "Autozeichnung nach „{work}“ von {author}, {license}, verändert.",
     textIntro: "Dein Anmeldecode für Ocean Live:",
   },
   nl: {
@@ -82,6 +86,7 @@ const STRINGS: Record<EmailLang, Strings> = {
     ignore: "Niet aangevraagd? Dan kun je deze e-mail negeren – zonder de code kan niemand inloggen.",
     sentBecause: "Verstuurd omdat iemand dit adres in Ocean Live heeft ingevuld.",
     footer: "Ocean Live · onafhankelijke app voor de Fisker Ocean · oceanlive.org",
+    credit: "Autotekening gebaseerd op “{work}” door {author}, {license}, aangepast.",
     textIntro: "Je inlogcode voor Ocean Live:",
   },
   fr: {
@@ -97,6 +102,7 @@ const STRINGS: Record<EmailLang, Strings> = {
     ignore: `Vous ne l'avez pas demandé${NBSP}? Ignorez simplement cet e-mail${NBSP}: personne ne peut se connecter sans le code.`,
     sentBecause: "Envoyé parce que quelqu'un a saisi cette adresse dans Ocean Live.",
     footer: "Ocean Live · application indépendante pour le Fisker Ocean · oceanlive.org",
+    credit: `Dessin de la voiture d’après «${NBSP}{work}${NBSP}» par {author}, {license}, modifié.`,
     textIntro: "Votre code de connexion Ocean Live :",
   },
   es: {
@@ -112,6 +118,7 @@ const STRINGS: Record<EmailLang, Strings> = {
     ignore: "¿No lo has pedido? Puedes ignorar este correo: nadie puede entrar sin el código.",
     sentBecause: "Te llega porque alguien escribió esta dirección en Ocean Live.",
     footer: "Ocean Live · app independiente para el Fisker Ocean · oceanlive.org",
+    credit: "Dibujo del coche basado en «{work}» de {author}, {license}, modificado.",
     textIntro: "Tu código para entrar en Ocean Live:",
   },
 };
@@ -128,6 +135,31 @@ export const HEADER_IMAGE = "https://oceanlive.org/email/header.png";
 /** The app icon (rounded, 96 px PNG for 32 px display). Served from the website like the banner. */
 export const LOGO_IMAGE = "https://oceanlive.org/icons/logo-rounded-96.png";
 const SITE = "https://oceanlive.org";
+
+// The banner's car is derived from a CC BY 4.0 model; the licence asks for title, author, source, licence
+// and a note that it was changed.
+const CREDIT = {
+  work: "Fisker Ocean (low-poly)",
+  workUrl: "https://sketchfab.com/3d-models/fisker-ocean-low-poly-f506bfe876864c04b68bdfc59070739a",
+  author: "LagzDesign",
+  license: "CC BY 4.0",
+  licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+};
+
+/** Fills the credit template; `wrap` turns the work title and licence name into links (HTML only). */
+function credit(t: Strings, wrap?: (label: string, href: string) => string): string {
+  const e = wrap ? esc : (s: string) => s;
+  // Split on the tokens first so only the template text is escaped, never the generated markup.
+  return t.credit
+    .split(/(\{work\}|\{author\}|\{license\})/)
+    .map((part) => {
+      if (part === "{work}") return wrap ? wrap(CREDIT.work, CREDIT.workUrl) : CREDIT.work;
+      if (part === "{author}") return e(CREDIT.author);
+      if (part === "{license}") return wrap ? wrap(CREDIT.license, CREDIT.licenseUrl) : CREDIT.license;
+      return e(part);
+    })
+    .join("");
+}
 
 // Palette (design-system/ocean-live/pages/home.md). Contrast on the surfaces used:
 // ink #EAF4FF ≈ 13:1 on #0E2C50, muted #A9C4E0 ≈ 7.5:1 on #0E2C50 and ≈ 9:1 on #071A33, cyan #5CE1E6 ≈ 9:1 on #071A33.
@@ -174,6 +206,10 @@ export function signInEmail(lang: EmailLang, code: string, minutes: number): Sig
     t.sentBecause,
     t.footer.replace("oceanlive.org", SITE),
     "",
+    credit(t),
+    CREDIT.workUrl,
+    CREDIT.licenseUrl,
+    "",
   ].join("\n");
   return { subject, text, html: html(lang, t, code, minutes) };
 }
@@ -183,6 +219,10 @@ function html(lang: EmailLang, t: Strings, code: string, minutes: number): strin
   const footer = esc(t.footer).replace(
     "oceanlive.org",
     `<a href="${SITE}" style="color:${C.cyan};text-decoration:underline">oceanlive.org</a>`,
+  );
+  const creditHtml = credit(
+    t,
+    (label, href) => `<a href="${href}" style="color:${C.muted};text-decoration:underline">${esc(label)}</a>`,
   );
   // Letter-spacing of the code; the left padding is larger by the same amount so the six glyphs (and the gap
   // between digits 3 and 4, where the thin centre line sits) are optically centred.
@@ -330,6 +370,7 @@ ${chip("&#8856;", chip3)}
 <tr><td class="px" bgcolor="${C.deep}" align="center" style="background-color:${C.deep};padding:22px 40px 26px;border-radius:0 0 16px 16px;font-family:${BODY};font-size:13px;line-height:21px;color:${C.muted}">
 <p class="muted" style="margin:0 0 6px;font-family:${BODY};font-size:13px;line-height:21px;color:${C.muted}">${footer}</p>
 <p class="muted" style="margin:0;font-family:${BODY};font-size:13px;line-height:21px;color:${C.muted}">${esc(t.sentBecause)}</p>
+<p class="muted" style="margin:10px 0 0;font-family:${BODY};font-size:12px;line-height:18px;color:${C.muted}">${creditHtml}</p>
 </td></tr>
 
 </table>
