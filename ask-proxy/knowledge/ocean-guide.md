@@ -186,7 +186,7 @@ Android Auto and CarPlay.
 
 * Sends the question, and unless **Include my car's readings** is off, the latest readings and
   fault codes the app already has; never the VIN or location, and it never wakes the car.
-  **Show what's sent** shows the exact text and the install ID. Up to 20 questions a day.
+  **Show what's sent** shows the exact text and the install ID. 10 free questions a day per phone; if the monthly budget runs out, questions pause for everyone until the next month.
   Questions are kept for 90 days for research; to have them deleted, the owner sends their
   install ID through the GitHub issues page.
 

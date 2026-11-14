@@ -120,7 +120,7 @@ export default {
     ]);
     const custom = override === null ? null : intVar(override, NaN);
     const hasCustom = custom !== null && Number.isFinite(custom);
-    const deviceLimit = hasCustom ? custom : intVar(env.DEVICE_DAILY_LIMIT, 20);
+    const deviceLimit = hasCustom ? custom : intVar(env.DEVICE_DAILY_LIMIT, 10);
     // A device with its own limit isn't held back by the shared per-network limit.
     const ipLimit = hasCustom ? Infinity : intVar(env.IP_DAILY_LIMIT, 40);
 

@@ -35,7 +35,7 @@ LOG_RETENTION_DAYS = "90"
 # The proxy stops answering once this many US dollars were spent in a calendar month (UTC).
 MONTHLY_CAP_USD = "10"
 # Questions per app install per day (UTC).
-DEVICE_DAILY_LIMIT = "20"
+DEVICE_DAILY_LIMIT = "10"
 # Questions per network (IP address) per day, across installs.
 IP_DAILY_LIMIT = "40"
 

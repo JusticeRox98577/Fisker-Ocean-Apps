@@ -1,7 +1,7 @@
 # Ocean Live "Any questions?" proxy
 
 A small Cloudflare Worker between the apps and Claude. It holds the Anthropic API key (the
-apps never see it), limits each install to 20 questions a day and each network to 40, and
+apps never see it), limits each install to 10 questions a day and each network to 40, and
 stops answering once $10 has been spent in a month. For research, it logs every question with
 its answer, the readings sent with it and the install ID to a D1 database, and deletes
 entries after 90 days. IP addresses are only kept as salted hashes in the daily counters,
@@ -100,7 +100,7 @@ Change the limits in `[vars]` in `wrangler.toml` and deploy again:
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `MONTHLY_CAP_USD` | `10` | Stop answering after this many dollars in a calendar month (UTC) |
-| `DEVICE_DAILY_LIMIT` | `20` | Questions per app install per day |
+| `DEVICE_DAILY_LIMIT` | `10` | Questions per app install per day |
 | `IP_DAILY_LIMIT` | `40` | Questions per network per day |
 
 The spend counter is worked out from the token counts Claude returns at Claude Opus 5.5 list
