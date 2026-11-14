@@ -1,0 +1,20 @@
+ocean-source.glb
+
+"Fisker Ocean (low-poly)" by LagzDesign
+https://sketchfab.com/3d-models/fisker-ocean-low-poly-f506bfe876864c04b68bdfc59070739a
+Author: https://sketchfab.com/LagzDesign
+Licence: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+This is the original file as downloaded from Sketchfab. It is kept here only as the source for
+public/models/ocean.glb, which tools/build-model.mjs makes from it. Changes made for the website:
+- texture coordinates (UVs) and material extensions removed; only positions and normals kept
+- tyres simplified: the four identical tyres share one mesh with about half the original's
+  vertices (about 89% fewer tyre triangles in total); meshes welded, deduplicated, quantized
+  and meshopt-compressed
+- on the page: drawn as lines, near-side door panels separated so they can open, and shaded
+  with the site's own materials
+- the static drawing (public/img/ocean-blueprint.svg) and the sign-in email banner
+  (public/email/header.*) are side views projected from the model
+
+The model is not made by, and not endorsed by, Fisker Inc. or the model's author.

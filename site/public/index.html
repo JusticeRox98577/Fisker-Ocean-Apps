@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en" class="no-js home">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ocean Live · Live battery, 12V and fault codes for the Fisker Ocean</title>
+<meta name="description" content="Ocean Live is an independent, owner-made app for the Fisker Ocean. Live charge, battery health, 12V monitor, trips and fault codes from 39 modules, read from your car over a Bluetooth OBD adapter. Android, Wear OS, iPhone and Apple Watch.">
+<link rel="canonical" href="https://oceanlive.org/">
+<meta name="theme-color" content="#0B2545">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ocean Live">
+<meta property="og:title" content="Ocean Live · Your Fisker Ocean, live">
+<meta property="og:description" content="Battery, 12V, trips and fault codes for the Fisker Ocean, read from the car through a Bluetooth OBD adapter. No ads, no tracking. Made by an owner.">
+<meta property="og:url" content="https://oceanlive.org/">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://oceanlive.org/icons/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="The Ocean Live app icon">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ocean Live · Your Fisker Ocean, live">
+<meta name="twitter:description" content="Battery, 12V, trips and fault codes for the Fisker Ocean, read from the car over Bluetooth. Made by an owner.">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script type="importmap">{"imports":{"three":"/vendor/three/three.module.min.js","three/addons/":"/vendor/three/addons/"}}</script>
+<script src="/app.js" defer></script>
+<script type="module" src="/js/blueprint.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Ocean Live",
+  "url": "https://oceanlive.org/",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Android, Wear OS, iOS, watchOS",
+  "description": "Independent, owner-made companion app for the Fisker Ocean: live battery data, 12V monitor, trips, charging curves and fault codes over a Bluetooth OBD adapter.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#download">Skip to downloads</a>
+
+<!-- The drawing: a fixed 3D canvas behind the page, a static drawing until (or instead of) it, and its labels. -->
+<div class="stage" id="stage">
+  <figure class="stage-fallback" aria-hidden="true">
+    <div class="blueprint-figure">
+      <img src="/img/ocean-blueprint.svg" width="1526" height="633" alt="" decoding="async">
+      <span class="label l-wheelbase">A · wheelbase</span>
+      <span class="label red l-length">B · length</span>
+      <span class="label l-lightbar">light bar</span>
+    </div>
+  </figure>
+  <canvas id="blueprint" aria-hidden="true"></canvas>
+</div>
+<div class="paper" aria-hidden="true"></div>
+<div class="callouts" id="callouts" aria-hidden="true"></div>
+<!-- The drawing's title block (desktop): app.js fills in the view and sheet for the section in view. -->
+<div class="titleblock" aria-hidden="true">
+  <div><span>Title</span><b>Ocean Live</b></div>
+  <div><span>View</span><b id="tb-view">Side elev.</b></div>
+  <div><span>Sheet</span><b id="tb-sheet">1</b></div>
+  <div><span>Scale</span><b>NTS</b></div>
+  <div><span>Rev</span><b id="tb-rev">&ndash;</b></div>
+  <div><span>Dims</span><b>A wheelbase, B length</b></div>
+</div>
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<header class="site-header" id="top">
+  <nav class="wrap nav" aria-label="Main">
+    <a class="brand" href="/" aria-label="Ocean Live home">
+      <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+      Ocean Live
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="#live">Live data</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#battery">12V</a></li>
+      <li><a href="#faults">Fault codes</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li class="nav-menu-only"><a href="#download">Downloads</a></li>
+    </ul>
+    <a class="btn btn-ghost btn-small nav-cta" href="#download">Downloads</a>
+  </nav>
+</header>
+
+<main id="main">
+
+<!-- 1. HERO: front three-quarter view; the drawing draws itself in -->
+<section class="chapter hero" data-scene="hero" aria-labelledby="hero-title">
+  <div class="wrap">
+    <div class="stack">
+      <div class="panel">
+        <div class="eyebrow after-title" data-i="0">For Fisker Ocean owners</div>
+        <h1 id="hero-title"><span class="line"><span>Your Ocean,</span></span><span class="line"><span class="glow">live.</span></span></h1>
+        <p class="lede after-title" data-i="1">Battery, 12V, trips and fault codes, read straight from the car through a Bluetooth OBD adapter. <strong>Your car talks to your phone.</strong> No ads, no tracking, and it lets the car sleep.</p>
+        <div class="hero-ctas after-title" data-i="2">
+          <a class="btn btn-primary" href="#download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            Get Ocean Live
+          </a>
+        </div>
+        <div class="hero-links after-title" data-i="3">
+          <a class="text-link" href="#live">See what it does
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></a>
+          <button class="btn btn-ghost btn-small tilt-toggle" type="button" aria-pressed="false" id="tilt-toggle">Tilt the drawing with your phone</button>
+        </div>
+        <ul class="hero-meta after-title" data-i="4" aria-label="Platforms">
+          <li>Android &amp; Wear OS</li><li>iPhone &amp; Apple Watch</li><li>CarPlay &amp; Android Auto</li>
+        </ul>
+      </div>
+      <div class="stats after-title" data-i="5" aria-label="At a glance">
+        <div class="stat"><b data-count="39">39</b><span>modules read for fault codes</span></div>
+        <div class="stat"><b><span data-count="90">90</span> days</b><span>of 12V battery history</span></div>
+        <div class="stat"><b data-count="5">5</b><span>languages: EN, DE, NL, FR, ES</span></div>
+        <div class="stat"><b>0</b><span>ads, trackers or keep-alive pings</span></div>
+      </div>
+      <p class="scroll-cue after-title" data-i="6" aria-hidden="true"><i></i>scroll to open it up</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2. LIVE DATA: side elevation with dimension lines -->
+<section class="chapter" id="live" data-scene="live" data-side="left" aria-labelledby="live-title">
+  <div class="wrap">
+    <div class="stack">
+      <div class="panel reveal">
+        <div class="eyebrow">Live data</div>
+        <h2 id="live-title">Watch every kilowatt arrive.</h2>
+        <p>Plug in, open Ocean Live, and the charge ring fills as the car charges. Power, energy added and time to your limit update as the car reports them, and every charge is saved with its own curve. On a drive: distance, energy and efficiency.</p>
+        <ul class="checks">
+          <li>Charging curve for every charge <span>(kW against %)</span></li>
+          <li>Usable capacity measured from your own charging</li>
+          <li>Charging cost per session and per month</li>
+          <li>Alerts when it reaches your level, or stops early</li>
+        </ul>
+      </div>
+      <div class="devices reveal" data-i="2">
+        <div class="phone" role="img" aria-label="App mockup: charge ring at 78 percent while charging">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <div class="app-top"><span>Ocean Live</span><span class="pill">Charging</span></div>
+            <div class="ring" data-ring>
+              <svg viewBox="0 0 200 200" aria-hidden="true">
+                <circle class="track" cx="100" cy="100" r="85" fill="none" stroke-width="12"/>
+                <circle class="fill" cx="100" cy="100" r="85" fill="none" stroke-width="12"/>
+              </svg>
+              <div class="ring-label"><b><span data-count="78">78</span><small>%</small></b><span>Charging</span></div>
+            </div>
+            <div class="tiles">
+              <div class="tile"><small>Range</small><b>312 km</b></div>
+              <div class="tile"><small>Power</small><b><em>+46.8</em> kW</b></div>
+              <div class="tile"><small>Added</small><b>21.4 kWh</b></div>
+              <div class="tile"><small>To 90%</small><b>22 min</b></div>
+              <div class="tile"><small>Peak</small><b>148 kW</b></div>
+              <div class="tile"><small>Battery</small><b>31 °C</b></div>
+            </div>
+            <p class="mock-note">Illustration with sample values</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. DOORS: the near-side doors swing open -->
+<section class="chapter wide" id="features" data-scene="doors" data-side="right" aria-labelledby="features-title">
+  <div class="wrap">
+    <div class="stack">
+      <div class="panel reveal">
+        <div class="eyebrow">Open it up</div>
+        <h2 id="features-title">Everything your Ocean knows, on your phone.</h2>
+        <p class="muted">Ocean Live reads the battery management system and the car's modules directly.</p>
+        <div class="features">
+          <article class="feature reveal" data-i="1">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 10v4"/><path d="M7 10v4M10.5 10v4M14 10v4"/></svg>Battery</h3>
+            <p>Pack voltage and current, cell voltages and spread, battery and coolant temperatures, insulation resistance, and usable capacity from your own charging. Share a one-page battery health report as a PDF.</p>
+          </article>
+          <article class="feature reveal" data-i="2">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19c2-6 6-10 16-14"/><path d="M4 19h16"/><circle cx="4" cy="19" r="1.5"/></svg>Trips &amp; charging</h3>
+            <p>Drive and charge history with charging curves, regen per drive, charging cost per session and per month, parked drain and CSV export.</p>
+          </article>
+          <article class="feature reveal" data-i="3">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Alerts</h3>
+            <p>Charge level reached, charging stopped, low 12V battery, uneven cells and a hot pack.</p>
+          </article>
+          <article class="feature reveal" data-i="4">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5"/><path d="M12 15h.01"/></svg>Any questions?</h3>
+            <p>Tap the <b>?</b> to ask Claude, Anthropic's AI, about your Ocean or the app. It answers from an Ocean owner guide and a fault code table and, unless you turn it off, sees your latest readings. Never the VIN or location, and it never talks to the car. 10 free questions a day.</p>
+          </article>
+          <article class="feature reveal" data-i="5">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l19-9-9 19-2-8z"/></svg>ABRP live data</h3>
+            <p>Optional live telemetry to A Better Route Planner with your own token and key, so your route plan knows your real charge.</p>
+          </article>
+          <article class="feature reveal" data-i="6">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M11 5v14"/></svg>Landscape &amp; split screen</h3>
+            <p>Charge ring on the left, readings and the Connect button on the right. Made for the Ocean's own display in split screen under ABRP, and for phones held sideways.</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. MATERIALISE: the scan sweep turns the drawing into the lit car -->
+<section class="chapter tall" id="real" data-scene="materialise" data-side="left" aria-labelledby="real-title">
+  <div class="scene-mark" data-scene-mark="lit" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="stack">
+      <div class="panel reveal">
+        <div class="eyebrow">Checked against the car</div>
+        <h2 id="real-title">From the drawing to the real thing.</h2>
+        <p>Values are checked against the car's own screen. The Android and iPhone apps have the same features and decode the car the same way.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. BATTERY / 12V: x-ray view of the pack -->
+<section class="chapter" id="battery" data-scene="battery" data-side="left" aria-labelledby="v12-title">
+  <div class="wrap">
+    <div class="stack">
+      <div class="panel reveal">
+        <div class="eyebrow">12V battery monitor</div>
+        <h2 id="v12-title">Know your 12V before it lets you down.</h2>
+        <p>A weak 12V battery is the most common way an EV refuses to wake up. Ocean Live graphs it over days and weeks, shows the resting voltage after the car has slept, and warns you when it runs low.</p>
+        <ul class="checks">
+          <li>Graph over 24 h, 7, 30 or 90 days</li>
+          <li>Resting voltage and overnight drop</li>
+          <li>Time since the car last charged it</li>
+          <li>Optional checks while the car sleeps <span>(off by default)</span></li>
+        </ul>
+      </div>
+      <div class="devices reveal" data-i="2">
+        <div class="phone" role="img" aria-label="App mockup: 12V battery voltage graph">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <div class="app-title">12V battery</div>
+            <div class="graph-card">
+              <div class="graph-head"><b>12.62 V</b><span>resting, after sleep</span></div>
+              <div class="seg"><span>24 h</span><span class="on">7 d</span><span>30 d</span><span>90 d</span></div>
+              <div class="graph" data-graph>
+                <svg viewBox="0 0 220 120" preserveAspectRatio="none" aria-hidden="true">
+                  <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5CE1E6" stop-opacity=".35"/><stop offset="1" stop-color="#5CE1E6" stop-opacity="0"/></linearGradient></defs>
+                  <g class="grid"><line x1="0" y1="20" x2="220" y2="20"/><line x1="0" y1="55" x2="220" y2="55"/><line x1="0" y1="90" x2="220" y2="90"/></g>
+                  <line class="lowline" x1="0" y1="96" x2="220" y2="96"/>
+                  <path class="area" d="M0 62 L14 63 L22 22 L30 24 L38 60 L60 63 L74 64 L82 26 L92 24 L100 61 L124 64 L140 66 L150 23 L160 25 L168 61 L186 63 L196 21 L204 24 L212 60 L220 61 L220 120 L0 120 Z"/>
+                  <path class="line" pathLength="1" d="M0 62 L14 63 L22 22 L30 24 L38 60 L60 63 L74 64 L82 26 L92 24 L100 61 L124 64 L140 66 L150 23 L160 25 L168 61 L186 63 L196 21 L204 24 L212 60 L220 61"/>
+                  <text class="lbl" x="2" y="16">14.4</text><text class="lbl" x="2" y="51">12.8</text><text class="lbl" x="2" y="112">low</text>
+                </svg>
+              </div>
+            </div>
+            <div class="kv">
+              <div class="tile"><small>Overnight drop</small><b>0.06 V</b></div>
+              <div class="tile"><small>Last charged</small><b>9 h ago</b></div>
+              <div class="tile"><small>Lowest (7 d)</small><b>12.51 V</b></div>
+              <div class="tile"><small>Alert below</small><b>12.0 V</b></div>
+            </div>
+            <p class="mock-note">Illustration with sample values</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. FAULT CODES: pulsing module dots in the x-ray view -->
+<section class="chapter" id="faults" data-scene="faults" data-side="right" aria-labelledby="faults-title">
+  <div class="wrap">
+    <div class="stack">
+      <div class="panel reveal">
+        <div class="eyebrow">Fault codes</div>
+        <h2 id="faults-title"><span data-count="39">39</span> modules. Plain language.</h2>
+        <p>Scan every module for stored codes and see what they mean, with active codes first and what's new or cleared since your last scan. Read module software versions and part numbers too. Import your own description lists; they stay on your phone.</p>
+        <ul class="checks">
+          <li>Mostly reads: never uses security access, never writes data</li>
+          <li>Clearing codes and restarting modules always ask first</li>
+          <li>Only while parked and not charging, re-checked before each module</li>
+          <li>No restarts for brakes, steering, airbags, drive motors, gateway or battery management</li>
+        </ul>
+        <p class="note-hand">Module positions in the drawing are illustrative.</p>
+      </div>
+      <div class="devices reveal" data-i="2">
+        <div class="phone" role="img" aria-label="App mockup: list of fault codes from a module scan">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <div class="app-title">Faults</div>
+            <div class="scan-bar"><span>Last scan, 39 modules</span><b>2 active · 1 new</b></div>
+            <div class="chip-row"><span class="chip on">Active now</span><span class="chip">All</span><span class="chip">History</span></div>
+            <ul class="faults">
+              <li class="fault"><span class="dot active"></span><b>U0293-87 <em>active</em></b><p>Body control module · lost communication, missing message</p></li>
+              <li class="fault"><span class="dot active"></span><b>B1A21-11 <em class="new">new</em></b><p>Climate control · circuit short to ground</p></li>
+              <li class="fault"><span class="dot stored"></span><b>C1095-29</b><p>Brake module · signal invalid, stored</p></li>
+              <li class="fault"><span class="dot clear"></span><b>P0A1F-00</b><p>Battery management · cleared since last scan</p></li>
+            </ul>
+            <p class="mock-note">Illustration with made-up sample codes</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. PLATFORMS: the car turns on a turntable -->
+<section class="chapter wide" id="platforms" data-scene="platforms" data-side="left" aria-labelledby="platforms-title">
+  <div class="wrap">
+    <div class="stack">
+      <div class="panel reveal">
+        <div class="eyebrow">Phone, wrist, dashboard</div>
+        <h2 id="platforms-title">Wherever you glance.</h2>
+        <p class="muted">The watch apps, widgets, Live Activity and car screens show what your phone already has. Android Auto and CarPlay update every second.</p>
+        <div class="platforms">
+          <div class="platform reveal" data-i="1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+            <h3>Android phone</h3>
+            <p>Android 8.0 or newer. Home screen widget. Android Auto.</p>
+          </div>
+          <div class="platform reveal" data-i="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><path d="M9 6V2h6v4M9 18v4h6v-4"/></svg>
+            <h3>Wear OS</h3>
+            <p>Watch app with a tile and a complication. Wear OS 3 or newer.</p>
+          </div>
+          <div class="platform reveal" data-i="3">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 4.5h4"/></svg>
+            <h3>iPhone</h3>
+            <p>iOS 17 or newer, with CarPlay. Home and Lock Screen widgets and a charging Live Activity on iOS 18 or newer.</p>
+          </div>
+          <div class="platform reveal" data-i="4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="4"/><path d="M9 6V2h6v4M9 18v4h6v-4"/></svg>
+            <h3>Apple Watch</h3>
+            <p>Your charge and readings on your wrist, straight from your iPhone.</p>
+          </div>
+        </div>
+      </div>
+      <div class="devices reveal" data-i="2">
+        <div class="carscreen" role="img" aria-label="Mockup of Ocean Live on a car display">
+          <div class="carscreen-inner">
+            <div class="carscreen-rail"><i class="on"></i><i></i><i></i><i></i></div>
+            <div class="carscreen-main">
+              <div class="ring" data-ring>
+                <svg viewBox="0 0 200 200" aria-hidden="true">
+                  <circle class="track" cx="100" cy="100" r="85" fill="none" stroke-width="14"/>
+                  <circle class="fill" cx="100" cy="100" r="85" fill="none" stroke-width="14"/>
+                </svg>
+                <div class="ring-label"><b>78<small>%</small></b><span>Driving</span></div>
+              </div>
+              <div class="tiles">
+                <div class="tile"><small>Range</small><b>312 km</b></div>
+                <div class="tile"><small>Power</small><b>18.2 kW</b></div>
+                <div class="tile"><small>Trip</small><b>42.7 km</b></div>
+                <div class="tile"><small>Efficiency</small><b>17.9 kWh/100</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="watch" role="img" aria-label="Mockup of Ocean Live on a watch">
+          <div class="watch-strap top"></div>
+          <div class="watch-body"><div class="watch-screen"><b>78%</b><span>312 km</span><i></i></div></div>
+          <div class="watch-strap bot"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU NEED -->
+<section class="chapter" id="need" data-scene="need" data-side="right" aria-labelledby="need-title">
+  <div class="wrap">
+    <div class="stack">
+      <div class="panel reveal">
+        <div class="eyebrow">What you need</div>
+        <h2 id="need-title">One small adapter. That's it.</h2>
+        <p>Ocean Live talks to the car through a <strong>Bluetooth LE OBD adapter that speaks ELM327</strong>, such as a <strong>Vgate vLinker FD+</strong> (the one most Ocean owners use) or an <strong>OBDLink CX</strong>.</p>
+        <ol class="steps">
+          <li><span><strong>Plug the adapter</strong> into the car's OBD port.</span></li>
+          <li><span><strong>Turn the car on</strong> and open Ocean Live.</span></li>
+          <li><span><strong>Tap Find adapter.</strong> The app remembers it for next time.</span></li>
+        </ol>
+      </div>
+      <div class="adapter-art panel reveal" data-i="2" aria-hidden="true">
+        <svg viewBox="0 0 440 260">
+          <g transform="translate(40 80)" fill="none" stroke="#EAF4FF" stroke-width="1.6">
+            <path d="M0 30 h26 v-10 h86 v80 h-86 v-10 h-26z" fill="#0B2545"/>
+            <path d="M4 40h20M4 50h20M4 60h20M4 70h20M4 80h20" stroke="#A9C4E0"/>
+            <rect x="40" y="56" width="58" height="3" rx="1.5" fill="#5CE1E6" stroke="none"/>
+            <circle cx="92" cy="38" r="4" fill="#7EE0B5" stroke="none"/>
+          </g>
+          <g fill="none" stroke="#5CE1E6" stroke-width="3" stroke-linecap="round">
+            <path class="pulse" d="M178 110 q14 20 0 40"/>
+            <path class="pulse d2" d="M196 98 q24 32 0 64"/>
+            <path class="pulse d3" d="M214 86 q34 44 0 88"/>
+          </g>
+          <g transform="translate(270 20)" fill="none" stroke="#EAF4FF" stroke-width="1.6">
+            <rect width="120" height="220" rx="22" fill="#0B2545"/>
+            <rect x="8" y="8" width="104" height="204" rx="16" stroke-opacity=".35"/>
+            <circle cx="60" cy="84" r="34" stroke="#ffffff" stroke-opacity=".12" stroke-width="7"/>
+            <circle cx="60" cy="84" r="34" stroke="#5CE1E6" stroke-width="7" stroke-linecap="round" stroke-dasharray="214" stroke-dashoffset="47" transform="rotate(-90 60 84)"/>
+            <rect x="20" y="140" width="80" height="10" rx="5" stroke-opacity=".4"/>
+            <rect x="20" y="158" width="56" height="10" rx="5" stroke-opacity=".4"/>
+            <rect x="30" y="184" width="60" height="16" rx="8" fill="#5CE1E6" stroke="none"/>
+          </g>
+          <text x="95" y="210" fill="#FF8A7A" font-size="15" font-family="Architects Daughter, cursive">BLE OBD adapter</text>
+          <text x="300" y="256" fill="#FF8A7A" font-size="15" font-family="Architects Daughter, cursive">your phone</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOADS: the camera pulls back, the doors close, the car rests -->
+<section class="flow" id="download" data-scene="downloads" aria-labelledby="download-title">
+  <div class="wrap">
+    <div class="section-head center panel reveal">
+      <div class="eyebrow">Downloads</div>
+      <h2 id="download-title">Get Ocean Live.</h2>
+      <p>Free. Signed with the official Ocean Live key.</p>
+      <div class="release-line" id="release-line" aria-live="polite">
+        <span class="live" aria-hidden="true"></span>
+        <span id="release-text">Latest release on GitHub</span>
+      </div>
+    </div>
+
+    <div class="dl-grid">
+      <article class="dl featured reveal" data-i="1">
+        <span class="tag">APK</span>
+        <div class="dl-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+          <div><h3>Android phone</h3><small>Android 8.0 or newer</small></div>
+        </div>
+        <p>The full phone app, with the Android widget and Android Auto. Download it on your phone and install it.</p>
+        <div class="dl-actions">
+          <a class="btn btn-primary btn-block" id="dl-android" href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases/latest" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            <span id="dl-android-label">Download Android APK</span>
+          </a>
+        </div>
+        <p class="file-meta" id="dl-android-meta">From the latest GitHub release</p>
+      </article>
+
+      <article class="dl reveal" data-i="2">
+        <span class="tag">APK</span>
+        <div class="dl-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><path d="M9 6V2h6v4M9 18v4h6v-4"/></svg>
+          <div><h3>Wear OS watch</h3><small>Wear OS 3 or newer</small></div>
+        </div>
+        <p>Watch app with a tile and a complication. It shows what the phone app reads, so install the phone app too.</p>
+        <div class="dl-actions">
+          <a class="btn btn-ghost btn-block" id="dl-wear" href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases/latest" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            <span id="dl-wear-label">Download Wear OS APK</span>
+          </a>
+        </div>
+        <p class="file-meta" id="dl-wear-meta">From the latest GitHub release</p>
+      </article>
+
+      <article class="dl reveal" data-i="3">
+        <span class="tag sand">Testing</span>
+        <div class="dl-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9z"/><path d="M5 3l9 9-9 9"/></svg>
+          <div><h3>Google Play</h3><small>Closed test: ask to be added, then join</small></div>
+        </div>
+        <p>Ocean Live is in a closed test on Google Play, so only invited testers can join. Ask to be added first (open an issue on GitHub). Once you're on the list, join the test with that Google account, then install it from Play and get updates automatically.</p>
+        <div class="dl-actions">
+          <a class="btn btn-ghost btn-block" href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">1. Ask to be added</a>
+          <a class="btn btn-ghost btn-block" href="https://play.google.com/apps/testing/com.justicemw.oceanlive" rel="noopener">2. Join the test on Google Play</a>
+        </div>
+        <p class="file-meta">Play installs aren't affected by the APK key change below</p>
+      </article>
+
+      <article class="dl reveal" data-i="4">
+        <span class="tag sand">Beta</span>
+        <div class="dl-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 4.5h4"/></svg>
+          <div><h3>iPhone &amp; Apple Watch</h3><small>iOS 17 or newer · TestFlight</small></div>
+        </div>
+        <p>The iPhone app, with its widgets, Live Activity, CarPlay and the Apple Watch app, is in a public TestFlight beta. Install Apple's free TestFlight app, then tap the button to join and install Ocean Live. TestFlight keeps it updated.</p>
+        <div class="dl-actions">
+          <a class="btn btn-primary btn-block" href="https://testflight.apple.com/join/5CEUXxa2" rel="noopener">Join the TestFlight beta</a>
+        </div>
+        <p class="file-meta">App Store release coming</p>
+      </article>
+    </div>
+
+    <div class="notice reveal" role="note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>
+      <p><strong>Installed an APK from GitHub up to version 3.3.1?</strong> Those were signed with a test key whose password is public, so someone else could make an update that installs over them. Uninstall it once and install the newest release; after that, updates install over it as usual. Google Play and TestFlight installs are not affected. <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/SECURITY.md" rel="noopener">Details in SECURITY.md</a>.</p>
+    </div>
+
+    <div class="howto">
+      <details class="panel reveal">
+        <summary>How to install the Android APK</summary>
+        <div class="panel-body">
+          <ol>
+            <li>On your phone, tap <b>Download Android APK</b> above.</li>
+            <li>Open the downloaded file from the notification or your Downloads folder.</li>
+            <li>If Android asks, allow your browser or file manager to <b>install unknown apps</b> (Settings, Apps, Special app access, Install unknown apps), then go back.</li>
+            <li>Tap <b>Install</b>, then open Ocean Live and tap <b>Find adapter</b>.</li>
+          </ol>
+          <p>Newer releases install over it as updates. If Android says the app conflicts with an existing package, you have an old test-key build: uninstall it once (see the note above).</p>
+        </div>
+      </details>
+      <details class="panel reveal" data-i="1">
+        <summary>How to install the Wear OS APK</summary>
+        <div class="panel-body">
+          <p>Watches can't open APKs from a browser, so the watch app goes on from a computer with Android's <code>adb</code> tool:</p>
+          <ol>
+            <li>On the watch, turn on Developer options and <b>Wireless debugging</b>, and note the address it shows.</li>
+            <li>On your computer, pair and connect: <code>adb pair &lt;address&gt;</code> then <code>adb connect &lt;address&gt;</code>.</li>
+            <li>Install: <code>adb install OceanLive-&lt;version&gt;-Wear.apk</code></li>
+          </ol>
+          <p>Install the phone app first; the watch shows what the phone reads.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="source panel reveal">
+      <div>
+        <h3>Source code on GitHub</h3>
+        <p>Ocean Live is <strong>source-available</strong>, not open source. In short:</p>
+        <ul class="license-list">
+          <li class="yes">Read and study the code, and change it for your own personal, non-commercial use</li>
+          <li class="yes">Install the official release files, and share them free of charge, unmodified, with the license intact</li>
+          <li class="no">Share the source code or modified versions, or builds made from it</li>
+          <li class="no">Any commercial use, including selling, bundling, ads or paid services</li>
+        </ul>
+        <p class="file-meta">Summary only. The <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/LICENSE" rel="noopener">LICENSE</a> is the full terms.</p>
+      </div>
+      <div class="source-actions">
+        <a class="btn btn-ghost btn-block" href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+          View the source
+        </a>
+        <a class="btn btn-ghost btn-block" href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">All releases</a>
+        <a class="btn btn-ghost btn-block" href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">What's new (changelog)</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY PROMISE -->
+<section class="flow" id="privacy" data-scene="privacy" aria-labelledby="privacy-title">
+  <div class="wrap">
+    <div class="section-head center panel reveal">
+      <div class="eyebrow">Privacy</div>
+      <h2 id="privacy-title">Your car talks to your phone. Not to us.</h2>
+      <p>What the app reads from your car is stored only in the app's private storage on your device.</p>
+    </div>
+    <div class="promise">
+      <div class="reveal" data-i="1">
+        <h3>No ads, no tracking</h3>
+        <p>No advertising, no analytics SDKs, nothing sold. This website sets no cookies, has no trackers and serves its fonts, scripts and 3D model itself; the only outside request is to GitHub's API for the download links.</p>
+      </div>
+      <div class="reveal" data-i="2">
+        <h3>Data leaves only for what you use</h3>
+        <p>Signing in and managing your account (from the next version), questions you ask in "Any questions?", and ABRP live data if you turn it on. Your VIN and location are never sent with questions.</p>
+      </div>
+      <div class="reveal" data-i="3">
+        <h3>Clear and short</h3>
+        <p>Questions are logged for research and deleted after 90 days. Delete your account in the app at any time, and its questions go with it. <a href="/privacy">Read the privacy policy</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CAR SLEEP -->
+<section class="flow" id="sleep" data-scene="sleep" aria-labelledby="sleep-title">
+  <div class="wrap">
+    <div class="panel reveal">
+      <div class="sleep-grid">
+        <div>
+          <svg class="moon" viewBox="0 0 64 64" aria-hidden="true"><path d="M44 46a20 20 0 0 1-22-30 20 20 0 1 0 28 26 20 20 0 0 1-6 4z" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="6" y="56" width="52" height="3" rx="1.5" fill="#5CE1E6" opacity=".7"/></svg>
+          <div class="eyebrow">Lets your car sleep</div>
+          <h2 id="sleep-title">Reads when you look. Rests when you don't.</h2>
+          <p>Diagnostic requests keep the car's modules awake and drain the 12V battery. So Ocean Live steps back as soon as the car wants to sleep, and never sends keep-alive messages.</p>
+          <div class="figure-row">
+            <div class="figure"><b><span data-count="10">10</span> min</b><span>parked in the background, then it stops</span></div>
+            <div class="figure"><b>~3 mA</b><span>vLinker FD+ asleep (about 51 mA awake, Vgate's figures)</span></div>
+          </div>
+        </div>
+        <ul class="timeline">
+          <li><strong>Car stops answering</strong>The car is asleep, so the app stops talking to it straight away.</li>
+          <li><strong>Parked, app in the background</strong>After 10 minutes with no CarPlay or Android Auto, it disconnects.</li>
+          <li><strong>You open the app again</strong>It reconnects only when you open it or plug in the car screen.</li>
+          <li><strong>Optional: watch 12V while the car sleeps</strong>Off by default. Every 30 minutes (or 5 or 10) it briefly asks the adapter for its own voltage reading, which puts nothing on the car's network, then lets the adapter sleep too.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="flow" id="faq" data-scene="faq" aria-labelledby="faq-title">
+  <div class="wrap narrow">
+    <div class="section-head center reveal">
+      <div class="eyebrow">FAQ</div>
+      <h2 id="faq-title">Good questions.</h2>
+    </div>
+    <div class="faq">
+      <details class="panel reveal">
+        <summary>Is this an official Fisker app?</summary>
+        <div class="panel-body"><p>No. Ocean Live is an independent app made by an Ocean owner for other owners. It isn't affiliated with or endorsed by Fisker Inc., and doesn't use Fisker's former servers. It reads the car directly through the OBD port.</p></div>
+      </details>
+      <details class="panel reveal">
+        <summary>Which adapter should I buy?</summary>
+        <div class="panel-body"><p>Any Bluetooth LE OBD adapter that speaks ELM327. The Vgate vLinker FD+ is the one most Ocean owners use; the OBDLink CX works too. It has to be Bluetooth LE.</p></div>
+      </details>
+      <details class="panel reveal">
+        <summary>Will it drain my 12V battery?</summary>
+        <div class="panel-body"><p>Ocean Live is built not to. It stops talking to the car as soon as the car stops answering, and after 10 minutes parked with the app in the background and no CarPlay or Android Auto. It never sends keep-alive messages. The optional overnight 12V watch asks only the adapter for its voltage, which puts nothing on the car's network, then lets the adapter sleep.</p></div>
+      </details>
+      <details class="panel reveal">
+        <summary>Can it change anything on my car?</summary>
+        <div class="panel-body"><p>It mostly reads. It never uses security access, never writes data and never runs routines. Only two actions change anything: clearing stored fault codes and restarting a module. Both ask you first, and only run while fresh readings show the car isn't moving and almost no power is flowing. Restart isn't offered for the brakes, steering, airbags, drive motors, gateway or battery management. Use them with the car in Park, unplugged and with the climate off. Values shown are not a dealer diagnosis.</p></div>
+      </details>
+      <details class="panel reveal">
+        <summary>What does "Any questions?" send, and to whom?</summary>
+        <div class="panel-body"><p>Your question goes over an encrypted connection to the Ocean Live question server, which passes it to Claude, Anthropic's AI. Unless you turn off "Include my car's readings", your latest readings and last scan's fault codes go with it. Never your VIN or location, and asking never connects to or wakes the car. The chat shows exactly what's sent under "Show what's sent". Questions are logged for research for 90 days. Answers come from an AI and can be wrong; check anything important with a qualified EV shop.</p></div>
+      </details>
+      <details class="panel reveal">
+        <summary>Do I need an account?</summary>
+        <div class="panel-body">
+          <p>Version 3.4 doesn't use one. The next version asks you to sign in once, with no password: with Google or a 6-digit code sent to your email, and on iPhone also with Sign in with Apple. The account keeps your AI questions tied to you when you change phones; your car data stays on your phone, and the app works offline after signing in.</p>
+          <p>The account holds your email address and a display name. You can delete it in the app at any time, which also deletes its logged questions: <a href="/delete-account">how to delete an account</a>. Details are in the <a href="/privacy#accounts">privacy policy</a>.</p>
+        </div>
+      </details>
+      <details class="panel reveal">
+        <summary>Does it cost anything?</summary>
+        <div class="panel-body"><p>No. The app is free, and "Any questions?" includes 10 free questions a day.</p></div>
+      </details>
+      <details class="panel reveal">
+        <summary>Which languages does it speak?</summary>
+        <div class="panel-body"><p>English, German, Dutch, French and Spanish.</p></div>
+      </details>
+      <details class="panel reveal">
+        <summary>I found a bug, or have an idea.</summary>
+        <div class="panel-body"><p><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">Open an issue on GitHub</a>. Screenshots or photos from the car help a lot. For a security problem, please <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/security/advisories/new" rel="noopener">report a vulnerability</a> privately instead.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="final" data-scene="final" aria-labelledby="final-title">
+  <div class="wrap">
+    <div class="lightbar" aria-hidden="true"></div>
+    <h2 id="final-title" class="reveal">Made by an Ocean owner, for Ocean owners.</h2>
+    <p class="reveal">Plug in an adapter, open the app, and see what your car has been trying to tell you.</p>
+    <div class="hero-ctas reveal">
+      <a class="btn btn-primary" href="#download">Download Ocean Live</a>
+      <a class="btn btn-ghost" href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">View on GitHub</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/">
+          <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+          Ocean Live
+        </a>
+        <p>Battery, 12V, trips and fault codes for the Fisker Ocean, read from the car through a Bluetooth OBD adapter.</p>
+      </div>
+      <div>
+        <h2>App</h2>
+        <ul>
+          <li><a href="/#download">Download</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">Releases</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">Changelog</a></li>
+          <li><a href="/#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Project</h2>
+        <ul>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">GitHub</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/LICENSE" rel="noopener">License</a></li>
+          <li><a href="/credits">Credits</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">Report a bug</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/security/advisories/new" rel="noopener">Report a vulnerability</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Privacy</h2>
+        <ul>
+          <li><a href="/privacy">Privacy policy</a></li>
+          <li><a href="/delete-account">Delete your account</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="disclaimer">
+      <p>Ocean Live is an independent, owner-made app. It is not affiliated with or endorsed by Fisker Inc. "Fisker" and "Fisker Ocean" are trademarks of their respective owners and are used only to describe the vehicle the app works with. Other names are trademarks of their owners.</p>
+      <p>3D model: <a href="https://sketchfab.com/3d-models/fisker-ocean-low-poly-f506bfe876864c04b68bdfc59070739a" rel="noopener">"Fisker Ocean (low-poly)"</a> by <a href="https://sketchfab.com/LagzDesign" rel="noopener">LagzDesign</a>, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>, changed: drawn as lines, compressed, doors separated. <a href="/credits">All credits</a>.</p>
+      <p>Use at your own risk. Values shown by the app are not a dealer diagnosis. © 2026 Ocean Live.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

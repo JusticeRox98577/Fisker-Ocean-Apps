@@ -1,9 +1,10 @@
 # Ocean Live
 
 Battery, 12V, trips and fault codes for the Fisker Ocean, read from the car through a
-Bluetooth OBD adapter. No account and no tracking: your car talks to your phone. Data leaves
-it only when you ask a question in "Any questions?", or send live data to A Better Route
-Planner if you set that up.
+Bluetooth OBD adapter. No tracking: your car talks to your phone. Version 3.4 has no account;
+from the next version you sign in once (Google or an email code). Data leaves your phone only
+when you sign in or manage your account, ask a question in "Any questions?", or send live data
+to A Better Route Planner if you set that up.
 
 | Folder | App |
 | --- | --- |
@@ -13,7 +14,7 @@ Planner if you set that up.
 
 Both phone apps have the same features and decode the car the same way; their unit tests
 share the same expected values. Download the latest Android release from
-[Releases](https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases). The iPhone app is in TestFlight.
+[Releases](https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases). The iPhone app is in a public TestFlight beta: [join it here](https://testflight.apple.com/join/5CEUXxa2). Everything is also on [oceanlive.org](https://oceanlive.org).
 
 ## What it does
 
@@ -169,9 +170,10 @@ Screenshots or photos from the car help a lot.
 
 ## Privacy
 
-See [PRIVACY.md](PRIVACY.md). Short version: no account, no tracking, and your data stays on
-your phone except questions you ask in "Any questions?" (with your latest readings unless you
-turn that off; logged for research for 90 days) and optional ABRP data.
+See [PRIVACY.md](PRIVACY.md). Short version: no tracking, and your car data stays on your phone
+except questions you ask in "Any questions?" (with your latest readings unless you turn that
+off; logged for research for 90 days) and optional ABRP data. Version 3.4 has no account; from
+the next version you sign in once, and the account holds your email address and a display name.
 
 ## License
 

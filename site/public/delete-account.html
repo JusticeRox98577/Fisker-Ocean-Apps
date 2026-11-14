@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Delete your account · Ocean Live</title>
+<meta name="description" content="How to delete your Ocean Live account in the app, and what is deleted with it.">
+<link rel="canonical" href="https://oceanlive.org/delete-account">
+<meta property="og:url" content="https://oceanlive.org/delete-account">
+<meta name="theme-color" content="#0B2545">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ocean Live">
+<meta property="og:title" content="Delete your account · Ocean Live">
+<meta property="og:description" content="How to delete your Ocean Live account in the app, and what is deleted with it.">
+<meta property="og:image" content="https://oceanlive.org/icons/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="The Ocean Live app icon">
+<meta name="twitter:card" content="summary">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="paper" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<header class="site-header" id="top">
+  <nav class="wrap nav" aria-label="Main">
+    <a class="brand" href="/" aria-label="Ocean Live home">
+      <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+      Ocean Live
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="/#live">Live data</a></li>
+      <li><a href="/#features">Features</a></li>
+      <li><a href="/#battery">12V</a></li>
+      <li><a href="/#faults">Fault codes</a></li>
+      <li><a href="/#privacy">Privacy</a></li>
+      <li><a href="/#faq">FAQ</a></li>
+      <li class="nav-menu-only"><a href="/#download">Downloads</a></li>
+    </ul>
+    <a class="btn btn-primary btn-small nav-cta" href="/#download">Downloads</a>
+  </nav>
+</header>
+
+<main id="main">
+<section class="doc-hero">
+  <div class="wrap narrow">
+    <div class="lightbar" aria-hidden="true"></div>
+    <div class="eyebrow">Account</div>
+    <h1>Delete your Ocean Live account</h1>
+    <p>How to delete your account and what gets deleted with it.</p>
+  </div>
+</section>
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+    <div class="callout">
+      <p>Version 3.4 has no account. From the next version, Ocean Live asks you to sign in once, with no password: with Google or a 6-digit email code, and on iPhone also with Sign in with Apple. The account keeps your "Any questions?" questions secure and tied to you, so you keep them when you change phones. Your car data never goes to your account: it stays on your phone.</p>
+    </div>
+
+    <h2 id="in-app">Delete it in the app</h2>
+    <p>This is the quickest way, and it takes effect straight away.</p>
+    <ol>
+      <li>Open Ocean Live and go to <span class="path"><span>Settings</span><i>→</i><span>Account</span><i>→</i><span>Delete account</span></span></li>
+      <li>Confirm <strong>Delete your account?</strong></li>
+    </ol>
+    <p>The app asks the Ocean Live server to delete the account and signs you out on this phone once the server confirms. Deleting can't be undone. If you sign in again later, a new, empty account is made.</p>
+
+    <h2 id="what">What gets deleted</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Data</th><th scope="col">What happens</th></tr></thead>
+        <tbody>
+          <tr><td>Your account: account ID, email address, display name, created and last-used dates</td><td>Deleted from the Ocean Live server</td></tr>
+          <tr><td>Linked sign-in methods (Google, Apple, email) and the provider's ID for you</td><td>Deleted</td></tr>
+          <tr><td>Sign-in sessions on all your devices</td><td>Deleted, so every device is signed out</td></tr>
+          <tr><td>Logged "Any questions?" questions linked to the account, with their answers and the readings sent with them (this includes questions the phone asked before you signed in, which are linked at sign-in)</td><td>Deleted</td></tr>
+          <tr><td>Any personal daily question limit set for your account</td><td>Deleted</td></tr>
+          <tr><td>Short-lived counters (questions per day, email code requests per hour), stored only as hashes or IDs</td><td>Not deleted by this; they expire on their own within about a day</td></tr>
+          <tr><td>A sign-in code entry (your email address and a hash of a code you asked for but didn't use)</td><td>Deleted. Unused entries are also removed automatically within a day after the code expires</td></tr>
+          <tr><td>Car data on your phone (drives, charges, 12V and fault history, settings)</td><td>Not affected. It was never on the server. Clear it in the app or delete the app to remove it.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Questions asked from an install that never signed in aren't linked to any account. They are kept under that install's random ID and deleted automatically after 90 days (see below to have them deleted sooner).</p>
+
+    <h2 id="without-app">Without the app</h2>
+    <p>If you no longer have the app, or can't sign in, ask the developer through GitHub:</p>
+    <ul>
+      <li>Open an issue at <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">github.com/JusticeRox98577/Fisker-Ocean-Apps/issues</a> asking for your account to be deleted.</li>
+      <li>Issues are public: anyone can see what you post there. You can include your <strong>account ID</strong> (shown under Settings, Account) or your <strong>install ID</strong> (shown in the chat under "Show what's sent") to speed things up, or leave them out and ask for a private way to send them.</li>
+      <li><strong>Don't post your email address in a public issue.</strong> If it's needed to find your account, the developer will arrange a private way to send it.</li>
+    </ul>
+
+    <h2 id="questions-only">Only delete my logged questions</h2>
+    <p>To have your logged questions deleted without deleting an account, or to ask what is held, open an issue on GitHub with your install ID from "Show what's sent" (issues are public; to keep the ID private, ask for a private way to send it instead). They are deleted within 30 days. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
+    </div>
+  </div>
+</article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/">
+          <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+          Ocean Live
+        </a>
+        <p>Battery, 12V, trips and fault codes for the Fisker Ocean, read from the car through a Bluetooth OBD adapter.</p>
+      </div>
+      <div>
+        <h2>App</h2>
+        <ul>
+          <li><a href="/#download">Download</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">Releases</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">Changelog</a></li>
+          <li><a href="/#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Project</h2>
+        <ul>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">GitHub</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/LICENSE" rel="noopener">License</a></li>
+          <li><a href="/credits">Credits</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">Report a bug</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/security/advisories/new" rel="noopener">Report a vulnerability</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Privacy</h2>
+        <ul>
+          <li><a href="/privacy">Privacy policy</a></li>
+          <li><a href="/delete-account">Delete your account</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="disclaimer">
+      <p>Ocean Live is an independent, owner-made app. It is not affiliated with or endorsed by Fisker Inc. "Fisker" and "Fisker Ocean" are trademarks of their respective owners and are used only to describe the vehicle the app works with. Other names are trademarks of their owners.</p>
+      <p>3D model: <a href="https://sketchfab.com/3d-models/fisker-ocean-low-poly-f506bfe876864c04b68bdfc59070739a" rel="noopener">"Fisker Ocean (low-poly)"</a> by <a href="https://sketchfab.com/LagzDesign" rel="noopener">LagzDesign</a>, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>, changed: drawn as lines, compressed, doors separated. <a href="/credits">All credits</a>.</p>
+      <p>Use at your own risk. Values shown by the app are not a dealer diagnosis. © 2026 Ocean Live.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
