@@ -8,7 +8,6 @@ struct AskView: View {
     @State private var input = ""
     @State private var showSent = false
     @FocusState private var focused: Bool
-    private let installId = Ask.installId()
 
     private let examples: [String] = [
         String(localized: "What does my 12V voltage mean?"),
@@ -126,10 +125,6 @@ struct AskView: View {
                             .background(Theme.bg, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .padding(.top, 6)
                     }
-                    Text("Install ID, for deletion requests: \(installId)")
-                        .font(.system(size: 12)).foregroundStyle(Theme.dim)
-                        .textSelection(.enabled)
-                        .padding(.top, 6)
                 }
             }
             if ask.turns.isEmpty {

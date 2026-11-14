@@ -40,6 +40,9 @@ targets:
       path: OceanLive/OceanLive.entitlements
       properties:
         com.apple.developer.carplay-driving-task: true
+        # Sign in with Apple for Ocean Live accounts (the App ID needs the capability too).
+        com.apple.developer.applesignin:
+          - Default
         com.apple.security.application-groups:
           - group.com.justice.OceanABRP
     info:

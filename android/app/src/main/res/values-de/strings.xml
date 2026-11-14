@@ -592,6 +592,7 @@
     <string name="account_cancelled">Anmeldung abgebrochen.</string>
     <string name="account_error_network">Der Ocean-Live-Server ist nicht erreichbar. Zum Anmelden brauchst du einmal Internet.</string>
     <string name="account_error_failed">Anmeldung fehlgeschlagen. Versuch es noch einmal.</string>
+    <string name="account_error_no_google">Kein Google-Konto auf diesem Telefon. Füge eins in den Android-Einstellungen hinzu oder melde dich per E-Mail an.</string>
     <string name="account_error_code">Der Code stimmt nicht.</string>
     <string name="account_error_expired">Der Code ist abgelaufen. Fordere einen neuen an.</string>
     <string name="account_error_email">Gib eine gültige E-Mail-Adresse ein.</string>

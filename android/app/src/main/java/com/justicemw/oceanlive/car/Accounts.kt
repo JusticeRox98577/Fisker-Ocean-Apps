@@ -2,6 +2,8 @@ package com.justicemw.oceanlive.car
 
 import android.app.Activity
 import android.content.Context
+import android.util.Base64
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.core.content.edit
 import androidx.credentials.ClearCredentialStateRequest
@@ -10,6 +12,7 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.justicemw.oceanlive.R
@@ -22,6 +25,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.UnknownHostException
+import java.security.SecureRandom
 import java.util.Locale
 
 /** The signed-in Ocean Live account, as the server last described it. */
@@ -95,18 +99,25 @@ object Accounts {
     suspend fun config(): AuthConfig? {
         val r = call("GET", "/auth/config", null, null) ?: return null
         if (r.code != 200) return null
+        // Android signs in with the web client ID; a server with only the iOS ID set has no Google for us.
+        val webId = r.json.optString("googleWebClientId").takeIf { it.isNotEmpty() && !r.json.isNull("googleWebClientId") }
         return AuthConfig(
-            google = r.json.optBoolean("google"),
+            google = r.json.optBoolean("google") && webId != null,
             email = r.json.optBoolean("email"),
-            googleWebClientId = r.json.optString("googleWebClientId").takeIf { it.isNotEmpty() && !r.json.isNull("googleWebClientId") },
+            googleWebClientId = webId,
         )
     }
 
-    /** Shows Google's sign-in sheet, then signs in with the ID token it returns. */
+    /**
+     * Shows Google's sign-in sheet ("Sign in with Google": every Google account on the phone, not only
+     * ones that used Ocean Live before), then signs in with the ID token it returns. The token's
+     * audience is the server's web client ID; the random nonce ties the token to this attempt.
+     */
     suspend fun signInWithGoogle(activity: Activity, webClientId: String): Result {
+        val nonce = newNonce()
         val idToken = try {
             val request = GetCredentialRequest.Builder()
-                .addCredentialOption(GetSignInWithGoogleOption.Builder(webClientId).build())
+                .addCredentialOption(GetSignInWithGoogleOption.Builder(webClientId).setNonce(nonce).build())
                 .build()
             val credential = CredentialManager.create(activity).getCredential(activity, request).credential
             if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
@@ -116,10 +127,26 @@ object Accounts {
             }
         } catch (_: GetCredentialCancellationException) {
             return Result.Failed(R.string.account_cancelled)
-        } catch (_: GetCredentialException) {
+        } catch (_: NoCredentialException) {
+            return Result.Failed(R.string.account_error_no_google)
+        } catch (e: GetCredentialException) {
+            // A wrong SHA-1 or client ID in Google Cloud shows up here (type and message say which).
+            Log.w("Accounts", "Google sign-in failed: ${e.type}: ${e.message}")
+            return Result.Failed(R.string.account_error_failed)
+        } catch (e: Exception) {
+            // A malformed credential from Play services: GoogleIdTokenCredential parsing failed.
+            Log.w("Accounts", "Google sign-in returned an unusable credential", e)
             return Result.Failed(R.string.account_error_failed)
         }
-        return finish(activity, call("POST", "/auth/google", JSONObject().put("idToken", idToken).put("device", Ask.installId(activity)), null))
+        return finish(
+            activity,
+            call("POST", "/auth/google", JSONObject().put("idToken", idToken).put("nonce", nonce).put("device", Ask.installId(activity)), null),
+        )
+    }
+
+    private fun newNonce(): String {
+        val bytes = ByteArray(24).also { SecureRandom().nextBytes(it) }
+        return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
     }
 
     suspend fun emailStart(email: String): Result {
@@ -146,6 +173,7 @@ object Accounts {
             when (r.error) {
                 "wrong_code" -> R.string.account_error_code
                 "code_expired" -> R.string.account_error_expired
+                "provider_unavailable" -> R.string.account_error_network
                 else -> R.string.account_error_failed
             },
         )

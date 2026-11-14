@@ -51,7 +51,11 @@ final class Ask: ObservableObject {
         var recent = Array(turns.suffix(Self.maxTurns))
         while let first = recent.first, !first.fromOwner { recent.removeFirst() }
         let body = Self.requestBody(device: Self.installId(), turns: recent, car: car)
-        switch await Self.post(url, body: body) {
+        let token = Accounts.shared.token
+        let result = await Self.post(url, body: body, token: token)
+        // The server no longer knows this session: back to the sign-in screen.
+        if case .failure(let f) = result, f.signedOut { Accounts.shared.unauthorized(token: token) }
+        switch result {
         case .success(let answer):
             turns.append(AskTurn(fromOwner: false, text: answer))
         case .failure(let message):
@@ -72,20 +76,26 @@ final class Ask: ObservableObject {
         return body
     }
 
-    struct Failure: Error { let text: String }
+    struct Failure: Error {
+        let text: String
+        /// The server answered 401: the session is gone.
+        var signedOut = false
+    }
 
     /// What the proxy's error codes mean for the owner.
     nonisolated static func errorMessage(status: Int, error: String?) -> String {
+        if error == "signin_required" || status == 401 { return String(localized: "Sign in again to ask questions.") }
         if error == "rate_limited" || status == 429 { return String(localized: "That's all the questions for today. Try again tomorrow.") }
         if error == "budget" { return String(localized: "Questions are paused until next month.") }
         if error == "no_answer" { return String(localized: "Couldn't answer that one. Try asking another way.") }
         return String(localized: "Couldn't reach the questions service. Try again in a moment.")
     }
 
-    private nonisolated static func post(_ url: URL, body: [String: Any]) async -> Result<String, Failure> {
+    private nonisolated static func post(_ url: URL, body: [String: Any], token: String?) async -> Result<String, Failure> {
         var request = URLRequest(url: url, timeoutInterval: 90)
         request.httpMethod = "POST"
         request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -93,7 +103,7 @@ final class Ask: ObservableObject {
             let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
             let answer = (json?["answer"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if (200..<300).contains(status), !answer.isEmpty { return .success(answer) }
-            return .failure(Failure(text: errorMessage(status: status, error: json?["error"] as? String)))
+            return .failure(Failure(text: errorMessage(status: status, error: json?["error"] as? String), signedOut: status == 401))
         } catch let e as URLError where e.code == .notConnectedToInternet || e.code == .networkConnectionLost {
             return .failure(Failure(text: String(localized: "No internet")))
         } catch {

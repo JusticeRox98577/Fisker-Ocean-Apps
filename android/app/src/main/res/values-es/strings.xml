@@ -611,6 +611,7 @@
     <string name="account_cancelled">Inicio de sesión cancelado.</string>
     <string name="account_error_network">No se puede contactar con el servidor de Ocean Live. Para iniciar sesión hace falta internet una vez.</string>
     <string name="account_error_failed">No se pudo iniciar sesión. Inténtalo de nuevo.</string>
+    <string name="account_error_no_google">No hay ninguna cuenta de Google en este teléfono. Añade una en los ajustes de Android o inicia sesión con tu correo.</string>
     <string name="account_error_code">Ese código no es correcto.</string>
     <string name="account_error_expired">Ese código ha caducado. Pide uno nuevo.</string>
     <string name="account_error_email">Escribe un correo válido.</string>

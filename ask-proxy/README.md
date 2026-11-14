@@ -85,6 +85,93 @@ The address isn't secret, but it's yours, so it isn't hard-coded. Builds without
 * **Local iPhone builds:** set `OCEAN_ASK_URL` before `xcodegen generate`, or pass
   `OCEAN_ASK_URL=https://.../ask` to `xcodebuild`.
 
+## Google and Apple sign-in setup
+
+The apps ask `GET /auth/config` which sign-in methods are set up and only show those, so
+nothing breaks before you do this. Client IDs aren't secret, but they are yours, so they live
+in `wrangler.toml` and never in the apps.
+
+### Google
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com), create a project
+   (for example "Ocean Live") and select it.
+2. **APIs & Services > OAuth consent screen** (called "Google Auth Platform > Branding" in
+   newer consoles):
+   * User type: **External**.
+   * App name: **Ocean Live**. User support email and developer contact: an address of your
+     choice.
+   * Authorised domain: **oceanlive.org**. Privacy policy: **https://oceanlive.org/privacy**.
+   * Scopes (Data access): **openid**, **.../auth/userinfo.email**, **.../auth/userinfo.profile**.
+     These are not sensitive, so Google needs no review.
+   * Audience: **Publish app** (In production). While it says "Testing", only the test users
+     you list can sign in.
+3. **APIs & Services > Credentials > Create credentials > OAuth client ID**, three times (four
+   clients in all):
+   1. **Web application**, name "Ocean Live server". No origins or redirect URIs needed. Its
+      client ID is `GOOGLE_WEB_CLIENT_ID`: Android asks Google for tokens made out to it, and
+      the server checks them against it.
+   2. **Android**, name "Ocean Live Android (upload key)": package name
+      **com.justicemw.oceanlive**, SHA-1 of your upload key:
+
+      ```powershell
+      keytool -list -v -keystore <path to ocean-upload.jks> -alias <your key alias>
+      ```
+
+      (`keytool` is in the JDK's `bin` folder; copy the `SHA1:` line.)
+   3. **Android** again, name "Ocean Live Android (Play)": same package name, with the SHA-1 of
+      the **app signing key** from Play Console > your app > **Test and release > App
+      integrity > App signing**. Installs from Google Play are signed with this key, not the
+      upload key, so without this client Google sign-in fails for store installs.
+      (Optional: a third Android client with the SHA-1 of `~/.android/debug.keystore` for
+      local debug builds; its password is `android`.)
+   4. **iOS**, name "Ocean Live iPhone": bundle ID **com.justice.OceanABRP**. Its client ID is
+      `GOOGLE_IOS_CLIENT_ID`.
+
+   The Android clients have no ID to copy anywhere: Google matches the package name and
+   signing certificate when the app asks for a token. Changes can take a few minutes (rarely
+   hours) to reach Google's servers.
+
+### Apple
+
+1. [developer.apple.com/account](https://developer.apple.com/account) > **Certificates,
+   Identifiers & Profiles > Identifiers > com.justice.OceanABRP**.
+2. Tick **Sign in with Apple** (leave it as a primary App ID), **Save**, confirm.
+3. With automatic signing, Xcode and the release workflow regenerate the provisioning
+   profiles on the next build; nothing else to do. `APPLE_AUDIENCES` in `wrangler.toml` is
+   already the bundle ID.
+
+Apple sign-in is iPhone only. Android shows Google and the email code: Apple on Android would
+need a Services ID, a web redirect and a client secret that expires every six months, which
+this server does not do.
+
+### Turn them on
+
+Put the two IDs from Google into `[vars]` in `wrangler.toml`:
+
+```toml
+GOOGLE_WEB_CLIENT_ID = "<the Web application client ID>"
+GOOGLE_IOS_CLIENT_ID = "<the iOS client ID>"
+```
+
+and deploy:
+
+```powershell
+npx.cmd wrangler deploy
+```
+
+Check it: `curl -s https://<your worker>/auth/config` should show `"google":true`,
+`"apple":true` and both client IDs. Sign in once on each phone.
+
+What the server checks, for the record: Google tokens must be signed by Google's current keys,
+come from `accounts.google.com` or `https://accounts.google.com`, be made out to one of the two
+client IDs (Android tokens to the web ID, iPhone tokens to the iOS ID) and not be expired.
+Apple tokens must be signed by Apple's keys, come from `https://appleid.apple.com`, be made out
+to a bundle ID in `APPLE_AUDIENCES` and not be expired. When an app sends the nonce it asked
+for, the token must carry it (as sent, or as its SHA-256 for Apple). An email from Google or
+Apple is only stored, and only links to an existing account with the same email, when the
+provider says it is verified. Signing keys are cached for an hour and refetched when a token
+names a key the cache doesn't have.
+
 ## Test it
 
 ```bash

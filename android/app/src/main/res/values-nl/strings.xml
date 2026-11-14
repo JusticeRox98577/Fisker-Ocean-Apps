@@ -592,6 +592,7 @@
     <string name="account_cancelled">Inloggen geannuleerd.</string>
     <string name="account_error_network">De Ocean Live-server is niet bereikbaar. Voor het inloggen heb je één keer internet nodig.</string>
     <string name="account_error_failed">Inloggen mislukt. Probeer het opnieuw.</string>
+    <string name="account_error_no_google">Geen Google-account op deze telefoon. Voeg er een toe in de Android-instellingen of log in met e-mail.</string>
     <string name="account_error_code">Die code klopt niet.</string>
     <string name="account_error_expired">Die code is verlopen. Vraag een nieuwe aan.</string>
     <string name="account_error_email">Vul een geldig e-mailadres in.</string>

@@ -599,6 +599,7 @@
     <string name="account_cancelled">Sign-in was cancelled.</string>
     <string name="account_error_network">Can\'t reach the Ocean Live server. Signing in needs internet once.</string>
     <string name="account_error_failed">Couldn\'t sign in. Try again.</string>
+    <string name="account_error_no_google">No Google account on this phone. Add one in Android settings, or sign in with email.</string>
     <string name="account_error_code">That code isn\'t right.</string>
     <string name="account_error_expired">That code has expired. Send a new one.</string>
     <string name="account_error_email">Enter a valid email address.</string>

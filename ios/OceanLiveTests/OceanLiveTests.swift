@@ -1549,3 +1549,122 @@ final class AskTests: XCTestCase {
         XCTAssertNil(Ask.requestBody(device: "abc-12345", turns: [turns[0]], car: nil)["car"])
     }
 }
+
+/// Ocean Live accounts: the pure parts of the sign-in flows (no network, no UI).
+final class AccountTests: XCTestCase {
+    /// RFC 7636, appendix B.
+    func testPkceChallenge() {
+        XCTAssertEqual(AuthCrypto.pkceChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"), "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
+    }
+
+    func testVerifierIsRandomAndUrlSafe() {
+        let a = AuthCrypto.randomURLSafe()
+        let b = AuthCrypto.randomURLSafe()
+        XCTAssertEqual(a.count, 43) // 32 bytes: within PKCE's 43...128 characters
+        XCTAssertNotEqual(a, b)
+        let allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
+        XCTAssertTrue(a.unicodeScalars.allSatisfy { allowed.contains($0) })
+    }
+
+    /// Apple gets the SHA-256 hex of the nonce; the server compares the token's nonce with sha256Hex(sent).
+    func testNonceHash() {
+        XCTAssertEqual(AuthCrypto.sha256Hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+    }
+
+    func testReversedClientId() {
+        let id = "1234-abcd.apps.googleusercontent.com"
+        XCTAssertEqual(GoogleOAuth.reversedClientId(id), "com.googleusercontent.apps.1234-abcd")
+        XCTAssertEqual(GoogleOAuth.redirectURI(clientId: id), "com.googleusercontent.apps.1234-abcd:/oauth2redirect")
+    }
+
+    func testAuthURL() throws {
+        let url = try XCTUnwrap(GoogleOAuth.authURL(clientId: "1234-abcd.apps.googleusercontent.com", challenge: "ch", state: "st", nonce: "no"))
+        let items = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
+        func value(_ n: String) -> String? { items.first { $0.name == n }?.value }
+        XCTAssertEqual(url.host, "accounts.google.com")
+        XCTAssertEqual(value("response_type"), "code")
+        XCTAssertEqual(value("scope"), "openid email profile")
+        XCTAssertEqual(value("code_challenge"), "ch")
+        XCTAssertEqual(value("code_challenge_method"), "S256")
+        XCTAssertEqual(value("state"), "st")
+        XCTAssertEqual(value("nonce"), "no")
+        XCTAssertEqual(value("redirect_uri"), "com.googleusercontent.apps.1234-abcd:/oauth2redirect")
+    }
+
+    func testCallbackChecksState() throws {
+        let ok = try XCTUnwrap(URL(string: "com.googleusercontent.apps.1234-abcd:/oauth2redirect?state=abc&code=4%2F0AbC&scope=email"))
+        XCTAssertEqual(GoogleOAuth.code(from: ok, expectedState: "abc"), .success("4/0AbC"))
+        XCTAssertEqual(GoogleOAuth.code(from: ok, expectedState: "other"), .failure(.failed))
+        XCTAssertEqual(GoogleOAuth.code(from: ok, expectedState: ""), .failure(.failed))
+        let denied = try XCTUnwrap(URL(string: "com.googleusercontent.apps.1234-abcd:/oauth2redirect?state=abc&error=access_denied"))
+        XCTAssertEqual(GoogleOAuth.code(from: denied, expectedState: "abc"), .failure(.cancelled))
+        let noCode = try XCTUnwrap(URL(string: "com.googleusercontent.apps.1234-abcd:/oauth2redirect?state=abc"))
+        XCTAssertEqual(GoogleOAuth.code(from: noCode, expectedState: "abc"), .failure(.failed))
+    }
+
+    func testTokenRequestBody() {
+        let body = GoogleOAuth.tokenRequestBody(code: "4/0Ab+c", clientId: "1-a.apps.googleusercontent.com", verifier: "v_-.~")
+        XCTAssertEqual(body, "code=4%2F0Ab%2Bc&client_id=1-a.apps.googleusercontent.com&redirect_uri=com.googleusercontent.apps.1-a%3A%2Foauth2redirect&grant_type=authorization_code&code_verifier=v_-.~")
+    }
+
+    func testErrorMapping() {
+        XCTAssertEqual(AuthProblem.from(status: 401, error: "wrong_code"), .wrongCode)
+        XCTAssertEqual(AuthProblem.from(status: 401, error: "code_expired"), .codeExpired)
+        XCTAssertEqual(AuthProblem.from(status: 400, error: "bad_email"), .badEmail)
+        XCTAssertEqual(AuthProblem.from(status: 429, error: "rate_limited"), .rateLimited)
+        XCTAssertEqual(AuthProblem.from(status: 429, error: nil), .rateLimited)
+        XCTAssertEqual(AuthProblem.from(status: 503, error: "method_unavailable"), .unavailable)
+        XCTAssertEqual(AuthProblem.from(status: 503, error: "accounts_unavailable"), .unavailable)
+        XCTAssertEqual(AuthProblem.from(status: 502, error: "provider_unavailable"), .network)
+        XCTAssertEqual(AuthProblem.from(status: 401, error: "invalid_token"), .failed)
+        XCTAssertEqual(AuthProblem.from(status: 500, error: nil), .failed)
+        XCTAssertNil(AuthProblem.cancelled.message)
+        XCTAssertEqual(AuthProblem.wrongCode.message, "That code isn't right.")
+    }
+
+    func testEmailCheck() {
+        XCTAssertTrue(AuthCrypto.validEmail(" owner@example.com "))
+        XCTAssertFalse(AuthCrypto.validEmail("owner@example"))
+        XCTAssertFalse(AuthCrypto.validEmail("owner example.com"))
+        XCTAssertFalse(AuthCrypto.validEmail(""))
+    }
+
+    func testServerBase() {
+        XCTAssertEqual(Accounts.baseURL(ask: URL(string: "https://ask.example.workers.dev/ask"))?.absoluteString, "https://ask.example.workers.dev")
+        XCTAssertEqual(Accounts.baseURL(ask: URL(string: "https://ask.example.workers.dev/ask/"))?.absoluteString, "https://ask.example.workers.dev")
+        XCTAssertEqual(Accounts.baseURL(ask: URL(string: "https://ask.example.workers.dev/"))?.absoluteString, "https://ask.example.workers.dev")
+        XCTAssertNil(Accounts.baseURL(ask: nil))
+    }
+
+    func testAccountJson() throws {
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(#"{"id":"a1","email":null,"name":"Ocean","created":"2026-01-01","providers":["apple","email"]}"#.utf8)) as? [String: Any])
+        let a = try XCTUnwrap(AccountInfo(json: json))
+        XCTAssertEqual(a, AccountInfo(id: "a1", email: nil, name: "Ocean", providers: ["apple", "email"]))
+        XCTAssertNil(AccountInfo(json: ["email": "x@example.com"]))
+        let saved = try JSONDecoder().decode(AccountInfo.self, from: JSONEncoder().encode(a))
+        XCTAssertEqual(saved, a)
+    }
+
+    func testConfig() throws {
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(#"{"apple":true,"google":true,"email":false,"googleWebClientId":"w","googleIosClientId":null}"#.utf8)) as? [String: Any])
+        let c = AuthConfig(json: json)
+        XCTAssertTrue(c.apple)
+        XCTAssertFalse(c.showsGoogle) // Google is on, but not for the iPhone without its own client ID
+        XCTAssertTrue(c.anyMethod)
+        XCTAssertTrue(AuthConfig(google: true, googleIosClientId: "i").showsGoogle)
+        XCTAssertFalse(AuthConfig().anyMethod)
+    }
+
+    func testAppleName() {
+        var name = PersonNameComponents()
+        XCTAssertNil(AuthCrypto.displayName(nil))
+        XCTAssertNil(AuthCrypto.displayName(name))
+        name.givenName = "Ada"
+        name.familyName = "Lovelace"
+        XCTAssertEqual(AuthCrypto.displayName(name)?.contains("Ada"), true)
+    }
+
+    func testAskSignInError() {
+        XCTAssertEqual(Ask.errorMessage(status: 401, error: "signin_required"), "Sign in again to ask questions.")
+    }
+}

@@ -140,6 +140,7 @@ jobs:
             --entitlements OceanLive/OceanLive.entitlements "$ARCHIVED_APP"
           codesign -d --entitlements - --xml "$ARCHIVED_APP" | grep -q carplay-driving-task
           codesign -d --entitlements - --xml "$ARCHIVED_APP" | grep -q application-groups
+          codesign -d --entitlements - --xml "$ARCHIVED_APP" | grep -q applesignin
           if ! xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/OceanLive.xcarchive" \
             -exportOptionsPlist ExportOptions.plist -exportPath build/ipa $AUTH; then
             # Keep Xcode's detailed distribution logs: they hold Apple's actual reason for a signing failure.
@@ -164,6 +165,12 @@ jobs:
             exit 1
           fi
           echo "App Group entitlement present."
+          if ! grep -q "com.apple.developer.applesignin" "$RUNNER_TEMP/entitlements.plist"; then
+            echo "The exported app is missing Sign in with Apple. Turn it on for the com.justice.OceanABRP App ID at developer.apple.com. Signed entitlements:"
+            cat "$RUNNER_TEMP/entitlements.plist"
+            exit 1
+          fi
+          echo "Sign in with Apple entitlement present."
           echo "Widget extension entitlements:"
           codesign -d --entitlements - --xml "$RUNNER_TEMP/check/Payload/OceanLive.app/PlugIns/OceanLiveWidgets.appex" 2>/dev/null || true
           echo

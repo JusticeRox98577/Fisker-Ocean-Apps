@@ -70,7 +70,7 @@ export async function handleAuth(request: Request, env: AuthEnv, path: string): 
         const aud = list(env.APPLE_AUDIENCES);
         if (aud.length === 0) return json({ error: "method_unavailable" }, 503);
         const claims = await verifyJwt(String(body.identityToken ?? ""), APPLE_KEYS, ["https://appleid.apple.com"], aud);
-        if (!claims) return json({ error: "invalid_token" }, 401);
+        if (!claims || !(await nonceMatches(claims, body.nonce))) return json({ error: "invalid_token" }, 401);
         const verified = claims.email_verified === true || claims.email_verified === "true";
         return json(await signIn(env, "apple", String(claims.sub), verified ? str(claims.email) : null, cleanName(body.name), device));
       }
@@ -78,7 +78,7 @@ export async function handleAuth(request: Request, env: AuthEnv, path: string): 
         const aud = googleAudiences(env);
         if (aud.length === 0) return json({ error: "method_unavailable" }, 503);
         const claims = await verifyJwt(String(body.idToken ?? ""), GOOGLE_KEYS, ["https://accounts.google.com", "accounts.google.com"], aud);
-        if (!claims) return json({ error: "invalid_token" }, 401);
+        if (!claims || !(await nonceMatches(claims, body.nonce))) return json({ error: "invalid_token" }, 401);
         const verified = claims.email_verified === true || claims.email_verified === "true";
         return json(await signIn(env, "google", String(claims.sub), verified ? str(claims.email) : null, cleanName(claims.name), device));
       }
@@ -93,15 +93,32 @@ export async function handleAuth(request: Request, env: AuthEnv, path: string): 
       }
     }
     return json({ error: "not_found" }, 404);
-  } catch {
+  } catch (e) {
+    // Apple's or Google's key server couldn't be reached: a retry may work, the request was fine.
+    if (e instanceof Error && e.message === "jwks") return json({ error: "provider_unavailable" }, 502);
     return json({ error: "bad_request" }, 400);
   }
+}
+
+/**
+ * When the app sent the nonce it asked Apple or Google to put in the token, the token must carry it:
+ * either as sent (Google) or as its SHA-256 hex (Apple's usual pattern, where the app passes
+ * sha256(nonce) to Apple). Without one (older app builds) there is nothing to compare.
+ */
+async function nonceMatches(claims: Record<string, unknown>, sent: unknown): Promise<boolean> {
+  if (sent === undefined || sent === null || sent === "") return true;
+  if (typeof sent !== "string" || sent.length > 200) return false;
+  const inToken = claims.nonce;
+  if (typeof inToken !== "string") return false;
+  return inToken === sent || inToken === (await sha256Hex(sent));
 }
 
 /** Which sign-in methods this server has been set up for, so the apps only show those. */
 function config(env: AuthEnv) {
   return {
     apple: list(env.APPLE_AUDIENCES).length > 0,
+    // Any Google client ID set. Each app also needs its own ID below: Android uses the web one,
+    // the iPhone the iOS one, and hides Google when its ID is missing.
     google: googleAudiences(env).length > 0,
     email: !!env.RESEND_API_KEY && !!env.EMAIL_FROM,
     googleWebClientId: env.GOOGLE_WEB_CLIENT_ID?.trim() || null,
@@ -239,9 +256,17 @@ const keyCache = new Map<string, { at: number; keys: JsonWebKey[] }>();
 async function jwks(url: string, refresh = false): Promise<JsonWebKey[]> {
   const hit = keyCache.get(url);
   if (hit && !refresh && Date.now() - hit.at < 3_600_000) return hit.keys;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("jwks");
-  const keys = ((await res.json()) as { keys: JsonWebKey[] }).keys;
+  let keys: JsonWebKey[];
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+    keys = ((await res.json()) as { keys: JsonWebKey[] }).keys;
+    if (!Array.isArray(keys)) throw new Error();
+  } catch {
+    // Keep using keys we already have rather than failing every sign-in while the provider is down.
+    if (hit) return hit.keys;
+    throw new Error("jwks");
+  }
   keyCache.set(url, { at: Date.now(), keys });
   return keys;
 }
@@ -270,6 +295,8 @@ export async function verifyJwt(token: string, keysUrl: string, issuers: string[
   if (!issuers.includes(String(claims.iss))) return null;
   if (!aud.some((a) => audiences.includes(String(a)))) return null;
   if (typeof claims.exp !== "number" || claims.exp < now - 60) return null;
+  // Issued in the future (beyond clock skew): not a token we should trust.
+  if (typeof claims.iat === "number" && claims.iat > now + 300) return null;
   if (typeof claims.sub !== "string" || !claims.sub) return null;
   return claims;
 }

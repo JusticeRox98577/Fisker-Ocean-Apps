@@ -1575,6 +1575,62 @@
         }
       }
     },
+    "Account": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuenta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compte"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
+        }
+      }
+    },
+    "Account ID: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto-ID: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID de cuenta: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID du compte : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account-ID: %@"
+          }
+        }
+      }
+    },
     "Active": {
       "localizations": {
         "de": {
@@ -1907,6 +1963,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alles"
+          }
+        }
+      }
+    },
+    "An account keeps your AI questions, and later any AI balance, secure and tied to you, and lets you keep them when you change phones. Your car data stays on your phone. You only need internet to sign in; after that the app works offline.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Konto hält deine KI-Fragen und später ein KI-Guthaben sicher, ordnet sie dir zu und behält sie beim Handywechsel. Deine Fahrzeugdaten bleiben auf deinem Handy. Internet brauchst du nur zum Anmelden, danach funktioniert die App auch offline."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una cuenta mantiene seguras tus preguntas a la IA, y más adelante tu saldo de IA, las vincula a ti y las conserva si cambias de móvil. Los datos de tu coche se quedan en tu móvil. Solo necesitas internet para iniciar sesión; después la app funciona sin conexión."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un compte protège vos questions à l'IA, et plus tard votre solde IA, les associe à vous et les conserve si vous changez de téléphone. Les données de votre voiture restent sur votre téléphone. Internet n'est nécessaire que pour vous connecter ; ensuite l'app fonctionne hors ligne."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een account houdt je AI-vragen en later een AI-tegoed veilig, koppelt ze aan jou en bewaart ze als je van telefoon wisselt. Je autogegevens blijven op je telefoon. Je hebt alleen internet nodig om in te loggen, daarna werkt de app ook offline."
           }
         }
       }
@@ -2495,6 +2579,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zowel de token als de API-sleutel zijn nodig om naar ABRP te sturen."
+          }
+        }
+      }
+    },
+    "Can't reach the Ocean Live server. Signing in needs internet once.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Ocean-Live-Server ist nicht erreichbar. Zum Anmelden brauchst du einmal Internet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede contactar con el servidor de Ocean Live. Para iniciar sesión hace falta internet una vez."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de joindre le serveur Ocean Live. La connexion nécessite Internet une fois."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De Ocean Live-server is niet bereikbaar. Voor het inloggen heb je één keer internet nodig."
           }
         }
       }
@@ -3703,6 +3815,34 @@
         }
       }
     },
+    "Code": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code"
+          }
+        }
+      }
+    },
     "Code descriptions": {
       "localizations": {
         "de": {
@@ -4235,6 +4375,34 @@
         }
       }
     },
+    "Couldn't delete the account. Check your connection and try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Konto konnte nicht gelöscht werden. Prüf deine Verbindung und versuch es noch einmal."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo eliminar la cuenta. Comprueba tu conexión e inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de supprimer le compte. Vérifiez votre connexion et réessayez."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het account kon niet worden verwijderd. Controleer je verbinding en probeer het opnieuw."
+          }
+        }
+      }
+    },
     "Couldn't reach the questions service. Try again in a moment.": {
       "localizations": {
         "de": {
@@ -4259,6 +4427,62 @@
           "stringUnit": {
             "state": "translated",
             "value": "De vragendienst is niet bereikbaar. Probeer het zo opnieuw."
+          }
+        }
+      }
+    },
+    "Couldn't save the name. Check your connection and try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Name konnte nicht gespeichert werden. Prüf deine Verbindung und versuch es noch einmal."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar el nombre. Comprueba tu conexión e inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d'enregistrer le nom. Vérifiez votre connexion et réessayez."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De naam kon niet worden opgeslagen. Controleer je verbinding en probeer het opnieuw."
+          }
+        }
+      }
+    },
+    "Couldn't sign in. Try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmeldung fehlgeschlagen. Versuch es noch einmal."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo iniciar sesión. Inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion impossible. Réessayez."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inloggen mislukt. Probeer het opnieuw."
           }
         }
       }
@@ -4515,6 +4739,34 @@
         }
       }
     },
+    "Delete account": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto löschen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar cuenta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer le compte"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account verwijderen"
+          }
+        }
+      }
+    },
     "Delete this entry": {
       "localizations": {
         "de": {
@@ -4539,6 +4791,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dit item verwijderen"
+          }
+        }
+      }
+    },
+    "Delete your account?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto löschen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar tu cuenta?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer votre compte ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account verwijderen?"
           }
         }
       }
@@ -4795,6 +5075,62 @@
         }
       }
     },
+    "Email": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-Mail"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correo electrónico"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mail"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mail"
+          }
+        }
+      }
+    },
+    "Email me a code": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code per E-Mail senden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviarme un código"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "M'envoyer un code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuur me een code"
+          }
+        }
+      }
+    },
     "Energy added": {
       "localizations": {
         "de": {
@@ -4875,6 +5211,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verbruikte energie"
+          }
+        }
+      }
+    },
+    "Enter a valid email address.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib eine gültige E-Mail-Adresse ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe un correo válido."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez une adresse e-mail valide."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vul een geldig e-mailadres in."
           }
         }
       }
@@ -6309,30 +6673,30 @@
         }
       }
     },
-    "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from questions you ask in Any questions?, this is the only thing Ocean Live sends over the internet.": {
+    "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from signing in to your Ocean Live account and questions you ask in Any questions?, this is the only thing Ocean Live sends over the internet.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von Fragen, die du unter Fragen? stellst, ist das das Einzige, was Ocean Live über das Internet sendet."
+            "value": "Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von der Anmeldung bei deinem Ocean-Live-Konto und Fragen, die du unter Fragen? stellst, ist das das Einzige, was Ocean Live über das Internet sendet."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de las preguntas que hagas en ¿Preguntas?, es lo único que Ocean Live envía por internet."
+            "value": "Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de iniciar sesión en tu cuenta de Ocean Live y las preguntas que hagas en ¿Preguntas?, es lo único que Ocean Live envía por internet."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. À part les questions posées dans Des questions ?, c'est la seule chose qu'Ocean Live envoie sur Internet."
+            "value": "Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. À part la connexion à votre compte Ocean Live et les questions posées dans Des questions ?, c'est la seule chose qu'Ocean Live envoie sur Internet."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve vragen die je stelt bij Vragen? is dit het enige dat Ocean Live via internet verstuurt."
+            "value": "Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve het inloggen op je Ocean Live-account en vragen die je stelt bij Vragen? is dit het enige dat Ocean Live via internet verstuurt."
           }
         }
       }
@@ -6813,6 +7177,34 @@
         }
       }
     },
+    "Name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nom"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam"
+          }
+        }
+      }
+    },
     "Needs a security key Ocean Live doesn't have": {
       "localizations": {
         "de": {
@@ -7229,6 +7621,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Geen enkele module gaf zijn versie."
+          }
+        }
+      }
+    },
+    "No password needed. The privacy policy explains what an account stores.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Passwort nötig. Die Datenschutzerklärung erklärt, was ein Konto speichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hace falta contraseña. La política de privacidad explica qué guarda una cuenta."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun mot de passe. La politique de confidentialité explique ce qu'un compte conserve."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen wachtwoord nodig. Het privacybeleid legt uit wat een account bewaart."
           }
         }
       }
@@ -8549,6 +8969,34 @@
         }
       }
     },
+    "Privacy policy": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutzerklärung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Política de privacidad"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Politique de confidentialité"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacybeleid"
+          }
+        }
+      }
+    },
     "Published usable capacity: 106.5 kWh for One, Extreme and Ultra, about 75 kWh for the Sport. Used for range and charge-time estimates.": {
       "localizations": {
         "de": {
@@ -9277,6 +9725,34 @@
         }
       }
     },
+    "Save name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Namen speichern"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar nombre"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer le nom"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam opslaan"
+          }
+        }
+      }
+    },
     "Saved adapter: %@": {
       "localizations": {
         "de": {
@@ -9441,6 +9917,62 @@
           "stringUnit": {
             "state": "translated",
             "value": "Versturen"
+          }
+        }
+      }
+    },
+    "Send a new code": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuen Code senden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar un código nuevo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyer un nouveau code"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe code sturen"
+          }
+        }
+      }
+    },
+    "Send a new code in %lld s": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer Code in %lld s"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código nuevo en %lld s"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau code dans %lld s"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe code over %lld s"
           }
         }
       }
@@ -9861,6 +10393,230 @@
           "stringUnit": {
             "state": "translated",
             "value": "Toont in Ritten wat elke laadbeurt kostte, met deze prijzen. Laat een prijs leeg om kosten voor dat soort laden te verbergen."
+          }
+        }
+      }
+    },
+    "Sign in": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmelden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inloggen"
+          }
+        }
+      }
+    },
+    "Sign in again to ask questions.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich erneut an, um Fragen zu stellen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a iniciar sesión para hacer preguntas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnectez-vous pour poser des questions."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log opnieuw in om vragen te stellen."
+          }
+        }
+      }
+    },
+    "Sign in to continue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich an, um fortzufahren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión para continuar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous pour continuer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log in om verder te gaan"
+          }
+        }
+      }
+    },
+    "Sign in with Google": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit Google anmelden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión con Google"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter avec Google"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inloggen met Google"
+          }
+        }
+      }
+    },
+    "Sign out": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abmelden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar sesión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se déconnecter"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitloggen"
+          }
+        }
+      }
+    },
+    "Sign out?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abmelden?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Cerrar sesión?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se déconnecter ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitloggen?"
+          }
+        }
+      }
+    },
+    "Sign-in isn't available right now. Try again later.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmelden ist gerade nicht möglich. Versuch es später noch einmal."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no se puede iniciar sesión. Inténtalo más tarde."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La connexion n'est pas disponible pour le moment. Réessayez plus tard."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inloggen kan nu niet. Probeer het later opnieuw."
+          }
+        }
+      }
+    },
+    "Signed in with %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angemeldet mit %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión iniciada con %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecté avec %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingelogd met %@"
           }
         }
       }
@@ -10425,6 +11181,62 @@
         }
       }
     },
+    "That code has expired. Send a new one.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Code ist abgelaufen. Fordere einen neuen an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ese código ha caducado. Pide uno nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce code a expiré. Demandez-en un nouveau."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die code is verlopen. Vraag een nieuwe aan."
+          }
+        }
+      }
+    },
+    "That code isn't right.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Code stimmt nicht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ese código no es correcto."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce code est incorrect."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die code klopt niet."
+          }
+        }
+      }
+    },
     "That's all the questions for today. Try again tomorrow.": {
       "localizations": {
         "de": {
@@ -10957,6 +11769,34 @@
         }
       }
     },
+    "This deletes your account, your sign-in details and your logged AI questions. It can't be undone. Car data on this phone isn't affected.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dadurch werden dein Konto, deine Anmeldedaten und deine gespeicherten KI-Fragen gelöscht. Das lässt sich nicht rückgängig machen. Fahrzeugdaten auf diesem Handy sind nicht betroffen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminarán tu cuenta, tus datos de inicio de sesión y tus preguntas a la IA guardadas. No se puede deshacer. Los datos del coche en este móvil no se tocan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cela supprime votre compte, vos informations de connexion et vos questions à l'IA enregistrées. C'est définitif. Les données de la voiture sur ce téléphone ne sont pas touchées."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiermee worden je account, je inloggegevens en je bewaarde AI-vragen verwijderd. Dit kan niet ongedaan worden gemaakt. Autogegevens op deze telefoon blijven staan."
+          }
+        }
+      }
+    },
     "This doesn't look like an OBD adapter.": {
       "localizations": {
         "de": {
@@ -11097,6 +11937,34 @@
         }
       }
     },
+    "This sign-in method isn't available right now. Try another one.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Anmeldeart ist gerade nicht verfügbar. Probier eine andere."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este método de inicio de sesión no está disponible ahora. Prueba otro."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce mode de connexion n'est pas disponible pour le moment. Essayez-en un autre."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze manier van inloggen is nu niet beschikbaar. Probeer een andere."
+          }
+        }
+      }
+    },
     "Time": {
       "localizations": {
         "de": {
@@ -11181,6 +12049,34 @@
         }
       }
     },
+    "Too many codes. Wait an hour and try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zu viele Codes. Warte eine Stunde und versuch es dann erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demasiados códigos. Espera una hora y vuelve a intentarlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trop de codes. Attendez une heure et réessayez."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te veel codes. Wacht een uur en probeer het opnieuw."
+          }
+        }
+      }
+    },
     "Totals": {
       "localizations": {
         "de": {
@@ -11233,6 +12129,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ritten"
+          }
+        }
+      }
+    },
+    "Try again": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneut versuchen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réessayer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnieuw proberen"
           }
         }
       }
@@ -11667,6 +12591,34 @@
         }
       }
     },
+    "Use a different email": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Andere E-Mail verwenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar otro correo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utiliser une autre adresse"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ander e-mailadres gebruiken"
+          }
+        }
+      }
+    },
     "Use miles": {
       "localizations": {
         "de": {
@@ -11975,6 +12927,34 @@
         }
       }
     },
+    "We sent a 6-digit code to %@. It works for 10 minutes.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wir haben einen 6-stelligen Code an %@ gesendet. Er gilt 10 Minuten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hemos enviado un código de 6 dígitos a %@. Sirve durante 10 minutos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nous avons envoyé un code à 6 chiffres à %@. Il est valable 10 minutes."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We hebben een code van 6 cijfers naar %@ gestuurd. Hij werkt 10 minuten."
+          }
+        }
+      }
+    },
     "Well balanced": {
       "localizations": {
         "de": {
@@ -12199,6 +13179,34 @@
         }
       }
     },
+    "You'll need to sign in again to use Ocean Live. Your car data on this phone stays.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du musst dich erneut anmelden, um Ocean Live zu nutzen. Deine Fahrzeugdaten auf diesem Handy bleiben erhalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tendrás que volver a iniciar sesión para usar Ocean Live. Los datos de tu coche en este móvil se conservan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous devrez vous reconnecter pour utiliser Ocean Live. Les données de votre voiture sur ce téléphone sont conservées."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je moet opnieuw inloggen om Ocean Live te gebruiken. Je autogegevens op deze telefoon blijven bewaard."
+          }
+        }
+      }
+    },
     "Your Ocean reached the level you set.": {
       "localizations": {
         "de": {
@@ -12391,6 +13399,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "voorwaarden niet goed (auto moet aan staan, in P, niet laden)"
+          }
+        }
+      }
+    },
+    "email code": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-Mail-Code"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "código por correo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "code par e-mail"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e-mailcode"
           }
         }
       }
@@ -12671,6 +13707,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "nog niet gedaan"
+          }
+        }
+      }
+    },
+    "or": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "oder"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "o"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ou"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "of"
           }
         }
       }
