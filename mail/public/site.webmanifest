@@ -1,0 +1,9 @@
+{
+  "name": "Ocean Live Mail",
+  "short_name": "OL Mail",
+  "start_url": "/#/inbox",
+  "display": "standalone",
+  "background_color": "#0B2545",
+  "theme_color": "#071A33",
+  "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+}

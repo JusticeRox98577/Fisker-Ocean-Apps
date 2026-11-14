@@ -11,6 +11,7 @@ to A Better Route Planner if you set that up.
 | `android` | Android phone app (Kotlin, Jetpack Compose) and Wear OS app (`android/wear`) |
 | `ios` | iPhone app (Swift, SwiftUI, CoreBluetooth), widgets and Live Activity (`OceanLiveWidgets`), Apple Watch app (`OceanLiveWatch`) |
 | `ask-proxy` | Cloudflare Worker behind "Any questions?": holds the Anthropic API key, rate limits and caps spend |
+| `mail` | Private webmail for the oceanlive.org mailboxes at mail.oceanlive.org (Cloudflare Worker, Email Routing in, Resend out) |
 
 Both phone apps have the same features and decode the car the same way; their unit tests
 share the same expected values. Download the latest Android release from

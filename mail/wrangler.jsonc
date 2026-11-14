@@ -1,0 +1,51 @@
+{
+  // Ocean Live Mail: private webmail for the oceanlive.org mailboxes. Setup: README.md in this folder.
+  "name": "ocean-live-mail",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "mail.oceanlive.org", "custom_domain": true }],
+
+  // The web app (public/) is served as static files; /api/* always runs the Worker.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"],
+    "not_found_handling": "single-page-application"
+  },
+
+  // Mailboxes, message list, sessions and rate-limit counters. These ids are not secrets:
+  // they only work with a login to the Cloudflare account.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ocean-live-mail",
+      "database_id": "e967ba07-f73e-4a00-9835-195a073194a0",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Raw messages, bodies and attachments.
+  "r2_buckets": [{ "binding": "STORE", "bucket_name": "ocean-live-mail" }],
+
+  // Every day at 04:23 UTC: drop expired sessions and counters, empty Trash older than TRASH_DAYS.
+  "triggers": { "crons": ["23 4 * * *"] },
+
+  "vars": {
+    // Only addresses on this domain can be mailboxes.
+    "MAIL_DOMAIN": "oceanlive.org",
+    // Wrong PINs allowed per network (IP) in 15 minutes, and in total per day, before sign-in pauses.
+    "LOGIN_FAILS_PER_IP": "5",
+    "LOGIN_FAILS_PER_DAY": "50",
+    // Sending limits: per mailbox per hour, and all mailboxes together per day.
+    "SEND_PER_HOUR": "30",
+    "SEND_PER_DAY": "150",
+    "MAX_RECIPIENTS": "50",
+    // Days a message stays in Trash before it is deleted for good.
+    "TRASH_DAYS": "30"
+  }
+
+  // Secrets, set with `npx wrangler secret put <NAME>`, never written here:
+  //   MAIL_PIN        the PIN that signs in to every mailbox (use 8+ digits)
+  //   RESEND_API_KEY  a Resend API key with sending access for oceanlive.org
+}
