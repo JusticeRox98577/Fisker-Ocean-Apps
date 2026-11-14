@@ -13,7 +13,15 @@ data class Ecu(
     val canRestart: Boolean = true,
     /** Telematics boxes expect a hard reset; everything else takes a soft one. */
     val hardRestart: Boolean = false,
-)
+    /**
+     * Brakes, steering, airbags, drive, gateway and the HV battery: never offered a restart,
+     * whatever state the car is in. Clearing their codes is still allowed.
+     */
+    val safetyCritical: Boolean = false,
+) {
+    /** Whether the app offers to restart this module. */
+    val offersRestart: Boolean get() = canRestart && !safetyCritical
+}
 
 /**
  * One UDS ReadDataByIdentifier (service 0x22) value.
@@ -54,28 +62,28 @@ data class Did(
  * are public CAN captures and owner-run UDS scans.
  */
 object Ecus {
-    val BMS = Ecu("BMS", "HV battery", "7E1", "7E9")
+    val BMS = Ecu("BMS", "HV battery", "7E1", "7E9", safetyCritical = true)
     val BCM = Ecu("BCM", "Body control", "7C1", "7C9")
-    val VCU = Ecu("VCU", "Vehicle control", "7C2", "7CA")
+    val VCU = Ecu("VCU", "Vehicle control", "7C2", "7CA", safetyCritical = true)
 
     val scanList = listOf(
         BMS, VCU, BCM,
-        Ecu("MCU_F", "Front motor", "786", "78E"),
-        Ecu("MCU_R", "Rear motor", "7F2", "7FA"),
+        Ecu("MCU_F", "Front motor", "786", "78E", safetyCritical = true),
+        Ecu("MCU_R", "Rear motor", "7F2", "7FA", safetyCritical = true),
         Ecu("PDU", "Power distribution", "7F3", "7FB"),
         Ecu("PIU", "Power integration unit", "791", "799"),
         Ecu("WTC", "HV coolant heater (A)", "752", "75A"),
         Ecu("BTC", "HV coolant heater (B)", "7D5", "7DD"),
         Ecu("ECC", "Climate control", "7F0", "7F8"),
         Ecu("RAC", "Rear climate", "787", "78F", canRestart = false),
-        Ecu("ESP", "Stability control", "7D0", "7D8"),
-        Ecu("IBOOSTER", "Brake booster", "7F4", "7FC"),
-        Ecu("EPS", "Power steering", "7E3", "7EB"),
-        Ecu("EPS2", "Power steering (backup)", "7F5", "7FD"),
-        Ecu("ACU", "Airbags", "7A0", "7A8"),
+        Ecu("ESP", "Stability control", "7D0", "7D8", safetyCritical = true),
+        Ecu("IBOOSTER", "Brake booster", "7F4", "7FC", safetyCritical = true),
+        Ecu("EPS", "Power steering", "7E3", "7EB", safetyCritical = true),
+        Ecu("EPS2", "Power steering (backup)", "7F5", "7FD", safetyCritical = true),
+        Ecu("ACU", "Airbags", "7A0", "7A8", safetyCritical = true),
         Ecu("PKC", "Keys and NFC", "7A2", "7AA"),
         Ecu("ICC", "Cockpit and screens", "7B1", "7B9"),
-        Ecu("GW", "Gateway", "7B6", "7BE"),
+        Ecu("GW", "Gateway", "7B6", "7BE", safetyCritical = true),
         Ecu("TBOX_EU", "Telematics (EU)", "7D1", "7D9", hardRestart = true),
         Ecu("TBOX_US", "Telematics (US)", "742", "74A", hardRestart = true),
         Ecu("HYDRA", "Driver assist (ADAS)", "7A6", "7AE"),

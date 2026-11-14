@@ -57,6 +57,12 @@ enum V12Store {
     /// When the last watch check ran (whether or not it reached the adapter), or 0.
     static func loadLastCheck() -> Int64 { Int64(UserDefaults.standard.double(forKey: lastCheckKey)) }
     static func saveLastCheck(_ time: Int64) { UserDefaults.standard.set(Double(time), forKey: lastCheckKey) }
+
+    private static let lastResumeKey = "v12_last_resume"
+
+    /// When watching last started reading the car again by itself, kept so iPhone closing the app doesn't reset it.
+    static func loadLastResume() -> Int64 { Int64(UserDefaults.standard.double(forKey: lastResumeKey)) }
+    static func saveLastResume(_ time: Int64) { UserDefaults.standard.set(Double(time), forKey: lastResumeKey) }
 }
 
 /// iPhone gives an app in the background only occasional time. While the app is watching the 12V,

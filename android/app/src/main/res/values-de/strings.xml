@@ -54,6 +54,7 @@
     <string name="v12_source_asleep">OBD-Buchse im Schlaf</string>
     <string name="v12_watch_status">Auto schläft · 12 V im Blick</string>
     <string name="v12_watch_unreachable">Auto schläft · Adapter nicht erreichbar</string>
+    <string name="v12_watch_awake">Auto wach · Trennen, dann Verbinden zum Auslesen</string>
     <string name="v12_battery">12-V-Batterie</string>
     <string name="live_last_seen">Zuletzt gesehen %1$s</string>
     <string name="live_offline">Offline</string>
@@ -273,6 +274,12 @@
     <string name="blocked_charging">Das Auto lädt. Steck es zuerst ab.</string>
     <string name="blocked_scan_running">Warte, bis der Scan fertig ist.</string>
     <string name="blocked_action_running">Eine andere Aktion läuft noch.</string>
+    <string name="blocked_wait_odometer">Prüfe, ob das Auto steht. Warte ein paar Sekunden.</string>
+    <string name="blocked_odometer_stale">Kein aktueller Kilometerstand. Warte ein paar Sekunden auf einen neuen.</string>
+    <string name="blocked_moved">Das Auto hat sich bewegt. Park es und warte ein paar Sekunden.</string>
+    <string name="blocked_wait_power">Warte auf einen aktuellen Leistungswert der Batterie.</string>
+    <string name="blocked_power">Es fließt Strom in die Batterie oder aus ihr heraus. Das Auto lädt vielleicht oder die Klimaanlage ist an. Steck es ab und schalte die Klimaanlage aus.</string>
+    <string name="blocked_no_answer">Das Auto hat auf die Sicherheitsprüfung nicht geantwortet.</string>
     <string name="faults_scan_all">Alle Steuergeräte scannen</string>
     <string name="faults_scan_again">Erneut scannen</string>
     <string name="faults_descriptions">Code-Beschreibungen</string>
@@ -312,13 +319,12 @@
     <string name="versions_software_no">Software-Nr. %1$s</string>
     <string name="confirm_clear_one">Codes in %1$s löschen?</string>
     <string name="confirm_clear_slow">Dabei wird jedes Steuergerät einzeln durchgegangen, das dauert ein paar Minuten.</string>
-    <string name="confirm_clear_body">Damit wird der gespeicherte Fehlerverlauf gelöscht, den eine Werkstatt nutzen würde. Mach das also erst, wenn das Problem behoben ist oder du den Bericht geteilt hast.\n\nCodes für Fehler, die noch bestehen, kommen sofort wieder.\n\nAuto an und auf P, Fuß auf der Bremse, Ladekabel abgesteckt.</string>
+    <string name="confirm_clear_body">Damit wird der gespeicherte Fehlerverlauf gelöscht, den eine Werkstatt nutzen würde. Mach das also erst, wenn das Problem behoben ist oder du den Bericht geteilt hast.\n\nCodes für Fehler, die noch bestehen, kommen sofort wieder.\n\nAuto an und auf P, Fuß auf der Bremse, Ladekabel abgesteckt, Klimaanlage aus.</string>
     <string name="confirm_restart">%1$s neu starten?</string>
-    <string name="confirm_restart_body">Das Steuergerät schaltet sich aus und wieder ein. Seine Funktionen fallen ein paar Sekunden aus, Bildschirme oder Warnleuchten können flackern. Es ist ein Neustart, keine Reparatur, und Einstellungen bleiben normalerweise erhalten.\n\nNur im Stand: Auto auf P, Fuß auf der Bremse.</string>
+    <string name="confirm_restart_body">Das Steuergerät schaltet sich aus und wieder ein. Seine Funktionen fallen ein paar Sekunden aus, Bildschirme oder Warnleuchten können flackern. Es ist ein Neustart, keine Reparatur, und Einstellungen bleiben normalerweise erhalten.\n\nNur im Stand: Auto auf P, Fuß auf der Bremse, Ladekabel abgesteckt, Klimaanlage aus.</string>
     <string name="action_clearing">Codes werden gelöscht</string>
     <string name="action_working">Läuft</string>
     <string name="action_keep_parked">Lass das Auto stehen, bis das fertig ist.</string>
-    <string name="action_stopped_early">Vorzeitig gestoppt, weil das Auto losgefahren ist oder zu laden begann.</string>
     <string name="outcome_restarted">Neu gestartet</string>
     <string name="outcome_cleared_check">Gelöscht · zum Bestätigen erneut scannen</string>
     <string name="outcome_needs_key">Braucht einen Sicherheitsschlüssel, den Ocean Live nicht hat</string>
@@ -565,4 +571,8 @@
     <string name="ask_error_no_answer">Darauf gab es keine Antwort. Versuch es anders zu formulieren.</string>
     <string name="ask_error_server">Der Fragendienst ist nicht erreichbar. Versuch es gleich noch einmal.</string>
     <string name="ask_error_offline">Kein Internet</string>
+    <plurals name="action_stopped_early">
+        <item quantity="one">Nach %1$d von %2$d Steuergerät gestoppt.</item>
+        <item quantity="other">Nach %1$d von %2$d Steuergeräten gestoppt.</item>
+    </plurals>
 </resources>

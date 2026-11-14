@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and older. Backup is off (allowBackup="false"); this also keeps the settings,
+     which hold the ABRP token and key, out of any backup. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="ocean_live.xml" />
+</full-backup-content>

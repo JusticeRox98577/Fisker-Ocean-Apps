@@ -323,6 +323,8 @@ struct V12Watch {
     static let settleMs: Int64 = 30 * 60_000
     /// After a first high reading, check again this soon to confirm.
     static let confirmMs: Int64 = 30_000
+    /// Reading the car again by itself after it woke up: at most once in this long.
+    static let resumeGapMs: Int64 = 2 * 3_600_000
     static let statusText = String(localized: "Car asleep · watching 12V")
     static let unreachableText = String(localized: "Car asleep · adapter not reachable")
     static let settingNote = String(localized: "Every 30 minutes (or your choice), Ocean Live briefly connects to the adapter, reads the 12V and disconnects so the adapter can sleep again. The car's network isn't touched, so the car stays asleep.")
@@ -399,6 +401,16 @@ struct V12Watch {
         if carStoppedAnswering || now - startedAt >= Self.settleMs { seenAsleep = true }
         return .keepWatching
     }
+
+    /// Whether a wake-up seen while watching may start reading the car again: not if it did so in the last 2 hours.
+    static func mayResume(now: Int64, lastResume: Int64?) -> Bool {
+        guard let lastResume, lastResume > 0, lastResume <= now else { return true }
+        return now - lastResume >= resumeGapMs
+    }
+
+    /// A wake-up that may not start reading yet: carry on watching at the chosen interval, and only a new pair
+    /// of high readings counts again.
+    mutating func resumeDeferred() { highInRow = 0 }
 
     /// Milliseconds until the next reading: the chosen interval, or a quick re-check after a first high reading.
     func nextDelayMs(intervalMinutes: Int) -> Int64 {

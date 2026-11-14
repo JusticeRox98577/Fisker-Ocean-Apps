@@ -8,11 +8,14 @@ struct Ecu: Hashable, Identifiable {
     let request: String
     let response: String
     /// False for modules that implement no ECUReset at all (they answer 7F 11 12 to both kinds).
-    var canRestart: Bool = true
+    var resetSupported: Bool = true
     /// Telematics boxes expect a hard reset; everything else takes a soft one.
     var hardRestart: Bool = false
 
     var id: String { code }
+    /// Whether Ocean Live offers a restart: the module supports one and isn't safety-critical
+    /// (brakes, steering, airbags, drive, gateway, HV battery).
+    var canRestart: Bool { resetSupported && !Ecus.safetyCritical.contains(code) }
 }
 
 /// One UDS ReadDataByIdentifier (service 0x22) value.
@@ -64,7 +67,7 @@ enum Ecus {
         Ecu(code: "WTC", name: "HV coolant heater (A)", request: "752", response: "75A"),
         Ecu(code: "BTC", name: "HV coolant heater (B)", request: "7D5", response: "7DD"),
         Ecu(code: "ECC", name: "Climate control", request: "7F0", response: "7F8"),
-        Ecu(code: "RAC", name: "Rear climate", request: "787", response: "78F", canRestart: false),
+        Ecu(code: "RAC", name: "Rear climate", request: "787", response: "78F", resetSupported: false),
         Ecu(code: "ESP", name: "Stability control", request: "7D0", response: "7D8"),
         Ecu(code: "IBOOSTER", name: "Brake booster", request: "7F4", response: "7FC"),
         Ecu(code: "EPS", name: "Power steering", request: "7E3", response: "7EB"),
@@ -97,7 +100,7 @@ enum Ecus {
 
     /// The module with this code. A code that is no longer known comes back with the code as its name.
     static func byCode(_ code: String) -> Ecu {
-        scanList.first { $0.code == code } ?? Ecu(code: code, name: code, request: "", response: "", canRestart: false)
+        scanList.first { $0.code == code } ?? Ecu(code: code, name: code, request: "", response: "", resetSupported: false)
     }
 }
 

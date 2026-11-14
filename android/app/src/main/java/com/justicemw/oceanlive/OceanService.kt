@@ -119,7 +119,7 @@ class OceanService : Service() {
                 (soc?.let { getString(R.string.notif_ocean_soc, it) } ?: appName) to what
             }
             Status.Watching -> {
-                val title = if (s.watchUnreachable) getString(R.string.v12_watch_unreachable)
+                val title = if (s.watchUnreachable || s.watchAwake) getString(s.watchStatus)
                 else s.snapshot.aux12v?.let { getString(R.string.notif_12v, Format.n(it, 2)) } ?: appName
                 val next = s.nextCheckAt?.let { V12Watch.minutesUntil(it, System.currentTimeMillis()) }
                 title to (next?.let { getString(R.string.notif_watching_next, it) } ?: getString(R.string.notif_watching))

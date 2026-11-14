@@ -52,9 +52,12 @@ confirm them: clearing stored fault codes (14), and restarting a module (11). Fo
 also switches the module's diagnostic session (10) and fault logging (85) and back. A module
 that needs security access refuses them.
 
-The app blocks these actions when its own readings show the car driving or charging. It can't
-read the gear or the charge port, so this is a safeguard, not a guarantee: only use them with
-the car in Park and unplugged.
+Before these actions, and again before each module, the app needs fresh readings from the
+current connection: the odometer hasn't changed and almost no power is going in or out of the
+battery (under 1 kW either way). If the connection drops, it starts over. Restart isn't offered
+at all for the brakes, steering, airbags, drive motors, gateway or battery management. The app
+can't read the gear or the charge port, so this is a safeguard, not a guarantee: only use these
+actions with the car in Park, unplugged and with the climate off.
 
 ## What counts
 

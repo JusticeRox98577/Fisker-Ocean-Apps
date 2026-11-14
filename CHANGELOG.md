@@ -15,6 +15,15 @@ Each `## x.y.z` section is used as the release notes for that version.
   that installs over them. If you installed one, uninstall it once and install the new one;
   after that, updates install over it as usual. Play Store installs are not affected
 * New SECURITY.md: how to report a security problem privately
+* Safer fault clearing and module restarts: before them, and again before each module, Ocean
+  Live checks fresh readings that the car isn't moving and that almost no power is flowing (so
+  it isn't charging and the climate is off). If the car moves or starts charging part way, it
+  stops and says why. Restart is no longer offered for the brakes, steering, airbags, drive
+  motors, gateway or battery management
+* The overnight 12V watch goes back to full reading at most once every 2 hours
+* iPhone: your ABRP token and key are now kept in the Keychain on this iPhone only, out of
+  backups. Android: they're left out of backups and phone-to-phone transfers
+* Android Auto: only Android Auto itself can open Ocean Live's car screen
 * License updated to version 1.1: Washington State law, and severability
 
 ## 3.3.1

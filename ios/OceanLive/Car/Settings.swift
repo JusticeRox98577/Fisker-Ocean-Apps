@@ -22,7 +22,8 @@ enum CarModel: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-/// Everything the user can change, stored as JSON in UserDefaults.
+/// Everything the user can change, stored as JSON in UserDefaults, except the ABRP token and API key:
+/// those live in the Keychain (SecretStore) and are left out of the JSON.
 struct Settings: Codable, Equatable {
     var adapterId: String? = nil
     var adapterName: String? = nil
@@ -37,7 +38,9 @@ struct Settings: Codable, Equatable {
     var alertLow = 20
     var alertStop = true
     var healthAlerts = true
+    /// Kept in the Keychain, not in the saved JSON.
     var abrpToken = ""
+    /// Kept in the Keychain, not in the saved JSON.
     var abrpKey = ""
     var abrpEverySec = 10
     var abrpLocation = false
@@ -63,21 +66,111 @@ struct Settings: Codable, Equatable {
     }
 
     private static let key = "settings"
+    /// The Keychain could be read when the settings were loaded, so saving may write the token and key to it.
+    /// False before the first unlock since the iPhone started: then empty fields never erase saved ones.
+    private static var secretsLoaded = false
+    /// Settings saved by an older version still hold the token and key in their JSON, and they haven't reached
+    /// the Keychain yet: keep them in the JSON until they have.
+    private static var plainPending = false
+    /// The token and key as they were when the settings were loaded, to tell later edits from values not read yet.
+    private static var loadedToken = ""
+    private static var loadedKey = ""
 
     static func load() -> Settings {
-        guard let data = UserDefaults.standard.data(forKey: key),
-              let s = try? JSONDecoder().decode(Settings.self, from: data) else {
+        var s: Settings
+        if let data = UserDefaults.standard.data(forKey: key), let saved = try? JSONDecoder().decode(Settings.self, from: data) {
+            s = saved
+        } else {
             // Carry over the adapter saved by Ocean Live 3.0.
-            var s = Settings()
+            s = Settings()
             s.adapterId = UserDefaults.standard.string(forKey: "adapter_id")
             s.adapterName = UserDefaults.standard.string(forKey: "adapter_name")
-            return s
         }
+        s.loadSecrets()
         return s
     }
 
+    /// Reads the token and key from the Keychain. Ones an older version saved in the JSON move there once,
+    /// and the settings are saved again without them.
+    private mutating func loadSecrets() {
+        let hadPlain = !abrpToken.isEmpty || !abrpKey.isEmpty
+        Self.plainPending = hadPlain
+        Self.loadedToken = abrpToken
+        Self.loadedKey = abrpKey
+        guard let token = SecretStore.get(SecretStore.tokenAccount), let key = SecretStore.get(SecretStore.keyAccount) else {
+            // Keychain locked: use what the JSON has for now and try again with retrySecrets().
+            Self.secretsLoaded = false
+            return
+        }
+        Self.secretsLoaded = true
+        if !token.isEmpty || !hadPlain { abrpToken = token }
+        if !key.isEmpty || !hadPlain { abrpKey = key }
+        if hadPlain { save() }
+    }
+
+    /// The Keychain couldn't be read at load (before the first unlock): read it now that it may be unlocked.
+    /// A token or key typed in since then is kept and saved to it. Returns whether the settings changed.
+    mutating func retrySecrets() -> Bool {
+        guard !Self.secretsLoaded,
+              let token = SecretStore.get(SecretStore.tokenAccount),
+              let key = SecretStore.get(SecretStore.keyAccount) else { return false }
+        Self.secretsLoaded = true
+        let before = self
+        if abrpToken == Self.loadedToken && !token.isEmpty { abrpToken = token }
+        if abrpKey == Self.loadedKey && !key.isEmpty { abrpKey = key }
+        save()
+        return self != before
+    }
+
     func save() {
+        if Self.secretsLoaded {
+            let stored = SecretStore.set(abrpToken, for: SecretStore.tokenAccount)
+                && SecretStore.set(abrpKey, for: SecretStore.keyAccount)
+            if stored { Self.plainPending = false }
+        } else if abrpToken != Self.loadedToken || abrpKey != Self.loadedKey {
+            // Typed in while the Keychain can't be read: keep them in the JSON until they reach it.
+            Self.plainPending = true
+        }
         if let data = try? JSONEncoder().encode(self) { UserDefaults.standard.set(data, forKey: Self.key) }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case adapterId, adapterName, autoStart, keepScreenOn, useMiles, useFahrenheit, model, customKwh
+        case alertsOn, alertHigh, alertLow, alertStop, healthAlerts, abrpToken, abrpKey, abrpEverySec, abrpLocation
+        case flipCurrent, currency, homePrice, dcPrice, v12Watch, v12WatchMinutes, v12WatchKeepConnected
+        case askShareCar
+    }
+
+    /// Everything but the ABRP token and key, which are in the Keychain (unless they couldn't be moved there yet).
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(adapterId, forKey: .adapterId)
+        try c.encodeIfPresent(adapterName, forKey: .adapterName)
+        try c.encode(autoStart, forKey: .autoStart)
+        try c.encode(keepScreenOn, forKey: .keepScreenOn)
+        try c.encode(useMiles, forKey: .useMiles)
+        try c.encode(useFahrenheit, forKey: .useFahrenheit)
+        try c.encode(model, forKey: .model)
+        try c.encode(customKwh, forKey: .customKwh)
+        try c.encode(alertsOn, forKey: .alertsOn)
+        try c.encode(alertHigh, forKey: .alertHigh)
+        try c.encode(alertLow, forKey: .alertLow)
+        try c.encode(alertStop, forKey: .alertStop)
+        try c.encode(healthAlerts, forKey: .healthAlerts)
+        if Self.plainPending {
+            try c.encode(abrpToken, forKey: .abrpToken)
+            try c.encode(abrpKey, forKey: .abrpKey)
+        }
+        try c.encode(abrpEverySec, forKey: .abrpEverySec)
+        try c.encode(abrpLocation, forKey: .abrpLocation)
+        try c.encode(flipCurrent, forKey: .flipCurrent)
+        try c.encode(currency, forKey: .currency)
+        try c.encode(homePrice, forKey: .homePrice)
+        try c.encode(dcPrice, forKey: .dcPrice)
+        try c.encode(v12Watch, forKey: .v12Watch)
+        try c.encode(v12WatchMinutes, forKey: .v12WatchMinutes)
+        try c.encode(v12WatchKeepConnected, forKey: .v12WatchKeepConnected)
+        try c.encode(askShareCar, forKey: .askShareCar)
     }
 
     // Decode field by field so settings saved by an older version keep working when fields are added.

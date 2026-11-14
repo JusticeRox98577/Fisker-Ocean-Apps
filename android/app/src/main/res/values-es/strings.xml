@@ -54,6 +54,7 @@
     <string name="v12_source_asleep">puerto OBD en reposo</string>
     <string name="v12_watch_status">Coche dormido · vigilando 12 V</string>
     <string name="v12_watch_unreachable">Coche dormido · adaptador sin respuesta</string>
+    <string name="v12_watch_awake">Coche despierto · Desconectar y luego Conectar para leerlo</string>
     <string name="v12_battery">Batería de 12 V</string>
     <string name="live_last_seen">Visto a las %1$s</string>
     <string name="live_offline">Sin conexión</string>
@@ -273,6 +274,12 @@
     <string name="blocked_charging">El coche está cargando. Desenchúfalo primero.</string>
     <string name="blocked_scan_running">Espera a que termine el escaneo.</string>
     <string name="blocked_action_running">Todavía hay otra acción en curso.</string>
+    <string name="blocked_wait_odometer">Comprobando que el coche está parado. Espera unos segundos.</string>
+    <string name="blocked_odometer_stale">No hay una lectura reciente del cuentakilómetros. Espera unos segundos.</string>
+    <string name="blocked_moved">El coche se ha movido. Aparca y espera unos segundos.</string>
+    <string name="blocked_wait_power">Esperando una lectura reciente de la potencia de la batería.</string>
+    <string name="blocked_power">Entra o sale corriente de la batería. Puede que el coche esté cargando o que el climatizador esté encendido. Desenchúfalo y apaga el climatizador.</string>
+    <string name="blocked_no_answer">El coche no respondió a la comprobación de seguridad.</string>
     <string name="faults_scan_all">Escanear todos los módulos</string>
     <string name="faults_scan_again">Escanear de nuevo</string>
     <string name="faults_descriptions">Descripciones de códigos</string>
@@ -312,13 +319,12 @@
     <string name="versions_software_no">Software n.º %1$s</string>
     <string name="confirm_clear_one">¿Borrar los códigos de %1$s?</string>
     <string name="confirm_clear_slow">Se recorre cada módulo uno a uno y tarda un par de minutos.</string>
-    <string name="confirm_clear_body">Esto borra el historial de averías que usaría un taller, así que hazlo cuando el problema esté resuelto o después de compartir el informe.\n\nLos códigos de averías que sigan presentes volverán enseguida.\n\nCoche encendido y en P, pie en el freno, cable de carga desenchufado.</string>
+    <string name="confirm_clear_body">Esto borra el historial de averías que usaría un taller, así que hazlo cuando el problema esté resuelto o después de compartir el informe.\n\nLos códigos de averías que sigan presentes volverán enseguida.\n\nCoche encendido y en P, pie en el freno, cable de carga desenchufado, climatizador apagado.</string>
     <string name="confirm_restart">¿Reiniciar %1$s?</string>
-    <string name="confirm_restart_body">El módulo se apaga y se vuelve a encender. Sus funciones se detienen unos segundos y las pantallas o testigos pueden parpadear. Es un reinicio, no una reparación, y los ajustes normalmente se mantienen.\n\nSolo con el coche parado: en P y con el pie en el freno.</string>
+    <string name="confirm_restart_body">El módulo se apaga y se vuelve a encender. Sus funciones se detienen unos segundos y las pantallas o testigos pueden parpadear. Es un reinicio, no una reparación, y los ajustes normalmente se mantienen.\n\nSolo con el coche parado: en P, con el pie en el freno, cable de carga desenchufado y climatizador apagado.</string>
     <string name="action_clearing">Borrando códigos</string>
     <string name="action_working">Trabajando</string>
     <string name="action_keep_parked">Mantén el coche aparcado hasta que termine.</string>
-    <string name="action_stopped_early">Se detuvo antes porque el coche empezó a moverse o a cargar.</string>
     <string name="outcome_restarted">Reiniciado</string>
     <string name="outcome_cleared_check">Borrado · escanea de nuevo para confirmar</string>
     <string name="outcome_needs_key">Necesita una clave de seguridad que Ocean Live no tiene</string>
@@ -583,4 +589,9 @@
     <string name="ask_error_no_answer">No hubo respuesta para eso. Prueba a preguntarlo de otra forma.</string>
     <string name="ask_error_server">No se puede contactar con el servicio de preguntas. Inténtalo de nuevo en un momento.</string>
     <string name="ask_error_offline">Sin internet</string>
+    <plurals name="action_stopped_early">
+        <item quantity="one">Se detuvo tras %1$d de %2$d módulo.</item>
+        <item quantity="many">Se detuvo tras %1$d de %2$d módulos.</item>
+        <item quantity="other">Se detuvo tras %1$d de %2$d módulos.</item>
+    </plurals>
 </resources>

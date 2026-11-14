@@ -54,6 +54,7 @@
     <string name="v12_source_asleep">prise OBD en veille</string>
     <string name="v12_watch_status">Voiture en veille · surveillance 12 V</string>
     <string name="v12_watch_unreachable">Voiture en veille · adaptateur injoignable</string>
+    <string name="v12_watch_awake">Voiture réveillée · Déconnecter puis Connecter pour la lire</string>
     <string name="v12_battery">Batterie 12 V</string>
     <string name="live_last_seen">Vue à %1$s</string>
     <string name="live_offline">Hors ligne</string>
@@ -273,6 +274,12 @@
     <string name="blocked_charging">La voiture est en charge. Débranchez-la d\'abord.</string>
     <string name="blocked_scan_running">Attendez la fin de la recherche.</string>
     <string name="blocked_action_running">Une autre action est encore en cours.</string>
+    <string name="blocked_wait_odometer">Vérification que la voiture est à l\'arrêt. Attendez quelques secondes.</string>
+    <string name="blocked_odometer_stale">Pas de relevé récent du compteur kilométrique. Attendez quelques secondes.</string>
+    <string name="blocked_moved">La voiture a bougé. Garez-la et attendez quelques secondes.</string>
+    <string name="blocked_wait_power">En attente d\'une mesure récente de la puissance de la batterie.</string>
+    <string name="blocked_power">Du courant entre dans la batterie ou en sort. La voiture est peut-être en charge ou la climatisation allumée. Débranchez-la et éteignez la climatisation.</string>
+    <string name="blocked_no_answer">La voiture n\'a pas répondu au contrôle de sécurité.</string>
     <string name="faults_scan_all">Analyser tous les modules</string>
     <string name="faults_scan_again">Analyser à nouveau</string>
     <string name="faults_descriptions">Descriptions des codes</string>
@@ -312,13 +319,12 @@
     <string name="versions_software_no">Logiciel n° %1$s</string>
     <string name="confirm_clear_one">Effacer les codes de %1$s ?</string>
     <string name="confirm_clear_slow">Chaque module est traité un par un, cela prend quelques minutes.</string>
-    <string name="confirm_clear_body">Cela efface l\'historique des défauts qu\'un garage utiliserait : faites-le une fois le problème réglé ou après avoir partagé le rapport.\n\nLes codes des défauts encore présents reviendront aussitôt.\n\nVoiture allumée et en position P, pied sur le frein, câble de charge débranché.</string>
+    <string name="confirm_clear_body">Cela efface l\'historique des défauts qu\'un garage utiliserait : faites-le une fois le problème réglé ou après avoir partagé le rapport.\n\nLes codes des défauts encore présents reviendront aussitôt.\n\nVoiture allumée et en position P, pied sur le frein, câble de charge débranché, climatisation éteinte.</string>
     <string name="confirm_restart">Redémarrer %1$s ?</string>
-    <string name="confirm_restart_body">Le module s\'éteint puis se rallume. Ses fonctions s\'arrêtent quelques secondes et les écrans ou témoins peuvent clignoter. C\'est un redémarrage, pas une réparation, et les réglages restent normalement inchangés.\n\nUniquement à l\'arrêt : voiture en position P, pied sur le frein.</string>
+    <string name="confirm_restart_body">Le module s\'éteint puis se rallume. Ses fonctions s\'arrêtent quelques secondes et les écrans ou témoins peuvent clignoter. C\'est un redémarrage, pas une réparation, et les réglages restent normalement inchangés.\n\nUniquement à l\'arrêt : voiture en position P, pied sur le frein, câble de charge débranché, climatisation éteinte.</string>
     <string name="action_clearing">Effacement des codes</string>
     <string name="action_working">En cours</string>
     <string name="action_keep_parked">Laissez la voiture à l\'arrêt jusqu\'à la fin.</string>
-    <string name="action_stopped_early">Arrêté avant la fin car la voiture a démarré ou commencé à charger.</string>
     <string name="outcome_restarted">Redémarré</string>
     <string name="outcome_cleared_check">Effacé · relancez l\'analyse pour confirmer</string>
     <string name="outcome_needs_key">Nécessite une clé de sécurité qu\'Ocean Live n\'a pas</string>
@@ -583,4 +589,9 @@
     <string name="ask_error_no_answer">Pas de réponse à cette question. Essayez de la formuler autrement.</string>
     <string name="ask_error_server">Le service de questions est injoignable. Réessayez dans un instant.</string>
     <string name="ask_error_offline">Pas d\'Internet</string>
+    <plurals name="action_stopped_early">
+        <item quantity="one">Arrêté après %1$d sur %2$d module.</item>
+        <item quantity="many">Arrêté après %1$d sur %2$d modules.</item>
+        <item quantity="other">Arrêté après %1$d sur %2$d modules.</item>
+    </plurals>
 </resources>

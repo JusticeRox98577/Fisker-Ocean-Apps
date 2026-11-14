@@ -956,6 +956,21 @@ final class TwelveVoltTests: XCTestCase {
         XCTAssertEqual(w.afterReading(13.0, now: t0 + 11 * minute), .carWoke)
     }
 
+    func testAutoResumeAtMostEveryTwoHours() {
+        XCTAssertTrue(V12Watch.mayResume(now: t0, lastResume: nil))
+        XCTAssertTrue(V12Watch.mayResume(now: t0, lastResume: 0), "never resumed before")
+        XCTAssertFalse(V12Watch.mayResume(now: t0 + 119 * minute, lastResume: t0))
+        XCTAssertTrue(V12Watch.mayResume(now: t0 + 120 * minute, lastResume: t0))
+        // A wake that may not resume yet goes back to the normal interval, not the quick re-check.
+        var w = V12Watch(startedAt: t0, carStoppedAnswering: true)
+        _ = w.afterReading(12.6, now: t0)
+        _ = w.afterReading(13.1, now: t0 + 10 * minute)
+        XCTAssertEqual(w.afterReading(13.1, now: t0 + 11 * minute), .carWoke)
+        w.resumeDeferred()
+        XCTAssertEqual(w.nextDelayMs(intervalMinutes: 30), 30 * minute)
+        XCTAssertEqual(w.afterReading(13.1, now: t0 + 41 * minute), .keepWatching, "needs two high readings again")
+    }
+
     func testOneHighReadingIsNotAWake() {
         var w = V12Watch(startedAt: t0, carStoppedAnswering: true)
         _ = w.afterReading(12.6, now: t0)
@@ -1313,6 +1328,125 @@ final class WatchTests: XCTestCase {
         let w = Glance.watchSummary(chargingState(soc: 81, kw: 10), settings, [], connected: true)
         XCTAssertNil(w.minutesToTarget)
         XCTAssertEqual(w.toTargetText, "Reached")
+    }
+}
+
+/// Clearing codes and restarting modules need fresh readings from this connection.
+final class ChangeGuardTests: XCTestCase {
+    private let t0: Int64 = 1_700_000_000_000
+
+    /// Two equal odometer readings 10 s apart and a small power reading, all just now.
+    private func parked(at now: Int64, kw: Double = 0.2) -> ChangeGuard {
+        var g = ChangeGuard()
+        g.addOdometer(12345.67, at: now - 12_000)
+        g.addOdometer(12345.67, at: now - 2_000)
+        g.addPower(kw, at: now - 1_000)
+        return g
+    }
+
+    func testFreshGoodEvidenceAllows() {
+        XCTAssertNil(parked(at: t0).block(connected: true, mode: .parked, now: t0))
+    }
+
+    func testNotConnected() {
+        XCTAssertEqual(parked(at: t0).block(connected: false, mode: .parked, now: t0), .notConnected)
+    }
+
+    func testSingleOdometerReadingWaits() {
+        var g = ChangeGuard()
+        g.addOdometer(12345.67, at: t0 - 2_000)
+        g.addPower(0.1, at: t0 - 1_000)
+        XCTAssertEqual(g.block(connected: true, mode: .parked, now: t0), .waiting)
+    }
+
+    func testNoPowerReadingWaits() {
+        var g = ChangeGuard()
+        g.addOdometer(12345.67, at: t0 - 12_000)
+        g.addOdometer(12345.67, at: t0 - 2_000)
+        XCTAssertEqual(g.block(connected: true, mode: .parked, now: t0), .waiting)
+    }
+
+    func testStaleOdometerBlocks() {
+        var g = ChangeGuard()
+        g.addOdometer(12345.67, at: t0 - 40_000)
+        g.addOdometer(12345.67, at: t0 - 26_000)
+        g.addPower(0.1, at: t0 - 1_000)
+        XCTAssertEqual(g.block(connected: true, mode: .parked, now: t0), .stale)
+    }
+
+    func testStalePowerBlocks() {
+        var g = parked(at: t0)
+        g.addPower(0.1, at: t0 - 7_000)
+        XCTAssertEqual(g.block(connected: true, mode: .parked, now: t0), .stale)
+    }
+
+    func testMovedOdometerBlocks() {
+        var g = ChangeGuard()
+        g.addOdometer(12345.67, at: t0 - 12_000)
+        g.addOdometer(12345.69, at: t0 - 2_000)
+        g.addPower(0.1, at: t0 - 1_000)
+        XCTAssertEqual(g.block(connected: true, mode: .parked, now: t0), .moving)
+    }
+
+    func testHighPowerEitherSignBlocks() {
+        XCTAssertEqual(parked(at: t0, kw: 7.2).block(connected: true, mode: .parked, now: t0), .power, "charging")
+        XCTAssertEqual(parked(at: t0, kw: -3.5).block(connected: true, mode: .parked, now: t0), .power, "climate on, or flipped current")
+        XCTAssertEqual(parked(at: t0, kw: 1.0).block(connected: true, mode: .parked, now: t0), .power)
+        XCTAssertEqual(parked(at: t0, kw: -1.0).block(connected: true, mode: .parked, now: t0), .power)
+        XCTAssertNil(parked(at: t0, kw: -0.9).block(connected: true, mode: .parked, now: t0))
+    }
+
+    func testTrackerModeStillChecked() {
+        XCTAssertEqual(parked(at: t0).block(connected: true, mode: .driving, now: t0), .moving)
+        XCTAssertEqual(parked(at: t0).block(connected: true, mode: .charging, now: t0), .charging)
+    }
+
+    func testResetOnReconnect() {
+        var g = parked(at: t0)
+        g.reset()
+        XCTAssertEqual(g.block(connected: true, mode: .parked, now: t0), .waiting)
+        // One reading after the reconnect isn't enough, even though the old ones matched.
+        g.addOdometer(12345.67, at: t0)
+        g.addPower(0.1, at: t0)
+        XCTAssertEqual(g.block(connected: true, mode: .parked, now: t0 + 1_000), .waiting)
+        g.addOdometer(12345.67, at: t0 + 10_000)
+        g.addPower(0.1, at: t0 + 10_000)
+        XCTAssertNil(g.block(connected: true, mode: .parked, now: t0 + 10_500))
+    }
+
+    func testMidActionCheck() {
+        XCTAssertNil(ChangeGuard.midAction(powerKw: 0.3, odometerKm: 100, startKm: 100))
+        XCTAssertEqual(ChangeGuard.midAction(powerKw: 0.3, odometerKm: 100.02, startKm: 100), .moving)
+        XCTAssertEqual(ChangeGuard.midAction(powerKw: -2, odometerKm: 100, startKm: 100), .power)
+        XCTAssertEqual(ChangeGuard.midAction(powerKw: nil, odometerKm: 100, startKm: 100), .noAnswer)
+        XCTAssertEqual(ChangeGuard.midAction(powerKw: 0.3, odometerKm: nil, startKm: 100), .noAnswer)
+        XCTAssertEqual(ChangeGuard.midAction(powerKw: 0.3, odometerKm: 100, startKm: nil), .noAnswer)
+    }
+
+    func testRestartHiddenForSafetyCriticalModules() {
+        for code in ["ESP", "IBOOSTER", "EPS", "EPS2", "ACU", "VCU", "MCU_F", "MCU_R", "GW", "BMS"] {
+            XCTAssertFalse(Ecus.byCode(code).canRestart, code)
+            XCTAssertTrue(Ecus.scanList.contains { $0.code == code }, "\(code) is in the scan list, so clearing stays possible")
+        }
+        XCTAssertTrue(Ecus.byCode("ICC").canRestart)
+        XCTAssertTrue(Ecus.byCode("TBOX_EU").canRestart)
+        XCTAssertFalse(Ecus.byCode("RAC").canRestart, "no ECUReset at all")
+    }
+
+    func testAbrpSecretsLeftOutOfSavedJson() throws {
+        var s = Settings()
+        s.abrpToken = "token-123"
+        s.abrpKey = "key-456"
+        s.currency = "€"
+        let json = String(decoding: try JSONEncoder().encode(s), as: UTF8.self)
+        XCTAssertFalse(json.contains("token-123"))
+        XCTAssertFalse(json.contains("key-456"))
+        XCTAssertFalse(json.contains("abrpToken"))
+        XCTAssertEqual(try JSONDecoder().decode(Settings.self, from: Data(json.utf8)).currency, "€")
+        // Settings saved by an older version still read their token, so it can move to the Keychain.
+        let old = try JSONDecoder().decode(Settings.self, from: Data(#"{"abrpToken":"a","abrpKey":"b"}"#.utf8))
+        XCTAssertEqual(old.abrpToken, "a")
+        XCTAssertEqual(old.abrpKey, "b")
     }
 }
 

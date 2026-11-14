@@ -1,6 +1,8 @@
 package com.justicemw.oceanlive
 
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import androidx.car.app.CarAppService
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -24,7 +26,20 @@ import kotlin.math.roundToInt
 
 /** Android Auto: a read-only dashboard of the same live data the phone shows. */
 class OceanCarService : CarAppService() {
-    override fun createHostValidator(): HostValidator = HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
+    /**
+     * The service is exported, so only Android Auto hosts signed by Google may bind to it.
+     * Debug builds accept any host, for the desktop head unit. The allowlist is the one the
+     * car-app library ships and Google's documentation uses (lint calls it private).
+     */
+    @SuppressLint("PrivateResource")
+    override fun createHostValidator(): HostValidator =
+        if ((applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
+        } else {
+            HostValidator.Builder(applicationContext)
+                .addAllowedHosts(androidx.car.app.R.array.hosts_allowlist_sample)
+                .build()
+        }
 
     override fun onCreateSession(): Session = object : Session() {
         init {

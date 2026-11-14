@@ -86,20 +86,22 @@ struct FaultsView: View {
     }
 
     private func confirmAlert(_ p: PendingAction) -> Alert {
+        // Ocean Live checks this from its own readings too, and stops if power starts flowing or the car moves.
+        let parked = String(localized: "The car must be in Park and unplugged, with the climate off. Keep your foot on the brake.")
         switch p.action {
         case .clear:
             let title = p.ecus.count == 1 ? String(localized: "Clear codes in \(p.ecus[0].name)?") : String(localized: "Clear codes in \(p.ecus.count) modules?")
             let slow = p.ecus.count > 15 ? String(localized: "This goes through every module one by one and takes a couple of minutes.") + "\n\n" : ""
             return Alert(
                 title: Text(title),
-                message: Text(slow + String(localized: "This erases the stored fault history a workshop would use, so do it after the problem is fixed or after you've shared the report.\n\nCodes for faults that are still there will come back straight away.\n\nCar on and in Park, foot on the brake, charging cable unplugged.")),
+                message: Text(slow + String(localized: "This erases the stored fault history a workshop would use, so do it after the problem is fixed or after you've shared the report.\n\nCodes for faults that are still there will come back straight away.") + "\n\n" + parked),
                 primaryButton: .destructive(Text("Clear codes")) { car.clearCodes(p.ecus) },
                 secondaryButton: .cancel()
             )
         case .restart:
             return Alert(
                 title: Text("Restart \(p.ecus[0].name)?"),
-                message: Text("The module turns off and back on. Its features stop for a few seconds and screens or warning lights may flicker. It's a restart, not a repair, and settings normally stay as they are.\n\nOnly while parked: car in Park, foot on the brake."),
+                message: Text(String(localized: "The module turns off and back on. Its features stop for a few seconds and screens or warning lights may flicker. It's a restart, not a repair, and settings normally stay as they are.") + "\n\n" + parked),
                 primaryButton: .default(Text("Restart")) { if let e = p.ecus.first { car.restartModule(e) } },
                 secondaryButton: .cancel()
             )
@@ -493,7 +495,7 @@ private struct ActionCard: View {
 
     var body: some View {
         let run = car.action
-        if run.running || !run.outcomes.isEmpty {
+        if run.running || !run.outcomes.isEmpty || run.stopReason != nil {
             SectionTitle(run.action == .restart ? String(localized: "Restart") : String(localized: "Clearing codes"))
             CardBox(glow: run.running ? Theme.cyan : nil) {
                 if run.running {
@@ -503,7 +505,9 @@ private struct ActionCard: View {
                 }
                 ForEach(run.outcomes) { OutcomeRow(o: $0) }
                 if !run.running {
-                    if run.outcomes.count < run.total {
+                    if let reason = run.stopReason {
+                        Text(reason).font(.system(size: 12)).foregroundStyle(Theme.warn).padding(.top, 6)
+                    } else if run.outcomes.count < run.total {
                         Text("Stopped early because the car started moving or charging, or the adapter disconnected.")
                             .font(.system(size: 12)).foregroundStyle(Theme.warn).padding(.top, 6)
                     }

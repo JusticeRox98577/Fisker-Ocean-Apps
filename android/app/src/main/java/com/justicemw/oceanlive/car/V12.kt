@@ -308,6 +308,12 @@ object V12Watch {
     const val MISSES_KEEP_MS = 14L * 24 * 3_600_000
     private const val MISSES_MAX = 2_000
 
+    /** Watch mode goes back to full reading on its own (the car woke up) at most this often. */
+    const val AUTO_RESUME_MIN_MS = 2 * 3_600_000L
+
+    /** Whether a wake-up seen while watching may start full reading again, given when that last happened. */
+    fun mayAutoResume(lastResume: Long?, now: Long): Boolean = lastResume == null || now - lastResume >= AUTO_RESUME_MIN_MS
+
     /** Whether the app should watch the 12V instead of letting go of the adapter when it stops reading. */
     fun shouldWatch(settingOn: Boolean, userStopped: Boolean): Boolean = settingOn && !userStopped
 

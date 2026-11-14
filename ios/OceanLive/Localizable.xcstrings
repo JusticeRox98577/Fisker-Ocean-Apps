@@ -3255,6 +3255,34 @@
         }
       }
     },
+    "Checking that the car is parked and not charging. Wait a few seconds.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe, ob das Auto steht und nicht lädt. Warte ein paar Sekunden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobando que el coche está aparcado y no está cargando. Espera unos segundos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérification que la voiture est garée et ne charge pas. Patientez quelques secondes."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controleren of de auto stilstaat en niet laadt. Wacht een paar seconden."
+          }
+        }
+      }
+    },
     "Checks that couldn't reach the adapter on the latest night: %lld": {
       "localizations": {
         "de": {
@@ -8465,6 +8493,34 @@
         }
       }
     },
+    "Power is flowing in or out of the battery, so the car may be charging or the climate is on. Unplug the car and switch the climate off.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strom fließt in die Batterie oder aus ihr heraus, das Auto lädt also vielleicht oder die Klimaanlage läuft. Steck das Auto ab und schalte die Klimaanlage aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Está entrando o saliendo corriente de la batería, así que el coche puede estar cargando o la climatización está encendida. Desenchufa el coche y apaga la climatización."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du courant entre dans la batterie ou en sort : la voiture est peut-être en charge ou la climatisation est allumée. Débranchez la voiture et coupez la climatisation."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er loopt stroom in of uit de batterij, dus de auto laadt misschien of de klimaatregeling staat aan. Koppel de auto los en zet de klimaatregeling uit."
+          }
+        }
+      }
+    },
     "Published usable capacity: 106.5 kWh for One, Extreme and Ultra, about 75 kWh for the Sport. Used for range and charge-time estimates.": {
       "localizations": {
         "de": {
@@ -10117,6 +10173,34 @@
         }
       }
     },
+    "Stopped after %lld of %lld modules: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach %lld von %lld Steuergeräten gestoppt: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detenido tras %lld de %lld módulos: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrêté après %lld modules sur %lld : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestopt na %lld van %lld modules: %@"
+          }
+        }
+      }
+    },
     "Stopped early because the car started moving or charging, or the adapter disconnected.": {
       "localizations": {
         "de": {
@@ -10481,6 +10565,34 @@
         }
       }
     },
+    "The car didn't answer the safety check.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Auto hat auf die Sicherheitsprüfung nicht geantwortet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El coche no respondió a la comprobación de seguridad."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La voiture n’a pas répondu à la vérification de sécurité."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De auto antwoordde niet op de veiligheidscontrole."
+          }
+        }
+      }
+    },
     "The car doesn't report battery health directly. Ocean Live works it out from your charging: keep the app connected through a charge that adds at least %@.": {
       "localizations": {
         "de": {
@@ -10621,30 +10733,86 @@
         }
       }
     },
-    "The module turns off and back on. Its features stop for a few seconds and screens or warning lights may flicker. It's a restart, not a repair, and settings normally stay as they are.\n\nOnly while parked: car in Park, foot on the brake.": {
+    "The car must be in Park and unplugged, with the climate off. Keep your foot on the brake.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Das Steuergerät schaltet sich aus und wieder ein. Seine Funktionen stoppen für ein paar Sekunden, Bildschirme oder Warnleuchten können flackern. Es ist ein Neustart, keine Reparatur, und Einstellungen bleiben normalerweise erhalten.\n\nNur im Stand: Auto in P, Fuß auf der Bremse."
+            "value": "Das Auto muss in P stehen, abgesteckt sein und die Klimaanlage aus. Lass den Fuß auf der Bremse."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El módulo se apaga y se vuelve a encender. Sus funciones se detienen unos segundos y pueden parpadear pantallas o testigos. Es un reinicio, no una reparación, y los ajustes normalmente se mantienen.\n\nSolo aparcado: coche en P, pie en el freno."
+            "value": "El coche debe estar en P y desenchufado, con la climatización apagada. Mantén el pie en el freno."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le module s’éteint puis se rallume. Ses fonctions s’arrêtent quelques secondes et des écrans ou voyants peuvent clignoter. C’est un redémarrage, pas une réparation, et les réglages restent normalement inchangés.\n\nUniquement à l’arrêt : voiture en P, pied sur le frein."
+            "value": "La voiture doit être en P, débranchée, avec la climatisation coupée. Gardez le pied sur le frein."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "De module gaat uit en weer aan. De functies stoppen een paar seconden en schermen of waarschuwingslampjes kunnen knipperen. Het is een herstart, geen reparatie, en instellingen blijven normaal gesproken zoals ze zijn.\n\nAlleen geparkeerd: auto in P, voet op de rem."
+            "value": "De auto moet in P staan, losgekoppeld zijn en de klimaatregeling moet uit. Houd je voet op de rem."
+          }
+        }
+      }
+    },
+    "The latest readings are too old. Wait for fresh readings from the car.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die letzten Messwerte sind zu alt. Warte auf neue Werte vom Auto."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las últimas lecturas son demasiado antiguas. Espera lecturas nuevas del coche."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les dernières mesures sont trop anciennes. Attendez de nouvelles mesures de la voiture."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De laatste metingen zijn te oud. Wacht op nieuwe metingen van de auto."
+          }
+        }
+      }
+    },
+    "The module turns off and back on. Its features stop for a few seconds and screens or warning lights may flicker. It's a restart, not a repair, and settings normally stay as they are.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Steuergerät schaltet sich aus und wieder ein. Seine Funktionen stoppen für ein paar Sekunden, Bildschirme oder Warnleuchten können flackern. Es ist ein Neustart, keine Reparatur, und Einstellungen bleiben normalerweise erhalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El módulo se apaga y se vuelve a encender. Sus funciones se detienen unos segundos y pueden parpadear pantallas o testigos. Es un reinicio, no una reparación, y los ajustes normalmente se mantienen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le module s’éteint puis se rallume. Ses fonctions s’arrêtent quelques secondes et des écrans ou voyants peuvent clignoter. C’est un redémarrage, pas une réparation, et les réglages restent normalement inchangés."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De module gaat uit en weer aan. De functies stoppen een paar seconden en schermen of waarschuwingslampjes kunnen knipperen. Het is een herstart, geen reparatie, en instellingen blijven normaal gesproken zoals ze zijn."
           }
         }
       }
@@ -10817,30 +10985,30 @@
         }
       }
     },
-    "This erases the stored fault history a workshop would use, so do it after the problem is fixed or after you've shared the report.\n\nCodes for faults that are still there will come back straight away.\n\nCar on and in Park, foot on the brake, charging cable unplugged.": {
+    "This erases the stored fault history a workshop would use, so do it after the problem is fixed or after you've shared the report.\n\nCodes for faults that are still there will come back straight away.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Das löscht den gespeicherten Fehlerverlauf, den eine Werkstatt nutzen würde. Mach es also, nachdem das Problem behoben ist oder du den Bericht geteilt hast.\n\nCodes für Fehler, die noch da sind, kommen sofort wieder.\n\nAuto an und in P, Fuß auf der Bremse, Ladekabel abgesteckt."
+            "value": "Das löscht den gespeicherten Fehlerverlauf, den eine Werkstatt nutzen würde. Mach es also, nachdem das Problem behoben ist oder du den Bericht geteilt hast.\n\nCodes für Fehler, die noch da sind, kommen sofort wieder."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esto borra el historial de averías que usaría un taller, así que hazlo cuando el problema esté arreglado o después de compartir el informe.\n\nLos códigos de averías que sigan presentes volverán enseguida.\n\nCoche encendido y en P, pie en el freno, cable de carga desconectado."
+            "value": "Esto borra el historial de averías que usaría un taller, así que hazlo cuando el problema esté arreglado o después de compartir el informe.\n\nLos códigos de averías que sigan presentes volverán enseguida."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cela efface l’historique des défauts qu’un atelier utiliserait, faites-le donc une fois le problème réglé ou après avoir partagé le rapport.\n\nLes codes des défauts encore présents reviendront aussitôt.\n\nVoiture allumée et en P, pied sur le frein, câble de recharge débranché."
+            "value": "Cela efface l’historique des défauts qu’un atelier utiliserait, faites-le donc une fois le problème réglé ou après avoir partagé le rapport.\n\nLes codes des défauts encore présents reviendront aussitôt."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dit wist de opgeslagen storingsgeschiedenis die een garage zou gebruiken, dus doe het nadat het probleem is opgelost of nadat je het rapport hebt gedeeld.\n\nCodes voor storingen die er nog zijn, komen meteen terug.\n\nAuto aan en in P, voet op de rem, laadkabel losgekoppeld."
+            "value": "Dit wist de opgeslagen storingsgeschiedenis die een garage zou gebruiken, dus doe het nadat het probleem is opgelost of nadat je het rapport hebt gedeeld.\n\nCodes voor storingen die er nog zijn, komen meteen terug."
           }
         }
       }

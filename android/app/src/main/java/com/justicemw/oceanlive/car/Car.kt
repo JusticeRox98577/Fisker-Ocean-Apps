@@ -73,12 +73,21 @@ data class CarState(
     val watchUnreachable: Boolean = false,
     /** While watching: when the next 12V check is due, or null while a check is running. */
     val nextCheckAt: Long? = null,
+    /**
+     * While watching: the car woke up but reading didn't start again by itself (it already did
+     * less than 2 hours ago), so the user knows to connect by hand. Cleared once it sleeps again.
+     */
+    val watchAwake: Boolean = false,
 ) {
     val connected: Boolean get() = status == Status.Live
 
     /** What to show while watching the 12V with the car asleep. */
     @get:StringRes
-    val watchStatus: Int get() = if (watchUnreachable) R.string.v12_watch_unreachable else R.string.v12_watch_status
+    val watchStatus: Int get() = when {
+        watchUnreachable -> R.string.v12_watch_unreachable
+        watchAwake -> R.string.v12_watch_awake
+        else -> R.string.v12_watch_status
+    }
 }
 
 data class FaultScan(
@@ -121,6 +130,8 @@ data class ActionRun(
     val done: Int = 0,
     val total: Int = 0,
     val outcomes: List<ActionOutcome> = emptyList(),
+    /** Why the run stopped before every module was done, or null if it wasn't stopped by a check. */
+    val stoppedBy: ChangeBlock? = null,
 )
 
 /**
@@ -142,6 +153,8 @@ object Car {
     private var wantConnected = false
     private var selectedEcu: Ecu? = null
     private val tracker = Tracker()
+    /** Odometer and power readings from this connection, checked before clearing codes or restarting a module. */
+    private val evidence = ChangeEvidence()
     private var lastAbrp = 0L
     private var lastWidget = 0L
     private var parkedMark: ParkedMark? = null
@@ -168,6 +181,8 @@ object Car {
     /** A watch setting changed: the next poke ends the wait whatever the spacing. */
     private var watchForce = false
     private var lastWatchRead = 0L
+    /** When watch mode last went back to full reading because the car woke up, or null if it hasn't. */
+    private var lastAutoResume: Long? = null
 
     private val _state = MutableStateFlow(CarState())
     val state: StateFlow<CarState> = _state.asStateFlow()
@@ -256,6 +271,8 @@ object Car {
     /**
      * Connects to the saved adapter when the user opens the app or Android Auto, if
      * auto-connect is on. Never called on a timer, so the app can't wake a sleeping car.
+     * (The only other way reading starts without a tap is watch mode seeing the car wake
+     * up by itself, at most once every [V12Watch.AUTO_RESUME_MIN_MS].)
      */
     fun autoConnect() {
         val s = _settings.value
@@ -316,6 +333,7 @@ object Car {
         userStopped = false
         reconnects = 0
         idleTimer.reset()
+        evidence.reset()
         // Watch mode may still hold the adapter; a different adapter needs a fresh link.
         if (address != _settings.value.adapterAddress) transport.disconnect()
         updateSettings { it.copy(adapterAddress = address, adapterName = name) }
@@ -335,7 +353,7 @@ object Car {
         stopJob()
         transport.disconnect()
         endSessions()
-        _state.update { it.copy(status = Status.Idle, message = null, resting = false, abrpStatus = null, watchedAt = null, watchUnreachable = false, nextCheckAt = null) }
+        _state.update { it.copy(status = Status.Idle, message = null, resting = false, abrpStatus = null, watchedAt = null, watchUnreachable = false, nextCheckAt = null, watchAwake = false) }
         OceanService.stop(app)
         refreshWidget(force = true)
     }
@@ -362,6 +380,8 @@ object Car {
                     transport.initialize()
                     selectedEcu = null
                 }
+                // A new connection: clearing or restarting waits for fresh readings from this one.
+                evidence.reset()
                 v12Recorder.startSession()
                 alerts.resetHealth()
                 first = false
@@ -432,6 +452,7 @@ object Car {
     private class StopReading(message: String) : Exception(message)
 
     private fun onLost(reason: String) {
+        evidence.reset()
         if (!wantConnected) return
         if (_state.value.status == Status.Live) {
             _state.update { it.copy(status = Status.Reconnecting, message = reason) }
@@ -466,14 +487,26 @@ object Car {
         while (scope.isActive && wantConnected) {
             var answered = false
             var fresh12v = false
+            var freshOdo: Double? = null
+            // When each guard reading came back, not when the cycle ended (a slow cycle can take many seconds).
+            var odoAt = 0L
+            var packVAt = 0L
+            var packAAt = 0L
             var snap = _state.value.snapshot
             val flip = _settings.value.flipCurrent
             bus.withLock {
                 val dids = if (cycle % 5 == 0) Pids.fast + (Pids.slow - Pids.aux12v) + Pids.odometer else Pids.fast
                 for (did in dids) {
                     val (got, value) = read(did)
+                    val readAt = System.currentTimeMillis()
                     if (got) answered = true
+                    if (did == Pids.packV) packVAt = readAt
+                    if (did == Pids.packA) packAAt = readAt
                     val v = if (did == Pids.packA && flip) value?.let { -it } else value
+                    if (did == Pids.odometer && value != null) {
+                        freshOdo = value
+                        odoAt = readAt
+                    }
                     // Keep slow values between their reads; fast ones go blank if the car stops answering.
                     if (v != null || did in Pids.fast) snap = snap.withValue(did.key, v)
                 }
@@ -494,6 +527,10 @@ object Car {
 
             if (answered) {
                 misses = 0
+                // Only readings taken in this cycle count as evidence (pack values go blank when not answered).
+                // Power is as old as the older of its two readings.
+                snap.powerKw?.let { evidence.power(it, minOf(packVAt, packAAt)) }
+                freshOdo?.let { evidence.odometer(it, odoAt) }
                 onReading(snap)
                 // Keeps the 12V reading just taken; never asks the car for anything extra.
                 if (fresh12v) record12v(snap.time, snap.aux12v!!, snap.aux12vSource ?: V12Log.SOURCE_PORT, V12Mode.of(tracker.mode))
@@ -556,14 +593,15 @@ object Car {
      * asleep against about 50 mA awake). With "Keep the adapter connected" on, the link stays
      * open between checks instead and is reconnected at most every 10 minutes if it drops.
      *
-     * Returns true when the car woke up by itself (13.0 V or more twice in a row), false when
+     * Returns true when the car woke up by itself (13.0 V or more twice in a row) and full
+     * reading may start again (at most once every [V12Watch.AUTO_RESUME_MIN_MS]), false when
      * watching ended another way (the setting turned off).
      */
     private suspend fun watch12v(address: String): Boolean {
         wakeDetector.enter()
         while (watchPoke.tryReceive().isSuccess) Unit
         watchForce = false
-        _state.update { it.copy(status = Status.Watching, message = null, resting = false, abrpStatus = null, watchUnreachable = false, nextCheckAt = null) }
+        _state.update { it.copy(status = Status.Watching, message = null, resting = false, abrpStatus = null, watchUnreachable = false, nextCheckAt = null, watchAwake = false) }
         refreshWidget(force = true)
         var lastLinkTry = 0L
         var quickMisses = 0
@@ -585,7 +623,7 @@ object Car {
                     _state.update { it.copy(message = null, watchUnreachable = V12Watch.unreachable(quickMisses)) }
                 }
                 if (volts != null) onWatchReading(volts, V12Method.Quick)
-                if (wakeDetector.add(volts)) return true
+                if (wakeDetector.add(volts) && wakeResume()) return true
                 refreshWidget(force = true)
                 watchWait(V12Watch.quickDelay(every, wakeDetector.confirming), needLink = false)
                 continue
@@ -624,7 +662,7 @@ object Car {
             }
             lastWatchRead = System.currentTimeMillis()
             if (volts != null) onWatchReading(volts, V12Method.KeptOpen)
-            if (wakeDetector.add(volts)) return true
+            if (wakeDetector.add(volts) && wakeResume()) return true
             if (!transport.connected) continue
             watchWait(V12Watch.nextDelay(every, connected = true, confirmingWake = wakeDetector.confirming), needLink = false)
         }
@@ -702,9 +740,31 @@ object Car {
         }
     }
 
+    /**
+     * The car woke up by itself. Full reading starts again at most once every 2 hours, so a car
+     * that keeps waking (a timer, the 12V being topped up) isn't kept awake by the app. Otherwise
+     * keep watching, and look for a wake-up again only after the car has been seen asleep.
+     */
+    private fun wakeResume(): Boolean {
+        val now = System.currentTimeMillis()
+        if (!V12Watch.mayAutoResume(lastAutoResume, now)) {
+            wakeDetector.enter()
+            _state.update { it.copy(watchAwake = true) }
+            return false
+        }
+        lastAutoResume = now
+        return true
+    }
+
     private fun onWatchReading(volts: Double, method: V12Method) {
         val now = System.currentTimeMillis()
-        _state.update { it.copy(snapshot = it.snapshot.copy(aux12v = volts, aux12vSource = V12Log.SOURCE_ASLEEP), watchedAt = now) }
+        _state.update {
+            it.copy(
+                snapshot = it.snapshot.copy(aux12v = volts, aux12vSource = V12Log.SOURCE_ASLEEP), watchedAt = now,
+                // Asleep again: the "awake, connect by hand" status no longer applies.
+                watchAwake = it.watchAwake && volts >= V12Watch.WAKE_VOLTS,
+            )
+        }
         record12v(now, volts, V12Log.SOURCE_ASLEEP, V12Mode.Asleep, method)
         lowAlarm.check(volts)?.let { alerts.low12v(it, volts, _settings.value) }
         refreshWidget(force = true)
@@ -748,6 +808,7 @@ object Car {
     }
 
     private fun endSessions() {
+        evidence.reset()
         saveParkedMark()
         tracker.flush(System.currentTimeMillis()).forEach { addHistory(it) }
         _state.update { it.copy(mode = Mode.Parked, currentCharge = null, currentDrive = null) }
@@ -896,36 +957,89 @@ object Car {
 
     // ── Changing things: clear codes, restart modules ───────────
 
-    /** Why the car can't take a clear or restart right now, or null if it can. */
-    fun changeBlockedReason(): String? {
+    /**
+     * Why the car can't take a clear or restart right now, or null if it can. Used both to
+     * enable the buttons and right before anything is sent. Needs fresh readings from this
+     * connection: two equal odometer readings (the newest under 25 s old) and a battery power
+     * reading under 6 s old that is below 1 kW either way.
+     */
+    fun changeBlockedReason(): String? = changeBlock()?.let { app.getString(it) }
+
+    @StringRes
+    private fun changeBlock(): Int? {
         val s = _state.value
+        val block = evidence.check(s.connected, s.mode, System.currentTimeMillis())
         return when {
-            !s.connected -> app.getString(R.string.blocked_not_connected)
-            s.mode == Mode.Driving -> app.getString(R.string.blocked_driving)
-            s.mode == Mode.Charging -> app.getString(R.string.blocked_charging)
-            _faults.value.running || _versions.value.running -> app.getString(R.string.blocked_scan_running)
-            _action.value.running -> app.getString(R.string.blocked_action_running)
-            else -> null
+            block == ChangeBlock.NotConnected -> block.text
+            _faults.value.running || _versions.value.running -> R.string.blocked_scan_running
+            _action.value.running -> R.string.blocked_action_running
+            else -> block?.text
         }
+    }
+
+    /**
+     * The readings went stale (or the car changed) between the buttons being enabled and the tap:
+     * nothing is sent, and the action card says why. A scan or another run in progress already
+     * shows on screen, so that changes nothing here.
+     */
+    private fun showBlocked(action: CarAction, total: Int) {
+        if (_faults.value.running || _versions.value.running || _action.value.running) return
+        val block = evidence.check(_state.value.connected, _state.value.mode, System.currentTimeMillis()) ?: return
+        _action.value = ActionRun(action = action, total = total, stoppedBy = block)
     }
 
     /** Clears stored fault codes on each module, then reads them again to show what stayed. */
     fun clearCodes(ecus: List<Ecu>) = runAction(CarAction.Clear, ecus)
 
-    /** Restarts one module (soft reset, or hard for the telematics boxes). */
-    fun restartModule(ecu: Ecu) = runAction(CarAction.Restart, listOf(ecu))
+    /** Restarts one module (soft reset, or hard for the telematics boxes). Never a safety-critical one. */
+    fun restartModule(ecu: Ecu) {
+        if (ecu.offersRestart) runAction(CarAction.Restart, listOf(ecu))
+    }
+
+    /**
+     * A fresh check taken straight from the car while the run holds the bus (so the normal
+     * poll can't update anything): battery power and the odometer against [startKm].
+     */
+    private suspend fun freshCheck(startKm: Double): ChangeBlock? {
+        val packV = read(Pids.packV).second
+        val powerAt = System.currentTimeMillis() // power is as old as its older reading
+        val packA = read(Pids.packA).second
+        val odometer = read(Pids.odometer).second
+        val odoAt = System.currentTimeMillis()
+        val power = if (packV != null && packA != null) packV * packA / 1000 else null
+        power?.let { evidence.power(it, powerAt) }
+        odometer?.let { evidence.odometer(it, odoAt) }
+        return ChangeGuard.midAction(startKm, odometer, power)
+    }
 
     private fun runAction(action: CarAction, ecus: List<Ecu>) {
-        if (changeBlockedReason() != null || ecus.isEmpty()) return
+        if (ecus.isEmpty()) return
+        if (changeBlock() != null) {
+            showBlocked(action, ecus.size)
+            return
+        }
+        val startKm = evidence.latestOdometer ?: return
+        val session = evidence.session
         _action.value = ActionRun(running = true, action = action, total = ecus.size)
         scope.launch {
             val outcomes = mutableListOf<ActionOutcome>()
+            var stop: ChangeBlock? = null
             try {
                 bus.withLock {
+                    // The connection may have dropped or started again while waiting for the bus.
+                    if (evidence.session != session || !_state.value.connected) {
+                        stop = ChangeBlock.NotConnected
+                        return@withLock
+                    }
                     query("ATST96")
-                    ecus.forEachIndexed { index, ecu ->
+                    for ((index, ecu) in ecus.withIndex()) {
                         // Stop if the car starts moving or charging part way through.
-                        if (_state.value.mode != Mode.Parked) return@forEachIndexed
+                        stop = when (_state.value.mode) {
+                            Mode.Driving -> ChangeBlock.Driving
+                            Mode.Charging -> ChangeBlock.Charging
+                            Mode.Parked -> freshCheck(startKm)
+                        }
+                        if (stop != null) break
                         _action.update { it.copy(current = ecu.displayName(app.strings()), done = index) }
                         selectEcu(ecu)
                         query(Uds.EXTENDED_SESSION) // some modules refuse this and still accept the request
@@ -939,7 +1053,7 @@ object Car {
                                     query(Uds.DTC_SETTING_ON) // the switch back to the default session below also turns it back on
                                 }
                             }
-                            CarAction.Restart -> if (!ecu.canRestart) UdsResult.Refused(0x12) else
+                            CarAction.Restart -> if (!ecu.offersRestart) UdsResult.Refused(0x12) else
                                 request(if (ecu.hardRestart) Uds.HARD_RESET else Uds.SOFT_RESET, 0x11)
                         }
                         if (action == CarAction.Restart && result == UdsResult.Done) delay(3_000) // let it boot
@@ -950,8 +1064,12 @@ object Car {
                     }
                     query("ATST20")
                 }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) throw e
+                // The adapter dropped part way: nothing more is sent.
+                if (stop == null && outcomes.size < ecus.size) stop = ChangeBlock.NoAnswer
             } finally {
-                _action.update { it.copy(running = false, current = null, done = it.total) }
+                _action.update { it.copy(running = false, current = null, done = outcomes.size, stoppedBy = stop) }
             }
         }
     }

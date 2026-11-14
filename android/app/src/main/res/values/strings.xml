@@ -56,6 +56,7 @@
     <string name="v12_source_asleep">OBD port while asleep</string>
     <string name="v12_watch_status">Car asleep · watching 12V</string>
     <string name="v12_watch_unreachable">Car asleep · adapter not reachable</string>
+    <string name="v12_watch_awake">Car awake · Disconnect, then Connect to read it</string>
     <string name="v12_battery">12V battery</string>
     <string name="live_last_seen">Last seen %1$s</string>
     <string name="live_offline">Offline</string>
@@ -278,6 +279,12 @@
     <string name="blocked_charging">The car is charging. Unplug it first.</string>
     <string name="blocked_scan_running">Wait for the scan to finish.</string>
     <string name="blocked_action_running">Another action is still running.</string>
+    <string name="blocked_wait_odometer">Checking that the car is standing still. Wait a few seconds.</string>
+    <string name="blocked_odometer_stale">No recent odometer reading. Wait a few seconds for a fresh one.</string>
+    <string name="blocked_moved">The car moved. Park it and wait a few seconds.</string>
+    <string name="blocked_wait_power">Waiting for a fresh battery power reading.</string>
+    <string name="blocked_power">Power is flowing into or out of the battery. The car may be charging or the climate may be on. Unplug it and switch the climate off.</string>
+    <string name="blocked_no_answer">The car didn\'t answer the safety check.</string>
     <string name="faults_scan_all">Scan all modules</string>
     <string name="faults_scan_again">Scan again</string>
     <string name="faults_descriptions">Code descriptions</string>
@@ -317,13 +324,12 @@
     <string name="versions_software_no">Software no. %1$s</string>
     <string name="confirm_clear_one">Clear codes in %1$s?</string>
     <string name="confirm_clear_slow">This goes through every module one by one and takes a couple of minutes.</string>
-    <string name="confirm_clear_body">This erases the stored fault history a workshop would use, so do it after the problem is fixed or after you\'ve shared the report.\n\nCodes for faults that are still there will come back straight away.\n\nCar on and in Park, foot on the brake, charging cable unplugged.</string>
+    <string name="confirm_clear_body">This erases the stored fault history a workshop would use, so do it after the problem is fixed or after you\'ve shared the report.\n\nCodes for faults that are still there will come back straight away.\n\nCar on and in Park, foot on the brake, charging cable unplugged, climate off.</string>
     <string name="confirm_restart">Restart %1$s?</string>
-    <string name="confirm_restart_body">The module turns off and back on. Its features stop for a few seconds and screens or warning lights may flicker. It\'s a restart, not a repair, and settings normally stay as they are.\n\nOnly while parked: car in Park, foot on the brake.</string>
+    <string name="confirm_restart_body">The module turns off and back on. Its features stop for a few seconds and screens or warning lights may flicker. It\'s a restart, not a repair, and settings normally stay as they are.\n\nOnly while parked: car in Park, foot on the brake, charging cable unplugged, climate off.</string>
     <string name="action_clearing">Clearing codes</string>
     <string name="action_working">Working</string>
     <string name="action_keep_parked">Keep the car parked until this finishes.</string>
-    <string name="action_stopped_early">Stopped early because the car started moving or charging.</string>
     <string name="outcome_restarted">Restarted</string>
     <string name="outcome_cleared_check">Cleared · scan again to confirm</string>
     <string name="outcome_needs_key">Needs a security key Ocean Live doesn\'t have</string>
@@ -572,4 +578,8 @@
     <string name="ask_error_no_answer">Couldn\'t answer that one. Try asking another way.</string>
     <string name="ask_error_server">Couldn\'t reach the questions service. Try again in a moment.</string>
     <string name="ask_error_offline">No internet</string>
+    <plurals name="action_stopped_early">
+        <item quantity="one">Stopped after %1$d of %2$d module.</item>
+        <item quantity="other">Stopped after %1$d of %2$d modules.</item>
+    </plurals>
 </resources>

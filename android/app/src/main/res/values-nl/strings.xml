@@ -54,6 +54,7 @@
     <string name="v12_source_asleep">OBD-poort in slaap</string>
     <string name="v12_watch_status">Auto slaapt · 12V in de gaten</string>
     <string name="v12_watch_unreachable">Auto slaapt · adapter niet bereikbaar</string>
+    <string name="v12_watch_awake">Auto wakker · verbreek de verbinding en verbind opnieuw om uit te lezen</string>
     <string name="v12_battery">12V-accu</string>
     <string name="live_last_seen">Laatst gezien %1$s</string>
     <string name="live_offline">Offline</string>
@@ -273,6 +274,12 @@
     <string name="blocked_charging">De auto laadt. Koppel hem eerst los.</string>
     <string name="blocked_scan_running">Wacht tot de scan klaar is.</string>
     <string name="blocked_action_running">Er loopt nog een andere actie.</string>
+    <string name="blocked_wait_odometer">Controleren of de auto stilstaat. Wacht een paar seconden.</string>
+    <string name="blocked_odometer_stale">Geen recente kilometerstand. Wacht een paar seconden op een nieuwe.</string>
+    <string name="blocked_moved">De auto heeft bewogen. Parkeer hem en wacht een paar seconden.</string>
+    <string name="blocked_wait_power">Wachten op een actuele vermogensmeting van de batterij.</string>
+    <string name="blocked_power">Er gaat stroom de batterij in of uit. De auto laadt misschien of de klimaatregeling staat aan. Koppel hem los en zet de klimaatregeling uit.</string>
+    <string name="blocked_no_answer">De auto antwoordde niet op de veiligheidscontrole.</string>
     <string name="faults_scan_all">Alle modules scannen</string>
     <string name="faults_scan_again">Opnieuw scannen</string>
     <string name="faults_descriptions">Code-omschrijvingen</string>
@@ -312,13 +319,12 @@
     <string name="versions_software_no">Softwarenr. %1$s</string>
     <string name="confirm_clear_one">Codes in %1$s wissen?</string>
     <string name="confirm_clear_slow">Dit gaat alle modules een voor een langs en duurt een paar minuten.</string>
-    <string name="confirm_clear_body">Hiermee wis je de opgeslagen storingsgeschiedenis die een garage zou gebruiken. Doe dit dus pas als het probleem is opgelost of nadat je het rapport hebt gedeeld.\n\nCodes van storingen die er nog zijn, komen meteen terug.\n\nAuto aan en in P, voet op de rem, laadkabel losgekoppeld.</string>
+    <string name="confirm_clear_body">Hiermee wis je de opgeslagen storingsgeschiedenis die een garage zou gebruiken. Doe dit dus pas als het probleem is opgelost of nadat je het rapport hebt gedeeld.\n\nCodes van storingen die er nog zijn, komen meteen terug.\n\nAuto aan en in P, voet op de rem, laadkabel losgekoppeld, klimaatregeling uit.</string>
     <string name="confirm_restart">%1$s herstarten?</string>
-    <string name="confirm_restart_body">De module gaat uit en weer aan. Zijn functies stoppen een paar seconden en schermen of waarschuwingslampjes kunnen knipperen. Het is een herstart, geen reparatie, en instellingen blijven normaal gesproken zoals ze zijn.\n\nAlleen als je stilstaat: auto in P, voet op de rem.</string>
+    <string name="confirm_restart_body">De module gaat uit en weer aan. Zijn functies stoppen een paar seconden en schermen of waarschuwingslampjes kunnen knipperen. Het is een herstart, geen reparatie, en instellingen blijven normaal gesproken zoals ze zijn.\n\nAlleen als je stilstaat: auto in P, voet op de rem, laadkabel losgekoppeld, klimaatregeling uit.</string>
     <string name="action_clearing">Codes wissen</string>
     <string name="action_working">Bezig</string>
     <string name="action_keep_parked">Laat de auto geparkeerd staan tot dit klaar is.</string>
-    <string name="action_stopped_early">Eerder gestopt omdat de auto ging rijden of laden.</string>
     <string name="outcome_restarted">Herstart</string>
     <string name="outcome_cleared_check">Gewist · scan opnieuw om te controleren</string>
     <string name="outcome_needs_key">Vereist een beveiligingssleutel die Ocean Live niet heeft</string>
@@ -565,4 +571,8 @@
     <string name="ask_error_no_answer">Daar kwam geen antwoord op. Probeer het anders te vragen.</string>
     <string name="ask_error_server">De vragendienst is niet bereikbaar. Probeer het zo opnieuw.</string>
     <string name="ask_error_offline">Geen internet</string>
+    <plurals name="action_stopped_early">
+        <item quantity="one">Gestopt na %1$d van %2$d module.</item>
+        <item quantity="other">Gestopt na %1$d van %2$d modules.</item>
+    </plurals>
 </resources>

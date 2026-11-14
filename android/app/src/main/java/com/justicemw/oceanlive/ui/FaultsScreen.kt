@@ -251,7 +251,7 @@ private fun Results(
     }
 
     // Restart any module that answered, including ones with no codes (a frozen screen, a stuck telematics box).
-    val reachable = Ecus.scanList.filter { it.canRestart && (scan.modules[it.code] == "ok" || scan.modules[it.code] == "incomplete") }
+    val reachable = Ecus.scanList.filter { it.offersRestart && (scan.modules[it.code] == "ok" || scan.modules[it.code] == "incomplete") }
     if (reachable.isNotEmpty() && !scan.running) {
         var open by remember { mutableStateOf(false) }
         SectionTitle(stringResource(R.string.faults_restart_title))
@@ -288,7 +288,7 @@ private fun ModuleGroup(ecu: Ecu, list: List<Dtc>, scan: FaultScan, blockedReaso
         Text("${ecu.displayName().uppercase()} · ${list.size}", color = Dim, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
             letterSpacing = 1.2.sp, modifier = Modifier.weight(1f).padding(start = 4.dp))
         SmallAction(stringResource(R.string.clear), Bad, blockedReason == null) { onConfirm(Pending(CarAction.Clear, listOf(ecu))) }
-        if (ecu.canRestart) {
+        if (ecu.offersRestart) {
             Spacer(Modifier.width(6.dp))
             SmallAction(stringResource(R.string.restart), Cyan, blockedReason == null) { onConfirm(Pending(CarAction.Restart, listOf(ecu))) }
         }
@@ -414,7 +414,7 @@ private fun ConfirmDialog(p: Pending, onCancel: () -> Unit, onConfirm: () -> Uni
 
 @Composable
 private fun ActionCard(run: ActionRun, onDismiss: () -> Unit) {
-    AnimatedVisibility(run.running || run.outcomes.isNotEmpty(), enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+    AnimatedVisibility(run.running || run.outcomes.isNotEmpty() || run.stoppedBy != null, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
         Column {
             SectionTitle(stringResource(if (run.action == CarAction.Restart) R.string.restart else R.string.action_clearing))
             Card(Modifier.animateContentSize(), glow = if (run.running) Cyan else null) {
@@ -427,7 +427,8 @@ private fun ActionCard(run: ActionRun, onDismiss: () -> Unit) {
                 run.outcomes.forEach { OutcomeRow(it) }
                 if (!run.running) {
                     if (run.outcomes.size < run.total) {
-                        Text(stringResource(R.string.action_stopped_early), color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                        Text(pluralStringResource(R.plurals.action_stopped_early, run.total, run.outcomes.size, run.total), color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                        run.stoppedBy?.let { Text(stringResource(it.text), color = Warn, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp)) }
                     }
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.done), color = Aqua) }
                 }

@@ -78,6 +78,8 @@ struct ActionRun {
     var done = 0
     var total = 0
     var outcomes: [ActionOutcome] = []
+    /// Why the action didn't start, or stopped part way, when the safety check failed.
+    var stopReason: String?
 }
 
 /// One request at a time on the adapter, across the poll loop, the fault scan and actions.
@@ -135,6 +137,8 @@ final class Car: ObservableObject {
     private var parkedCheckPending = false
     private var latestAnchor: ParkedAnchor?
     private var anchorSavedAt: Int64 = 0
+    /// Readings from this connection that show the car is standing still and not charging, for clear and restart.
+    private var changeGuard = ChangeGuard()
 
     private var carPlayConnected = false
     /// The user tapped Disconnect: don't connect again just because the app came back on screen.
@@ -166,6 +170,8 @@ final class Car: ObservableObject {
     /// unless the user disconnected. Nothing reconnects while the app stays in the background.
     func setInBackground(_ on: Bool) {
         guard !on else { return }
+        // On screen means unlocked: pick up the ABRP token and key if the Keychain was locked at launch.
+        if settings.retrySecrets() { location.setEnabled(settings.abrpEnabled && settings.abrpLocation) }
         // While watching the 12V, coming back on screen only asks the adapter for the 12V, so the car stays asleep.
         if watch != nil {
             if watchCheckDue {
@@ -206,6 +212,8 @@ final class Car: ObservableObject {
     }
 
     func updateSettings(_ change: (inout Settings) -> Void) {
+        // Read the Keychain first if it was locked at launch, so its token and key aren't taken for empty edits.
+        _ = settings.retrySecrets()
         let before = settings
         var next = settings
         change(&next)
@@ -356,6 +364,8 @@ final class Car: ObservableObject {
                 alerts.resetHealth()
                 parkedCheckPending = true
                 v12FirstOfConnection = true
+                // Nothing seen on an earlier connection counts towards clearing codes or restarting a module.
+                changeGuard.reset()
                 first = false
                 state.status = .live
                 state.message = nil
@@ -456,6 +466,10 @@ final class Car: ObservableObject {
             var answered = false
             var snap = state.snapshot
             var fresh12v: (volts: Double, source: String)?
+            var freshOdometer: Double?
+            // When each guard reading came back; snap.time is only set after the whole cycle.
+            var packVTime: Int64?
+            var odometerTime: Int64?
             let flip = settings.flipCurrent
             await bus.lock()
             do {
@@ -465,6 +479,8 @@ final class Car: ObservableObject {
                     let (got, value) = try await read(did)
                     if got { answered = true }
                     let v = (did == Pids.packA && flip) ? value.map { -$0 } : value
+                    if did == Pids.packV, v != nil { packVTime = nowMs() }
+                    if did == Pids.odometer { freshOdometer = v; if v != nil { odometerTime = nowMs() } }
                     // Keep slow values between their reads; fast ones go blank if the car stops answering.
                     if v != nil || Pids.fast.contains(did) { snap = snap.with(did.key, v) }
                 }
@@ -493,6 +509,10 @@ final class Car: ObservableObject {
             if answered {
                 misses = 0
                 adapterRetries = 0
+                // Only readings taken in this cycle: fast values go blank when not answered, slow ones are kept.
+                // Power is stamped with the older of its two reads (packV comes before packA).
+                if let kw = snap.powerKw, let t = packVTime { changeGuard.addPower(kw, at: t) }
+                if let km = freshOdometer, let t = odometerTime { changeGuard.addOdometer(km, at: t) }
                 onReading(snap)
                 // Saves a reading the poll took anyway; never asks the car for anything extra.
                 if let r = fresh12v { recordV12(r.volts, source: r.source, mode: V12Sample.Kind(tracker.mode)) }
@@ -801,14 +821,21 @@ final class Car: ObservableObject {
         let decision = w.afterReading(volts, now: now)
         watch = w
         if decision == .carWoke {
-            resumeAfterWake(id: id)
-            return
+            // At most once every 2 hours, so a 12V that keeps going up and down never keeps the car awake.
+            if V12Watch.mayResume(now: now, lastResume: V12Store.loadLastResume()) {
+                V12Store.saveLastResume(now)
+                resumeAfterWake(id: id)
+                return
+            }
+            w.resumeDeferred()
+            watch = w
         }
         watchNextAt = now + w.nextDelayMs(intervalMinutes: settings.v12WatchMinutes)
         state.nextWatch = watchNextAt
     }
 
     /// The 12V stayed at 13.0 V or more: the car woke up by itself, so read it as usual again.
+    /// Not more than once every 2 hours (see V12Watch.mayResume).
     private func resumeAfterWake(id: UUID) {
         endWatch()
         wantConnected = true
@@ -819,7 +846,8 @@ final class Car: ObservableObject {
     }
 
     /// A background refresh from iPhone: one check if the interval has passed (a quick check, or the kept link
-    /// reopened if it dropped). Never starts reading the car on its own.
+    /// reopened if it dropped). The check itself only asks the adapter for the 12V. If it shows the car woke up
+    /// by itself, reading the car starts again (resumeAfterWake), at most once every 2 hours.
     func handleV12Refresh(_ bgTask: BGTask) {
         let finish = BackgroundFinish(bgTask)
         guard settings.v12Watch, V12Background.active, settings.adapterId != nil else {
@@ -883,6 +911,8 @@ final class Car: ObservableObject {
     }
 
     private func endSessions() {
+        // A fault scan still on screen can't be acted on until the next connection has fresh readings.
+        changeGuard.reset()
         saveParkedAnchor()
         tracker.flush(nowMs()).forEach(addHistory)
         state.mode = .parked
@@ -1051,14 +1081,15 @@ final class Car: ObservableObject {
 
     // MARK: Changing things: clear codes, restart modules
 
-    /// Why the car can't take a clear or restart right now, or nil if it can.
+    /// Why the car can't take a clear or restart right now, or nil if it can. Used to enable the buttons and
+    /// checked again right before anything is sent. Needs fresh readings from this connection: two equal
+    /// odometer readings (the newest under 25 s old) and pack power under 1 kW either way (under 6 s old).
     var changeBlockedReason: String? {
-        if !state.connected { return String(localized: "Connect to the car first.") }
-        if state.mode == .driving { return String(localized: "The car is moving. Park it first.") }
-        if state.mode == .charging { return String(localized: "The car is charging. Unplug it first.") }
+        // These hold the bus, so the readings go stale meanwhile: name the real reason first.
         if faults.running { return String(localized: "Wait for the scan to finish.") }
         if versions.running { return String(localized: "Wait for the module versions to finish.") }
         if action.running { return String(localized: "Another action is still running.") }
+        if let block = changeGuard.block(connected: state.connected, mode: state.mode, now: nowMs()) { return block.message }
         return nil
     }
 
@@ -1072,17 +1103,34 @@ final class Car: ObservableObject {
         if !action.running { action = ActionRun() }
     }
 
-    private func runAction(_ kind: CarAction, _ ecus: [Ecu]) {
-        guard changeBlockedReason == nil, !ecus.isEmpty else { return }
+    private func runAction(_ kind: CarAction, _ requested: [Ecu]) {
+        // Safety-critical modules are never restarted, even if asked.
+        let ecus = kind == .restart ? requested.filter(\.canRestart) : requested
+        guard !ecus.isEmpty, !action.running else { return }
+        if let reason = changeBlockedReason {
+            // Conditions changed since the button was shown: say why nothing was sent.
+            action = ActionRun(action: kind, total: ecus.count, stopReason: reason)
+            return
+        }
+        let startKm = changeGuard.latestOdometer?.value
         action = ActionRun(running: true, action: kind, total: ecus.count)
         Task {
             var outcomes: [ActionOutcome] = []
+            var stop: ChangeGuard.Block?
             await bus.lock()
             do {
                 _ = try await query("ATST96")
                 for (index, ecu) in ecus.enumerated() {
                     // Stop if the car starts moving or charging part way through.
-                    if state.mode != .parked { break }
+                    if state.mode != .parked {
+                        stop = state.mode == .charging ? .charging : .moving
+                        break
+                    }
+                    // The action holds the bus, so the poll can't see a change: read power and odometer now.
+                    if let block = try await safetyCheck(startKm: startKm) {
+                        stop = block
+                        break
+                    }
                     action.current = ecu.name
                     action.done = index
                     try await selectEcu(ecu)
@@ -1120,10 +1168,28 @@ final class Car: ObservableObject {
                 // The connection dropped; the outcomes so far stay on screen.
             }
             bus.unlock()
+            if let stop {
+                let done = outcomes.count, total = ecus.count
+                action.stopReason = String(localized: "Stopped after \(done) of \(total) modules: \(stop.message)")
+            }
             action.running = false
             action.current = nil
             action.done = action.total
         }
+    }
+
+    /// Reads pack power and the odometer right now, between modules of an action, and says why to stop, if it should.
+    /// Only readings the poll takes anyway. Compares the odometer with the one when the action started.
+    private func safetyCheck(startKm: Double?) async throws -> ChangeGuard.Block? {
+        let volts = try await read(Pids.packV).1
+        let amps = try await read(Pids.packA).1
+        let km = try await read(Pids.odometer).1
+        var kw: Double?
+        if let volts, let amps { kw = volts * amps / 1000 }
+        let now = nowMs()
+        if let kw { changeGuard.addPower(kw, at: now) }
+        if let km { changeGuard.addOdometer(km, at: now) }
+        return ChangeGuard.midAction(powerKw: kw, odometerKm: km, startKm: startKm)
     }
 
     private func request(_ command: String, service: Int) async throws -> UdsResult {
