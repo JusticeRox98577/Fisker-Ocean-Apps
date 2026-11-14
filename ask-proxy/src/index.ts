@@ -109,15 +109,21 @@ export default {
     const ipKey = `ip:${await sha256(`${env.IP_SALT ?? ""}|${ip}`)}:${day}`;
     const spendKey = `spend:${month}`;
 
-    const deviceLimit = intVar(env.DEVICE_DAILY_LIMIT, 20);
-    const ipLimit = intVar(env.IP_DAILY_LIMIT, 40);
     const capMicros = Math.round(numVar(env.MONTHLY_CAP_USD, 10) * 1_000_000);
 
-    const [deviceCount, ipCount, spent] = await Promise.all([
+    const [deviceCount, ipCount, spent, override] = await Promise.all([
       readInt(env.ASK_KV, deviceKey),
       readInt(env.ASK_KV, ipKey),
       readInt(env.ASK_KV, spendKey),
+      // Per-device daily limit set by hand: `limit:<install ID>` = a number (0 blocks the device).
+      env.ASK_KV.get(`limit:${body.device}`),
     ]);
+    const custom = override === null ? null : intVar(override, NaN);
+    const hasCustom = custom !== null && Number.isFinite(custom);
+    const deviceLimit = hasCustom ? custom : intVar(env.DEVICE_DAILY_LIMIT, 20);
+    // A device with its own limit isn't held back by the shared per-network limit.
+    const ipLimit = hasCustom ? Infinity : intVar(env.IP_DAILY_LIMIT, 40);
+
     if (spent >= capMicros) return json({ error: "budget" }, 503);
     if (deviceCount >= deviceLimit || ipCount >= ipLimit) return json({ error: "rate_limited" }, 429);
 

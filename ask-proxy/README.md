@@ -111,6 +111,27 @@ Console.
 A typical question costs about 1 to 5 cents: the knowledge guide is about 3,000 tokens and is
 read from the prompt cache when questions come within 5 minutes of each other.
 
+### More (or fewer) questions for one device
+
+Owners see their install ID under "Show what's sent" in the chat. Give that device its own
+daily limit (it takes effect within about a minute, no redeploy or app update needed):
+
+```bash
+npx wrangler kv key put "limit:THEIR-INSTALL-ID" 100 --binding ASK_KV --remote
+```
+
+`0` blocks the device. A device with its own limit isn't held back by the per-network limit,
+but the monthly spend cap still applies to everyone together, so raise `MONTHLY_CAP_USD` if
+you hand out a lot. See who has their own limit, or go back to the default:
+
+```bash
+npx wrangler kv key list --prefix "limit:" --binding ASK_KV --remote
+```
+
+```bash
+npx wrangler kv key delete "limit:THEIR-INSTALL-ID" --binding ASK_KV --remote
+```
+
 ## Research log
 
 Each answered question is a row in the `questions` table: time (UTC), install ID, phone
