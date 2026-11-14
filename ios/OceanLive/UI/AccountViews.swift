@@ -21,6 +21,9 @@ struct SignInView: View {
     @State private var codeSent = false
     @State private var resendAt = Date.distantPast
     @State private var appleNonce = ""
+    /// Apple's error code from the last failed Sign in with Apple, shown small under the message so the owner
+    /// can report it (there's no other way to see it without a Mac).
+    @State private var appleErrorCode: Int?
     @FocusState private var focus: Field?
 
     private enum Action { case apple, google, send, verify }
@@ -42,6 +45,14 @@ struct SignInView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.top, 14)
                             .transition(.opacity)
+                        if let appleErrorCode {
+                            Text(verbatim: "Apple error \(appleErrorCode)")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(Theme.dim)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, 4)
+                                .textSelection(.enabled)
+                        }
                     }
                     Spacer(minLength: 24)
                     footer
@@ -57,7 +68,10 @@ struct SignInView: View {
         .background(Theme.background.ignoresSafeArea())
         .animation(.easeInOut(duration: 0.25), value: codeSent)
         .animation(.easeInOut(duration: 0.2), value: problem)
-        .onChange(of: problem) { _, new in announce(new?.message) }
+        .onChange(of: problem) { _, new in
+            if new != .failed { appleErrorCode = nil }
+            announce(new?.message)
+        }
         .task(id: reload) {
             loaded = false
             config = await accounts.config()
@@ -126,6 +140,7 @@ struct SignInView: View {
             request.requestedScopes = [.fullName, .email]
             request.nonce = AuthCrypto.sha256Hex(nonce)
         } onCompletion: { result in
+            appleErrorCode = nil
             switch result {
             case .success(let authorization):
                 guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
@@ -142,6 +157,7 @@ struct SignInView: View {
                 // 1000 (unknown) usually means the App ID or provisioning profile lacks Sign in with Apple;
                 // 1004 (failed) is Apple's side or the device's Apple ID. Logged so the cause shows in Console.
                 appleSignInLog.error("Sign in with Apple failed: \((error as NSError).domain, privacy: .public) \((error as NSError).code, privacy: .public)")
+                appleErrorCode = (error as NSError).code
                 problem = .failed
             }
         }
