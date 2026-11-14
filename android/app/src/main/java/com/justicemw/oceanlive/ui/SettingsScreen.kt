@@ -48,6 +48,7 @@ fun SettingsScreen(
     onNeedNotifications: () -> Unit,
     onNeedLocation: () -> Unit,
 ) {
+    if (com.justicemw.oceanlive.car.Accounts.required) AccountSection()
     SectionTitle(stringResource(R.string.settings_car))
     Card {
         CarModel.entries.forEach { m ->

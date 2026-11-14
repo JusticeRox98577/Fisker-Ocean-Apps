@@ -584,7 +584,6 @@
     <string name="ask_send">Enviar</string>
     <string name="ask_thinking">Pensando…</string>
     <string name="ask_disclaimer">Las respuestas de una IA pueden ser incorrectas. Comprueba lo importante con un taller cualificado en eléctricos. Las preguntas, las respuestas y los datos enviados van al servidor de Ocean Live y a Anthropic, y Ocean Live los guarda 90 días con fines de investigación.</string>
-    <string name="ask_install_id">ID de instalación, para solicitar el borrado: %1$s</string>
     <string name="ask_error_limit">Esas son todas las preguntas de hoy. Vuelve a intentarlo mañana.</string>
     <string name="ask_error_budget">Las preguntas están en pausa hasta el mes que viene.</string>
     <string name="ask_error_no_answer">No hubo respuesta para eso. Prueba a preguntarlo de otra forma.</string>
@@ -595,4 +594,39 @@
         <item quantity="many">Se detuvo tras %1$d de %2$d módulos.</item>
         <item quantity="other">Se detuvo tras %1$d de %2$d módulos.</item>
     </plurals>
+    <!-- Accounts -->
+    <string name="account_signin_title">Inicia sesión para continuar</string>
+    <string name="account_signin_body">Una cuenta mantiene seguras tus preguntas a la IA, y más adelante tu saldo de IA, las vincula a ti y las conserva si cambias de móvil. Los datos de tu coche se quedan en tu móvil. Solo necesitas internet para iniciar sesión; después la app funciona sin conexión.</string>
+    <string name="account_continue_apple">Continuar con Apple</string>
+    <string name="account_continue_google">Continuar con Google</string>
+    <string name="account_email">Correo electrónico</string>
+    <string name="account_send_code">Enviarme un código</string>
+    <string name="account_code_sent">Hemos enviado un código de 6 dígitos a %1$s. Sirve durante 10 minutos.</string>
+    <string name="account_code">Código</string>
+    <string name="account_verify">Iniciar sesión</string>
+    <string name="account_resend">Enviar un código nuevo</string>
+    <string name="account_use_other">Usar otro correo</string>
+    <string name="account_privacy">No hace falta contraseña. La política de privacidad explica qué guarda una cuenta.</string>
+    <string name="account_try_again">Reintentar</string>
+    <string name="account_cancelled">Inicio de sesión cancelado.</string>
+    <string name="account_error_network">No se puede contactar con el servidor de Ocean Live. Para iniciar sesión hace falta internet una vez.</string>
+    <string name="account_error_failed">No se pudo iniciar sesión. Inténtalo de nuevo.</string>
+    <string name="account_error_code">Ese código no es correcto.</string>
+    <string name="account_error_expired">Ese código ha caducado. Pide uno nuevo.</string>
+    <string name="account_error_email">Escribe un correo válido.</string>
+    <string name="account_error_limit">Demasiados códigos. Espera una hora y vuelve a intentarlo.</string>
+    <string name="account_no_methods">Ahora no se puede iniciar sesión. Inténtalo más tarde.</string>
+    <string name="account_section">Cuenta</string>
+    <string name="account_name">Nombre</string>
+    <string name="account_save_name">Guardar nombre</string>
+    <string name="account_signed_in_with">Sesión iniciada con %1$s</string>
+    <string name="account_provider_email">código por correo</string>
+    <string name="account_id">ID de cuenta: %1$s</string>
+    <string name="account_sign_out">Cerrar sesión</string>
+    <string name="account_sign_out_title">¿Cerrar sesión?</string>
+    <string name="account_sign_out_body">Tendrás que volver a iniciar sesión para usar Ocean Live. Los datos de tu coche en este móvil se conservan.</string>
+    <string name="account_delete">Eliminar cuenta</string>
+    <string name="account_delete_title">¿Eliminar tu cuenta?</string>
+    <string name="account_delete_body">Se eliminarán tu cuenta, tus datos de inicio de sesión y tus preguntas a la IA guardadas. No se puede deshacer. Los datos del coche en este móvil no se tocan.</string>
+    <string name="ask_error_signin">Vuelve a iniciar sesión para hacer preguntas.</string>
 </resources>

@@ -79,6 +79,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.justicemw.oceanlive.car.Accounts
 import com.justicemw.oceanlive.car.Ask
 import com.justicemw.oceanlive.car.Car
 import com.justicemw.oceanlive.car.HistoryStore
@@ -96,6 +97,7 @@ import com.justicemw.oceanlive.ui.LiveScreen
 import com.justicemw.oceanlive.ui.LocalLandscape
 import com.justicemw.oceanlive.ui.OceanBrush
 import com.justicemw.oceanlive.ui.SettingsScreen
+import com.justicemw.oceanlive.ui.SignInScreen
 import com.justicemw.oceanlive.ui.TripsScreen
 import com.justicemw.oceanlive.ui.V12Screen
 import com.justicemw.oceanlive.ui.V12Share
@@ -106,6 +108,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         Car.init(this)
+        Accounts.init(this)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Aqua, background = Bg, surface = CardBg)) {
                 App(::keepScreenOn)
@@ -157,6 +160,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     var showAsk by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = showAsk) { showAsk = false }
     val askChat by Ask.chat.collectAsState()
+    val accountState by Accounts.state.collectAsState()
     val onAsk: (() -> Unit)? = if (Ask.enabled) ({ showAsk = true }) else null
 
     fun granted(p: String) = ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
@@ -205,12 +209,18 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     // The tab content stays at the same place in the tree either way, so turning the phone
     // keeps its state and never restarts anything.
     BoxWithConstraints(Modifier.fillMaxSize().background(Bg).background(BackgroundBrush)) {
+        // An Ocean Live account is needed once; after that the app works offline.
+        if (Accounts.required && !accountState.signedIn) {
+            Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
+                SignInScreen()
+            }
+            return@BoxWithConstraints
+        }
         if (showAsk) {
             Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
                 AskScreen(
                     chat = askChat,
                     shareCar = settings.askShareCar,
-                    installId = remember { Ask.installId(context) },
                     // Only what the app already has in memory: asking never talks to the car.
                     carSummary = { Ask.carSummary(state, faults, settings, System.currentTimeMillis()) },
                     onShareCar = { on -> Car.updateSettings { it.copy(askShareCar = on) } },

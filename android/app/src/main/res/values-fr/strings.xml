@@ -584,7 +584,6 @@
     <string name="ask_send">Envoyer</string>
     <string name="ask_thinking">Réflexion…</string>
     <string name="ask_disclaimer">Les réponses d\'une IA peuvent être fausses. Faites vérifier tout point important par un garage qualifié en véhicules électriques. Les questions, les réponses et les relevés joints vont au serveur d\'Ocean Live et à Anthropic, et Ocean Live les conserve 90 jours à des fins de recherche.</string>
-    <string name="ask_install_id">ID d\'installation, pour les demandes de suppression : %1$s</string>
     <string name="ask_error_limit">C\'est tout pour aujourd\'hui. Réessayez demain.</string>
     <string name="ask_error_budget">Les questions sont en pause jusqu\'au mois prochain.</string>
     <string name="ask_error_no_answer">Pas de réponse à cette question. Essayez de la formuler autrement.</string>
@@ -595,4 +594,39 @@
         <item quantity="many">Arrêté après %1$d sur %2$d modules.</item>
         <item quantity="other">Arrêté après %1$d sur %2$d modules.</item>
     </plurals>
+    <!-- Accounts -->
+    <string name="account_signin_title">Connectez-vous pour continuer</string>
+    <string name="account_signin_body">Un compte protège vos questions à l\'IA, et plus tard votre solde IA, les associe à vous et les conserve si vous changez de téléphone. Les données de votre voiture restent sur votre téléphone. Internet n\'est nécessaire que pour vous connecter ; ensuite l\'app fonctionne hors ligne.</string>
+    <string name="account_continue_apple">Continuer avec Apple</string>
+    <string name="account_continue_google">Continuer avec Google</string>
+    <string name="account_email">E-mail</string>
+    <string name="account_send_code">M\'envoyer un code</string>
+    <string name="account_code_sent">Nous avons envoyé un code à 6 chiffres à %1$s. Il est valable 10 minutes.</string>
+    <string name="account_code">Code</string>
+    <string name="account_verify">Se connecter</string>
+    <string name="account_resend">Envoyer un nouveau code</string>
+    <string name="account_use_other">Utiliser une autre adresse</string>
+    <string name="account_privacy">Aucun mot de passe. La politique de confidentialité explique ce qu\'un compte conserve.</string>
+    <string name="account_try_again">Réessayer</string>
+    <string name="account_cancelled">Connexion annulée.</string>
+    <string name="account_error_network">Impossible de joindre le serveur Ocean Live. La connexion nécessite Internet une fois.</string>
+    <string name="account_error_failed">Connexion impossible. Réessayez.</string>
+    <string name="account_error_code">Ce code est incorrect.</string>
+    <string name="account_error_expired">Ce code a expiré. Demandez-en un nouveau.</string>
+    <string name="account_error_email">Saisissez une adresse e-mail valide.</string>
+    <string name="account_error_limit">Trop de codes. Attendez une heure et réessayez.</string>
+    <string name="account_no_methods">La connexion n\'est pas disponible pour le moment. Réessayez plus tard.</string>
+    <string name="account_section">Compte</string>
+    <string name="account_name">Nom</string>
+    <string name="account_save_name">Enregistrer le nom</string>
+    <string name="account_signed_in_with">Connecté avec %1$s</string>
+    <string name="account_provider_email">code par e-mail</string>
+    <string name="account_id">ID du compte : %1$s</string>
+    <string name="account_sign_out">Se déconnecter</string>
+    <string name="account_sign_out_title">Se déconnecter ?</string>
+    <string name="account_sign_out_body">Vous devrez vous reconnecter pour utiliser Ocean Live. Les données de votre voiture sur ce téléphone sont conservées.</string>
+    <string name="account_delete">Supprimer le compte</string>
+    <string name="account_delete_title">Supprimer votre compte ?</string>
+    <string name="account_delete_body">Cela supprime votre compte, vos informations de connexion et vos questions à l\'IA enregistrées. C\'est définitif. Les données de la voiture sur ce téléphone ne sont pas touchées.</string>
+    <string name="ask_error_signin">Reconnectez-vous pour poser des questions.</string>
 </resources>

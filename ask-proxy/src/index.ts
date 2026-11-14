@@ -13,8 +13,9 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import guide from "../knowledge/ocean-guide.md";
+import { handleAuth, sessionAccount, type Account, type AuthEnv } from "./auth";
 
-export interface Env {
+export interface Env extends AuthEnv {
   ANTHROPIC_API_KEY: string;
   /** Random string used to hash IP addresses for the per-network limit. */
   IP_SALT?: string;
@@ -25,6 +26,11 @@ export interface Env {
   /** Research log. Without the binding nothing is logged. */
   LOG_DB?: D1Database;
   LOG_RETENTION_DAYS?: string;
+  /**
+   * "true" while apps without accounts (3.4) are still in use: questions without a session are
+   * answered and counted per install. Set to "false" once the account update is out.
+   */
+  ALLOW_ANONYMOUS?: string;
 }
 
 const MODEL = "claude-opus-5-5";
@@ -91,6 +97,8 @@ interface AskBody {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const auth = await handleAuth(request, env, url.pathname);
+    if (auth) return auth;
     if (url.pathname !== "/ask") return json({ error: "not_found" }, 404);
     if (request.method !== "POST") return json({ error: "method" }, 405);
 
@@ -101,10 +109,15 @@ export default {
       return json({ error: "bad_request" }, 400);
     }
 
+    const account = await sessionAccount(request, env);
+    if (!account && env.ALLOW_ANONYMOUS !== "true") return json({ error: "signin_required" }, 401);
+    // Limits count per account once signed in, per install before.
+    const who = account ? account.id : body.device;
+
     const now = new Date();
     const day = now.toISOString().slice(0, 10);
     const month = day.slice(0, 7);
-    const deviceKey = `d:${body.device}:${day}`;
+    const deviceKey = account ? `a:${account.id}:${day}` : `d:${body.device}:${day}`;
     const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
     const ipKey = `ip:${await sha256(`${env.IP_SALT ?? ""}|${ip}`)}:${day}`;
     const spendKey = `spend:${month}`;
@@ -115,8 +128,8 @@ export default {
       readInt(env.ASK_KV, deviceKey),
       readInt(env.ASK_KV, ipKey),
       readInt(env.ASK_KV, spendKey),
-      // Per-device daily limit set by hand: `limit:<install ID>` = a number (0 blocks the device).
-      env.ASK_KV.get(`limit:${body.device}`),
+      // Daily limit set by hand: `limit:<account ID>` (or install ID for 3.4) = a number; 0 blocks.
+      env.ASK_KV.get(`limit:${who}`),
     ]);
     const custom = override === null ? null : intVar(override, NaN);
     const hasCustom = custom !== null && Number.isFinite(custom);
@@ -139,7 +152,7 @@ export default {
     try {
       const { answer, micros } = await ask(client, env, body);
       costMicros = micros;
-      ctx.waitUntil(log(env, request, body, answer, micros));
+      ctx.waitUntil(log(env, request, body, answer, micros, account));
       if (!answer) return json({ error: "no_answer" }, 422);
       return json({ answer, remainingToday: Math.max(0, deviceLimit - deviceCount - 1) });
     } catch (e) {
@@ -165,12 +178,12 @@ export default {
 } satisfies ExportedHandler<Env>;
 
 /** Saves one answered (or declined) question to the research log. Never fails the request. */
-async function log(env: Env, request: Request, body: AskBody, answer: string, micros: number): Promise<void> {
+async function log(env: Env, request: Request, body: AskBody, answer: string, micros: number, account: Account | null): Promise<void> {
   if (!env.LOG_DB) return;
   const last = body.messages[body.messages.length - 1];
   try {
     await env.LOG_DB.prepare(
-      "INSERT INTO questions (ts, device, lang, question, history, car, answer, cost_micros, model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO questions (ts, device, lang, question, history, car, answer, cost_micros, model, account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
       .bind(
         new Date().toISOString(),
@@ -182,6 +195,7 @@ async function log(env: Env, request: Request, body: AskBody, answer: string, mi
         answer || null,
         micros,
         MODEL,
+        account?.id ?? null,
       )
       .run();
   } catch {

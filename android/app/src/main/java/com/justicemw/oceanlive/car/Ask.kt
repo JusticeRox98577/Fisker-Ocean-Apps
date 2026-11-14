@@ -59,7 +59,7 @@ object Ask {
         if (q.isEmpty() || _chat.value.waiting) return
         _chat.update { it.copy(turns = it.turns + AskTurn(true, q), waiting = true, error = null, retry = null) }
         val turns = _chat.value.turns.takeLast(MAX_TURNS).dropWhile { !it.fromOwner }
-        val result = post(requestBody(installId(context), turns, car))
+        val result = post(context, requestBody(installId(context), turns, car))
         _chat.update {
             when (result) {
                 is Reply.Answer -> it.copy(turns = it.turns + AskTurn(false, result.text), waiting = false)
@@ -85,13 +85,14 @@ object Ask {
     /** What the proxy's error codes mean for the owner. */
     @StringRes
     fun errorMessage(code: Int, error: String?): Int = when {
+        error == "signin_required" || code == 401 -> R.string.ask_error_signin
         error == "rate_limited" || code == 429 -> R.string.ask_error_limit
         error == "budget" -> R.string.ask_error_budget
         error == "no_answer" -> R.string.ask_error_no_answer
         else -> R.string.ask_error_server
     }
 
-    private suspend fun post(body: JSONObject): Reply = withContext(Dispatchers.IO) {
+    private suspend fun post(context: Context, body: JSONObject): Reply = withContext(Dispatchers.IO) {
         var conn: HttpURLConnection? = null
         try {
             conn = (URL(url).openConnection() as HttpURLConnection).apply {
@@ -101,12 +102,15 @@ object Ask {
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 setRequestProperty("Accept-Language", Locale.getDefault().toLanguageTag())
+                Accounts.token?.let { setRequestProperty("Authorization", "Bearer $it") }
             }
             conn.outputStream.use { it.write(body.toString().toByteArray()) }
             val code = conn.responseCode
             val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
             val json = runCatching { JSONObject(text) }.getOrNull()
             val answer = json?.optString("answer").orEmpty().trim()
+            // The server no longer knows this session: back to the sign-in screen.
+            if (code == 401) Accounts.sessionEnded(context)
             if (code in 200..299 && answer.isNotEmpty()) Reply.Answer(answer)
             else Reply.Failed(errorMessage(code, json?.optString("error")))
         } catch (_: UnknownHostException) {

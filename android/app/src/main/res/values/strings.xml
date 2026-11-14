@@ -573,7 +573,6 @@
     <string name="ask_send">Send</string>
     <string name="ask_thinking">Thinking…</string>
     <string name="ask_disclaimer">AI answers can be wrong. Check anything important with a qualified EV shop. Questions, answers and the readings sent with them go to Ocean Live\'s server and to Anthropic, and Ocean Live keeps them for 90 days for research.</string>
-    <string name="ask_install_id">Install ID, for deletion requests: %1$s</string>
     <string name="ask_error_limit">That\'s all the questions for today. Try again tomorrow.</string>
     <string name="ask_error_budget">Questions are paused until next month.</string>
     <string name="ask_error_no_answer">Couldn\'t answer that one. Try asking another way.</string>
@@ -583,4 +582,39 @@
         <item quantity="one">Stopped after %1$d of %2$d module.</item>
         <item quantity="other">Stopped after %1$d of %2$d modules.</item>
     </plurals>
+    <!-- Accounts -->
+    <string name="account_signin_title">Sign in to continue</string>
+    <string name="account_signin_body">An account keeps your AI questions, and later any AI balance, secure and tied to you, and lets you keep them when you change phones. Your car data stays on your phone. You only need internet to sign in; after that the app works offline.</string>
+    <string name="account_continue_apple">Continue with Apple</string>
+    <string name="account_continue_google">Continue with Google</string>
+    <string name="account_email">Email</string>
+    <string name="account_send_code">Email me a code</string>
+    <string name="account_code_sent">We sent a 6-digit code to %1$s. It works for 10 minutes.</string>
+    <string name="account_code">Code</string>
+    <string name="account_verify">Sign in</string>
+    <string name="account_resend">Send a new code</string>
+    <string name="account_use_other">Use a different email</string>
+    <string name="account_privacy">No password needed. The privacy policy explains what an account stores.</string>
+    <string name="account_try_again">Try again</string>
+    <string name="account_cancelled">Sign-in was cancelled.</string>
+    <string name="account_error_network">Can\'t reach the Ocean Live server. Signing in needs internet once.</string>
+    <string name="account_error_failed">Couldn\'t sign in. Try again.</string>
+    <string name="account_error_code">That code isn\'t right.</string>
+    <string name="account_error_expired">That code has expired. Send a new one.</string>
+    <string name="account_error_email">Enter a valid email address.</string>
+    <string name="account_error_limit">Too many codes. Wait an hour and try again.</string>
+    <string name="account_no_methods">Sign-in isn\'t available right now. Try again later.</string>
+    <string name="account_section">Account</string>
+    <string name="account_name">Name</string>
+    <string name="account_save_name">Save name</string>
+    <string name="account_signed_in_with">Signed in with %1$s</string>
+    <string name="account_provider_email">email code</string>
+    <string name="account_id">Account ID: %1$s</string>
+    <string name="account_sign_out">Sign out</string>
+    <string name="account_sign_out_title">Sign out?</string>
+    <string name="account_sign_out_body">You\'ll need to sign in again to use Ocean Live. Your car data on this phone stays.</string>
+    <string name="account_delete">Delete account</string>
+    <string name="account_delete_title">Delete your account?</string>
+    <string name="account_delete_body">This deletes your account, your sign-in details and your logged AI questions. It can\'t be undone. Car data on this phone isn\'t affected.</string>
+    <string name="ask_error_signin">Sign in again to ask questions.</string>
 </resources>

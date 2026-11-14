@@ -566,7 +566,6 @@
     <string name="ask_send">Senden</string>
     <string name="ask_thinking">Denkt nach…</string>
     <string name="ask_disclaimer">KI-Antworten können falsch sein. Lass Wichtiges von einer qualifizierten E-Auto-Werkstatt prüfen. Fragen, Antworten und die mitgesendeten Werte gehen an den Server von Ocean Live und an Anthropic, und Ocean Live speichert sie 90 Tage lang zu Forschungszwecken.</string>
-    <string name="ask_install_id">Installations-ID für Löschanfragen: %1$s</string>
     <string name="ask_error_limit">Das waren alle Fragen für heute. Versuch es morgen wieder.</string>
     <string name="ask_error_budget">Fragen sind bis nächsten Monat pausiert.</string>
     <string name="ask_error_no_answer">Darauf gab es keine Antwort. Versuch es anders zu formulieren.</string>
@@ -576,4 +575,39 @@
         <item quantity="one">Nach %1$d von %2$d Steuergerät gestoppt.</item>
         <item quantity="other">Nach %1$d von %2$d Steuergeräten gestoppt.</item>
     </plurals>
+    <!-- Accounts -->
+    <string name="account_signin_title">Melde dich an, um fortzufahren</string>
+    <string name="account_signin_body">Ein Konto hält deine KI-Fragen und später ein KI-Guthaben sicher, ordnet sie dir zu und behält sie beim Handywechsel. Deine Fahrzeugdaten bleiben auf deinem Handy. Internet brauchst du nur zum Anmelden, danach funktioniert die App auch offline.</string>
+    <string name="account_continue_apple">Mit Apple fortfahren</string>
+    <string name="account_continue_google">Mit Google fortfahren</string>
+    <string name="account_email">E-Mail</string>
+    <string name="account_send_code">Code per E-Mail senden</string>
+    <string name="account_code_sent">Wir haben einen 6-stelligen Code an %1$s gesendet. Er gilt 10 Minuten.</string>
+    <string name="account_code">Code</string>
+    <string name="account_verify">Anmelden</string>
+    <string name="account_resend">Neuen Code senden</string>
+    <string name="account_use_other">Andere E-Mail verwenden</string>
+    <string name="account_privacy">Kein Passwort nötig. Die Datenschutzerklärung erklärt, was ein Konto speichert.</string>
+    <string name="account_try_again">Erneut versuchen</string>
+    <string name="account_cancelled">Anmeldung abgebrochen.</string>
+    <string name="account_error_network">Der Ocean-Live-Server ist nicht erreichbar. Zum Anmelden brauchst du einmal Internet.</string>
+    <string name="account_error_failed">Anmeldung fehlgeschlagen. Versuch es noch einmal.</string>
+    <string name="account_error_code">Der Code stimmt nicht.</string>
+    <string name="account_error_expired">Der Code ist abgelaufen. Fordere einen neuen an.</string>
+    <string name="account_error_email">Gib eine gültige E-Mail-Adresse ein.</string>
+    <string name="account_error_limit">Zu viele Codes. Warte eine Stunde und versuch es dann erneut.</string>
+    <string name="account_no_methods">Anmelden ist gerade nicht möglich. Versuch es später noch einmal.</string>
+    <string name="account_section">Konto</string>
+    <string name="account_name">Name</string>
+    <string name="account_save_name">Namen speichern</string>
+    <string name="account_signed_in_with">Angemeldet mit %1$s</string>
+    <string name="account_provider_email">E-Mail-Code</string>
+    <string name="account_id">Konto-ID: %1$s</string>
+    <string name="account_sign_out">Abmelden</string>
+    <string name="account_sign_out_title">Abmelden?</string>
+    <string name="account_sign_out_body">Du musst dich erneut anmelden, um Ocean Live zu nutzen. Deine Fahrzeugdaten auf diesem Handy bleiben erhalten.</string>
+    <string name="account_delete">Konto löschen</string>
+    <string name="account_delete_title">Konto löschen?</string>
+    <string name="account_delete_body">Dadurch werden dein Konto, deine Anmeldedaten und deine gespeicherten KI-Fragen gelöscht. Das lässt sich nicht rückgängig machen. Fahrzeugdaten auf diesem Handy sind nicht betroffen.</string>
+    <string name="ask_error_signin">Melde dich erneut an, um Fragen zu stellen.</string>
 </resources>

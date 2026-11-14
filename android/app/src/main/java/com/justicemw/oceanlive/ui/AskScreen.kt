@@ -63,7 +63,6 @@ import kotlinx.coroutines.launch
 fun AskScreen(
     chat: AskChat,
     shareCar: Boolean,
-    installId: String,
     carSummary: () -> String,
     onShareCar: (Boolean) -> Unit,
     onSend: suspend (question: String, car: String?) -> Unit,
@@ -137,7 +136,6 @@ fun AskScreen(
                                                 modifier = Modifier.padding(top = 6.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Bg).padding(10.dp),
                                             )
                                         }
-                                        Text(stringResource(R.string.ask_install_id, installId), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                                     }
                                 }
                             }
