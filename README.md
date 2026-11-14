@@ -1,13 +1,15 @@
 # Ocean Live
 
 Battery, 12V, trips and fault codes for the Fisker Ocean, read from the car through a
-Bluetooth OBD adapter. No account and no cloud: your car talks to your phone, and the only
-thing that ever leaves it is optional live data to A Better Route Planner, if you set that up.
+Bluetooth OBD adapter. No account and no tracking: your car talks to your phone. Data leaves
+it only when you ask a question in "Any questions?", or send live data to A Better Route
+Planner if you set that up.
 
 | Folder | App |
 | --- | --- |
 | `android` | Android phone app (Kotlin, Jetpack Compose) and Wear OS app (`android/wear`) |
 | `ios` | iPhone app (Swift, SwiftUI, CoreBluetooth), widgets and Live Activity (`OceanLiveWidgets`), Apple Watch app (`OceanLiveWatch`) |
+| `ask-proxy` | Cloudflare Worker behind "Any questions?": holds the Anthropic API key, rate limits and caps spend |
 
 Both phone apps have the same features and decode the car the same way; their unit tests
 share the same expected values. Download the latest Android release from
@@ -38,6 +40,11 @@ share the same expected values. Download the latest Android release from
 * **On your wrist and home screen:** Wear OS app with tile and complication, Apple Watch app,
   Android widget, iPhone Home and Lock Screen widgets, and a charging Live Activity (iOS 18+)
 * **ABRP:** optional live telemetry to A Better Route Planner
+* **Any questions?:** the **?** button at the top asks Claude (Anthropic's AI) about your
+  Ocean or the app. It answers from an Ocean owner guide and a fault code table, and by
+  default sees your latest readings and fault codes (never the VIN or location; turn it off
+  in the chat). It never talks to the car. Up to 20 questions a day. See
+  [ask-proxy/README.md](ask-proxy/README.md) for the server
 * **Languages:** English, German, Dutch, French and Spanish
 
 ## Letting the car sleep
@@ -150,6 +157,10 @@ Without the Android secrets, a push only checks that the app compiles, and a man
 run fails rather than publish an unsigned release. Without the iOS secrets, the TestFlight
 upload is skipped.
 
+Repository variable (not a secret) used by every build: `OCEAN_ASK_URL`, the "Any questions?"
+server address ending in `/ask`. Without it the **?** button is hidden. See
+[ask-proxy/README.md](ask-proxy/README.md).
+
 ## Feedback
 
 Found a bug or have an idea? [Open an issue](https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose).
@@ -157,8 +168,9 @@ Screenshots or photos from the car help a lot.
 
 ## Privacy
 
-See [PRIVACY.md](PRIVACY.md). Short version: no account, no tracking, everything stays on your
-phone, and the only network use is optional ABRP data.
+See [PRIVACY.md](PRIVACY.md). Short version: no account, no tracking, and your data stays on
+your phone except questions you ask in "Any questions?" (with your latest readings unless you
+turn that off) and optional ABRP data.
 
 ## License
 

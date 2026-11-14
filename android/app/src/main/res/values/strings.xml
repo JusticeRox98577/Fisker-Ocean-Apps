@@ -204,7 +204,7 @@
     <string name="settings_abrp_both">Both the token and the API key are needed to send to ABRP.</string>
     <string name="settings_abrp_every">Send every</string>
     <string name="settings_abrp_location">Include phone location</string>
-    <string name="settings_abrp_note">Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. This is the only thing Ocean Live ever sends over the internet.</string>
+    <string name="settings_abrp_note">Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from questions you ask in Any questions?, this is the only thing Ocean Live sends over the internet.</string>
     <string name="settings_advanced">Advanced</string>
     <string name="settings_flip_current">Flip current sign</string>
     <string name="settings_flip_note">Turn on only if charging shows as using power on your car.</string>
@@ -550,4 +550,26 @@
     <!-- Landscape layout -->
     <string name="connect">Connect</string>
     <string name="live_range">Range</string>
+    <!-- Any questions? -->
+    <string name="ask_title">Any questions?</string>
+    <string name="ask_back">Back</string>
+    <string name="ask_new_chat">New chat</string>
+    <string name="ask_intro">Ask about your Fisker Ocean or Ocean Live. Answers come from Claude, an AI by Anthropic, using an Ocean guide and a fault code table.</string>
+    <string name="ask_share_car">Include my car\'s readings</string>
+    <string name="ask_share_car_on">Your latest readings and fault codes go with each question, never your VIN or location. Asking never wakes the car.</string>
+    <string name="ask_share_car_off">Only your question is sent.</string>
+    <string name="ask_show_sent">Show what\'s sent</string>
+    <string name="ask_hide_sent">Hide</string>
+    <string name="ask_example_1">What does my 12V voltage mean?</string>
+    <string name="ask_example_2">Is my cell spread normal?</string>
+    <string name="ask_example_3">Which fault codes should worry me?</string>
+    <string name="ask_placeholder">Ask a question</string>
+    <string name="ask_send">Send</string>
+    <string name="ask_thinking">Thinking…</string>
+    <string name="ask_disclaimer">AI answers can be wrong. Check anything important with a qualified EV shop. Questions are sent to Ocean Live\'s server and to Anthropic to be answered, and are not kept by Ocean Live.</string>
+    <string name="ask_error_limit">That\'s all the questions for today. Try again tomorrow.</string>
+    <string name="ask_error_budget">Questions are paused until next month.</string>
+    <string name="ask_error_no_answer">Couldn\'t answer that one. Try asking another way.</string>
+    <string name="ask_error_server">Couldn\'t reach the questions service. Try again in a moment.</string>
+    <string name="ask_error_offline">No internet</string>
 </resources>

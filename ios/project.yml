@@ -33,6 +33,9 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
+        # "Any questions?" proxy address (see ask-proxy/README.md). Empty hides the feature; CI passes
+        # OCEAN_ASK_URL=https://.../ask to xcodebuild from the repository variable of the same name.
+        OCEAN_ASK_URL: ""
     entitlements:
       path: OceanLive/OceanLive.entitlements
       properties:
@@ -66,6 +69,7 @@ targets:
         NSBluetoothAlwaysUsageDescription: Ocean Live reads your car's battery and fault codes through your Bluetooth OBD adapter.
         NSLocationWhenInUseUsageDescription: Only used when you turn on location sharing for A Better Route Planner, so ABRP can plan from where you are.
         ITSAppUsesNonExemptEncryption: false
+        OceanAskURL: $(OCEAN_ASK_URL)
         # Charging progress on the lock screen, Dynamic Island, Apple Watch and CarPlay.
         NSSupportsLiveActivities: true
         # The phone window comes from SwiftUI; CarPlay gets its own scene delegate.

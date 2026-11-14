@@ -64,6 +64,8 @@ In scope:
   lets clearing codes or restarting a module happen while the car is driving or charging
 * Anything that keeps the car from going to sleep
 * Leaks of the user's data off the phone, including the ABRP token and API key
+* The "Any questions?" server (`ask-proxy/`): exposing its Anthropic API key, getting past its
+  daily limits or monthly spend cap, or seeing other people's questions
 * Release files (APK, Play bundle, TestFlight build) that aren't signed with the official
   Ocean Live key, or a problem in the build workflows that could let someone change them
 
@@ -71,6 +73,7 @@ Out of scope:
 
 * Weaknesses in the car itself, its modules or Fisker's former servers
 * Weaknesses in third-party OBD adapters or in ABRP
+* Wrong or unhelpful answers from "Any questions?" (please open a normal issue)
 * Builds that weren't downloaded from this repository's releases or an official store,
   including unsigned build artifacts from the Actions tab
 * Attacks that need an unlocked phone that's already in the attacker's hands

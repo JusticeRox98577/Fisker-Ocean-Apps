@@ -4,6 +4,12 @@ Each `## x.y.z` section is used as the release notes for that version.
 
 ## Unreleased
 
+* "Any questions?": tap the **?** at the top to ask Claude, Anthropic's AI, about your
+  Fisker Ocean or the app. It answers from an Ocean owner guide and a fault code table and,
+  unless you turn it off, sees your latest readings and fault codes (never the VIN or
+  location). Asking never talks to the car. Questions go to the Ocean Live server and
+  Anthropic; nothing is stored. Up to 20 questions a day. English, German, Dutch, French and
+  Spanish
 * Android APKs on GitHub are now signed only with the official Ocean Live key. APKs from
   GitHub up to 3.3.1 used a test key that is public, so someone else could make an update
   that installs over them. If you installed one, uninstall it once and install the new one;

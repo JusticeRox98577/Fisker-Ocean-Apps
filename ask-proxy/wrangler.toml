@@ -1,0 +1,30 @@
+# Ocean Live "Any questions?" proxy. Deploy steps: README.md in this folder.
+name = "ocean-live-ask"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# The knowledge guide is bundled into the Worker as text.
+[[rules]]
+type = "Text"
+globs = ["**/*.md"]
+fallthrough = false
+
+# Counters (per device, per network, monthly spend) and the fault code table.
+# Replace the id with the one `npx wrangler kv namespace create ASK_KV` prints.
+[[kv_namespaces]]
+binding = "ASK_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+[vars]
+# The proxy stops answering once this many US dollars were spent in a calendar month (UTC).
+MONTHLY_CAP_USD = "10"
+# Questions per app install per day (UTC).
+DEVICE_DAILY_LIMIT = "20"
+# Questions per network (IP address) per day, across installs.
+IP_DAILY_LIMIT = "40"
+
+# Secrets, set with `npx wrangler secret put <NAME>`, never written here:
+#   ANTHROPIC_API_KEY  your Anthropic API key
+#   IP_SALT            any long random string, used to hash IP addresses

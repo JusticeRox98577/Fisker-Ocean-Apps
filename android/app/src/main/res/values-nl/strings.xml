@@ -200,7 +200,7 @@
     <string name="settings_abrp_both">Om naar ABRP te sturen zijn zowel de token als de API-sleutel nodig.</string>
     <string name="settings_abrp_every">Versturen elke</string>
     <string name="settings_abrp_location">Locatie van de telefoon meesturen</string>
-    <string name="settings_abrp_note">Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Dit is het enige dat Ocean Live ooit via internet verstuurt.</string>
+    <string name="settings_abrp_note">Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve vragen die je stelt bij Vragen? is dit het enige dat Ocean Live via internet verstuurt.</string>
     <string name="settings_advanced">Geavanceerd</string>
     <string name="settings_flip_current">Teken van stroom omdraaien</string>
     <string name="settings_flip_note">Alleen aanzetten als laden bij jouw auto als verbruik wordt getoond.</string>
@@ -543,4 +543,26 @@
     <!-- Landscape layout -->
     <string name="connect">Verbinden</string>
     <string name="live_range">Bereik</string>
+    <!-- Any questions? -->
+    <string name="ask_title">Vragen?</string>
+    <string name="ask_back">Terug</string>
+    <string name="ask_new_chat">Nieuwe chat</string>
+    <string name="ask_intro">Vraag iets over je Fisker Ocean of Ocean Live. De antwoorden komen van Claude, een AI van Anthropic, met een Ocean-gids en een tabel met foutcodes.</string>
+    <string name="ask_share_car">Waarden van mijn auto meesturen</string>
+    <string name="ask_share_car_on">Je laatste waarden en foutcodes gaan mee met elke vraag, nooit je VIN of locatie. Vragen maakt de auto nooit wakker.</string>
+    <string name="ask_share_car_off">Alleen je vraag wordt verstuurd.</string>
+    <string name="ask_show_sent">Laat zien wat er verstuurd wordt</string>
+    <string name="ask_hide_sent">Verbergen</string>
+    <string name="ask_example_1">Wat betekent mijn 12V-spanning?</string>
+    <string name="ask_example_2">Is mijn celspreiding normaal?</string>
+    <string name="ask_example_3">Over welke foutcodes moet ik me zorgen maken?</string>
+    <string name="ask_placeholder">Stel een vraag</string>
+    <string name="ask_send">Versturen</string>
+    <string name="ask_thinking">Denkt na…</string>
+    <string name="ask_disclaimer">AI-antwoorden kunnen fout zijn. Laat belangrijke zaken controleren door een gekwalificeerde EV-garage. Vragen worden naar de server van Ocean Live en naar Anthropic gestuurd om ze te beantwoorden, en Ocean Live bewaart ze niet.</string>
+    <string name="ask_error_limit">Dat waren alle vragen voor vandaag. Probeer het morgen opnieuw.</string>
+    <string name="ask_error_budget">Vragen zijn gepauzeerd tot volgende maand.</string>
+    <string name="ask_error_no_answer">Daar kwam geen antwoord op. Probeer het anders te vragen.</string>
+    <string name="ask_error_server">De vragendienst is niet bereikbaar. Probeer het zo opnieuw.</string>
+    <string name="ask_error_offline">Geen internet</string>
 </resources>

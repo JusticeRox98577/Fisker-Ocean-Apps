@@ -32,6 +32,8 @@ jobs:
       WIDGETS: ${{ github.event_name != 'workflow_dispatch' || inputs.include_widgets }}
       # The Apple Watch app is left out unless a manual run asks for it.
       WATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.include_watch }}
+      # "Any questions?" proxy address (repository variable, see ask-proxy/README.md). Empty hides the button.
+      OCEAN_ASK_URL: ${{ vars.OCEAN_ASK_URL }}
     defaults:
       run:
         working-directory: ios
@@ -78,7 +80,7 @@ jobs:
         run: |
           xcodebuild -project OceanLive.xcodeproj -scheme OceanLive -configuration Release \
             -destination 'generic/platform=iOS' -derivedDataPath build \
-            CURRENT_PROJECT_VERSION=$BUILD_NUMBER \
+            CURRENT_PROJECT_VERSION=$BUILD_NUMBER OCEAN_ASK_URL="$OCEAN_ASK_URL" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= build
       - name: Package unsigned IPA
         run: |
@@ -108,7 +110,7 @@ jobs:
           # create a development certificate, and the account is at its certificate limit.
           xcodebuild -project OceanLive.xcodeproj -scheme OceanLive -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/OceanLive.xcarchive" \
-            CURRENT_PROJECT_VERSION=$BUILD_NUMBER \
+            CURRENT_PROJECT_VERSION=$BUILD_NUMBER OCEAN_ASK_URL="$OCEAN_ASK_URL" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= archive
           # An unsigned archive carries no entitlements, and export only re-signs what is there.
           # Ad-hoc sign it with ours (no certificate needed) so the CarPlay and App Group entitlements

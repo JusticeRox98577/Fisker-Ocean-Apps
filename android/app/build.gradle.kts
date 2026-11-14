@@ -15,6 +15,18 @@ if (uploadFile.exists()) uploadFile.inputStream().use { upload.load(it) }
 val uploadStore: String? = upload.getProperty("storeFile") ?: System.getenv("ANDROID_STORE_FILE")
 val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 3310
 
+// "Any questions?" proxy address (see ask-proxy/README.md). Not secret, but the owner's own, so it comes
+// from local.properties or the OCEAN_ASK_URL variable. Empty hides the feature.
+val local = Properties()
+val localFile = rootProject.file("local.properties")
+if (localFile.exists()) localFile.inputStream().use { local.load(it) }
+val askUrl: String = (local.getProperty("oceanAskUrl") ?: System.getenv("OCEAN_ASK_URL") ?: "").trim()
+    .also { url ->
+        require(url.isEmpty() || (url.startsWith("https://") && url.none { it.isWhitespace() || it == '"' || it == '\\' })) {
+            "OCEAN_ASK_URL must be an https:// address"
+        }
+    }
+
 android {
     namespace = "com.justicemw.oceanlive"
     compileSdk = 36
@@ -25,6 +37,7 @@ android {
         targetSdk = 36
         versionCode = buildNumber
         versionName = "3.3.1"
+        buildConfigField("String", "ASK_URL", "\"$askUrl\"")
     }
     signingConfigs {
         if (uploadStore != null) create("upload") {
@@ -50,6 +63,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

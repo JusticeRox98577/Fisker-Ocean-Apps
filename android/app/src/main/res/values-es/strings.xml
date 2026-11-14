@@ -200,7 +200,7 @@
     <string name="settings_abrp_both">Para enviar a ABRP hacen falta el token y la clave API.</string>
     <string name="settings_abrp_every">Enviar cada</string>
     <string name="settings_abrp_location">Incluir la ubicación del móvil</string>
-    <string name="settings_abrp_note">Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Es lo único que Ocean Live envía por internet.</string>
+    <string name="settings_abrp_note">Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de las preguntas que hagas en ¿Preguntas?, es lo único que Ocean Live envía por internet.</string>
     <string name="settings_advanced">Avanzado</string>
     <string name="settings_flip_current">Invertir el signo de la corriente</string>
     <string name="settings_flip_note">Actívalo solo si en tu coche la carga aparece como consumo.</string>
@@ -561,4 +561,26 @@
     <!-- Landscape layout -->
     <string name="connect">Conectar</string>
     <string name="live_range">Autonomía</string>
+    <!-- Any questions? -->
+    <string name="ask_title">¿Preguntas?</string>
+    <string name="ask_back">Atrás</string>
+    <string name="ask_new_chat">Nuevo chat</string>
+    <string name="ask_intro">Pregunta sobre tu Fisker Ocean o sobre Ocean Live. Las respuestas vienen de Claude, una IA de Anthropic, con una guía del Ocean y una tabla de códigos de avería.</string>
+    <string name="ask_share_car">Incluir los datos de mi coche</string>
+    <string name="ask_share_car_on">Tus últimos datos y códigos de avería van con cada pregunta, nunca tu VIN ni tu ubicación. Preguntar nunca despierta el coche.</string>
+    <string name="ask_share_car_off">Solo se envía tu pregunta.</string>
+    <string name="ask_show_sent">Ver lo que se envía</string>
+    <string name="ask_hide_sent">Ocultar</string>
+    <string name="ask_example_1">¿Qué significa mi tensión de 12V?</string>
+    <string name="ask_example_2">¿Es normal la diferencia entre mis celdas?</string>
+    <string name="ask_example_3">¿Qué códigos de avería deberían preocuparme?</string>
+    <string name="ask_placeholder">Haz una pregunta</string>
+    <string name="ask_send">Enviar</string>
+    <string name="ask_thinking">Pensando…</string>
+    <string name="ask_disclaimer">Las respuestas de una IA pueden ser incorrectas. Comprueba lo importante con un taller cualificado en eléctricos. Las preguntas se envían al servidor de Ocean Live y a Anthropic para responderlas, y Ocean Live no las guarda.</string>
+    <string name="ask_error_limit">Esas son todas las preguntas de hoy. Vuelve a intentarlo mañana.</string>
+    <string name="ask_error_budget">Las preguntas están en pausa hasta el mes que viene.</string>
+    <string name="ask_error_no_answer">No hubo respuesta para eso. Prueba a preguntarlo de otra forma.</string>
+    <string name="ask_error_server">No se puede contactar con el servicio de preguntas. Inténtalo de nuevo en un momento.</string>
+    <string name="ask_error_offline">Sin internet</string>
 </resources>

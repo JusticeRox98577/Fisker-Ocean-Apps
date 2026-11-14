@@ -46,6 +46,8 @@ data class Settings(
      * briefly for each one. Only for adapters that can't be woken over Bluetooth.
      */
     val watchKeepConnected: Boolean = false,
+    /** "Any questions?": include the car's latest readings and fault codes with each question. */
+    val askShareCar: Boolean = true,
 ) {
     val usableKwh: Double get() = if (model == CarModel.Custom) customKwh else model.usableKwh
     val abrpEnabled: Boolean get() = abrpToken.isNotBlank() && abrpKey.isNotBlank()
@@ -76,6 +78,7 @@ data class Settings(
             watch12v = p.getBoolean("watch_12v", false),
             watchEveryMin = p.getInt("watch_every", V12Watch.DEFAULT_INTERVAL).takeIf { it in V12Watch.INTERVALS } ?: V12Watch.DEFAULT_INTERVAL,
             watchKeepConnected = p.getBoolean("watch_keep_connected", false),
+            askShareCar = p.getBoolean("ask_share_car", true),
         )
 
         fun prefs(context: Context): SharedPreferences =
@@ -107,5 +110,6 @@ data class Settings(
         putBoolean("watch_12v", watch12v)
         putInt("watch_every", watchEveryMin)
         putBoolean("watch_keep_connected", watchKeepConnected)
+        putBoolean("ask_share_car", askShareCar)
     }
 }

@@ -54,6 +54,8 @@ struct Settings: Codable, Equatable {
     /// Keep the Bluetooth link open between those readings instead of a quick connect, read and disconnect.
     /// Only for adapters that can't be woken over Bluetooth: it keeps the adapter awake (about 50 mA).
     var v12WatchKeepConnected = false
+    /// "Any questions?": include the car's latest readings and fault codes with each question.
+    var askShareCar = true
 
     var usableKwh: Double { model == .custom ? customKwh : model.usableKwh }
     var abrpEnabled: Bool {
@@ -108,5 +110,6 @@ struct Settings: Codable, Equatable {
         v12Watch = try c.decodeIfPresent(Bool.self, forKey: .v12Watch) ?? d.v12Watch
         v12WatchMinutes = V12Watch.interval(try c.decodeIfPresent(Int.self, forKey: .v12WatchMinutes) ?? d.v12WatchMinutes)
         v12WatchKeepConnected = try c.decodeIfPresent(Bool.self, forKey: .v12WatchKeepConnected) ?? d.v12WatchKeepConnected
+        askShareCar = try c.decodeIfPresent(Bool.self, forKey: .askShareCar) ?? d.askShareCar
     }
 }

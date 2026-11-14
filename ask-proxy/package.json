@@ -1,0 +1,19 @@
+{
+  "name": "ocean-live-ask",
+  "private": true,
+  "description": "Proxy for Ocean Live's \"Any questions?\" chat. Holds the Anthropic API key, limits and caps spend.",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "dtc": "node scripts/build-dtc-kv.mjs",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261114.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.162.0"
+  }
+}

@@ -20,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # "Any questions?" proxy address (repository variable, see ask-proxy/README.md). Empty hides the button.
+      OCEAN_ASK_URL: ${{ vars.OCEAN_ASK_URL }}
     defaults:
       run:
         working-directory: android
@@ -114,7 +117,7 @@ jobs:
             echo
             echo "Files: OceanLive-$SHORT-Android.apk (phone) and OceanLive-$SHORT-Wear.apk (Wear OS), both signed with the official Ocean Live key."
             echo
-            echo "No account and no cloud. The only network use is optional ABRP live data. Built from ${{ github.sha }}."
+            echo "No account and no tracking. The only network use is questions you ask in Any questions? and optional ABRP live data. Built from ${{ github.sha }}."
           } >> "$RUNNER_TEMP/notes.md"
           gh release create "v$VERSION-build-${{ github.run_number }}" $FILES \
             --latest \

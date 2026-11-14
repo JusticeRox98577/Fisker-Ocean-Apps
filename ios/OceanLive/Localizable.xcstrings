@@ -1547,6 +1547,34 @@
         }
       }
     },
+    "AI answers can be wrong. Check anything important with a qualified EV shop. Questions are sent to Ocean Live's server and to Anthropic to be answered, and are not kept by Ocean Live.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KI-Antworten können falsch sein. Lass Wichtiges von einer qualifizierten E-Auto-Werkstatt prüfen. Fragen werden an den Server von Ocean Live und an Anthropic gesendet, um sie zu beantworten, und Ocean Live speichert sie nicht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las respuestas de una IA pueden ser incorrectas. Comprueba lo importante con un taller cualificado en eléctricos. Las preguntas se envían al servidor de Ocean Live y a Anthropic para responderlas, y Ocean Live no las guarda."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les réponses d'une IA peuvent être fausses. Faites vérifier tout point important par un garage qualifié en véhicules électriques. Les questions sont envoyées au serveur d'Ocean Live et à Anthropic pour y répondre, et Ocean Live ne les conserve pas."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-antwoorden kunnen fout zijn. Laat belangrijke zaken controleren door een gekwalificeerde EV-garage. Vragen worden naar de server van Ocean Live en naar Anthropic gestuurd om ze te beantwoorden, en Ocean Live bewaart ze niet."
+          }
+        }
+      }
+    },
     "Active": {
       "localizations": {
         "de": {
@@ -1907,6 +1935,90 @@
           "stringUnit": {
             "state": "translated",
             "value": "Er loopt nog een andere actie."
+          }
+        }
+      }
+    },
+    "Any questions?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fragen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Preguntas?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Des questions ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vragen?"
+          }
+        }
+      }
+    },
+    "Ask a question": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stell eine Frage"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haz una pregunta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posez une question"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stel een vraag"
+          }
+        }
+      }
+    },
+    "Ask about your Fisker Ocean or Ocean Live. Answers come from Claude, an AI by Anthropic, using an Ocean guide and a fault code table.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frag etwas zu deinem Fisker Ocean oder zu Ocean Live. Die Antworten kommen von Claude, einer KI von Anthropic, mit einem Ocean-Leitfaden und einer Fehlercode-Tabelle."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregunta sobre tu Fisker Ocean o sobre Ocean Live. Las respuestas vienen de Claude, una IA de Anthropic, con una guía del Ocean y una tabla de códigos de avería."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posez vos questions sur votre Fisker Ocean ou sur Ocean Live. Les réponses viennent de Claude, une IA d'Anthropic, avec un guide de l'Ocean et une table de codes défaut."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vraag iets over je Fisker Ocean of Ocean Live. De antwoorden komen van Claude, een AI van Anthropic, met een Ocean-gids en een tabel met foutcodes."
           }
         }
       }
@@ -4067,6 +4179,62 @@
         }
       }
     },
+    "Couldn't answer that one. Try asking another way.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Darauf gab es keine Antwort. Versuch es anders zu formulieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hubo respuesta para eso. Prueba a preguntarlo de otra forma."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas de réponse à cette question. Essayez de la formuler autrement."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daar kwam geen antwoord op. Probeer het anders te vragen."
+          }
+        }
+      }
+    },
+    "Couldn't reach the questions service. Try again in a moment.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Fragendienst ist nicht erreichbar. Versuch es gleich noch einmal."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede contactar con el servicio de preguntas. Inténtalo de nuevo en un momento."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le service de questions est injoignable. Réessayez dans un instant."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De vragendienst is niet bereikbaar. Probeer het zo opnieuw."
+          }
+        }
+      }
+    },
     "Critical": {
       "localizations": {
         "de": {
@@ -5179,6 +5347,34 @@
         }
       }
     },
+    "Hide": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausblenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbergen"
+          }
+        }
+      }
+    },
     "High voltage": {
       "localizations": {
         "de": {
@@ -5525,6 +5721,34 @@
         }
       }
     },
+    "Include my car's readings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werte meines Autos mitsenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluir los datos de mi coche"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joindre les relevés de ma voiture"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waarden van mijn auto meesturen"
+          }
+        }
+      }
+    },
     "Include phone location": {
       "localizations": {
         "de": {
@@ -5605,6 +5829,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Isolatieweerstand"
+          }
+        }
+      }
+    },
+    "Is my cell spread normal?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ist meine Zellspreizung normal?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Es normal la diferencia entre mis celdas?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'écart entre mes cellules est-il normal ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Is mijn celspreiding normaal?"
           }
         }
       }
@@ -6001,30 +6253,30 @@
         }
       }
     },
-    "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. This is the only thing Ocean Live ever sends over the internet.": {
+    "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from questions you ask in Any questions?, this is the only thing Ocean Live sends over the internet.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um den Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Das ist das Einzige, was Ocean Live je über das Internet sendet."
+            "value": "Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von Fragen, die du unter Fragen? stellst, ist das das Einzige, was Ocean Live über das Internet sendet."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Déjalos vacíos para que todo se quede en tu teléfono. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Es lo único que Ocean Live envía por internet."
+            "value": "Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de las preguntas que hagas en ¿Preguntas?, es lo único que Ocean Live envía por internet."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laissez les deux vides pour tout garder sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. C’est la seule chose qu’Ocean Live envoie sur Internet."
+            "value": "Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. À part les questions posées dans Des questions ?, c'est la seule chose qu'Ocean Live envoie sur Internet."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Dit is het enige wat Ocean Live ooit via internet verstuurt."
+            "value": "Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve vragen die je stelt bij Vragen? is dit het enige dat Ocean Live via internet verstuurt."
           }
         }
       }
@@ -6557,6 +6809,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nieuw"
+          }
+        }
+      }
+    },
+    "New chat": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer Chat"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuevo chat"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvelle discussion"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe chat"
           }
         }
       }
@@ -7569,6 +7849,34 @@
         }
       }
     },
+    "Only your question is sent.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur deine Frage wird gesendet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo se envía tu pregunta."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seule votre question est envoyée."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen je vraag wordt verstuurd."
+          }
+        }
+      }
+    },
     "Other": {
       "localizations": {
         "de": {
@@ -8181,6 +8489,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gepubliceerde bruikbare capaciteit: 106,5 kWh voor One, Extreme en Ultra, ongeveer 75 kWh voor de Sport. Gebruikt voor schattingen van bereik en laadtijd."
+          }
+        }
+      }
+    },
+    "Questions are paused until next month.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fragen sind bis nächsten Monat pausiert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las preguntas están en pausa hasta el mes que viene."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les questions sont en pause jusqu'au mois prochain."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vragen zijn gepauzeerd tot volgende maand."
           }
         }
       }
@@ -8997,6 +9333,34 @@
         }
       }
     },
+    "Send": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versturen"
+          }
+        }
+      }
+    },
     "Send every": {
       "localizations": {
         "de": {
@@ -9357,6 +9721,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minder tonen"
+          }
+        }
+      }
+    },
+    "Show what's sent": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigen, was gesendet wird"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver lo que se envía"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voir ce qui est envoyé"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laat zien wat er verstuurd wordt"
           }
         }
       }
@@ -9921,6 +10313,34 @@
         }
       }
     },
+    "That's all the questions for today. Try again tomorrow.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das waren alle Fragen für heute. Versuch es morgen wieder."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esas son todas las preguntas de hoy. Vuelve a intentarlo mañana."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "C'est tout pour aujourd'hui. Réessayez demain."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dat waren alle vragen voor vandaag. Probeer het morgen opnieuw."
+          }
+        }
+      }
+    },
     "The Ocean may not wake up. Drive it or charge the 12V soon.": {
       "localizations": {
         "de": {
@@ -10253,6 +10673,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Deze waren er op %@ en zijn nu weg."
+          }
+        }
+      }
+    },
+    "Thinking…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denkt nach…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pensando…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réflexion…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denkt na…"
           }
         }
       }
@@ -11359,6 +11807,34 @@
         }
       }
     },
+    "What does my 12V voltage mean?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was bedeutet meine 12V-Spannung?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué significa mi tensión de 12V?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Que signifie ma tension 12V ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wat betekent mijn 12V-spanning?"
+          }
+        }
+      }
+    },
     "What it affects": {
       "localizations": {
         "de": {
@@ -11411,6 +11887,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wat de getallen betekenen"
+          }
+        }
+      }
+    },
+    "Which fault codes should worry me?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welche Fehlercodes sind bedenklich?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué códigos de avería deberían preocuparme?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quels codes défaut doivent m'inquiéter ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over welke foutcodes moet ik me zorgen maken?"
           }
         }
       }
@@ -11523,6 +12027,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Je Ocean heeft het ingestelde niveau bereikt."
+          }
+        }
+      }
+    },
+    "Your latest readings and fault codes go with each question, never your VIN or location. Asking never wakes the car.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine letzten Werte und Fehlercodes gehen mit jeder Frage mit, nie deine FIN oder dein Standort. Fragen weckt das Auto nie."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus últimos datos y códigos de avería van con cada pregunta, nunca tu VIN ni tu ubicación. Preguntar nunca despierta el coche."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vos derniers relevés et codes défaut accompagnent chaque question, jamais votre VIN ni votre position. Poser une question ne réveille jamais la voiture."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je laatste waarden en foutcodes gaan mee met elke vraag, nooit je VIN of locatie. Vragen maakt de auto nooit wakker."
           }
         }
       }

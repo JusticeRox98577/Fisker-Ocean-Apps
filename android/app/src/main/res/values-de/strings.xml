@@ -200,7 +200,7 @@
     <string name="settings_abrp_both">Zum Senden an ABRP werden Token und API-Schlüssel gebraucht.</string>
     <string name="settings_abrp_every">Senden alle</string>
     <string name="settings_abrp_location">Standort des Handys mitsenden</string>
-    <string name="settings_abrp_note">Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Das ist das Einzige, was Ocean Live jemals über das Internet sendet.</string>
+    <string name="settings_abrp_note">Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von Fragen, die du unter Fragen? stellst, ist das das Einzige, was Ocean Live über das Internet sendet.</string>
     <string name="settings_advanced">Erweitert</string>
     <string name="settings_flip_current">Stromvorzeichen umkehren</string>
     <string name="settings_flip_note">Nur einschalten, wenn Laden bei deinem Auto als Verbrauch angezeigt wird.</string>
@@ -543,4 +543,26 @@
     <!-- Landscape layout -->
     <string name="connect">Verbinden</string>
     <string name="live_range">Reichweite</string>
+    <!-- Any questions? -->
+    <string name="ask_title">Fragen?</string>
+    <string name="ask_back">Zurück</string>
+    <string name="ask_new_chat">Neuer Chat</string>
+    <string name="ask_intro">Frag etwas zu deinem Fisker Ocean oder zu Ocean Live. Die Antworten kommen von Claude, einer KI von Anthropic, mit einem Ocean-Leitfaden und einer Fehlercode-Tabelle.</string>
+    <string name="ask_share_car">Werte meines Autos mitsenden</string>
+    <string name="ask_share_car_on">Deine letzten Werte und Fehlercodes gehen mit jeder Frage mit, nie deine FIN oder dein Standort. Fragen weckt das Auto nie.</string>
+    <string name="ask_share_car_off">Nur deine Frage wird gesendet.</string>
+    <string name="ask_show_sent">Zeigen, was gesendet wird</string>
+    <string name="ask_hide_sent">Ausblenden</string>
+    <string name="ask_example_1">Was bedeutet meine 12V-Spannung?</string>
+    <string name="ask_example_2">Ist meine Zellspreizung normal?</string>
+    <string name="ask_example_3">Welche Fehlercodes sind bedenklich?</string>
+    <string name="ask_placeholder">Stell eine Frage</string>
+    <string name="ask_send">Senden</string>
+    <string name="ask_thinking">Denkt nach…</string>
+    <string name="ask_disclaimer">KI-Antworten können falsch sein. Lass Wichtiges von einer qualifizierten E-Auto-Werkstatt prüfen. Fragen werden an den Server von Ocean Live und an Anthropic gesendet, um sie zu beantworten, und Ocean Live speichert sie nicht.</string>
+    <string name="ask_error_limit">Das waren alle Fragen für heute. Versuch es morgen wieder.</string>
+    <string name="ask_error_budget">Fragen sind bis nächsten Monat pausiert.</string>
+    <string name="ask_error_no_answer">Darauf gab es keine Antwort. Versuch es anders zu formulieren.</string>
+    <string name="ask_error_server">Der Fragendienst ist nicht erreichbar. Versuch es gleich noch einmal.</string>
+    <string name="ask_error_offline">Kein Internet</string>
 </resources>

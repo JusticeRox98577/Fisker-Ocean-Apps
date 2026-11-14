@@ -200,7 +200,7 @@
     <string name="settings_abrp_both">Le jeton et la clé API sont tous deux nécessaires pour envoyer à ABRP.</string>
     <string name="settings_abrp_every">Envoyer toutes les</string>
     <string name="settings_abrp_location">Inclure la position du téléphone</string>
-    <string name="settings_abrp_note">Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. C\'est la seule chose qu\'Ocean Live envoie sur Internet.</string>
+    <string name="settings_abrp_note">Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. À part les questions posées dans Des questions ?, c\'est la seule chose qu\'Ocean Live envoie sur Internet.</string>
     <string name="settings_advanced">Avancé</string>
     <string name="settings_flip_current">Inverser le signe du courant</string>
     <string name="settings_flip_note">À activer seulement si la charge apparaît comme une consommation sur votre voiture.</string>
@@ -561,4 +561,26 @@
     <!-- Landscape layout -->
     <string name="connect">Connecter</string>
     <string name="live_range">Autonomie</string>
+    <!-- Any questions? -->
+    <string name="ask_title">Des questions ?</string>
+    <string name="ask_back">Retour</string>
+    <string name="ask_new_chat">Nouvelle discussion</string>
+    <string name="ask_intro">Posez vos questions sur votre Fisker Ocean ou sur Ocean Live. Les réponses viennent de Claude, une IA d\'Anthropic, avec un guide de l\'Ocean et une table de codes défaut.</string>
+    <string name="ask_share_car">Joindre les relevés de ma voiture</string>
+    <string name="ask_share_car_on">Vos derniers relevés et codes défaut accompagnent chaque question, jamais votre VIN ni votre position. Poser une question ne réveille jamais la voiture.</string>
+    <string name="ask_share_car_off">Seule votre question est envoyée.</string>
+    <string name="ask_show_sent">Voir ce qui est envoyé</string>
+    <string name="ask_hide_sent">Masquer</string>
+    <string name="ask_example_1">Que signifie ma tension 12V ?</string>
+    <string name="ask_example_2">L\'écart entre mes cellules est-il normal ?</string>
+    <string name="ask_example_3">Quels codes défaut doivent m\'inquiéter ?</string>
+    <string name="ask_placeholder">Posez une question</string>
+    <string name="ask_send">Envoyer</string>
+    <string name="ask_thinking">Réflexion…</string>
+    <string name="ask_disclaimer">Les réponses d\'une IA peuvent être fausses. Faites vérifier tout point important par un garage qualifié en véhicules électriques. Les questions sont envoyées au serveur d\'Ocean Live et à Anthropic pour y répondre, et Ocean Live ne les conserve pas.</string>
+    <string name="ask_error_limit">C\'est tout pour aujourd\'hui. Réessayez demain.</string>
+    <string name="ask_error_budget">Les questions sont en pause jusqu\'au mois prochain.</string>
+    <string name="ask_error_no_answer">Pas de réponse à cette question. Essayez de la formuler autrement.</string>
+    <string name="ask_error_server">Le service de questions est injoignable. Réessayez dans un instant.</string>
+    <string name="ask_error_offline">Pas d\'Internet</string>
 </resources>

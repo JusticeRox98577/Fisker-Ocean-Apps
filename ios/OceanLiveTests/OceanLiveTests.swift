@@ -1360,3 +1360,58 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(BatteryReport.measuredNote, "Each charge that adds 20% or more is measured at the battery.")
     }
 }
+
+/// "Any questions?": the same expected text as the Android AskTest.
+final class AskTests: XCTestCase {
+    private let now: Int64 = 1_800_000_000_000
+
+    func testCarSummaryHasReadingsAndCodesButNoVin() {
+        var state = CarState()
+        state.status = .live
+        state.vin = "VCF1ZBU20PG000123"
+        state.mode = .charging
+        state.snapshot.soc = 78.5
+        state.snapshot.packV = 402.1
+        state.snapshot.packA = 25
+        state.snapshot.cellMax = 3912
+        state.snapshot.cellMin = 3901
+        state.snapshot.cellAvg = 3906
+        state.snapshot.aux12v = 12.61
+        state.snapshot.time = now - 5 * 60_000
+        var faults = FaultScan()
+        faults.codes = [Dtc(code: "U199701", status: 0x09, ecu: Ecus.bms), Dtc(code: "B2AAAAA", status: 0x08, ecu: Ecus.bcm)]
+        faults.finishedAt = now - 3 * 3_600_000
+        let text = Ask.carSummary(state: state, faults: faults, settings: Settings(), now: now)
+
+        XCTAssertFalse(text.contains("VCF1ZBU20PG000123"))
+        XCTAssertTrue(text.contains("State of charge: 78.5 %"))
+        XCTAssertTrue(text.contains("Readings taken: 5 min ago (connected now)"))
+        XCTAssertTrue(text.contains("Car state: charging"))
+        XCTAssertTrue(text.contains("spread 11 mV"))
+        XCTAssertTrue(text.contains("12 V battery: 12.61 V"))
+        XCTAssertTrue(text.contains("Last fault scan: 3 h ago, 1 code(s):"))
+        XCTAssertTrue(text.contains("- U199701 from BMS (HV battery)"))
+        XCTAssertFalse(text.contains("B2AAAAA"))
+        XCTAssertTrue(text.contains("Owner's units: miles, °F"))
+    }
+
+    func testCarSummaryWithNothingYet() {
+        var settings = Settings()
+        settings.useMiles = false
+        settings.useFahrenheit = false
+        let text = Ask.carSummary(state: CarState(), faults: FaultScan(), settings: settings, now: now)
+        XCTAssertTrue(text.contains("No readings yet"))
+        XCTAssertTrue(text.contains("No fault scan in this session."))
+        XCTAssertTrue(text.contains("Owner's units: km, °C"))
+    }
+
+    func testRequestBodyMatchesTheProxy() {
+        let turns = [AskTurn(fromOwner: true, text: "Hi"), AskTurn(fromOwner: false, text: "Hello"), AskTurn(fromOwner: true, text: "B208896?")]
+        let body = Ask.requestBody(device: "abc-12345", turns: turns, car: "SOC 80 %")
+        XCTAssertEqual(body["device"] as? String, "abc-12345")
+        let messages = body["messages"] as? [[String: String]]
+        XCTAssertEqual(messages?.map { $0["role"] ?? "" }, ["user", "assistant", "user"])
+        XCTAssertEqual(body["car"] as? String, "SOC 80 %")
+        XCTAssertNil(Ask.requestBody(device: "abc-12345", turns: [turns[0]], car: nil)["car"])
+    }
+}

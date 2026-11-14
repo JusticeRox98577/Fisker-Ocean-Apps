@@ -327,6 +327,8 @@ struct Page<Content: View>: View {
 }
 
 struct Header: View {
+    @EnvironmentObject var car: Car
+    @State private var showAsk = false
     let status: Status
     let adapter: String?
     var watching = false
@@ -341,8 +343,10 @@ struct Header: View {
                 statusDot
                 Text(subtitle).font(.system(size: 13)).foregroundStyle(Theme.dim).lineLimit(1)
                 Spacer(minLength: 0)
+                askButton
             }
             .padding(.vertical, 6)
+            .sheet(isPresented: $showAsk) { AskView().environmentObject(car) }
         } else {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -350,9 +354,24 @@ struct Header: View {
                     Text(subtitle).font(.system(size: 13)).foregroundStyle(Theme.dim)
                 }
                 Spacer()
+                askButton
                 statusDot
             }
             .padding(.vertical, 12)
+            .sheet(isPresented: $showAsk) { AskView().environmentObject(car) }
+        }
+    }
+
+    /// The round "?" button that opens "Any questions?". Hidden in builds without the proxy address.
+    @ViewBuilder private var askButton: some View {
+        if Ask.enabled {
+            Button { showAsk = true } label: {
+                Text(verbatim: "?").font(.system(size: 18, weight: .bold)).foregroundStyle(Theme.aqua)
+                    .frame(width: 36, height: 36)
+                    .overlay(Circle().stroke(Theme.aqua.opacity(0.5), lineWidth: 1))
+            }
+            .accessibilityLabel(Text("Any questions?"))
+            .padding(.trailing, 6)
         }
     }
 

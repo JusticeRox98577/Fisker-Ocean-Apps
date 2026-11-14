@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -70,15 +72,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.justicemw.oceanlive.car.Ask
 import com.justicemw.oceanlive.car.Car
 import com.justicemw.oceanlive.car.HistoryStore
 import com.justicemw.oceanlive.car.Status
 import com.justicemw.oceanlive.ui.Aqua
+import com.justicemw.oceanlive.ui.AskScreen
 import com.justicemw.oceanlive.ui.BackgroundBrush
 import com.justicemw.oceanlive.ui.BatteryScreen
 import com.justicemw.oceanlive.ui.Bg
@@ -147,6 +153,11 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     // The 12V battery screen, opened from the Battery tab or the Live 12V tile.
     var show12v by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = show12v && tab == Tab.Battery.ordinal) { show12v = false }
+    // "Any questions?" covers the tabs until closed; the tabs keep their place underneath.
+    var showAsk by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = showAsk) { showAsk = false }
+    val askChat by Ask.chat.collectAsState()
+    val onAsk: (() -> Unit)? = if (Ask.enabled) ({ showAsk = true }) else null
 
     fun granted(p: String) = ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
     val pending = remember { arrayOfNulls<() -> Unit>(1) }
@@ -194,6 +205,21 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     // The tab content stays at the same place in the tree either way, so turning the phone
     // keeps its state and never restarts anything.
     BoxWithConstraints(Modifier.fillMaxSize().background(Bg).background(BackgroundBrush)) {
+        if (showAsk) {
+            Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
+                AskScreen(
+                    chat = askChat,
+                    shareCar = settings.askShareCar,
+                    // Only what the app already has in memory: asking never talks to the car.
+                    carSummary = { Ask.carSummary(state, faults, settings, System.currentTimeMillis()) },
+                    onShareCar = { on -> Car.updateSettings { it.copy(askShareCar = on) } },
+                    onSend = { q, car -> Ask.send(context, q, car) },
+                    onClear = { Ask.clear() },
+                    onBack = { showAsk = false },
+                )
+            }
+            return@BoxWithConstraints
+        }
         val wide = maxWidth > maxHeight
         val railLabels = maxHeight >= 320.dp
         CompositionLocalProvider(LocalLandscape provides wide) {
@@ -204,7 +230,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                 }
                 Column(Modifier.weight(1f).fillMaxHeight()) {
                     Header(
-                        state.status, state.adapterName, state.watchStatus, compact = wide,
+                        state.status, state.adapterName, state.watchStatus, compact = wide, onAsk = onAsk,
                         action = if (wide) headerAction(
                             state.status, settings.adapterAddress != null,
                             onScan = { withBluetooth { Car.scan() } },
@@ -360,7 +386,7 @@ private fun headerAction(
 @Composable
 private fun Header(
     status: Status, adapter: String?, @androidx.annotation.StringRes watchStatus: Int,
-    compact: Boolean = false, action: HeaderAction? = null,
+    compact: Boolean = false, action: HeaderAction? = null, onAsk: (() -> Unit)? = null,
 ) {
     val text = when (status) {
                 Status.Live -> stringResource(R.string.header_connected_to, adapter ?: stringResource(R.string.adapter_generic))
@@ -387,6 +413,10 @@ private fun Header(
             Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
             Spacer(Modifier.width(8.dp))
             Text(text, color = Dim, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            if (onAsk != null) {
+                Spacer(Modifier.width(8.dp))
+                AskButton(onAsk)
+            }
             if (status == Status.Connecting) {
                 CircularProgressIndicator(color = Aqua, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
             } else if (action != null) {
@@ -415,8 +445,24 @@ private fun Header(
             Text(stringResource(R.string.app_name), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Text(text, color = Dim, fontSize = 13.sp)
         }
+        if (onAsk != null) {
+            AskButton(onAsk)
+            Spacer(Modifier.width(12.dp))
+        }
         Box(Modifier.size(10.dp).clip(CircleShape).background(dot))
     }
+}
+
+/** The round "?" button in the header that opens "Any questions?". */
+@Composable
+private fun AskButton(onClick: () -> Unit) {
+    val label = stringResource(R.string.ask_title)
+    Box(
+        Modifier.size(36.dp).clip(CircleShape).border(1.dp, Aqua.copy(alpha = 0.5f), CircleShape)
+            .clickable(onClickLabel = label, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { Text("?", color = Aqua, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
 }
 
 /** Landscape navigation: the same five tabs in a slim rail on the left, to keep the height for content. */

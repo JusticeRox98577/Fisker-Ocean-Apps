@@ -136,7 +136,7 @@ struct SettingsView: View {
                 }
                 SliderRow(label: "Send every", value: s.abrpEverySec, range: 5...60, suffix: " sec") { v in car.updateSettings { $0.abrpEverySec = v } }
                 ToggleRow(label: "Include phone location", value: s.abrpLocation) { v in car.updateSettings { $0.abrpLocation = v } }
-                Note(String(localized: "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. This is the only thing Ocean Live ever sends over the internet."))
+                Note(String(localized: "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from questions you ask in Any questions?, this is the only thing Ocean Live sends over the internet."))
             }
 
             SectionTitle(String(localized: "Advanced"))
