@@ -69,10 +69,9 @@ after 90 days. Your IP address, VIN and location are never logged. The log is ne
 shared or published, and is not used for advertising.
 
 The chat screen shows your install ID under "Show what's sent". To have your logged questions
-deleted, or to ask what is held, open an issue on GitHub with that ID; they are deleted within
-30 days. Issues are public: anyone can see what you post there, including the ID. If you'd
-rather not post the ID publicly, open an issue asking for a private way to send it, without the
-ID in it. If you don't want your questions
+deleted, or to ask what is held, email justice@oceanlive.org with that ID; they are deleted within
+30 days. You can also open an issue on GitHub, but issues are public: anyone can see what you
+post there, including the ID. If you don't want your questions
 logged, don't use "Any questions?". The legal basis in the EU and UK is the developer's
 legitimate interest in improving the feature you chose to use.
 
@@ -168,5 +167,5 @@ If this policy changes, the new version will be posted here with a new date.
 
 ## Contact
 
-Questions: open an issue at
+Questions: email justice@oceanlive.org, or open an issue at
 https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues

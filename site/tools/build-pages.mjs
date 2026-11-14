@@ -148,7 +148,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 13 Novem
 
     <h3 id="research-log">Research log</h3>
     <p>Every question is logged for research: to see what owners ask and how good the answers are, and to improve the knowledge Claude answers from. Each log entry holds the date and time, the install ID, your account ID if you are signed in, your phone's language, the question, the earlier messages of that chat, the readings and fault codes sent with it (if any), the answer and its cost. Entries are kept in a database at Cloudflare that only the developer can read, and are deleted automatically after 90 days. Your IP address, VIN and location are never logged. The log is never sold, shared or published, and is not used for advertising.</p>
-    <p>The chat screen shows your install ID under "Show what's sent". To have your logged questions deleted, or to ask what is held, open an issue on GitHub with that ID; they are deleted within 30 days. Issues are public: anyone can see what you post there, including the ID. If you'd rather not post the ID publicly, open an issue asking for a private way to send it, without the ID in it. If you don't want your questions logged, don't use "Any questions?". The legal basis in the EU and UK is the developer's legitimate interest in improving the feature you chose to use.</p>
+    <p>The chat screen shows your install ID under "Show what's sent". To have your logged questions deleted, or to ask what is held, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> with that ID; they are deleted within 30 days. You can also open an issue on GitHub, but issues are public: anyone can see what you post there, including the ID. If you don't want your questions logged, don't use "Any questions?". The legal basis in the EU and UK is the developer's legitimate interest in improving the feature you chose to use.</p>
     <p>Apart from the log, the question server keeps counters: questions per account (or per install ID before you sign in) and per network per day (the IP address is turned into a salted hash and never stored as is), deleted after about a day, and the month's total spend. Cloudflare and Anthropic see your IP address as part of the connection.</p>
     <p>Anthropic processes the question to produce the answer under its commercial terms, which do not allow it to train models on this data by default, and keeps it only for a limited time; see <a href="https://www.anthropic.com/legal/privacy" rel="noopener">https://www.anthropic.com/legal/privacy</a>. On your phone, the chat lives only in the app's memory and is gone when you close the app or tap "New chat".</p>
     <p>Don't put personal details in questions. Answers come from an AI and can be wrong; check anything important with a qualified EV shop.</p>
@@ -186,7 +186,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 13 Novem
     <p>If this policy changes, the new version will be posted here with a new date.</p>
 
     <h2 id="contact">Contact</h2>
-    <p>Questions: open an issue at <a href="${REPO}/issues" rel="noopener">${REPO.replace("https://", "")}/issues</a>. For a security problem, <a href="${REPO}/security/advisories/new" rel="noopener">report a vulnerability</a> privately instead.</p>
+    <p>Questions: email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a>, or open an issue at <a href="${REPO}/issues" rel="noopener">${REPO.replace("https://", "")}/issues</a>. For a security problem, <a href="${REPO}/security/advisories/new" rel="noopener">report a vulnerability</a> privately instead.</p>
 
     <div class="callout sand">
       <h2 id="website">This website</h2>
@@ -242,13 +242,13 @@ ${docHero("Account", "Delete your Ocean Live account", "How to delete your accou
     <h2 id="without-app">Without the app</h2>
     <p>If you no longer have the app, or can't sign in, ask the developer through GitHub:</p>
     <ul>
-      <li>Open an issue at <a href="${REPO}/issues/new/choose" rel="noopener">${REPO.replace("https://", "")}/issues</a> asking for your account to be deleted.</li>
+      <li>Email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> from the address on your account, asking for your account to be deleted. Or open an issue at <a href="${REPO}/issues/new/choose" rel="noopener">${REPO.replace("https://", "")}/issues</a> (issues are public).</li>
       <li>Issues are public: anyone can see what you post there. You can include your <strong>account ID</strong> (shown under Settings, Account) or your <strong>install ID</strong> (shown in the chat under "Show what's sent") to speed things up, or leave them out and ask for a private way to send them.</li>
       <li><strong>Don't post your email address in a public issue.</strong> If it's needed to find your account, the developer will arrange a private way to send it.</li>
     </ul>
 
     <h2 id="questions-only">Only delete my logged questions</h2>
-    <p>To have your logged questions deleted without deleting an account, or to ask what is held, open an issue on GitHub with your install ID from "Show what's sent" (issues are public; to keep the ID private, ask for a private way to send it instead). They are deleted within 30 days. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
+    <p>To have your logged questions deleted without deleting an account, or to ask what is held, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> with your install ID from "Show what's sent" (or open an issue on GitHub; issues are public). They are deleted within 30 days. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
     </div>
   </div>
 </article>`,
