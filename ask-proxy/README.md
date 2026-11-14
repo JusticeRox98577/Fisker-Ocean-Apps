@@ -2,8 +2,10 @@
 
 A small Cloudflare Worker between the apps and Claude. It holds the Anthropic API key (the
 apps never see it), limits each install to 20 questions a day and each network to 40, and
-stops answering once $10 has been spent in a month. Questions and answers are not stored or
-logged; the Worker only keeps those counters, with IP addresses hashed.
+stops answering once $10 has been spent in a month. For research, it logs every question with
+its answer, the readings sent with it and the install ID to a D1 database, and deletes
+entries after 90 days. IP addresses are only kept as salted hashes in the daily counters,
+never in the log.
 
 Claude (Claude Opus 5.5) answers from `knowledge/ocean-guide.md`, which is sent as a cached
 system prompt, and looks fault codes up in a table you upload to Workers KV. The table is
@@ -12,6 +14,18 @@ never committed to this public repo.
 ## Deploy (you run these; nothing here deploys itself)
 
 You need a free Cloudflare account and Node.js 20 or later.
+
+**One step on Windows:** `setup.ps1` runs everything below in order (install, sign-in, KV,
+D1, secrets, fault code table, deploy, a test question) and prints the address for
+`OCEAN_ASK_URL`. It asks you to sign in to Cloudflare in the browser and to paste your
+Anthropic API key; it never stores or shows the key. Safe to run again.
+
+```powershell
+cd ask-proxy
+powershell -ExecutionPolicy Bypass -File .setup.ps1
+```
+
+The same steps by hand:
 
 ```bash
 cd ask-proxy
@@ -34,6 +48,19 @@ formats Ocean Live imports; several files can be given, the first one wins):
 ```bash
 node scripts/build-dtc-kv.mjs "path/to/fisker-dtc-descriptions.json"
 npx wrangler kv bulk put dtc-kv.json --binding ASK_KV --remote
+```
+
+Create the research log database and its table:
+
+```bash
+npx wrangler d1 create ocean-live-ask-log
+```
+
+Put the `database_id` it prints into `wrangler.toml` in place of
+`REPLACE_WITH_YOUR_D1_DATABASE_ID`, then:
+
+```bash
+npx wrangler d1 migrations apply ocean-live-ask-log --remote
 ```
 
 Deploy:
@@ -84,6 +111,36 @@ Console.
 A typical question costs about 1 to 5 cents: the knowledge guide is about 3,000 tokens and is
 read from the prompt cache when questions come within 5 minutes of each other.
 
+## Research log
+
+Each answered question is a row in the `questions` table: time (UTC), install ID, phone
+language, the question, the earlier messages of the chat, the car readings and fault codes
+sent with it, the answer (empty when Claude declined), cost and model. A daily cron job
+deletes rows older than `LOG_RETENTION_DAYS` (90). PRIVACY.md promises that period, so
+change both together.
+
+Latest questions:
+
+```bash
+npx wrangler d1 execute ocean-live-ask-log --remote --command "SELECT ts, lang, question, answer FROM questions ORDER BY ts DESC LIMIT 20"
+```
+
+Everything, as a SQL file to analyse offline (keep it private; it holds owners' data):
+
+```bash
+npx wrangler d1 export ocean-live-ask-log --remote --output questions.sql
+```
+
+**Deletion requests.** The chat screen shows each owner their install ID under "Show what's
+sent". When someone asks you to delete their questions:
+
+```bash
+npx wrangler d1 execute ocean-live-ask-log --remote --command "DELETE FROM questions WHERE device = 'THEIR-INSTALL-ID'"
+```
+
+Use the log only for research into what owners ask and how good the answers are. Don't
+publish raw entries or try to work out who someone is.
+
 ## Updating the knowledge
 
 Edit `knowledge/ocean-guide.md` and run `npx wrangler deploy`. Keep it to facts you are
@@ -109,16 +166,18 @@ update them (the apps can't do this for you):
 
 **Google Play, Data safety:**
 
-* Data collected: **App activity > Other user-generated content** (the questions), and
-  **App info and performance > Other** or **Device or other IDs** (the random install ID).
-  If readings are shared: **Other info** (vehicle battery readings and fault codes).
-* Purpose: **App functionality**. Not shared for advertising. Processed by a service provider
-  (Anthropic) on your behalf, which Play treats as not "shared".
+* Data collected: **App activity > Other user-generated content** (questions and answers),
+  **Device or other IDs** (the random install ID) and, when readings are shared, **Other
+  info** (vehicle battery readings and fault codes).
+* Purposes: **App functionality** and **Analytics** (the research log). Not used for
+  advertising. Processed by a service provider (Anthropic) on your behalf, which Play treats
+  as not "shared".
 * Data is encrypted in transit: **Yes**. Collection is optional: **Yes** (only when a question
-  is asked). Users can request deletion: nothing is stored, so say so.
+  is asked). Users can request deletion: **Yes**, by sending their install ID (see Research
+  log above). Kept for 90 days.
 
 **App Store, App Privacy:**
 
-* **User Content > Other User Content** (questions and readings) and **Identifiers > Device
-  ID** (the random install ID): used for **App Functionality**, **not linked** to the user,
-  **not used for tracking**.
+* **User Content > Other User Content** (questions, answers and readings) and **Identifiers >
+  Device ID** (the random install ID): used for **App Functionality** and **Analytics**,
+  **linked to the user** (through the install ID), **not used for tracking**.

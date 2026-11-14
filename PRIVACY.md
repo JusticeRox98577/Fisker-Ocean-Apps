@@ -7,13 +7,14 @@ Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple W
 
 ## The short version
 
-* No account, no sign-in, no ads, no analytics, no tracking.
+* No account, no sign-in, no ads, no tracking.
 * What the app reads from your car stays on your phone, except what you choose to send below.
 * Data leaves your phone only when you ask a question in "Any questions?", or if you turn on
   live data to A Better Route Planner (ABRP) yourself.
 * Questions (and, unless you turn it off, your car's latest readings) are answered by Claude,
-  an AI made by Anthropic, through a small server the developer runs. That server does not
-  store questions or answers.
+  an AI made by Anthropic, through a small server the developer runs. For research, the
+  developer keeps each question, its answer, the readings sent with it and a random install
+  ID for 90 days, then deletes them.
 
 ## What the app reads and stores
 
@@ -48,18 +49,33 @@ Claude API to be answered. With the question go:
   settings, and the fault codes from your last scan in this session. The chat screen shows
   exactly this text under "Show what's sent". Your VIN and location are never included,
   and asking never connects to or wakes the car;
-* a random ID made for this install, used only to limit how many questions one install can
-  ask per day.
+* a random ID made for this install. It is not linked to your name, account, phone or car.
 
-The question server does not store or log questions or answers. It keeps only counters:
-questions per install ID and per network per day (the IP address is turned into a salted hash
-and never stored as is), deleted after about a day, and the month's total spend. Cloudflare
-and Anthropic see your IP address as part of the connection.
+### Research log
+
+Every question is logged for research: to see what owners ask and how good the answers are,
+and to improve the knowledge Claude answers from. Each log entry holds the date and time,
+the install ID, your phone's language, the question, the earlier messages of that chat, the
+readings and fault codes sent with it (if any), the answer and its cost. Entries are kept in
+a database at Cloudflare that only the developer can read, and are deleted automatically
+after 90 days. Your IP address, VIN and location are never logged. The log is never sold,
+shared or published, and is not used for advertising.
+
+The chat screen shows your install ID under "Show what's sent". To have your logged questions
+deleted, or to ask what is held, open an issue (or contact the developer privately through
+GitHub) with that ID; they are deleted within 30 days. If you don't want your questions
+logged, don't use "Any questions?". The legal basis in the EU and UK is the developer's
+legitimate interest in improving the feature you chose to use.
+
+Apart from the log, the question server keeps counters: questions per install ID and per
+network per day (the IP address is turned into a salted hash and never stored as is),
+deleted after about a day, and the month's total spend. Cloudflare and Anthropic see your IP
+address as part of the connection.
 
 Anthropic processes the question to produce the answer under its commercial terms, which do
 not allow it to train models on this data by default, and keeps it only for a limited time;
-see https://www.anthropic.com/legal/privacy. The chat itself lives only in the app's memory
-and is gone when you close the app or tap "New chat".
+see https://www.anthropic.com/legal/privacy. On your phone, the chat lives only in the app's
+memory and is gone when you close the app or tap "New chat".
 
 Don't put personal details in questions. Answers come from an AI and can be wrong; check
 anything important with a qualified EV shop.

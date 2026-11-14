@@ -6,7 +6,10 @@
  * knowledge guide as a cached system prompt. Fault codes are looked up on demand from KV
  * (see scripts/build-dtc-kv.mjs) so the big table never goes into the prompt.
  *
- * Nothing is logged or stored except the counters below. Questions are not kept.
+ * Research log: every answered question is saved to D1 (table `questions`, see migrations/) with
+ * the conversation, the answer, the car readings sent with it, the install ID, the phone's
+ * language and the cost. A daily cron deletes entries older than LOG_RETENTION_DAYS (90).
+ * Owners are told in the app and in PRIVACY.md. IP addresses are never logged.
  */
 import Anthropic from "@anthropic-ai/sdk";
 import guide from "../knowledge/ocean-guide.md";
@@ -19,6 +22,9 @@ export interface Env {
   MONTHLY_CAP_USD?: string;
   DEVICE_DAILY_LIMIT?: string;
   IP_DAILY_LIMIT?: string;
+  /** Research log. Without the binding nothing is logged. */
+  LOG_DB?: D1Database;
+  LOG_RETENTION_DAYS?: string;
 }
 
 const MODEL = "claude-opus-5-5";
@@ -83,7 +89,7 @@ interface AskBody {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname !== "/ask") return json({ error: "not_found" }, 404);
     if (request.method !== "POST") return json({ error: "method" }, 405);
@@ -127,6 +133,7 @@ export default {
     try {
       const { answer, micros } = await ask(client, env, body);
       costMicros = micros;
+      ctx.waitUntil(log(env, request, body, answer, micros));
       if (!answer) return json({ error: "no_answer" }, 422);
       return json({ answer, remainingToday: Math.max(0, deviceLimit - deviceCount - 1) });
     } catch (e) {
@@ -141,7 +148,40 @@ export default {
       }
     }
   },
+
+  /** Daily: deletes research log entries past the retention period. */
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    if (!env.LOG_DB) return;
+    const days = intVar(env.LOG_RETENTION_DAYS, 90);
+    const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
+    await env.LOG_DB.prepare("DELETE FROM questions WHERE ts < ?").bind(cutoff).run();
+  },
 } satisfies ExportedHandler<Env>;
+
+/** Saves one answered (or declined) question to the research log. Never fails the request. */
+async function log(env: Env, request: Request, body: AskBody, answer: string, micros: number): Promise<void> {
+  if (!env.LOG_DB) return;
+  const last = body.messages[body.messages.length - 1];
+  try {
+    await env.LOG_DB.prepare(
+      "INSERT INTO questions (ts, device, lang, question, history, car, answer, cost_micros, model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+      .bind(
+        new Date().toISOString(),
+        body.device,
+        (request.headers.get("Accept-Language") ?? "").slice(0, 35) || null,
+        last.text,
+        JSON.stringify(body.messages.slice(0, -1)),
+        body.car ?? null,
+        answer || null,
+        micros,
+        MODEL,
+      )
+      .run();
+  } catch {
+    // Logging is best effort: a missing table or a full database never breaks an answer.
+  }
+}
 
 async function ask(client: Anthropic, env: Env, body: AskBody): Promise<{ answer: string; micros: number }> {
   const messages: Anthropic.Beta.BetaMessageParam[] = body.messages.map((m, i) => {

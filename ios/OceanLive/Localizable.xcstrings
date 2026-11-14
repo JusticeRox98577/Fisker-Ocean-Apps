@@ -1547,30 +1547,30 @@
         }
       }
     },
-    "AI answers can be wrong. Check anything important with a qualified EV shop. Questions are sent to Ocean Live's server and to Anthropic to be answered, and are not kept by Ocean Live.": {
+    "AI answers can be wrong. Check anything important with a qualified EV shop. Questions, answers and the readings sent with them go to Ocean Live's server and to Anthropic, and Ocean Live keeps them for 90 days for research.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "KI-Antworten können falsch sein. Lass Wichtiges von einer qualifizierten E-Auto-Werkstatt prüfen. Fragen werden an den Server von Ocean Live und an Anthropic gesendet, um sie zu beantworten, und Ocean Live speichert sie nicht."
+            "value": "KI-Antworten können falsch sein. Lass Wichtiges von einer qualifizierten E-Auto-Werkstatt prüfen. Fragen, Antworten und die mitgesendeten Werte gehen an den Server von Ocean Live und an Anthropic, und Ocean Live speichert sie 90 Tage lang zu Forschungszwecken."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Las respuestas de una IA pueden ser incorrectas. Comprueba lo importante con un taller cualificado en eléctricos. Las preguntas se envían al servidor de Ocean Live y a Anthropic para responderlas, y Ocean Live no las guarda."
+            "value": "Las respuestas de una IA pueden ser incorrectas. Comprueba lo importante con un taller cualificado en eléctricos. Las preguntas, las respuestas y los datos enviados van al servidor de Ocean Live y a Anthropic, y Ocean Live los guarda 90 días con fines de investigación."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Les réponses d'une IA peuvent être fausses. Faites vérifier tout point important par un garage qualifié en véhicules électriques. Les questions sont envoyées au serveur d'Ocean Live et à Anthropic pour y répondre, et Ocean Live ne les conserve pas."
+            "value": "Les réponses d'une IA peuvent être fausses. Faites vérifier tout point important par un garage qualifié en véhicules électriques. Les questions, les réponses et les relevés joints vont au serveur d'Ocean Live et à Anthropic, et Ocean Live les conserve 90 jours à des fins de recherche."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "AI-antwoorden kunnen fout zijn. Laat belangrijke zaken controleren door een gekwalificeerde EV-garage. Vragen worden naar de server van Ocean Live en naar Anthropic gestuurd om ze te beantwoorden, en Ocean Live bewaart ze niet."
+            "value": "AI-antwoorden kunnen fout zijn. Laat belangrijke zaken controleren door een gekwalificeerde EV-garage. Vragen, antwoorden en de meegestuurde waarden gaan naar de server van Ocean Live en naar Anthropic, en Ocean Live bewaart ze 90 dagen voor onderzoek."
           }
         }
       }
@@ -5801,6 +5801,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Telefoonlocatie meesturen"
+          }
+        }
+      }
+    },
+    "Install ID, for deletion requests: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installations-ID für Löschanfragen: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID de instalación, para solicitar el borrado: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID d'installation, pour les demandes de suppression : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installatie-ID voor verwijderverzoeken: %@"
           }
         }
       }

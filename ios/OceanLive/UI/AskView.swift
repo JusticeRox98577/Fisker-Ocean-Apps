@@ -8,6 +8,7 @@ struct AskView: View {
     @State private var input = ""
     @State private var showSent = false
     @FocusState private var focused: Bool
+    private let installId = Ask.installId()
 
     private let examples: [String] = [
         String(localized: "What does my 12V voltage mean?"),
@@ -51,7 +52,7 @@ struct AskView: View {
                         if let e = ask.error {
                             Text(e).font(.system(size: 13)).foregroundStyle(Theme.bad).padding(4)
                         }
-                        Text("AI answers can be wrong. Check anything important with a qualified EV shop. Questions are sent to Ocean Live's server and to Anthropic to be answered, and are not kept by Ocean Live.")
+                        Text("AI answers can be wrong. Check anything important with a qualified EV shop. Questions, answers and the readings sent with them go to Ocean Live's server and to Anthropic, and Ocean Live keeps them for 90 days for research.")
                             .font(.system(size: 11)).foregroundStyle(Theme.dim)
                             .padding(.top, 4)
                             .id("bottom")
@@ -111,12 +112,12 @@ struct AskView: View {
                      : LocalizedStringKey("Only your question is sent."))
                     .font(.system(size: 12)).foregroundStyle(Theme.dim)
                     .padding(.top, 4)
-                if car.settings.askShareCar {
-                    Button { withAnimation { showSent.toggle() } } label: {
-                        Text(showSent ? LocalizedStringKey("Hide") : LocalizedStringKey("Show what's sent")).font(.system(size: 13)).foregroundStyle(Theme.aqua)
-                    }
-                    .padding(.top, 6)
-                    if showSent {
+                Button { withAnimation { showSent.toggle() } } label: {
+                    Text(showSent ? LocalizedStringKey("Hide") : LocalizedStringKey("Show what's sent")).font(.system(size: 13)).foregroundStyle(Theme.aqua)
+                }
+                .padding(.top, 6)
+                if showSent {
+                    if car.settings.askShareCar {
                         Text(carSummary)
                             .font(.system(size: 12, design: .monospaced)).foregroundStyle(.white)
                             .textSelection(.enabled)
@@ -125,6 +126,10 @@ struct AskView: View {
                             .background(Theme.bg, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .padding(.top, 6)
                     }
+                    Text("Install ID, for deletion requests: \(installId)")
+                        .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                        .textSelection(.enabled)
+                        .padding(.top, 6)
                 }
             }
             if ask.turns.isEmpty {

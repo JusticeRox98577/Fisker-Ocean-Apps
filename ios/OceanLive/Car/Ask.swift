@@ -50,7 +50,7 @@ final class Ask: ObservableObject {
         retry = nil
         var recent = Array(turns.suffix(Self.maxTurns))
         while let first = recent.first, !first.fromOwner { recent.removeFirst() }
-        let body = Self.requestBody(device: Self.deviceId(), turns: recent, car: car)
+        let body = Self.requestBody(device: Self.installId(), turns: recent, car: car)
         switch await Self.post(url, body: body) {
         case .success(let answer):
             turns.append(AskTurn(fromOwner: false, text: answer))
@@ -101,8 +101,9 @@ final class Ask: ObservableObject {
         }
     }
 
-    /// A random id for this install, used only by the proxy to count questions per day.
-    private nonisolated static func deviceId() -> String {
+    /// A random id for this install. The proxy counts questions per day by it and saves it with
+    /// each question in the research log; the owner quotes it to have their questions deleted.
+    nonisolated static func installId() -> String {
         if let id = UserDefaults.standard.string(forKey: "ask_device") { return id }
         let id = UUID().uuidString
         UserDefaults.standard.set(id, forKey: "ask_device")

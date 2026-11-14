@@ -63,6 +63,7 @@ import kotlinx.coroutines.launch
 fun AskScreen(
     chat: AskChat,
     shareCar: Boolean,
+    installId: String,
     carSummary: () -> String,
     onShareCar: (Boolean) -> Unit,
     onSend: suspend (question: String, car: String?) -> Unit,
@@ -123,17 +124,20 @@ fun AskScreen(
                                 stringResource(if (shareCar) R.string.ask_share_car_on else R.string.ask_share_car_off),
                                 color = Dim, fontSize = 12.sp,
                             )
-                            if (shareCar) {
-                                Text(
-                                    stringResource(if (showSent) R.string.ask_hide_sent else R.string.ask_show_sent), color = Aqua, fontSize = 13.sp,
-                                    modifier = Modifier.padding(top = 6.dp).clickable { showSent = !showSent },
-                                )
-                                AnimatedVisibility(showSent) {
-                                    SelectionContainer {
-                                        Text(
-                                            carSummary(), color = Color.White, fontSize = 12.sp, fontFamily = FontFamily.Monospace,
-                                            modifier = Modifier.padding(top = 6.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Bg).padding(10.dp),
-                                        )
+                            Text(
+                                stringResource(if (showSent) R.string.ask_hide_sent else R.string.ask_show_sent), color = Aqua, fontSize = 13.sp,
+                                modifier = Modifier.padding(top = 6.dp).clickable { showSent = !showSent },
+                            )
+                            AnimatedVisibility(showSent) {
+                                SelectionContainer {
+                                    Column {
+                                        if (shareCar) {
+                                            Text(
+                                                carSummary(), color = Color.White, fontSize = 12.sp, fontFamily = FontFamily.Monospace,
+                                                modifier = Modifier.padding(top = 6.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Bg).padding(10.dp),
+                                            )
+                                        }
+                                        Text(stringResource(R.string.ask_install_id, installId), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                                     }
                                 }
                             }

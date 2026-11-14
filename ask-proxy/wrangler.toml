@@ -17,7 +17,21 @@ fallthrough = false
 binding = "ASK_KV"
 id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
 
+# Research log of questions and answers (see migrations/ and PRIVACY.md).
+# Replace the id with the one `npx wrangler d1 create ocean-live-ask-log` prints.
+[[d1_databases]]
+binding = "LOG_DB"
+database_name = "ocean-live-ask-log"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# Every day at 03:17 UTC: delete log entries older than LOG_RETENTION_DAYS.
+[triggers]
+crons = ["17 3 * * *"]
+
 [vars]
+# Days to keep the research log. PRIVACY.md promises 90; change both together.
+LOG_RETENTION_DAYS = "90"
 # The proxy stops answering once this many US dollars were spent in a calendar month (UTC).
 MONTHLY_CAP_USD = "10"
 # Questions per app install per day (UTC).

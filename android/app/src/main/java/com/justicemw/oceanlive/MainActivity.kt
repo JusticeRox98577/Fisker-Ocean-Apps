@@ -210,6 +210,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                 AskScreen(
                     chat = askChat,
                     shareCar = settings.askShareCar,
+                    installId = remember { Ask.installId(context) },
                     // Only what the app already has in memory: asking never talks to the car.
                     carSummary = { Ask.carSummary(state, faults, settings, System.currentTimeMillis()) },
                     onShareCar = { on -> Car.updateSettings { it.copy(askShareCar = on) } },

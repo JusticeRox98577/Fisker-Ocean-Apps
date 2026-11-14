@@ -43,7 +43,8 @@ share the same expected values. Download the latest Android release from
 * **Any questions?:** the **?** button at the top asks Claude (Anthropic's AI) about your
   Ocean or the app. It answers from an Ocean owner guide and a fault code table, and by
   default sees your latest readings and fault codes (never the VIN or location; turn it off
-  in the chat). It never talks to the car. Up to 20 questions a day. See
+  in the chat). It never talks to the car. Up to 20 questions a day. Questions and answers
+  are logged for research and deleted after 90 days. See
   [ask-proxy/README.md](ask-proxy/README.md) for the server
 * **Languages:** English, German, Dutch, French and Spanish
 
@@ -170,7 +171,7 @@ Screenshots or photos from the car help a lot.
 
 See [PRIVACY.md](PRIVACY.md). Short version: no account, no tracking, and your data stays on
 your phone except questions you ask in "Any questions?" (with your latest readings unless you
-turn that off) and optional ABRP data.
+turn that off; logged for research for 90 days) and optional ABRP data.
 
 ## License
 

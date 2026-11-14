@@ -59,7 +59,7 @@ object Ask {
         if (q.isEmpty() || _chat.value.waiting) return
         _chat.update { it.copy(turns = it.turns + AskTurn(true, q), waiting = true, error = null, retry = null) }
         val turns = _chat.value.turns.takeLast(MAX_TURNS).dropWhile { !it.fromOwner }
-        val result = post(requestBody(deviceId(context), turns, car))
+        val result = post(requestBody(installId(context), turns, car))
         _chat.update {
             when (result) {
                 is Reply.Answer -> it.copy(turns = it.turns + AskTurn(false, result.text), waiting = false)
@@ -118,8 +118,11 @@ object Ask {
         }
     }
 
-    /** A random id for this install, used only by the proxy to count questions per day. */
-    private fun deviceId(context: Context): String {
+    /**
+     * A random id for this install. The proxy counts questions per day by it and saves it with
+     * each question in the research log; the owner quotes it to have their questions deleted.
+     */
+    fun installId(context: Context): String {
         val p = Settings.prefs(context)
         p.getString("ask_device", null)?.let { return it }
         val id = UUID.randomUUID().toString()

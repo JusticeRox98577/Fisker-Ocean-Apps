@@ -565,7 +565,8 @@
     <string name="ask_placeholder">Stell eine Frage</string>
     <string name="ask_send">Senden</string>
     <string name="ask_thinking">Denkt nach…</string>
-    <string name="ask_disclaimer">KI-Antworten können falsch sein. Lass Wichtiges von einer qualifizierten E-Auto-Werkstatt prüfen. Fragen werden an den Server von Ocean Live und an Anthropic gesendet, um sie zu beantworten, und Ocean Live speichert sie nicht.</string>
+    <string name="ask_disclaimer">KI-Antworten können falsch sein. Lass Wichtiges von einer qualifizierten E-Auto-Werkstatt prüfen. Fragen, Antworten und die mitgesendeten Werte gehen an den Server von Ocean Live und an Anthropic, und Ocean Live speichert sie 90 Tage lang zu Forschungszwecken.</string>
+    <string name="ask_install_id">Installations-ID für Löschanfragen: %1$s</string>
     <string name="ask_error_limit">Das waren alle Fragen für heute. Versuch es morgen wieder.</string>
     <string name="ask_error_budget">Fragen sind bis nächsten Monat pausiert.</string>
     <string name="ask_error_no_answer">Darauf gab es keine Antwort. Versuch es anders zu formulieren.</string>

@@ -572,7 +572,8 @@
     <string name="ask_placeholder">Ask a question</string>
     <string name="ask_send">Send</string>
     <string name="ask_thinking">Thinking…</string>
-    <string name="ask_disclaimer">AI answers can be wrong. Check anything important with a qualified EV shop. Questions are sent to Ocean Live\'s server and to Anthropic to be answered, and are not kept by Ocean Live.</string>
+    <string name="ask_disclaimer">AI answers can be wrong. Check anything important with a qualified EV shop. Questions, answers and the readings sent with them go to Ocean Live\'s server and to Anthropic, and Ocean Live keeps them for 90 days for research.</string>
+    <string name="ask_install_id">Install ID, for deletion requests: %1$s</string>
     <string name="ask_error_limit">That\'s all the questions for today. Try again tomorrow.</string>
     <string name="ask_error_budget">Questions are paused until next month.</string>
     <string name="ask_error_no_answer">Couldn\'t answer that one. Try asking another way.</string>

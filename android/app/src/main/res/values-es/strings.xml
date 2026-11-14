@@ -583,7 +583,8 @@
     <string name="ask_placeholder">Haz una pregunta</string>
     <string name="ask_send">Enviar</string>
     <string name="ask_thinking">Pensando…</string>
-    <string name="ask_disclaimer">Las respuestas de una IA pueden ser incorrectas. Comprueba lo importante con un taller cualificado en eléctricos. Las preguntas se envían al servidor de Ocean Live y a Anthropic para responderlas, y Ocean Live no las guarda.</string>
+    <string name="ask_disclaimer">Las respuestas de una IA pueden ser incorrectas. Comprueba lo importante con un taller cualificado en eléctricos. Las preguntas, las respuestas y los datos enviados van al servidor de Ocean Live y a Anthropic, y Ocean Live los guarda 90 días con fines de investigación.</string>
+    <string name="ask_install_id">ID de instalación, para solicitar el borrado: %1$s</string>
     <string name="ask_error_limit">Esas son todas las preguntas de hoy. Vuelve a intentarlo mañana.</string>
     <string name="ask_error_budget">Las preguntas están en pausa hasta el mes que viene.</string>
     <string name="ask_error_no_answer">No hubo respuesta para eso. Prueba a preguntarlo de otra forma.</string>
