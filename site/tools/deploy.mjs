@@ -35,7 +35,9 @@ const { values: opt } = parseArgs({
     version: { type: "string" },
     build: { type: "string" },
     commit: { type: "string" },
-    base: { type: "string", default: "https://oceanlive.org" },
+    // The same Worker's workers.dev address: identical files, but outside oceanlive.org's bot protection,
+    // which answers GitHub's runners with 403.
+    base: { type: "string", default: "https://ocean-live-site.justicemw9857.workers.dev" },
     "dry-run": { type: "boolean", default: false },
   },
   strict: true,
@@ -51,7 +53,7 @@ function checkArgs() {
   // Checked first, for every mode: the kept downloads are fetched from --base and then deployed.
   if (!/^(https:\/\/[^/]+|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/.test(opt.base)) die(`--base must be an https origin (or http://localhost for testing)`);
   // Another origin is for testing the fetch and verify logic only: never deploy its files to oceanlive.org.
-  if (opt.base !== "https://oceanlive.org" && !opt["dry-run"]) die(`--base ${opt.base} is only allowed with --dry-run`);
+  if (!["https://oceanlive.org", "https://ocean-live-site.justicemw9857.workers.dev"].includes(opt.base) && !opt["dry-run"]) die(`--base ${opt.base} is only allowed with --dry-run`);
   if (!opt.channel) {
     for (const k of ["android", "wear", "version", "build", "commit"]) if (opt[k]) die(`--${k} needs --channel`);
     return;

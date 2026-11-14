@@ -2,6 +2,9 @@
   // Ocean Live website: static files only, no Worker script.
   "name": "ocean-live-site",
   "compatibility_date": "2026-11-01",
+  // workers.dev stays on so CI can read the live downloads (oceanlive.org's bot protection blocks GitHub's runners).
+  "workers_dev": true,
+  "preview_urls": false,
   "assets": {
     "directory": "./public",
     "not_found_handling": "404-page",
