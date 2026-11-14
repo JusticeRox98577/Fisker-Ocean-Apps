@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-pwxGLHz2ww9Fb1OMpo72qpIrr+gd9A5qJ4erId6yMj8='; style-src 'self'; font-src 'self'; img-src 'self'; manifest-src 'self'; connect-src 'self' https://api.github.com; worker-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-pwxGLHz2ww9Fb1OMpo72qpIrr+gd9A5qJ4erId6yMj8='; style-src 'self'; font-src 'self'; img-src 'self'; manifest-src 'self'; connect-src 'self'; worker-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: accelerometer=(self), camera=(), geolocation=(), gyroscope=(self), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()
@@ -29,3 +29,20 @@
 /site.webmanifest
   Content-Type: application/manifest+json
   Cache-Control: public, max-age=86400
+
+# Downloads, staged at deploy time by tools/deploy.mjs (never in git).
+# "! Cache-Control" drops the value from /* so the one below is the only one.
+# APKs are no-cache (revalidated by ETag): their names never change, so a cached copy could be
+# an older build than the version and SHA-256 that latest.json and the page show.
+/downloads/*.apk
+  Content-Type: application/vnd.android.package-archive
+  Content-Disposition: attachment
+  ! Cache-Control
+  Cache-Control: public, no-cache
+
+/downloads/*latest.json
+  ! Cache-Control
+  Cache-Control: no-cache
+
+/downloads/preview/*
+  X-Robots-Tag: noindex

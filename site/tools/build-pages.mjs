@@ -72,7 +72,8 @@ ${footer}
 </body>
 </html>
 `;
-  writeFileSync(new URL(file, PUB), html);
+  // Always LF, whatever line endings the checkout (or index.html) has, so pages never end up mixed.
+  writeFileSync(new URL(file, PUB), html.replace(/\r\n?/g, "\n"));
   console.log("wrote", file, html.length, "bytes");
 }
 
@@ -189,7 +190,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 13 Novem
 
     <div class="callout sand">
       <h2 id="website">This website</h2>
-      <p>oceanlive.org sets no cookies and uses no analytics or trackers. Its fonts, scripts, styles and 3D model are served from oceanlive.org itself, so your browser makes no requests to font or script services. The only request to anyone else: the download section asks GitHub's public API for the latest release, from your browser, so GitHub sees that request (and the download buttons link to GitHub). Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+      <p>oceanlive.org sets no cookies and uses no analytics or trackers. Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     </div>
     </div>
   </div>

@@ -1,8 +1,8 @@
 # oceanlive.org
 
 The Ocean Live website: plain HTML, CSS and JavaScript ES modules in `public/`, with no build
-step, no frameworks, no cookies, no analytics and no third-party requests (except GitHub's API
-for the download links). It is served by a Cloudflare Worker with static
+step, no frameworks, no cookies, no analytics and no third-party requests (the APK downloads
+are served from the site too, see [Download channels](#download-channels)). It is served by a Cloudflare Worker with static
 assets only (no Worker script), configured in `wrangler.jsonc`.
 
 | File | What it is |
@@ -12,7 +12,7 @@ assets only (no Worker script), configured in `wrangler.jsonc`.
 | `public/delete-account.html` | How to delete an account (the Google Play URL: `https://oceanlive.org/delete-account`) |
 | `public/credits.html` | Credits and licences: the 3D model (CC BY 4.0), three.js, GSAP, fonts |
 | `public/404.html` | Not found page |
-| `public/styles.css`, `public/app.js` | Shared styles and script (reveals, count-ups, progress bar, and the download links from the latest GitHub release) |
+| `public/styles.css`, `public/app.js` | Shared styles and script (reveals, count-ups, progress bar, and the download buttons from `/downloads/latest.json`) |
 | `public/js/blueprint.js`, `public/js/scene/*.js` | The 3D blueprint (home page only), see below |
 | `public/models/ocean.glb` | The car, made by `tools/build-model.mjs` |
 | `public/img/ocean-blueprint.svg` | Static side elevation shown without 3D, made by `tools/make-blueprint-svg.mjs` |
@@ -54,6 +54,7 @@ One-off Node scripts in `tools/` (never deployed). Their npm packages live in `t
 | `make-blueprint-svg.mjs` | Draws `public/img/ocean-blueprint.svg` from the model |
 | `vendor.mjs` | Copies the pinned three.js and GSAP files into `public/vendor/` |
 | `build-pages.mjs` | Writes privacy, delete-account, credits and 404 with the shared header and footer |
+| `deploy.mjs` | Deploys the site with wrangler, keeping or replacing the APK download channels (see [Deploy](#deploy)) |
 | `check-site.mjs` | Checks every local reference, anchors, the CSP hash and that nothing loads from a third party |
 | `serve.mjs` | Local preview with the `_headers` applied (`node tools/serve.mjs`, then open http://localhost:8787) |
 
@@ -68,13 +69,56 @@ npx wrangler dev
 
 ## Deploy
 
-You need Node.js 20 or later and access to the Cloudflare account that holds `oceanlive.org`.
+GitHub Actions deploys the site; you rarely need to by hand.
+
+| What runs | What it deploys |
+| --- | --- |
+| Site workflow (push to `main` touching `site/`, or a manual run from `main`) | The site, after `check-site.mjs`; both download channels stay as they are |
+| Android workflow, push to `main` | The site from the current `main`, plus the new APKs on the **preview** channel |
+| Android workflow, manual release run (from `main` or a `release-*` tag) | The site from the current `main`, plus that run's new APKs on the **stable** channel (the public download) |
+
+The Android publish job always checks out the current `main` for the site, so a slow APK build
+or a release from an older tag never rolls back site changes; only the APKs come from its run.
+
+Both workflows share the `oceanlive-deploy` concurrency group, so deploys run one at a time.
+GitHub keeps only one waiting run per group, so a newer deploy can cancel a waiting one. A
+cancelled stable publish makes the manual Android run fail; use **Re-run failed jobs** on that run.
+They need the `CLOUDFLARE_API_TOKEN` secret and the `CLOUDFLARE_ACCOUNT_ID` repository variable.
+
+### Download channels
+
+The APKs are not in git. Each channel is a folder on the site with fixed file names and a
+`latest.json` (`version`, `short`, `build`, `commit`, `date`, and for `android` and `wear` the
+`name`, `path`, `size` and `sha256`):
+
+| Channel | Files | Used by |
+| --- | --- | --- |
+| stable | `https://oceanlive.org/downloads/OceanLive-Android.apk`, `.../OceanLive-Wear.apk`, `.../latest.json` | The download section (`app.js` reads `/downloads/latest.json`; without it the buttons open the latest GitHub release) |
+| preview | `https://oceanlive.org/downloads/preview/OceanLive-Android.apk`, `.../preview/OceanLive-Wear.apk`, `.../preview/latest.json` | Nothing links to it (and it is `noindex`): the latest build from `main`, for testing |
+
+The same stable APKs are attached to the GitHub release of that run.
+
+`tools/deploy.mjs` does every deploy. Because a deploy replaces all static files, it first
+downloads the live files of each channel it is not replacing (from `latest.json`), checks
+their SHA-256 and size, and puts them in `public/downloads/`; then it runs
+`npx --yes wrangler@4.162.0 deploy` and deletes `public/downloads/` again (it is git-ignored).
+A channel that was never published (404) is skipped; a hash mismatch or a failed download stops
+the deploy, so the live downloads are never lost. Each APK must be under 25 MiB (the Workers
+static assets limit per file).
 
 ```bash
-cd site
-npx wrangler login
-npx wrangler deploy
+# Site only, keeping both channels (needs Node.js 20 or later)
+node site/tools/deploy.mjs
+# New APKs on one channel
+node site/tools/deploy.mjs --channel preview --android app.apk --wear wear.apk \
+  --version 3.5.0 --build 123 --commit <sha>
+# Fetch, verify and stage the downloads without deploying
+node site/tools/deploy.mjs --dry-run
 ```
+
+Wrangler takes `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from the environment, or
+your own `npx wrangler login`. Always deploy with `tools/deploy.mjs`: a bare `wrangler deploy`
+would remove the downloads.
 
 The routes in `wrangler.jsonc` attach `oceanlive.org` and `www.oceanlive.org` to the Worker as
 custom domains; Cloudflare creates the DNS records and certificates on the first deploy.

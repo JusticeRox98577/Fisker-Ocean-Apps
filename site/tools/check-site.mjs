@@ -1,5 +1,6 @@
 // Static checks for public/: every local reference resolves to a file, in-page anchors exist,
-// the CSP hash matches the inline import map, and nothing loads from a third party.
+// the CSP hash matches the inline import map, and nothing loads from a third party (the CSP's
+// connect-src is 'self' only and every fetch is same-origin).
 // Usage (from site/): node tools/check-site.mjs
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, dirname, relative, resolve, extname } from "node:path";
@@ -42,7 +43,7 @@ function checkRef(where, url, base) {
 }
 
 // HTML: src, href, import map, inline styles/scripts, third-party loads.
-const ALLOWED_LINKS = /^https:\/\/(github\.com|play\.google\.com|sketchfab\.com|creativecommons\.org|www\.anthropic\.com|threejs\.org|gsap\.com|oceanlive\.org|testflight\.apple\.com)\//;
+const ALLOWED_LINKS = /^https:\/\/(github\.com|play\.google\.com|sketchfab\.com|creativecommons\.org|www\.anthropic\.com|threejs\.org|gsap\.com|oceanlive\.org|testflight\.apple\.com|groups\.google\.com)\//;
 for (const f of files.filter((f) => f.endsWith(".html"))) {
   const html = readFileSync(f, "utf8");
   const where = rel(f);
@@ -102,8 +103,30 @@ for (const f of files.filter((f) => f.endsWith(".js") && !rel(f).startsWith("ven
     const target = resolveSpecifier(s, f);
     if (!target || !existsSync(target)) fail(where, `import "${s}" does not resolve`);
   }
-  for (const m of src.matchAll(/(?:fetch|loadModel|load)\(\s*["'](\/[^"']+)["']/g)) { checked++; if (!resolveUrl(m[1])) fail(where, `${m[1]} does not resolve`); }
-  for (const m of src.matchAll(/fetch\(\s*["'](https?:\/\/[^"']+)["']/g)) if (!m[1].startsWith("https://api.github.com/")) fail(where, `fetch to third party ${m[1]}`);
+  for (const m of src.matchAll(/(?:fetch|loadModel|load)\(\s*["'](\/[^/"'][^"']*)["']/g)) {
+    // /downloads/ is staged by tools/deploy.mjs at deploy time and is never in git.
+    if (m[1].startsWith("/downloads/")) {
+      if (m[1].startsWith("/downloads/preview/")) fail(where, `the pages must not use the preview channel (${m[1]})`);
+      continue;
+    }
+    checked++;
+    if (!resolveUrl(m[1])) fail(where, `${m[1]} does not resolve`);
+  }
+  // Same origin only: no fetch to a full or protocol-relative URL, and no GitHub API any more.
+  for (const m of src.matchAll(/fetch\(\s*["'`]((?:https?:)?\/\/[^"'`]+)["'`]/g)) fail(where, `fetch to another origin ${m[1]}`);
+  if (!rel(f).startsWith("vendor/") && /api\.github\.com/.test(src)) fail(where, "uses the GitHub API (the site makes no third-party requests)");
+}
+
+// CSP: no third-party connections, and the download headers are in place.
+{
+  const headers = readFileSync(join(ROOT, "_headers"), "utf8");
+  const csp = (headers.match(/Content-Security-Policy:([^\n]*)/) || [])[1] || "";
+  const connect = ((csp.match(/connect-src([^;]*)/) || [])[1] || "").trim();
+  if (connect !== "'self'") fail("_headers", `connect-src must be 'self' only, got "${connect}"`);
+  for (const rule of ["/downloads/*.apk", "/downloads/*latest.json"]) {
+    if (!new RegExp("^" + rule.replace(/[.*]/g, "\\$&") + "\\r?$", "m").test(headers)) fail("_headers", `no ${rule} rule`);
+  }
+  if (!headers.includes("application/vnd.android.package-archive")) fail("_headers", "APKs need Content-Type application/vnd.android.package-archive");
 }
 
 // CSS url(...)

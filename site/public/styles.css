@@ -431,6 +431,10 @@ main { position: relative; z-index: var(--z-content); }
 .dl > p { font-size: var(--fs-card); color: var(--ink-muted); }
 .dl-actions { margin-top: auto; display: grid; gap: 8px; }
 .file-meta { margin: 10px 0 0; font-size: var(--fs-meta); color: var(--ink-muted); overflow-wrap: anywhere; }
+.file-hash { margin: 4px 0 0; font-size: var(--fs-meta); color: var(--ink-muted); }
+.file-hash summary { cursor: pointer; width: fit-content; min-height: 24px; font-variant-numeric: tabular-nums; }
+.file-hash summary:hover, .file-hash summary:focus-visible { color: var(--ink); }
+.file-hash code { display: block; margin-top: 6px; font-size: .95em; user-select: all; }
 .notice { display: flex; gap: 14px; align-items: flex-start; margin-top: 18px; padding: 18px; border-radius: var(--radius); border: 1px solid rgba(246,201,119,.4); background: rgba(35,28,12,.78); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 .notice svg { width: 24px; height: 24px; color: var(--amber); flex: none; margin-top: 2px; }
 .notice p { margin: 0; font-size: .93rem; max-width: none; }

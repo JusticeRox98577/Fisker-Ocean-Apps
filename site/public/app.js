@@ -130,7 +130,9 @@
     scenes.forEach(function (el) { sheetIo.observe(el); });
   }
 
-  // Latest GitHub release: version, file sizes and direct APK links.
+  // Latest release, from oceanlive.org itself: /downloads/latest.json is written at deploy time
+  // (tools/deploy.mjs) with the version, file sizes and SHA-256 of the APKs next to it. Only the
+  // stable channel is ever used here. Without it the buttons keep pointing at GitHub Releases.
   var android = document.getElementById("dl-android");
   if (!android || !window.fetch) return;
 
@@ -140,60 +142,77 @@
     catch (e) { return ""; }
   }
   function set(id, text) { var el = document.getElementById(id); if (el) el.textContent = text; }
-  function wire(linkId, metaId, labelId, label, asset, version) {
+  function wire(linkId, metaId, labelId, label, file, fileName, version) {
     var a = document.getElementById(linkId);
-    if (!a || !asset) return;
-    // Only accept direct downloads from GitHub.
-    if (!/^https:\/\/github\.com\//.test(asset.browser_download_url)) return;
-    a.href = asset.browser_download_url;
-    a.setAttribute("download", "");
+    var meta = document.getElementById(metaId);
+    // Only the fixed same-origin paths, with a real SHA-256.
+    if (!a || !file || file.path !== "/downloads/" + fileName || !/^[0-9a-f]{64}$/.test(file.sha256) || !(file.size > 0)) return false;
+    var name = typeof file.name === "string" && /^[\w.-]+\.apk$/.test(file.name) ? file.name : fileName;
+    a.href = file.path;
+    a.setAttribute("download", name);
+    a.removeAttribute("rel");
     set(labelId, "Download " + label + (version ? " " + version : ""));
-    set(metaId, asset.name + " · " + mb(asset.size));
+    if (meta) {
+      meta.textContent = name + " · " + mb(file.size) + " · from oceanlive.org";
+      // Short hash on the card; the full one for people who verify the file.
+      var d = document.createElement("details");
+      d.className = "file-hash";
+      var s = document.createElement("summary");
+      s.textContent = "SHA-256 " + file.sha256.slice(0, 12) + "…";
+      s.title = file.sha256;
+      var code = document.createElement("code");
+      code.textContent = file.sha256;
+      d.appendChild(s);
+      d.appendChild(code);
+      meta.insertAdjacentElement("afterend", d);
+    }
+    return true;
+  }
+  function fallback(phone, watch) {
+    // Those links still point at the latest release page on GitHub.
+    if (phone) set("dl-android-meta", "Opens the latest release on GitHub");
+    if (watch) set("dl-wear-meta", "Opens the latest release on GitHub");
   }
 
   var ctrl = "AbortController" in window ? new AbortController() : null;
   var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 8000);
 
-  fetch("https://api.github.com/repos/" + REPO + "/releases/latest", {
-    headers: { Accept: "application/vnd.github+json" },
+  fetch("/downloads/latest.json", {
+    cache: "no-cache",
     credentials: "omit",
-    referrerPolicy: "no-referrer",
     signal: ctrl ? ctrl.signal : undefined
   })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (rel) {
       clearTimeout(timer);
-      var assets = rel.assets || [];
-      var phone = assets.filter(function (x) { return /-Android\.apk$/i.test(x.name); })[0];
-      var wear = assets.filter(function (x) { return /-Wear\.apk$/i.test(x.name); })[0];
-      var m = String(rel.tag_name || rel.name || "").match(/\d+(\.\d+)+/);
-      var version = m ? m[0] : "";
-      if (version) set("tb-rev", version);
-      if (version) {
-        var line = document.getElementById("release-line");
-        if (line) line.classList.add("ok");
-        var text = document.getElementById("release-text");
-        if (text) {
-          text.textContent = "";
-          text.appendChild(document.createTextNode("Latest: "));
-          var b = document.createElement("b");
-          b.textContent = "Ocean Live " + version;
-          text.appendChild(b);
-          text.appendChild(document.createTextNode(rel.published_at ? " · " + date(rel.published_at) + " · " : " · "));
-          var notes = document.createElement("a");
-          notes.href = typeof rel.html_url === "string" && /^https:\/\/github\.com\//.test(rel.html_url) ? rel.html_url : LATEST;
-          notes.rel = "noopener";
-          notes.textContent = "Release notes";
-          text.appendChild(notes);
-        }
+      var files = rel && rel.files || {};
+      var version = typeof rel.short === "string" && /^\d+(\.\d+)+$/.test(rel.short) ? rel.short : "";
+      var build = typeof rel.build === "number" && rel.build > 0 ? rel.build : 0;
+      var okPhone = wire("dl-android", "dl-android-meta", "dl-android-label", "Android APK", files.android, "OceanLive-Android.apk", version);
+      var okWear = wire("dl-wear", "dl-wear-meta", "dl-wear-label", "Wear OS APK", files.wear, "OceanLive-Wear.apk", version);
+      fallback(!okPhone, !okWear);
+      if (!version || !okPhone) return;
+      set("tb-rev", version);
+      var line = document.getElementById("release-line");
+      if (line) line.classList.add("ok");
+      var text = document.getElementById("release-text");
+      if (text) {
+        text.textContent = "";
+        text.appendChild(document.createTextNode("Latest: "));
+        var b = document.createElement("b");
+        b.textContent = "Ocean Live " + version;
+        text.appendChild(b);
+        var when = typeof rel.date === "string" ? date(rel.date) : "";
+        text.appendChild(document.createTextNode((build ? " (build " + build + ")" : "") + (when ? " · " + when : "") + " · "));
+        var notes = document.createElement("a");
+        notes.href = LATEST;
+        notes.rel = "noopener";
+        notes.textContent = "Release notes";
+        text.appendChild(notes);
       }
-      wire("dl-android", "dl-android-meta", "dl-android-label", "Android APK", phone, version);
-      wire("dl-wear", "dl-wear-meta", "dl-wear-label", "Wear OS APK", wear, version);
     })
     .catch(function () {
       clearTimeout(timer);
-      // Links already point at the latest release page on GitHub.
-      set("dl-android-meta", "Opens the latest release on GitHub");
-      set("dl-wear-meta", "Opens the latest release on GitHub");
+      fallback(true, true);
     });
 })();

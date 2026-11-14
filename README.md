@@ -14,7 +14,7 @@ to A Better Route Planner if you set that up.
 
 Both phone apps have the same features and decode the car the same way; their unit tests
 share the same expected values. Download the latest Android release from
-[Releases](https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases). The iPhone app is in a public TestFlight beta: [join it here](https://testflight.apple.com/join/5CEUXxa2). Everything is also on [oceanlive.org](https://oceanlive.org).
+[Releases](https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases). The iPhone app is in a public TestFlight beta: [join it here](https://testflight.apple.com/join/5CEUXxa2). For the Google Play beta, join the [testers group](https://groups.google.com/g/Ocean-Live_Testing), then [opt in on Google Play](https://play.google.com/apps/testing/com.justicemw.oceanlive). Everything is also on [oceanlive.org](https://oceanlive.org).
 
 ## What it does
 
@@ -141,8 +141,12 @@ Bundle IDs: `com.justice.OceanABRP` (app, CarPlay driving-task entitlement, App 
 
 | Workflow | On push to main | On manual run (Actions tab, Run workflow) |
 | --- | --- | --- |
-| Android | Unit tests and signed APK build artifacts (phone and Wear OS); pull requests only check that it compiles | Also Play bundles and a GitHub release with the APKs, named from the app version, with notes from CHANGELOG.md |
+| Android | Unit tests and signed APK build artifacts (phone and Wear OS), also put on the unlisted preview channel of oceanlive.org (`/downloads/preview/`); pull requests only check that it compiles | Also Play bundles, a GitHub release with the APKs, named from the app version, with notes from CHANGELOG.md, and the same APKs as the public download on oceanlive.org |
 | iOS | Unsigned build and IPA artifact | Also signs and uploads to TestFlight |
+| Site | Checks and deploys oceanlive.org (on changes in `site/`), keeping the APK downloads that are live | The same, from `main` |
+
+Deploys to oceanlive.org run one at a time (the Android publish job and the Site workflow share
+one queue). See [site/README.md](site/README.md#deploy).
 
 Manual iOS runs have two switches: **Include the widgets and Live Activity** (on by default)
 and **Include the Apple Watch app** (off by default; tick it for full builds).
@@ -154,6 +158,14 @@ Secrets used by the manual runs:
 
 * Android signing (every APK and bundle): `ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
 * iOS TestFlight: `ASC_KEY_P8`, `ASC_KEY_ID`, `ASC_ISSUER_ID`
+* oceanlive.org (Site workflow and the Android publish job): the `CLOUDFLARE_API_TOKEN` secret, plus the repository variable `CLOUDFLARE_ACCOUNT_ID`. Make the token from Cloudflare's "Edit Cloudflare Workers" template, or by hand with Account: Workers Scripts Edit and, for the oceanlive.org zone, Zone: Workers Routes Edit and DNS Edit (the deploy attaches oceanlive.org and www.oceanlive.org as custom domains)
+
+Without the Cloudflare token or account ID, a push skips the preview, while the publish job of
+a manual Android run (after the GitHub release) and the Site workflow fail.
+
+All oceanlive.org deploys share one queue, and GitHub keeps only one waiting run in it, so a
+newer deploy can cancel a waiting release publish. The manual Android run then fails with
+"The publish job was cancelled"; use **Re-run failed jobs** on that run to publish the release.
 
 Without the Android secrets, a push only checks that the app compiles, and a manual Android
 run fails rather than publish an unsigned release. Without the iOS secrets, the TestFlight

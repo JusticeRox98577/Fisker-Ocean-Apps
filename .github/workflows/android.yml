@@ -11,15 +11,21 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: android-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    # On the build job, not the workflow, so a newer run never cancels a deploy in progress.
+    # A newer push cancels an older push build, but never a manual release build (its own group,
+    # never cancelled), so an ordinary push cannot silently drop a release.
+    concurrency:
+      group: android-${{ github.event_name }}-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
     permissions:
       contents: write
+    outputs:
+      apks: ${{ steps.sign.outputs.apks }}
+      version: ${{ steps.version.outputs.version }}
+      short: ${{ steps.version.outputs.short }}
     env:
       # "Any questions?" proxy address (repository variable, see ask-proxy/README.md). Empty hides the button.
       OCEAN_ASK_URL: ${{ vars.OCEAN_ASK_URL }}
@@ -34,6 +40,7 @@ jobs:
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
       - name: Set build number and version
+        id: version
         # The version comes from the app (versionName), so file and release names follow it.
         run: |
           echo "BUILD_NUMBER=$((3000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
@@ -41,9 +48,12 @@ jobs:
           test -n "$VERSION" || { echo "versionName not found in app/build.gradle.kts"; exit 1; }
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "SHORT=${VERSION%.0}" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "short=${VERSION%.0}" >> "$GITHUB_OUTPUT"
       - name: Unit tests
         run: ./gradlew testDebugUnitTest
       - name: Build and sign with the upload key
+        id: sign
         # Only the owner's upload key signs Ocean Live. Without the key secrets this is a
         # compile check only (debug builds, no APKs), and a manual release run fails.
         env:
@@ -87,6 +97,7 @@ jobs:
               [ "$GOT" = "$WANT" ] || { echo "$f is not signed with the expected certificate."; exit 1; }
             fi
           done
+          echo "apks=true" >> "$GITHUB_OUTPUT"
       - name: Remove the signing key
         if: always()
         run: rm -f "$RUNNER_TEMP/upload.jks"
@@ -123,3 +134,79 @@ jobs:
             --latest \
             --title "Ocean Live $SHORT (build ${{ github.run_number }})" \
             --notes-file "$RUNNER_TEMP/notes.md"
+
+  # The signed APKs on oceanlive.org: a manual release run updates the public download
+  # (/downloads/), a push to main updates the unlisted preview (/downloads/preview/).
+  # GitHub releases are unchanged. Shares one queue with site.yml, so deploys never overlap.
+  publish:
+    name: Publish to oceanlive.org
+    needs: build
+    if: >-
+      needs.build.outputs.apks == 'true' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/release-'))))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: oceanlive-deploy
+      cancel-in-progress: false
+    steps:
+      # The site files (and deploy.mjs) always come from the current main, never from this run's
+      # commit or tag: wrangler replaces every file, and this job can start minutes after the
+      # build, so an older checkout would roll back site changes deployed by site.yml meanwhile.
+      # Only the APKs come from this run (the artifact below).
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: site
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/download-artifact@v4
+        with:
+          name: OceanLive-Android
+          path: ${{ runner.temp }}/apks
+      - name: Publish to oceanlive.org
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CHANNEL: ${{ github.event_name == 'workflow_dispatch' && 'stable' || 'preview' }}
+          VERSION: ${{ needs.build.outputs.version }}
+          SHORT: ${{ needs.build.outputs.short }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            if [ "$CHANNEL" = "stable" ]; then
+              echo "::error::A release needs the CLOUDFLARE_API_TOKEN secret and the CLOUDFLARE_ACCOUNT_ID variable."; exit 1
+            fi
+            echo "No Cloudflare token or account ID: the preview was not published." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          node site/tools/deploy.mjs --channel "$CHANNEL" \
+            --android "$RUNNER_TEMP/apks/OceanLive-$SHORT-Android.apk" \
+            --wear "$RUNNER_TEMP/apks/OceanLive-$SHORT-Wear.apk" \
+            --version "$VERSION" --build "$GITHUB_RUN_NUMBER" --commit "$GITHUB_SHA"
+          DIR=downloads/
+          if [ "$CHANNEL" = "preview" ]; then DIR=downloads/preview/; fi
+          {
+            echo "Published Ocean Live $SHORT (build $GITHUB_RUN_NUMBER) to the $CHANNEL channel:"
+            echo
+            echo "* https://oceanlive.org/${DIR}OceanLive-Android.apk"
+            echo "* https://oceanlive.org/${DIR}OceanLive-Wear.apk"
+            echo "* https://oceanlive.org/${DIR}latest.json"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # GitHub keeps only one pending run per concurrency group, so while a deploy is running a
+  # newer site.yml or preview deploy can cancel a queued stable publish. The GitHub release
+  # already exists by then, so make that loud: this job fails and says how to recover.
+  publish-cancelled:
+    name: Check the oceanlive.org publish
+    needs: [build, publish]
+    if: always() && github.event_name == 'workflow_dispatch' && needs.publish.result == 'cancelled'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: The stable download was not updated
+        run: |
+          echo "::error::The publish job was cancelled (another deploy took its place in the oceanlive-deploy queue), so oceanlive.org still offers the previous release. Use Re-run failed jobs on this run to publish it."
+          exit 1

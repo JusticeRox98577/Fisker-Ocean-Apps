@@ -2,3 +2,5 @@ tools/.cache/
 tools/review-*/
 .wrangler/
 node_modules/
+# APKs and latest.json staged by tools/deploy.mjs; they live on oceanlive.org, never in git.
+public/downloads/
