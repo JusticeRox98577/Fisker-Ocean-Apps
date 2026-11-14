@@ -8,6 +8,8 @@
  * Tables: see migrations/0002_accounts.sql.
  */
 
+import { emailLang, signInEmail } from "./email";
+
 export interface AuthEnv {
   LOG_DB?: D1Database;
   ASK_KV: KVNamespace;
@@ -199,11 +201,11 @@ async function emailStart(request: Request, env: AuthEnv, raw: unknown): Promise
   await env.LOG_DB!.prepare("INSERT OR REPLACE INTO email_codes (email, code_hash, expires, attempts) VALUES (?, ?, ?, 0)")
     .bind(email, await codeHash(env, email, code), expires).run();
 
-  const text = emailText(request.headers.get("Accept-Language") ?? "", code);
+  const mail = signInEmail(emailLang(request.headers.get("Accept-Language") ?? ""), code, CODE_MINUTES);
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env.EMAIL_FROM, to: [email], subject: text.subject, text: text.body }),
+    body: JSON.stringify({ from: env.EMAIL_FROM, to: [email], subject: mail.subject, text: mail.text, html: mail.html }),
   });
   if (!res.ok) return json({ error: "email_failed" }, 502);
   return json({ ok: true });
@@ -226,19 +228,6 @@ async function emailVerify(env: AuthEnv, rawEmail: unknown, rawCode: unknown, de
 
 function codeHash(env: AuthEnv, email: string, code: string) {
   return sha256Hex(`${env.IP_SALT ?? ""}|${email}|${code}`);
-}
-
-function emailText(acceptLanguage: string, code: string): { subject: string; body: string } {
-  const lang = acceptLanguage.slice(0, 2).toLowerCase();
-  const t: Record<string, [string, string]> = {
-    en: ["Your Ocean Live code", `Your Ocean Live sign-in code is ${code}.\n\nIt works for ${CODE_MINUTES} minutes. If you didn't ask for it, you can ignore this email.`],
-    de: ["Dein Ocean-Live-Code", `Dein Anmeldecode für Ocean Live ist ${code}.\n\nEr gilt ${CODE_MINUTES} Minuten. Wenn du ihn nicht angefordert hast, kannst du diese E-Mail ignorieren.`],
-    nl: ["Je Ocean Live-code", `Je inlogcode voor Ocean Live is ${code}.\n\nHij werkt ${CODE_MINUTES} minuten. Heb je hem niet aangevraagd, dan kun je deze e-mail negeren.`],
-    fr: ["Votre code Ocean Live", `Votre code de connexion Ocean Live est ${code}.\n\nIl est valable ${CODE_MINUTES} minutes. Si vous ne l'avez pas demandé, ignorez cet e-mail.`],
-    es: ["Tu código de Ocean Live", `Tu código para entrar en Ocean Live es ${code}.\n\nSirve durante ${CODE_MINUTES} minutos. Si no lo has pedido, puedes ignorar este correo.`],
-  };
-  const [subject, body] = t[lang] ?? t.en;
-  return { subject, body };
 }
 
 // ── Identity token verification (RS256 JWTs) ────────────────────
