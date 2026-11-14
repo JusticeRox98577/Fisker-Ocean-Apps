@@ -14,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -84,6 +85,7 @@ import com.justicemw.oceanlive.car.Ask
 import com.justicemw.oceanlive.car.Car
 import com.justicemw.oceanlive.car.HistoryStore
 import com.justicemw.oceanlive.car.Status
+import com.justicemw.oceanlive.car.Tips
 import com.justicemw.oceanlive.ui.Aqua
 import com.justicemw.oceanlive.ui.AskScreen
 import com.justicemw.oceanlive.ui.BackgroundBrush
@@ -98,6 +100,8 @@ import com.justicemw.oceanlive.ui.LocalLandscape
 import com.justicemw.oceanlive.ui.OceanBrush
 import com.justicemw.oceanlive.ui.SettingsScreen
 import com.justicemw.oceanlive.ui.SignInScreen
+import com.justicemw.oceanlive.ui.SupportScreen
+import com.justicemw.oceanlive.ui.TipBanner
 import com.justicemw.oceanlive.ui.TripsScreen
 import com.justicemw.oceanlive.ui.V12Screen
 import com.justicemw.oceanlive.ui.V12Share
@@ -109,6 +113,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         Car.init(this)
         Accounts.init(this)
+        TipJar.init(this)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Aqua, background = Bg, surface = CardBg)) {
                 App(::keepScreenOn)
@@ -162,6 +167,11 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     val askChat by Ask.chat.collectAsState()
     val accountState by Accounts.state.collectAsState()
     val onAsk: (() -> Unit)? = if (Ask.enabled) ({ showAsk = true }) else null
+    // "Support Ocean Live" (tips) covers the tabs the same way.
+    var showSupport by rememberSaveable { mutableStateOf(false) }
+    val closeSupport = { showSupport = false; TipJar.clearMessages() }
+    BackHandler(enabled = showSupport) { closeSupport() }
+    val tips by TipJar.state.collectAsState()
 
     fun granted(p: String) = ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
     val pending = remember { arrayOfNulls<() -> Unit>(1) }
@@ -231,6 +241,12 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
             }
             return@BoxWithConstraints
         }
+        if (showSupport) {
+            Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
+                SupportScreen(tips, onBuy = { activity, id -> TipJar.buy(activity, id) }, onRetry = { TipJar.load() }, onBack = closeSupport)
+            }
+            return@BoxWithConstraints
+        }
         val wide = maxWidth > maxHeight
         val railLabels = maxHeight >= 320.dp
         CompositionLocalProvider(LocalLandscape provides wide) {
@@ -274,15 +290,25 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                                     .padding(bottom = if (livePanes) 4.dp else 24.dp),
                             ) {
                                 when (Tab.entries[current]) {
-                                    Tab.Live -> LiveScreen(
-                                        state, settings, history, parked, found, Car.bluetoothOn,
-                                        onScan = { withBluetooth { Car.scan() } },
-                                        onCancelScan = { Car.cancelScan() },
-                                        onConnect = { a -> withBluetooth { Car.connect(a.address, a.name) } },
-                                        onConnectSaved = { withBluetooth { Car.connectSaved() } },
-                                        onDisconnect = { Car.disconnect() },
-                                        onOpen12v = { show12v = true; tab = Tab.Battery.ordinal },
-                                    )
+                                    Tab.Live -> {
+                                        LiveScreen(
+                                            state, settings, history, parked, found, Car.bluetoothOn,
+                                            onScan = { withBluetooth { Car.scan() } },
+                                            onCancelScan = { Car.cancelScan() },
+                                            onConnect = { a -> withBluetooth { Car.connect(a.address, a.name) } },
+                                            onConnectSaved = { withBluetooth { Car.connectSaved() } },
+                                            onDisconnect = { Car.disconnect() },
+                                            onOpen12v = { show12v = true; tab = Tab.Battery.ordinal },
+                                        )
+                                        // The tip banner: phone in portrait only (landscape may be the car's screen),
+                                        // never while driving or charging, and only when Google Play has the tips.
+                                        val busy = state.status == Status.Scanning || state.status == Status.Connecting
+                                        AnimatedVisibility(
+                                            !wide && !busy && Tips.showBanner(System.currentTimeMillis(), tips.dates, state.mode, tips.availability == TipJar.Availability.Ready),
+                                        ) {
+                                            TipBanner(onSupport = { showSupport = true }, onClose = { TipJar.dismissBanner() })
+                                        }
+                                    }
                                     Tab.Battery -> AnimatedContent(
                                         targetState = show12v,
                                         transitionSpec = {
@@ -359,6 +385,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                                                 simpleLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
                                             }
                                         },
+                                        onSupport = { showSupport = true },
                                     )
                                 }
                             }

@@ -201,7 +201,7 @@
     <string name="settings_abrp_both">Le jeton et la clé API sont tous deux nécessaires pour envoyer à ABRP.</string>
     <string name="settings_abrp_every">Envoyer toutes les</string>
     <string name="settings_abrp_location">Inclure la position du téléphone</string>
-    <string name="settings_abrp_note">Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. À part les questions posées dans Des questions ?, c\'est la seule chose qu\'Ocean Live envoie sur Internet.</string>
+    <string name="settings_abrp_note">Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. À part les questions posées dans Des questions ? et les pourboires, qui passent par Google Play, c\'est la seule chose qu\'Ocean Live envoie sur Internet.</string>
     <string name="settings_advanced">Avancé</string>
     <string name="settings_flip_current">Inverser le signe du courant</string>
     <string name="settings_flip_note">À activer seulement si la charge apparaît comme une consommation sur votre voiture.</string>
@@ -630,4 +630,27 @@
     <string name="account_delete_title">Supprimer votre compte ?</string>
     <string name="account_delete_body">Cela supprime votre compte, vos informations de connexion et vos questions à l\'IA enregistrées. C\'est définitif. Les données de la voiture sur ce téléphone ne sont pas touchées.</string>
     <string name="ask_error_signin">Reconnectez-vous pour poser des questions.</string>
+    <string name="tips_section">Soutenir</string>
+    <string name="tips_title">Soutenir Ocean Live</string>
+    <string name="tips_settings_note">Laissez un pourboire. Tout reste gratuit.</string>
+    <string name="tips_body">Ocean Live est fait par un seul propriétaire sur son temps libre. Les pourboires aident à payer les questions à l\'IA et à faire vivre l\'app. Un pourboire ne débloque rien ; tout reste gratuit.</string>
+    <string name="tips_small">Petit pourboire</string>
+    <string name="tips_medium">Pourboire moyen</string>
+    <string name="tips_large">Grand pourboire</string>
+    <string name="tips_loading">Chargement des pourboires…</string>
+    <string name="tips_unavailable">Les pourboires sont disponibles dans la version Google Play d\'Ocean Live.</string>
+    <string name="tips_unavailable_now">Les pourboires ne sont pas disponibles pour le moment.</string>
+    <string name="tips_load_failed">Impossible de charger les pourboires depuis Google Play. Vérifiez votre connexion et réessayez.</string>
+    <string name="tips_retry">Réessayer</string>
+    <string name="tips_pending">Votre pourboire est en attente. Il sera finalisé dès que Google Play confirmera le paiement.</string>
+    <string name="tips_error_purchase">Le pourboire n\'est pas passé. Veuillez réessayer.</string>
+    <string name="tips_error_owned">Un pourboire précédent est encore en cours de finalisation. Réessayez dans un instant.</string>
+    <string name="tips_error_finish">Votre pourboire n\'a pas encore pu être finalisé. Ocean Live le finalisera la prochaine fois que vous ouvrirez cet écran ou l\'app.</string>
+    <string name="tips_thanks_title">Merci !</string>
+    <string name="tips_thanks_body">Votre pourboire aide à faire vivre Ocean Live.</string>
+    <string name="tips_done">Terminé</string>
+    <string name="tips_store_note">Les paiements sont gérés par Google Play. Ocean Live ne voit jamais vos informations de paiement.</string>
+    <string name="tips_banner_text">Vous aimez Ocean Live ? Soutenez-le avec un pourboire</string>
+    <string name="tips_banner_support">Soutenir</string>
+    <string name="tips_banner_close">Masquer la suggestion de pourboire</string>
 </resources>

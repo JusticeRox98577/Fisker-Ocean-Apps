@@ -205,7 +205,7 @@
     <string name="settings_abrp_both">Both the token and the API key are needed to send to ABRP.</string>
     <string name="settings_abrp_every">Send every</string>
     <string name="settings_abrp_location">Include phone location</string>
-    <string name="settings_abrp_note">Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from questions you ask in Any questions?, this is the only thing Ocean Live sends over the internet.</string>
+    <string name="settings_abrp_note">Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from questions you ask in Any questions? and tips, which go through Google Play, this is the only thing Ocean Live sends over the internet.</string>
     <string name="settings_advanced">Advanced</string>
     <string name="settings_flip_current">Flip current sign</string>
     <string name="settings_flip_note">Turn on only if charging shows as using power on your car.</string>
@@ -618,4 +618,27 @@
     <string name="account_delete_title">Delete your account?</string>
     <string name="account_delete_body">This deletes your account, your sign-in details and your logged AI questions. It can\'t be undone. Car data on this phone isn\'t affected.</string>
     <string name="ask_error_signin">Sign in again to ask questions.</string>
+    <string name="tips_section">Support</string>
+    <string name="tips_title">Support Ocean Live</string>
+    <string name="tips_settings_note">Leave a tip. Everything stays free.</string>
+    <string name="tips_body">Ocean Live is made by one owner in spare time. Tips help pay for the AI questions and keep the app going. A tip unlocks nothing; everything stays free.</string>
+    <string name="tips_small">Small tip</string>
+    <string name="tips_medium">Medium tip</string>
+    <string name="tips_large">Large tip</string>
+    <string name="tips_loading">Loading tips…</string>
+    <string name="tips_unavailable">Tips are available in the Google Play version of Ocean Live.</string>
+    <string name="tips_unavailable_now">Tips aren\'t available right now.</string>
+    <string name="tips_load_failed">Couldn\'t load the tips from Google Play. Check your connection and try again.</string>
+    <string name="tips_retry">Try again</string>
+    <string name="tips_pending">Your tip is pending. It finishes once Google Play confirms the payment.</string>
+    <string name="tips_error_purchase">The tip didn\'t go through. Please try again.</string>
+    <string name="tips_error_owned">An earlier tip is still being finished. Try again in a moment.</string>
+    <string name="tips_error_finish">Your tip couldn\'t be finished yet. Ocean Live finishes it the next time you open this screen or the app.</string>
+    <string name="tips_thanks_title">Thank you!</string>
+    <string name="tips_thanks_body">Your tip helps keep Ocean Live going.</string>
+    <string name="tips_done">Done</string>
+    <string name="tips_store_note">Payments are handled by Google Play. Ocean Live never sees your payment details.</string>
+    <string name="tips_banner_text">Enjoying Ocean Live? Support it with a tip</string>
+    <string name="tips_banner_support">Support</string>
+    <string name="tips_banner_close">Hide tip suggestion</string>
 </resources>

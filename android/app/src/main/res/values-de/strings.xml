@@ -201,7 +201,7 @@
     <string name="settings_abrp_both">Zum Senden an ABRP werden Token und API-Schlüssel gebraucht.</string>
     <string name="settings_abrp_every">Senden alle</string>
     <string name="settings_abrp_location">Standort des Handys mitsenden</string>
-    <string name="settings_abrp_note">Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von Fragen, die du unter Fragen? stellst, ist das das Einzige, was Ocean Live über das Internet sendet.</string>
+    <string name="settings_abrp_note">Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von Fragen, die du unter Fragen? stellst, und Trinkgeldern, die über Google Play laufen, ist das das Einzige, was Ocean Live über das Internet sendet.</string>
     <string name="settings_advanced">Erweitert</string>
     <string name="settings_flip_current">Stromvorzeichen umkehren</string>
     <string name="settings_flip_note">Nur einschalten, wenn Laden bei deinem Auto als Verbrauch angezeigt wird.</string>
@@ -611,4 +611,27 @@
     <string name="account_delete_title">Konto löschen?</string>
     <string name="account_delete_body">Dadurch werden dein Konto, deine Anmeldedaten und deine gespeicherten KI-Fragen gelöscht. Das lässt sich nicht rückgängig machen. Fahrzeugdaten auf diesem Handy sind nicht betroffen.</string>
     <string name="ask_error_signin">Melde dich erneut an, um Fragen zu stellen.</string>
+    <string name="tips_section">Unterstützen</string>
+    <string name="tips_title">Ocean Live unterstützen</string>
+    <string name="tips_settings_note">Gib ein Trinkgeld. Alles bleibt kostenlos.</string>
+    <string name="tips_body">Ocean Live wird von einem einzelnen Besitzer in seiner Freizeit gemacht. Trinkgelder helfen, die KI-Fragen zu bezahlen und die App am Laufen zu halten. Ein Trinkgeld schaltet nichts frei; alles bleibt kostenlos.</string>
+    <string name="tips_small">Kleines Trinkgeld</string>
+    <string name="tips_medium">Mittleres Trinkgeld</string>
+    <string name="tips_large">Großes Trinkgeld</string>
+    <string name="tips_loading">Trinkgelder werden geladen…</string>
+    <string name="tips_unavailable">Trinkgelder gibt es in der Google-Play-Version von Ocean Live.</string>
+    <string name="tips_unavailable_now">Trinkgelder sind gerade nicht verfügbar.</string>
+    <string name="tips_load_failed">Die Trinkgelder konnten nicht von Google Play geladen werden. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="tips_retry">Erneut versuchen</string>
+    <string name="tips_pending">Dein Trinkgeld ist ausstehend. Es wird abgeschlossen, sobald Google Play die Zahlung bestätigt.</string>
+    <string name="tips_error_purchase">Das Trinkgeld hat nicht geklappt. Bitte versuche es erneut.</string>
+    <string name="tips_error_owned">Ein früheres Trinkgeld wird noch abgeschlossen. Versuche es gleich noch einmal.</string>
+    <string name="tips_error_finish">Dein Trinkgeld konnte noch nicht abgeschlossen werden. Ocean Live schließt es ab, wenn du diese Seite oder die App das nächste Mal öffnest.</string>
+    <string name="tips_thanks_title">Danke!</string>
+    <string name="tips_thanks_body">Dein Trinkgeld hilft, Ocean Live am Laufen zu halten.</string>
+    <string name="tips_done">Fertig</string>
+    <string name="tips_store_note">Zahlungen laufen über Google Play. Ocean Live sieht deine Zahlungsdaten nie.</string>
+    <string name="tips_banner_text">Gefällt dir Ocean Live? Unterstütze es mit einem Trinkgeld</string>
+    <string name="tips_banner_support">Unterstützen</string>
+    <string name="tips_banner_close">Trinkgeld-Hinweis ausblenden</string>
 </resources>

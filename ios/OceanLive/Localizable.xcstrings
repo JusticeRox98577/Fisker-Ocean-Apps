@@ -4403,6 +4403,62 @@
         }
       }
     },
+    "Couldn't load the tips. Check your connection and try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Trinkgelder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron cargar las propinas. Comprueba tu conexión e inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de charger les pourboires. Vérifiez votre connexion et réessayez."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kan de fooien niet laden. Controleer je verbinding en probeer het opnieuw."
+          }
+        }
+      }
+    },
+    "Couldn't reach the App Store. Check your connection and try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der App Store ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo conectar con el App Store. Comprueba tu conexión e inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de joindre l'App Store. Vérifiez votre connexion et réessayez."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kan de App Store niet bereiken. Controleer je verbinding en probeer het opnieuw."
+          }
+        }
+      }
+    },
     "Couldn't reach the questions service. Try again in a moment.": {
       "localizations": {
         "de": {
@@ -5215,6 +5271,34 @@
         }
       }
     },
+    "Enjoying Ocean Live? Support it with a tip": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gefällt dir Ocean Live? Unterstütze es mit einem Trinkgeld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Te gusta Ocean Live? Apóyalo con una propina"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous aimez Ocean Live ? Soutenez-le avec un pourboire"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blij met Ocean Live? Steun het met een fooi"
+          }
+        }
+      }
+    },
     "Enter a valid email address.": {
       "localizations": {
         "de": {
@@ -5763,6 +5847,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verbergen"
+          }
+        }
+      }
+    },
+    "Hide tip suggestion": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trinkgeld-Hinweis ausblenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar la sugerencia de propina"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer la suggestion de pourboire"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fooitip verbergen"
           }
         }
       }
@@ -6449,6 +6561,34 @@
         }
       }
     },
+    "Large tip": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Großes Trinkgeld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Propina grande"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gros pourboire"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grote fooi"
+          }
+        }
+      }
+    },
     "Last charged by the car": {
       "localizations": {
         "de": {
@@ -6673,30 +6813,58 @@
         }
       }
     },
-    "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from signing in to your Ocean Live account and questions you ask in Any questions?, this is the only thing Ocean Live sends over the internet.": {
+    "Leave a tip. It unlocks nothing; everything stays free.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von der Anmeldung bei deinem Ocean-Live-Konto und Fragen, die du unter Fragen? stellst, ist das das Einzige, was Ocean Live über das Internet sendet."
+            "value": "Gib ein Trinkgeld. Es schaltet nichts frei; alles bleibt kostenlos."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de iniciar sesión en tu cuenta de Ocean Live y las preguntas que hagas en ¿Preguntas?, es lo único que Ocean Live envía por internet."
+            "value": "Deja una propina. No desbloquea nada; todo sigue siendo gratis."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. À part la connexion à votre compte Ocean Live et les questions posées dans Des questions ?, c'est la seule chose qu'Ocean Live envoie sur Internet."
+            "value": "Laissez un pourboire. Il ne débloque rien ; tout reste gratuit."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve het inloggen op je Ocean Live-account en vragen die je stelt bij Vragen? is dit het enige dat Ocean Live via internet verstuurt."
+            "value": "Geef een fooi. Die ontgrendelt niets; alles blijft gratis."
+          }
+        }
+      }
+    },
+    "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from signing in to your Ocean Live account, questions you ask in Any questions? and tips, which go through the App Store, this is the only thing Ocean Live sends over the internet.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von der Anmeldung bei deinem Ocean-Live-Konto, Fragen, die du unter Fragen? stellst, und Trinkgeldern, die über den App Store laufen, ist das das Einzige, was Ocean Live über das Internet sendet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de iniciar sesión en tu cuenta de Ocean Live, las preguntas que hagas en ¿Preguntas? y las propinas, que pasan por el App Store, es lo único que Ocean Live envía por internet."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. À part la connexion à votre compte Ocean Live, les questions posées dans Des questions ? et les pourboires, qui passent par l'App Store, c'est la seule chose qu'Ocean Live envoie sur Internet."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve het inloggen op je Ocean Live-account, vragen die je stelt bij Vragen? en fooien, die via de App Store gaan, is dit het enige dat Ocean Live via internet verstuurt."
           }
         }
       }
@@ -6753,6 +6921,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Live-metingen van"
+          }
+        }
+      }
+    },
+    "Loading tips…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trinkgelder werden geladen…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando propinas…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chargement des pourboires…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fooien laden…"
           }
         }
       }
@@ -7033,6 +7229,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gemeten bruikbaar"
+          }
+        }
+      }
+    },
+    "Medium tip": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mittleres Trinkgeld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Propina mediana"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pourboire moyen"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Middelgrote fooi"
           }
         }
       }
@@ -8185,6 +8409,34 @@
         }
       }
     },
+    "Ocean Live is made by one owner in spare time. Tips help pay for the AI questions and keep the app going. A tip unlocks nothing; everything stays free.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live wird von einem einzelnen Besitzer in seiner Freizeit gemacht. Trinkgelder helfen, die KI-Fragen zu bezahlen und die App am Laufen zu halten. Ein Trinkgeld schaltet nichts frei; alles bleibt kostenlos."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live lo hace un solo propietario en su tiempo libre. Las propinas ayudan a pagar las preguntas a la IA y a mantener la app. Una propina no desbloquea nada; todo sigue siendo gratis."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live est fait par un seul propriétaire sur son temps libre. Les pourboires aident à payer les questions à l'IA et à faire vivre l'app. Un pourboire ne débloque rien ; tout reste gratuit."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live wordt door één eigenaar in zijn vrije tijd gemaakt. Fooien helpen de AI-vragen te betalen en de app draaiende te houden. Een fooi ontgrendelt niets; alles blijft gratis."
+          }
+        }
+      }
+    },
     "Ocean Live saves the 12V every time it reads the car. Nothing extra is asked of the car for it.": {
       "localizations": {
         "de": {
@@ -8969,6 +9221,34 @@
         }
       }
     },
+    "Prices are set by the App Store in your currency. Payment goes through Apple.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Preise legt der App Store in deiner Währung fest. Die Zahlung läuft über Apple."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los precios los fija el App Store en tu moneda. El pago se hace a través de Apple."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les prix sont fixés par l'App Store dans votre devise. Le paiement passe par Apple."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prijzen worden door de App Store in jouw valuta bepaald. De betaling loopt via Apple."
+          }
+        }
+      }
+    },
     "Privacy policy": {
       "localizations": {
         "de": {
@@ -8997,6 +9277,34 @@
         }
       }
     },
+    "Processing…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird verarbeitet…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Procesando…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traitement…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezig…"
+          }
+        }
+      }
+    },
     "Published usable capacity: 106.5 kWh for One, Extreme and Ultra, about 75 kWh for the Sport. Used for range and charge-time estimates.": {
       "localizations": {
         "de": {
@@ -9021,6 +9329,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gepubliceerde bruikbare capaciteit: 106,5 kWh voor One, Extreme en Ultra, ongeveer 75 kWh voor de Sport. Gebruikt voor schattingen van bereik en laadtijd."
+          }
+        }
+      }
+    },
+    "Purchases are turned off on this iPhone. You can allow them in Screen Time settings.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Käufe sind auf diesem iPhone deaktiviert. Du kannst sie in den Bildschirmzeit-Einstellungen erlauben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las compras están desactivadas en este iPhone. Puedes permitirlas en los ajustes de Tiempo de uso."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les achats sont désactivés sur cet iPhone. Vous pouvez les autoriser dans les réglages de Temps d'écran."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aankopen staan uit op deze iPhone. Je kunt ze toestaan in de instellingen van Schermtijd."
           }
         }
       }
@@ -10649,6 +10985,34 @@
         }
       }
     },
+    "Small tip": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleines Trinkgeld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Propina pequeña"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petit pourboire"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleine fooi"
+          }
+        }
+      }
+    },
     "Software": {
       "localizations": {
         "de": {
@@ -11097,6 +11461,62 @@
         }
       }
     },
+    "Support": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterstützen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apoyar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soutenir"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Steunen"
+          }
+        }
+      }
+    },
+    "Support Ocean Live": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live unterstützen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apoyar Ocean Live"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soutenir Ocean Live"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean Live steunen"
+          }
+        }
+      }
+    },
     "Tap for causes and fixes": {
       "localizations": {
         "de": {
@@ -11181,6 +11601,34 @@
         }
       }
     },
+    "Thank you!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danke!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Gracias!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merci !"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bedankt!"
+          }
+        }
+      }
+    },
     "That code has expired. Send a new one.": {
       "localizations": {
         "de": {
@@ -11261,6 +11709,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dat waren alle vragen voor vandaag. Probeer het morgen opnieuw."
+          }
+        }
+      }
+    },
+    "The App Store couldn't confirm this tip. Please try again later.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der App Store konnte dieses Trinkgeld nicht bestätigen. Bitte versuche es später erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El App Store no pudo confirmar esta propina. Inténtalo de nuevo más tarde."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'App Store n'a pas pu confirmer ce pourboire. Veuillez réessayer plus tard."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De App Store kon deze fooi niet bevestigen. Probeer het later opnieuw."
           }
         }
       }
@@ -11657,6 +12133,34 @@
         }
       }
     },
+    "The tip didn't go through. Please try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Trinkgeld ist nicht durchgegangen. Bitte versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La propina no se completó. Inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le pourboire n'est pas passé. Veuillez réessayer."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De fooi is niet gelukt. Probeer het opnieuw."
+          }
+        }
+      }
+    },
     "These were there on %@ and are gone now.": {
       "localizations": {
         "de": {
@@ -12017,6 +12521,90 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gemeten tijd"
+          }
+        }
+      }
+    },
+    "Tip": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trinkgeld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Propina"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pourboire"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fooi"
+          }
+        }
+      }
+    },
+    "Tips aren't available in your App Store country.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trinkgelder sind im App Store deines Landes nicht verfügbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las propinas no están disponibles en el App Store de tu país."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les pourboires ne sont pas disponibles dans l'App Store de votre pays."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fooien zijn niet beschikbaar in de App Store van jouw land."
+          }
+        }
+      }
+    },
+    "Tips aren't available right now.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trinkgelder sind gerade nicht verfügbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las propinas no están disponibles ahora mismo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les pourboires ne sont pas disponibles pour le moment."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fooien zijn nu niet beschikbaar."
           }
         }
       }
@@ -12815,6 +13403,34 @@
         }
       }
     },
+    "Waiting for approval. Once it's approved, the tip goes through on its own.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wartet auf Bestätigung. Sobald sie erteilt ist, geht das Trinkgeld von selbst durch."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando aprobación. Cuando se apruebe, la propina se completará sola."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente d'approbation. Une fois approuvé, le pourboire passera tout seul."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wacht op goedkeuring. Zodra die er is, gaat de fooi vanzelf door."
+          }
+        }
+      }
+    },
     "Warm battery: the car may limit fast-charging power to cool it.": {
       "localizations": {
         "de": {
@@ -13259,6 +13875,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Je laatste waarden en foutcodes gaan mee met elke vraag, nooit je VIN of locatie. Vragen maakt de auto nooit wakker."
+          }
+        }
+      }
+    },
+    "Your tip helps keep Ocean Live going.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Trinkgeld hilft, Ocean Live am Laufen zu halten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu propina ayuda a mantener Ocean Live."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre pourboire aide à faire vivre Ocean Live."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je fooi helpt Ocean Live draaiende te houden."
           }
         }
       }

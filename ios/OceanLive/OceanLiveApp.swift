@@ -7,6 +7,8 @@ struct OceanLiveApp: App {
     init() {
         // Must be registered before launch finishes. Only ever asks the adapter for the 12V.
         V12Background.register()
+        // Finishes tips the App Store hands over outside the Support screen (Ask to Buy, interrupted purchases).
+        MainActor.assumeIsolated { Tips.shared.start() }
     }
 
     var body: some Scene {

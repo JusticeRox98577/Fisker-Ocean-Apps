@@ -201,7 +201,7 @@
     <string name="settings_abrp_both">Om naar ABRP te sturen zijn zowel de token als de API-sleutel nodig.</string>
     <string name="settings_abrp_every">Versturen elke</string>
     <string name="settings_abrp_location">Locatie van de telefoon meesturen</string>
-    <string name="settings_abrp_note">Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve vragen die je stelt bij Vragen? is dit het enige dat Ocean Live via internet verstuurt.</string>
+    <string name="settings_abrp_note">Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve vragen die je stelt bij Vragen? en fooien, die via Google Play gaan, is dit het enige dat Ocean Live via internet verstuurt.</string>
     <string name="settings_advanced">Geavanceerd</string>
     <string name="settings_flip_current">Teken van stroom omdraaien</string>
     <string name="settings_flip_note">Alleen aanzetten als laden bij jouw auto als verbruik wordt getoond.</string>
@@ -611,4 +611,27 @@
     <string name="account_delete_title">Account verwijderen?</string>
     <string name="account_delete_body">Hiermee worden je account, je inloggegevens en je bewaarde AI-vragen verwijderd. Dit kan niet ongedaan worden gemaakt. Autogegevens op deze telefoon blijven staan.</string>
     <string name="ask_error_signin">Log opnieuw in om vragen te stellen.</string>
+    <string name="tips_section">Steunen</string>
+    <string name="tips_title">Ocean Live steunen</string>
+    <string name="tips_settings_note">Geef een fooi. Alles blijft gratis.</string>
+    <string name="tips_body">Ocean Live wordt gemaakt door één eigenaar in zijn vrije tijd. Fooien helpen de AI-vragen te betalen en de app draaiende te houden. Een fooi ontgrendelt niets; alles blijft gratis.</string>
+    <string name="tips_small">Kleine fooi</string>
+    <string name="tips_medium">Middelgrote fooi</string>
+    <string name="tips_large">Grote fooi</string>
+    <string name="tips_loading">Fooien laden…</string>
+    <string name="tips_unavailable">Fooien zijn beschikbaar in de Google Play-versie van Ocean Live.</string>
+    <string name="tips_unavailable_now">Fooien zijn nu niet beschikbaar.</string>
+    <string name="tips_load_failed">Kon de fooien niet laden van Google Play. Controleer je verbinding en probeer het opnieuw.</string>
+    <string name="tips_retry">Opnieuw proberen</string>
+    <string name="tips_pending">Je fooi is in behandeling. Hij wordt afgerond zodra Google Play de betaling bevestigt.</string>
+    <string name="tips_error_purchase">De fooi is niet gelukt. Probeer het opnieuw.</string>
+    <string name="tips_error_owned">Een eerdere fooi wordt nog afgerond. Probeer het zo opnieuw.</string>
+    <string name="tips_error_finish">Je fooi kon nog niet worden afgerond. Ocean Live rondt hem af de volgende keer dat je dit scherm of de app opent.</string>
+    <string name="tips_thanks_title">Bedankt!</string>
+    <string name="tips_thanks_body">Je fooi helpt Ocean Live draaiende te houden.</string>
+    <string name="tips_done">Klaar</string>
+    <string name="tips_store_note">Betalingen lopen via Google Play. Ocean Live ziet je betaalgegevens nooit.</string>
+    <string name="tips_banner_text">Bevalt Ocean Live? Steun het met een fooi</string>
+    <string name="tips_banner_support">Steunen</string>
+    <string name="tips_banner_close">Fooitip verbergen</string>
 </resources>

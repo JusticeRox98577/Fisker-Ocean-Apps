@@ -21,6 +21,10 @@ targets:
     sources:
       - OceanLive
       - Shared
+      # Local tip products for trying the Support screen from Xcode (Run uses it, see the scheme below).
+      # Only a file reference: never copied into the app. TestFlight and the App Store use the real products.
+      - path: StoreKit/Tips.storekit
+        buildPhase: none
     dependencies:
       - target: OceanLiveWidgets
       # Copied into OceanLive.app/Watch.
@@ -159,6 +163,9 @@ schemes:
     build:
       targets:
         OceanLive: all
+    run:
+      # Xcode's local StoreKit testing for the tips; archives and TestFlight builds ignore it.
+      storeKitConfiguration: StoreKit/Tips.storekit
     test:
       targets:
         - OceanLiveTests

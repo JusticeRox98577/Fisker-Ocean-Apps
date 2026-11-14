@@ -82,6 +82,9 @@ dependencies {
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    // Tips through Google Play Billing (one-time consumables). The plain Java artifact, not billing-ktx:
+    // billing-ktx 8+/9 pulls kotlin-stdlib 2.2, which this project's Kotlin 2.0 compiler can't read.
+    implementation("com.android.billingclient:billing:9.1.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }

@@ -30,6 +30,9 @@ struct LiveView: View {
             default:
                 if !showDash || state.status == .error || state.stopped != nil { StartCard() }
                 if showDash { Dashboard(showV12: $showV12) }
+                // Only on the phone's Live screen in portrait (landscape is often the phone mounted as the
+                // car's screen, same rule as Android); hidden while driving or charging (see TipBanner).
+                TipBannerCard()
             }
         }
     }
@@ -371,6 +374,7 @@ private struct LandscapeLive: View {
                                 if showDash {
                                     LandscapeDashboard(width: rightWidth, compact: geo.size.height < 420, showV12: $showV12)
                                 }
+                                // No tip card here: landscape may be the car's screen (see TipBannerCard).
                             }
                         }
                         .padding(.bottom, 16)

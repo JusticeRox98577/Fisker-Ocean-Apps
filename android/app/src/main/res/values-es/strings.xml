@@ -201,7 +201,7 @@
     <string name="settings_abrp_both">Para enviar a ABRP hacen falta el token y la clave API.</string>
     <string name="settings_abrp_every">Enviar cada</string>
     <string name="settings_abrp_location">Incluir la ubicación del móvil</string>
-    <string name="settings_abrp_note">Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de las preguntas que hagas en ¿Preguntas?, es lo único que Ocean Live envía por internet.</string>
+    <string name="settings_abrp_note">Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de las preguntas que hagas en ¿Preguntas? y las propinas, que pasan por Google Play, es lo único que Ocean Live envía por internet.</string>
     <string name="settings_advanced">Avanzado</string>
     <string name="settings_flip_current">Invertir el signo de la corriente</string>
     <string name="settings_flip_note">Actívalo solo si en tu coche la carga aparece como consumo.</string>
@@ -630,4 +630,27 @@
     <string name="account_delete_title">¿Eliminar tu cuenta?</string>
     <string name="account_delete_body">Se eliminarán tu cuenta, tus datos de inicio de sesión y tus preguntas a la IA guardadas. No se puede deshacer. Los datos del coche en este móvil no se tocan.</string>
     <string name="ask_error_signin">Vuelve a iniciar sesión para hacer preguntas.</string>
+    <string name="tips_section">Apoyar</string>
+    <string name="tips_title">Apoya Ocean Live</string>
+    <string name="tips_settings_note">Deja una propina. Todo sigue siendo gratis.</string>
+    <string name="tips_body">Ocean Live lo hace un solo propietario en su tiempo libre. Las propinas ayudan a pagar las preguntas a la IA y a mantener la app. Una propina no desbloquea nada; todo sigue siendo gratis.</string>
+    <string name="tips_small">Propina pequeña</string>
+    <string name="tips_medium">Propina mediana</string>
+    <string name="tips_large">Propina grande</string>
+    <string name="tips_loading">Cargando propinas…</string>
+    <string name="tips_unavailable">Las propinas están disponibles en la versión de Ocean Live de Google Play.</string>
+    <string name="tips_unavailable_now">Las propinas no están disponibles ahora mismo.</string>
+    <string name="tips_load_failed">No se pudieron cargar las propinas desde Google Play. Comprueba tu conexión y vuelve a intentarlo.</string>
+    <string name="tips_retry">Reintentar</string>
+    <string name="tips_pending">Tu propina está pendiente. Se completará cuando Google Play confirme el pago.</string>
+    <string name="tips_error_purchase">La propina no se completó. Vuelve a intentarlo.</string>
+    <string name="tips_error_owned">Todavía se está completando una propina anterior. Inténtalo de nuevo en un momento.</string>
+    <string name="tips_error_finish">Tu propina aún no se pudo completar. Ocean Live la completará la próxima vez que abras esta pantalla o la app.</string>
+    <string name="tips_thanks_title">¡Gracias!</string>
+    <string name="tips_thanks_body">Tu propina ayuda a mantener Ocean Live.</string>
+    <string name="tips_done">Listo</string>
+    <string name="tips_store_note">Los pagos los gestiona Google Play. Ocean Live nunca ve tus datos de pago.</string>
+    <string name="tips_banner_text">¿Te gusta Ocean Live? Apóyalo con una propina</string>
+    <string name="tips_banner_support">Apoyar</string>
+    <string name="tips_banner_close">Ocultar la sugerencia de propina</string>
 </resources>
