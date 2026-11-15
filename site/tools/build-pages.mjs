@@ -210,7 +210,7 @@ ${docHero("Account", "Delete your Ocean Live account", "How to delete your accou
   <div class="wrap narrow">
     <div class="sheet">
     <div class="callout">
-      <p>Version 3.4 has no account. From the next version, Ocean Live asks you to sign in once, with no password: with Google or a 6-digit email code, and on iPhone also with Sign in with Apple. The account keeps your "Any questions?" questions secure and tied to you, so you keep them when you change phones. Your car data never goes to your account: it stays on your phone.</p>
+      <p>From version 3.4, Ocean Live asks you to sign in once, with no password: with Google or a 6-digit email code, and on iPhone also with Sign in with Apple. The account keeps your "Any questions?" questions secure and tied to you, so you keep them when you change phones. Your car data never goes to your account: it stays on your phone.</p>
     </div>
 
     <h2 id="in-app">Delete it in the app</h2>
@@ -249,6 +249,56 @@ ${docHero("Account", "Delete your Ocean Live account", "How to delete your accou
 
     <h2 id="questions-only">Only delete my logged questions</h2>
     <p>To have your logged questions deleted without deleting an account, or to ask what is held, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> with your install ID from "Show what's sent" (or open an issue on GitHub; issues are public). They are deleted within 30 days. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
+    </div>
+  </div>
+</article>`,
+});
+
+// ── Pre-registration reward terms (the Google Play pre-registration rewards URL) ──
+page({
+  file: "preregistration-terms.html",
+  title: "Pre-registration reward terms · Ocean Live",
+  description: "Terms for the Ocean Live pre-registration reward: $5 of Ocean Live credit and an Early supporter badge.",
+  canonical: "https://oceanlive.org/preregistration-terms",
+  body: `
+${docHero("Reward", "Pre-registration reward terms", "What you get for pre-registering for Ocean Live, and how it works.")}
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+    <h2 id="reward">The reward</h2>
+    <p>If you pre-register for Ocean Live on Google Play before it is released there, you get:</p>
+    <ul>
+      <li><strong>US$5 of Ocean Live credit</strong> on your Ocean Live account</li>
+      <li>An <strong>Early supporter badge</strong> on your account, shown in the app</li>
+    </ul>
+
+    <h2 id="claim">How to get it</h2>
+    <ol>
+      <li>Pre-register on the Ocean Live page on Google Play while pre-registration is open.</li>
+      <li>Install Ocean Live from Google Play with the same Google account you pre-registered with.</li>
+      <li>Open the app and sign in to your Ocean Live account. The reward is added to the account you're signed in to.</li>
+    </ol>
+    <p>Google Play hands the reward to the app when you install it. If you sign in later, it's added the first time you open the app signed in. Claim it within 12 months after Ocean Live is released on Google Play.</p>
+
+    <h2 id="credit">Using the credit</h2>
+    <ul>
+      <li>You can spend it on extra "Any questions?" questions beyond the free daily ones, and on Ocean Live add-ons when they're available.</li>
+      <li>Credit is used before any other payment.</li>
+      <li>It has no cash value. It can't be exchanged for money, refunded, sold or moved to another account.</li>
+      <li>It doesn't expire while Ocean Live offers things to spend it on. If Ocean Live ever stops offering paid features, unused credit ends with them, and we'll say so in the app first.</li>
+    </ul>
+
+    <h2 id="limits">Limits</h2>
+    <ul>
+      <li>One reward per Google account and one per Ocean Live account.</li>
+      <li>The badge stays on your account until you delete the account. Deleting the account also deletes any unused credit.</li>
+      <li>Rewards obtained by abuse (for example, many accounts made to collect credit) may be removed.</li>
+      <li>Pre-registration closes when Ocean Live is released on Google Play. Pre-registering doesn't oblige you to install anything, and Google can't charge you for it.</li>
+    </ul>
+
+    <h2 id="who">Who runs this</h2>
+    <p>Ocean Live is an independent app made by an Ocean owner. Google is not a sponsor of this reward and is not responsible for it. Questions: <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a>. These terms are governed by the laws of the State of Washington, USA, except where the law where you live gives you rights that can't be waived.</p>
     </div>
   </div>
 </article>`,
