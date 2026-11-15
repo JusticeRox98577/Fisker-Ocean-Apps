@@ -2275,6 +2275,34 @@
         }
       }
     },
+    "Balance": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guthaben"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saldo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solde"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tegoed"
+          }
+        }
+      }
+    },
     "Battery": {
       "localizations": {
         "de": {
@@ -5103,6 +5131,34 @@
         }
       }
     },
+    "Early supporter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Früher Unterstützer"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguidor pionero"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soutien de la première heure"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vroege supporter"
+          }
+        }
+      }
+    },
     "Efficiency": {
       "localizations": {
         "de": {
@@ -5735,6 +5791,34 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Further questions today use your balance (%@)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weitere Fragen heute werden von deinem Guthaben bezahlt (%@)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las demás preguntas de hoy se pagan con tu saldo (%@)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les autres questions du jour sont payées avec votre solde (%@)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verdere vragen vandaag gaan van je tegoed af (%@)"
           }
         }
       }
@@ -8801,6 +8885,62 @@
         }
       }
     },
+    "Paid from your balance: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von deinem Guthaben bezahlt: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagado con tu saldo: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payé avec votre solde : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betaald van je tegoed: %@"
+          }
+        }
+      }
+    },
+    "Paid from your balance: %@ · %@ left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von deinem Guthaben bezahlt: %1$@ · %2$@ übrig"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagado con tu saldo: %1$@ · quedan %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payé avec votre solde : %1$@ · reste %2$@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betaald van je tegoed: %1$@ · nog %2$@ over"
+          }
+        }
+      }
+    },
     "Parked": {
       "localizations": {
         "de": {
@@ -8993,6 +9133,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eerdere scans"
+          }
+        }
+      }
+    },
+    "Pays for AI questions beyond the free ones each day, and for future add-ons.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezahlt KI-Fragen über die kostenlosen pro Tag hinaus und künftige Extras."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paga las preguntas a la IA que superen las gratuitas de cada día y futuros complementos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paie les questions à l'IA au-delà des questions gratuites du jour, et les futurs modules."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betaalt AI-vragen boven de gratis vragen per dag, en toekomstige extra's."
           }
         }
       }
@@ -11629,6 +11797,34 @@
         }
       }
     },
+    "Thanks for supporting Ocean Live from the start.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danke, dass du Ocean Live von Anfang an unterstützt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gracias por apoyar Ocean Live desde el principio."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merci de soutenir Ocean Live depuis le début."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bedankt dat je Ocean Live vanaf het begin steunt."
+          }
+        }
+      }
+    },
     "That code has expired. Send a new one.": {
       "localizations": {
         "de": {
@@ -12273,30 +12469,30 @@
         }
       }
     },
-    "This deletes your account, your sign-in details and your logged AI questions. It can't be undone. Car data on this phone isn't affected.": {
+    "This deletes your account, your sign-in details, your balance and badges, and your logged AI questions. Any balance left is lost. It can't be undone. Car data on this phone isn't affected.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dadurch werden dein Konto, deine Anmeldedaten und deine gespeicherten KI-Fragen gelöscht. Das lässt sich nicht rückgängig machen. Fahrzeugdaten auf diesem Handy sind nicht betroffen."
+            "value": "Dadurch werden dein Konto, deine Anmeldedaten, dein Guthaben und deine Abzeichen sowie deine gespeicherten KI-Fragen gelöscht. Restliches Guthaben verfällt. Das lässt sich nicht rückgängig machen. Fahrzeugdaten auf diesem Handy sind nicht betroffen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se eliminarán tu cuenta, tus datos de inicio de sesión y tus preguntas a la IA guardadas. No se puede deshacer. Los datos del coche en este móvil no se tocan."
+            "value": "Se eliminarán tu cuenta, tus datos de inicio de sesión, tu saldo e insignias y tus preguntas a la IA guardadas. El saldo que quede se pierde. No se puede deshacer. Los datos del coche en este móvil no se tocan."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cela supprime votre compte, vos informations de connexion et vos questions à l'IA enregistrées. C'est définitif. Les données de la voiture sur ce téléphone ne sont pas touchées."
+            "value": "Cela supprime votre compte, vos informations de connexion, votre solde et vos badges, ainsi que vos questions à l'IA enregistrées. Le solde restant est perdu. C'est définitif. Les données de la voiture sur ce téléphone ne sont pas touchées."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hiermee worden je account, je inloggegevens en je bewaarde AI-vragen verwijderd. Dit kan niet ongedaan worden gemaakt. Autogegevens op deze telefoon blijven staan."
+            "value": "Hiermee worden je account, je inloggegevens, je tegoed en badges en je bewaarde AI-vragen verwijderd. Resterend tegoed vervalt. Dit kan niet ongedaan worden gemaakt. Autogegevens op deze telefoon blijven staan."
           }
         }
       }
@@ -13819,6 +14015,62 @@
           "stringUnit": {
             "state": "translated",
             "value": "Je moet opnieuw inloggen om Ocean Live te gebruiken. Je autogegevens op deze telefoon blijven bewaard."
+          }
+        }
+      }
+    },
+    "You've used today's free questions and your balance is too low for another. They reset at midnight UTC.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine kostenlosen Fragen für heute sind aufgebraucht, und dein Guthaben reicht für keine weitere. Sie gelten ab Mitternacht UTC wieder."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya usaste las preguntas gratis de hoy y tu saldo no alcanza para otra. Se renuevan a medianoche UTC."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous avez utilisé vos questions gratuites du jour et votre solde ne suffit pas pour une autre. Elles reviennent à minuit UTC."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je hebt de gratis vragen van vandaag gebruikt en je tegoed is te laag voor nog een vraag. Ze worden om middernacht UTC gereset."
+          }
+        }
+      }
+    },
+    "You've used today's free questions. They reset at midnight UTC.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du hast die kostenlosen Fragen für heute aufgebraucht. Sie werden um Mitternacht UTC zurückgesetzt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Has usado las preguntas gratuitas de hoy. Se renuevan a medianoche UTC."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous avez utilisé les questions gratuites du jour. Elles se renouvellent à minuit UTC."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je hebt de gratis vragen van vandaag gebruikt. Ze worden om middernacht UTC vernieuwd."
           }
         }
       }

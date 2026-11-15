@@ -62,8 +62,23 @@ MONTHLY_CAP_USD = "10"
 DEVICE_DAILY_LIMIT = "10"
 # Questions per network (IP address) per day, across installs.
 IP_DAILY_LIMIT = "40"
+# Balance: once the free questions of the day are used up, signed-in accounts pay from their balance
+# (the answer's cost rounded up to the next cent). At most this many paid questions per account per day.
+PAID_DAILY_LIMIT = "50"
+# A paid question is only asked with at least this many cents in the balance.
+PAID_MIN_BALANCE_CENTS = "3"
+# Store rewards (US$5 + Early supporter badge). The Play reward product (one-time product).
+PLAY_REWARD_PRODUCT = "prereg_credit_5"
+# Last day rewards can be claimed (UTC date, e.g. "2027-12-31"). Empty: open.
+REWARD_CLAIM_UNTIL = ""
+# Testing only: "true" also accepts Play test purchases / App Store Sandbox pre-orders. Keep "false".
+PLAY_ALLOW_TEST = "false"
+APPLE_ALLOW_SANDBOX = "false"
+# The iPhone app's Apple ID (the number in App Store Connect). When set, App Store rewards must match it.
+APPLE_APP_ID = ""
 
 # Secrets, set with `npx wrangler secret put <NAME>`, never written here:
 #   ANTHROPIC_API_KEY  your Anthropic API key
 #   IP_SALT            any long random string, used to hash IP addresses and email codes
 #   RESEND_API_KEY     your Resend API key, for email sign-in codes
+#   GOOGLE_PLAY_SERVICE_ACCOUNT  the Google Cloud service account's JSON key, to check Play rewards

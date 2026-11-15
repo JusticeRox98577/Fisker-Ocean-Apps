@@ -20,8 +20,11 @@ import java.net.UnknownHostException
 import java.util.Locale
 import java.util.UUID
 
-/** One message in the "Any questions?" chat. */
-data class AskTurn(val fromOwner: Boolean, val text: String)
+/**
+ * One message in the "Any questions?" chat. An answer paid from the balance has [paidCents]
+ * (what it cost) and [balanceCents] (what's left after it).
+ */
+data class AskTurn(val fromOwner: Boolean, val text: String, val paidCents: Int? = null, val balanceCents: Int? = null)
 
 data class AskChat(
     val turns: List<AskTurn> = emptyList(),
@@ -29,6 +32,12 @@ data class AskChat(
     @StringRes val error: Int? = null,
     /** The question that failed, to put back into the text field. */
     val retry: String? = null,
+    /** Free questions left today, from the last answer (remainingToday). */
+    val freeLeft: Int? = null,
+    /** The last answer was paid from the balance: today's free questions are used up. */
+    val paidLast: Boolean = false,
+    /** The UTC day [freeLeft] and [paidLast] are for; free questions reset at midnight UTC. */
+    val day: String? = null,
 )
 
 /**
@@ -48,7 +57,8 @@ object Ask {
     private val _chat = MutableStateFlow(AskChat())
     val chat: StateFlow<AskChat> = _chat.asStateFlow()
 
-    fun clear() = _chat.update { if (it.waiting) it else AskChat() }
+    /** A new chat; what's known about today's free questions stays. */
+    fun clear() = _chat.update { if (it.waiting) it else AskChat(freeLeft = it.freeLeft, paidLast = it.paidLast, day = it.day) }
 
     /**
      * Sends [question] with the conversation so far. [car] is the readings text from [carSummary],
@@ -60,9 +70,17 @@ object Ask {
         _chat.update { it.copy(turns = it.turns + AskTurn(true, q), waiting = true, error = null, retry = null) }
         val turns = _chat.value.turns.takeLast(MAX_TURNS).dropWhile { !it.fromOwner }
         val result = post(context, requestBody(installId(context), turns, car))
+        if (result is Reply.Answer && result.balanceCents != null) Accounts.updateBalance(context, result.balanceCents)
+        if (result is Reply.Failed && result.balanceCents != null) Accounts.updateBalance(context, result.balanceCents)
         _chat.update {
             when (result) {
-                is Reply.Answer -> it.copy(turns = it.turns + AskTurn(false, result.text), waiting = false)
+                is Reply.Answer -> it.copy(
+                    turns = it.turns + AskTurn(false, result.text, result.chargedCents.takeIf { result.paid }, result.balanceCents.takeIf { result.paid }),
+                    waiting = false,
+                    freeLeft = result.freeLeft,
+                    paidLast = result.paid,
+                    day = utcDay(System.currentTimeMillis()),
+                )
                 // Take the question back out so the owner can try again; the text field gets it back.
                 is Reply.Failed -> it.copy(turns = it.turns.dropLast(1), waiting = false, error = result.message, retry = q)
             }
@@ -78,9 +96,37 @@ object Ask {
     }
 
     sealed interface Reply {
-        data class Answer(val text: String) : Reply
-        data class Failed(@StringRes val message: Int) : Reply
+        data class Answer(
+            val text: String,
+            val paid: Boolean = false,
+            val chargedCents: Int? = null,
+            val balanceCents: Int? = null,
+            val freeLeft: Int? = null,
+        ) : Reply
+
+        data class Failed(@StringRes val message: Int, val balanceCents: Int? = null) : Reply
     }
+
+    /** The proxy's reply, as the chat needs it. */
+    fun reply(code: Int, json: JSONObject?): Reply {
+        val answer = json?.optString("answer").orEmpty().trim()
+        if (code in 200..299 && answer.isNotEmpty()) {
+            return Reply.Answer(
+                text = answer,
+                paid = json?.optBoolean("paid") == true,
+                chargedCents = json?.takeIf { it.has("chargedCents") }?.optInt("chargedCents"),
+                balanceCents = Balance.centsIn(json),
+                freeLeft = json?.takeIf { it.has("remainingToday") }?.optInt("remainingToday"),
+            )
+        }
+        val error = json?.optString("error")
+        val balance = Balance.centsIn(json)
+        val message = if (error == "rate_limited" || (code == 429 && error.isNullOrEmpty())) Balance.limitMessage(json?.optString("reason")?.takeIf { it.isNotEmpty() }, balance) else errorMessage(code, error)
+        return Reply.Failed(message, balance)
+    }
+
+    /** The UTC date of [millis], like the proxy's daily count (yyyy-MM-dd). */
+    fun utcDay(millis: Long): String = java.time.Instant.ofEpochMilli(millis).toString().take(10)
 
     /** What the proxy's error codes mean for the owner. */
     @StringRes
@@ -108,11 +154,9 @@ object Ask {
             val code = conn.responseCode
             val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
             val json = runCatching { JSONObject(text) }.getOrNull()
-            val answer = json?.optString("answer").orEmpty().trim()
             // The server no longer knows this session: back to the sign-in screen.
             if (code == 401) Accounts.sessionEnded(context)
-            if (code in 200..299 && answer.isNotEmpty()) Reply.Answer(answer)
-            else Reply.Failed(errorMessage(code, json?.optString("error")))
+            reply(code, json)
         } catch (_: UnknownHostException) {
             Reply.Failed(R.string.ask_error_offline)
         } catch (_: Exception) {

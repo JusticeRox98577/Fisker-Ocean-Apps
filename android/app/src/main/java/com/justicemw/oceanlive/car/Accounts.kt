@@ -34,9 +34,15 @@ data class AccountInfo(
     val email: String?,
     val name: String?,
     val providers: List<String>,
+    /** The balance in US cents; null when the server didn't say (an older server). */
+    val balanceCents: Int? = null,
+    /** Badges such as [Balance.EARLY_SUPPORTER]. */
+    val badges: List<String> = emptyList(),
 ) {
     fun toJson(): String = JSONObject().put("id", id).put("email", email ?: JSONObject.NULL).put("name", name ?: JSONObject.NULL)
-        .put("providers", org.json.JSONArray(providers)).toString()
+        .put("providers", org.json.JSONArray(providers))
+        .put("balanceCents", balanceCents ?: JSONObject.NULL)
+        .put("badges", org.json.JSONArray(badges)).toString()
 
     companion object {
         fun from(o: JSONObject): AccountInfo = AccountInfo(
@@ -44,6 +50,8 @@ data class AccountInfo(
             email = o.optString("email").takeIf { it.isNotEmpty() && !o.isNull("email") },
             name = o.optString("name").takeIf { it.isNotEmpty() && !o.isNull("name") },
             providers = o.optJSONArray("providers")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty(),
+            balanceCents = Balance.centsIn(o),
+            badges = Balance.badgesIn(o).orEmpty(),
         )
     }
 }
@@ -185,6 +193,27 @@ object Accounts {
         val r = call("GET", "/account", null, token) ?: return
         if (r.code == 401) sessionEnded(context)
         else if (r.code == 200) save(context, AccountState(token, AccountInfo.from(r.json)))
+    }
+
+    /** A newer balance (and badges) from another reply, e.g. a paid question or a reward. */
+    fun updateBalance(context: Context, cents: Int?, badges: List<String>? = null) {
+        val s = _state.value
+        val a = s.account ?: return
+        if (cents == null && badges == null) return
+        save(context, s.copy(account = a.copy(balanceCents = cents ?: a.balanceCents, badges = badges ?: a.badges)))
+    }
+
+    /**
+     * Sends a Google Play pre-registration reward to the server, which checks it with Google Play
+     * and adds it to this account once.
+     */
+    suspend fun claimPlayReward(context: Context, productId: String, purchaseToken: String): Balance.Claim {
+        val token = token ?: return Balance.Claim.Later
+        val r = call("POST", "/rewards/play", JSONObject().put("productId", productId).put("purchaseToken", purchaseToken), token)
+        if (r?.code == 401) { sessionEnded(context); return Balance.Claim.Later }
+        val result = Balance.claimResult(r?.code, r?.json)
+        if (result is Balance.Claim.Added) updateBalance(context, result.balanceCents, result.badges)
+        return result
     }
 
     suspend fun rename(context: Context, name: String): Result {

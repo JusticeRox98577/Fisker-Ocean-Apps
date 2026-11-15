@@ -106,10 +106,10 @@ const docHero = (eyebrow, h1, sub) => `<section class="doc-hero">
 page({
   file: "privacy.html",
   title: "Privacy policy · Ocean Live",
-  description: "How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds, what &quot;Any questions?&quot; sends, the email list, and how to have it deleted.",
+  description: "How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds (including its balance and rewards), what &quot;Any questions?&quot; sends, the email list, and how to have it deleted.",
   canonical: "https://oceanlive.org/privacy",
   body: `
-${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 November 2026 (added: mailing list, tester invitations, account website)")}
+${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 November 2026 (added: mailing list, tester invitations, account website, balance and pre-registration rewards)")}
 
 <article class="doc">
   <div class="wrap narrow">
@@ -124,6 +124,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
       <li><a href="#research-log">Research log</a></li>
       <li><a href="#accounts">Accounts</a></li>
       <li><a href="#account-website">Account website</a></li>
+      <li><a href="#balance-and-rewards">Balance and rewards</a></li>
       <li><a href="#abrp">ABRP</a></li>
       <li><a href="#watches">Watches, widgets and car screens</a></li>
       <li><a href="#mailing-list">Mailing list</a></li>
@@ -138,8 +139,9 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
       <ul>
         <li>No ads, no tracking.</li>
         <li>From version 3.4, the app asks you to sign in once (with Google or a 6-digit email code, and on iPhone also with Sign in with Apple). The account holds your email address and a display name, and you can delete it at any time, in the app or at account.oceanlive.org. See <a href="#accounts">Accounts</a>.</li>
+        <li>Your account can hold a balance of Ocean Live credit and badges, such as the US$5 and Early supporter badge for pre-registering on Google Play or pre-ordering on the App Store. See <a href="#balance-and-rewards">Balance and rewards</a>.</li>
         <li>What the app reads from your car stays on your phone, except what you choose to send below.</li>
-        <li>Data leaves your phone only when you sign in or manage your account (opening the account settings checks it with the server), when you ask a question in "Any questions?", or if you turn on live data to A Better Route Planner (ABRP) yourself.</li>
+        <li>Data leaves your phone only when you sign in or manage your account (opening the account settings checks it with the server), when you ask a question in "Any questions?", when the app claims a pre-registration or pre-order reward for your account, or if you turn on live data to A Better Route Planner (ABRP) yourself.</li>
         <li>The mailing list on oceanlive.org is separate from the app and only for people who sign up and confirm. It keeps your email address and language until you unsubscribe. Testers may be asked once by email whether they want to join. See <a href="#mailing-list">Mailing list</a>.</li>
         <li>Questions (and, unless you turn it off, your car's latest readings) are answered by Claude, an AI made by Anthropic, through a small server the developer runs. For research, the developer keeps each question, its answer, the readings sent with it and a random install ID for 90 days, then deletes them.</li>
       </ul>
@@ -187,14 +189,30 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
       <li><strong>Cloudflare</strong> runs the server and its database and storage.</li>
       <li><strong>Resend</strong> delivers the sign-in code emails, so it receives your email address and the code.</li>
       <li><strong>Google</strong>, when you sign in with Google: Google tells the server your Google account ID, email address and name, signed so the server can check it is genuine. <strong>Apple</strong> does the same when you use Sign in with Apple on iPhone. The server only downloads Google's and Apple's public keys to check these; it sends them nothing about you.</li>
+      <li><strong>Google Play</strong> checks a pre-registration reward when the app claims one (see <a href="#balance-and-rewards">Balance and rewards</a>).</li>
       <li><strong>Anthropic</strong> only receives questions, as described above.</li>
     </ul>
-    <p>The account and its sign-in methods are kept until you delete the account. To delete it, open Ocean Live and go to <span class="path"><span>Settings</span><i>→</i><span>Account</span><i>→</i><span>Delete account</span></span>. This deletes, straight away, the account, its sign-in methods, all its sessions (every device is signed out), the logged questions linked to it and any personal question limit set for it. Car data on your phone is not affected. An email-code entry for your address (see Email codes) is removed too. The short-lived counters above expire on their own within about a day. You can also delete it on the <a href="#account-website">account website</a>. See <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+    <p>The account and its sign-in methods are kept until you delete the account. To delete it, open Ocean Live and go to <span class="path"><span>Settings</span><i>→</i><span>Account</span><i>→</i><span>Delete account</span></span>. This deletes, straight away, the account, its sign-in methods, all its sessions (every device is signed out), the logged questions linked to it, any personal question limit set for it, and its balance, ledger and badges (unused credit is lost; only the hashed store reference of a claimed reward stays, see <a href="#balance-and-rewards">Balance and rewards</a>). Car data on your phone is not affected. An email-code entry for your address (see Email codes) is removed too. The short-lived counters above expire on their own within about a day. You can also delete it on the <a href="#account-website">account website</a>. See <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     ${/* Owner review: legal basis for account data. */ ""}<p>The legal basis in the EU and UK for account data is performance of a contract (providing the signed-in app and keeping your questions with your account); for the abuse and rate-limit counters it is the developer's legitimate interest.</p>
 
     <h3 id="account-website">The account website</h3>
     <p>You can also manage your account without the app at <a href="${ACCOUNT}" rel="noopener">account.oceanlive.org</a>: sign in with a 6-digit email code (or with Google, when it's offered there; Sign in with Apple isn't) to see your account and its sign-in methods, rename it, sign out or delete it. It uses the same account, the same server and the same processors as the app, described above.</p>
     <p>Signing in there sets one cookie. It is strictly necessary: it only keeps you signed in, holds the session token (the server keeps only its hash, as for the app) and is sent only to account.oceanlive.org. A session there lasts 30 days from its last use; signing out ends it and removes the cookie. The account website uses no analytics or trackers. If Sign in with Google is offered there, the page loads Google's sign-in button from Google, so Google sees your IP address when you open it.</p>
+
+    <h3 id="balance-and-rewards">Balance and rewards</h3>
+    <p>Your account can hold a balance of Ocean Live credit, and badges. The balance pays for extra "Any questions?" questions after the free daily ones (each costs what that answer cost the developer at Anthropic, rounded up to the next cent), and for Ocean Live add-ons when they're offered. If you pre-registered for Ocean Live on Google Play, or pre-ordered it on the App Store, the app claims US$5 of credit and an Early supporter badge for the account you're signed in to (see the <a href="/preregistration-terms">reward terms</a>).</p>
+    <p>What the server stores for this, in the same database as the account:</p>
+    <ul>
+      <li><strong>Balance:</strong> the amount, in cents, and when it last changed.</li>
+      <li><strong>Ledger:</strong> one line per credit or spend, with the amount, the kind (reward, question, add-on or a correction by the developer), a reference and the date. For a question the reference is the question's ID; the ledger line holds only the amount, not the question, and stays after the question itself is deleted at 90 days. For a reward the reference identifies the store purchase so it can't be claimed twice: for Google Play a SHA-256 hash of the purchase token, for the App Store a SHA-256 hash of Apple's ID for your download of the app (its app transaction ID).</li>
+      <li><strong>Badges:</strong> which badge the account has and when it was added.</li>
+    </ul>
+    <p>How a reward is checked:</p>
+    <ul>
+      <li><strong>Google Play:</strong> Google Play gives the reward to the app as an item. The app confirms it with Google Play straight away, so Google doesn't take it back while you're not signed in yet. When you're signed in, the app sends the item's product ID and purchase token to the Ocean Live server, which asks Google Play's developer API whether it is genuine, and confirms it there if the app hasn't. Google receives only the purchase token it issued; the server tells Google nothing else about you.</li>
+      <li><strong>App Store:</strong> the app sends the server the App Store's signed record of your download of the app, which says when you pre-ordered. It also holds the app version, the download date and a value for checking the device. The server checks Apple's signature itself, without contacting Apple, and keeps only a SHA-256 hash of the app transaction ID (in the ledger reference).</li>
+    </ul>
+    <p>The balance, ledger and badges are kept until you delete the account, and deleting it deletes them straight away. Only one thing stays after the account is deleted: the hashed store reference of a reward it claimed, with its date, in a separate list with no account ID and nothing else, kept with no end date so the same store purchase can never be rewarded twice. The legal basis for that is legitimate interest (preventing the same reward from being paid out twice). Credit has no cash value and can't be moved to another account. The legal basis in the EU and UK is performance of a contract (keeping your credit and badge and letting you spend it).</p>
 
     <h2 id="abrp">A Better Route Planner (optional)</h2>
     <p>If you enter your own ABRP token and API key, Ocean Live sends live telemetry (charge, power, voltage, current, battery temperature, odometer, charging state and, if you allow it, your location) to ABRP's servers (Iternio) so ABRP can plan your route. That data is handled under ABRP's own privacy policy. Remove the token and key to stop it at any time.</p>
@@ -273,6 +291,8 @@ ${docHero("Account", "Delete your Ocean Live account", "How to delete your accou
           <tr><td>Sign-in sessions on all your devices</td><td>Deleted, so every device is signed out</td></tr>
           <tr><td>Logged "Any questions?" questions linked to the account, with their answers and the readings sent with them (this includes questions the phone asked before you signed in, which are linked at sign-in)</td><td>Deleted</td></tr>
           <tr><td>Any personal daily question limit set for your account</td><td>Deleted</td></tr>
+          <tr><td>Your balance of Ocean Live credit, its ledger of credits and spends, and badges such as Early supporter</td><td>Deleted. Unused credit is lost and can't be paid out</td></tr>
+          <tr><td>The SHA-256 hash of the store purchase reference (Google Play purchase token or App Store app transaction ID) of a reward the account claimed, with its date</td><td>Kept, with no account ID or anything else, so the same store purchase can't be rewarded twice</td></tr>
           <tr><td>Short-lived counters (questions per day, email code requests per hour), stored only as hashes or IDs</td><td>Not deleted by this; they expire on their own within about a day</td></tr>
           <tr><td>A sign-in code entry (your email address and a hash of a code you asked for but didn't use)</td><td>Deleted. Unused entries are also removed automatically within a day after the code expires</td></tr>
           <tr><td>Car data on your phone (drives, charges, 12V and fault history, settings)</td><td>Not affected. It was never on the server. Clear it in the app or delete the app to remove it.</td></tr>
@@ -301,47 +321,56 @@ ${docHero("Account", "Delete your Ocean Live account", "How to delete your accou
 page({
   file: "preregistration-terms.html",
   title: "Pre-registration reward terms · Ocean Live",
-  description: "Terms for the Ocean Live pre-registration reward: $5 of Ocean Live credit and an Early supporter badge.",
+  description: "Terms for the Ocean Live pre-registration and pre-order reward: $5 of Ocean Live credit and an Early supporter badge.",
   canonical: "https://oceanlive.org/preregistration-terms",
   body: `
-${docHero("Reward", "Pre-registration reward terms", "What you get for pre-registering for Ocean Live, and how it works.")}
+${docHero("Reward", "Pre-registration reward terms", "What you get for pre-registering for Ocean Live on Google Play or pre-ordering it on the App Store, and how it works.")}
 
 <article class="doc">
   <div class="wrap narrow">
     <div class="sheet">
     <h2 id="reward">The reward</h2>
-    <p>If you pre-register for Ocean Live on Google Play before it is released there, you get:</p>
+    <p>If you pre-register for Ocean Live on Google Play before it is released there, or pre-order it on the App Store before it is released there, you get:</p>
     <ul>
       <li><strong>US$5 of Ocean Live credit</strong> on your Ocean Live account</li>
       <li>An <strong>Early supporter badge</strong> on your account, shown in the app</li>
     </ul>
 
     <h2 id="claim">How to get it</h2>
+    <h3 id="claim-play">On Google Play (Android)</h3>
     <ol>
       <li>Pre-register on the Ocean Live page on Google Play while pre-registration is open.</li>
       <li>Install Ocean Live from Google Play with the same Google account you pre-registered with.</li>
       <li>Open the app and sign in to your Ocean Live account. The reward is added to the account you're signed in to.</li>
     </ol>
-    <p>Google Play hands the reward to the app when you install it. If you sign in later, it's added the first time you open the app signed in. Claim it within 12 months after Ocean Live is released on Google Play.</p>
+    <p>Google Play hands the reward to the app when you install it, and the app accepts it straight away so Google keeps it for you. If you sign in later, it's added the first time you open the app signed in.</p>
+    <h3 id="claim-app-store">On the App Store (iPhone)</h3>
+    <ol>
+      <li>Pre-order Ocean Live on the App Store while the pre-order is open.</li>
+      <li>On release day, the App Store downloads Ocean Live for you. Use the same Apple Account you pre-ordered with.</li>
+      <li>Open the app and sign in to your Ocean Live account. The reward is added to the account you're signed in to.</li>
+    </ol>
+    <p>Test versions from TestFlight don't count as a pre-order. Claim the reward within 12 months after Ocean Live is released on the store you used.</p>
 
     <h2 id="credit">Using the credit</h2>
     <ul>
       <li>You can spend it on extra "Any questions?" questions beyond the free daily ones, and on Ocean Live add-ons when they're available.</li>
-      <li>Credit is used before any other payment.</li>
+      <li>An extra question costs what its answer cost Ocean Live at Anthropic, rounded up to the next cent (at least 1 cent). The app shows what each one cost and what's left. A question that fails costs nothing, and extra questions per day are limited.</li>
+      <li>Extra questions are paid only from your credit. For add-ons, credit is used before any other payment.</li>
       <li>It has no cash value. It can't be exchanged for money, refunded, sold or moved to another account.</li>
       <li>It doesn't expire while Ocean Live offers things to spend it on. If Ocean Live ever stops offering paid features, unused credit ends with them, and we'll say so in the app first.</li>
     </ul>
 
     <h2 id="limits">Limits</h2>
     <ul>
-      <li>One reward per Google account and one per Ocean Live account.</li>
+      <li>One reward per Google account or Apple Account, and one per Ocean Live account, even if you pre-registered on both stores.</li>
       <li>The badge stays on your account until you delete the account. Deleting the account also deletes any unused credit.</li>
       <li>Rewards obtained by abuse (for example, many accounts made to collect credit) may be removed.</li>
-      <li>Pre-registration closes when Ocean Live is released on Google Play. Pre-registering doesn't oblige you to install anything, and Google can't charge you for it.</li>
+      <li>Pre-registration closes when Ocean Live is released on Google Play, and pre-orders close when it is released on the App Store. Ocean Live is free: pre-registering or pre-ordering doesn't oblige you to keep it, and Google and Apple can't charge you for it.</li>
     </ul>
 
     <h2 id="who">Who runs this</h2>
-    <p>Ocean Live is an independent app made by an Ocean owner. Google is not a sponsor of this reward and is not responsible for it. Questions: <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a>. These terms are governed by the laws of the State of Washington, USA, except where the law where you live gives you rights that can't be waived.</p>
+    <p>Ocean Live is an independent app made by an Ocean owner. Google and Apple are not sponsors of this reward and are not responsible for it. Questions: <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a>. These terms are governed by the laws of the State of Washington, USA, except where the law where you live gives you rights that can't be waived.</p>
     </div>
   </div>
 </article>`,
@@ -696,12 +725,13 @@ ${docHero("Help", "Using Ocean Live", "Getting connected, what each tab does, th
     <p>From version 3.4, Ocean Live asks you to sign in once, with no password: with Google or a 6-digit code sent to your email, and on iPhone also with Sign in with Apple. The account keeps your "Any questions?" questions tied to you when you change phones. Your car data stays on your phone, and the app works offline after signing in.</p>
     <ul>
       <li>Rename or delete your account in ${path("Settings", "Account")}.</li>
+      <li>${path("Settings", "Account")} also shows your balance of Ocean Live credit and any badges. When today's free questions are used up, further questions are paid from the balance, and the chat shows what each one cost and what's left. Pre-registered on Google Play or pre-ordered on the App Store? Sign in and the US$5 reward and Early supporter badge are added; see the <a href="/preregistration-terms">reward terms</a>.</li>
       <li>Without the app, sign in at <a href="${ACCOUNT}" rel="noopener">account.oceanlive.org</a> to see, rename or delete it.</li>
       <li>What deleting removes: <a href="/delete-account">Delete your Ocean Live account</a>.</li>
     </ul>
 
     <h2 id="privacy">Privacy</h2>
-    <p>No ads, no tracking. What the app reads from your car stays on your phone. Data leaves it only when you sign in or manage your account, when you ask "Any questions?" (the chat shows exactly what's sent under <strong>Show what's sent</strong>), or if you turn on ABRP yourself. Everything is in the <a href="/privacy">privacy policy</a>.</p>
+    <p>No ads, no tracking. What the app reads from your car stays on your phone. Data leaves it only when you sign in or manage your account, when you ask "Any questions?" (the chat shows exactly what's sent under <strong>Show what's sent</strong>), when the app claims a pre-registration or pre-order reward, or if you turn on ABRP yourself. Everything is in the <a href="/privacy">privacy policy</a>.</p>
 
     <h2 id="trouble">Troubleshooting</h2>
     <h3 id="cant-connect">Can't connect</h3>

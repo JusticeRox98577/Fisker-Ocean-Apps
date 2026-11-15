@@ -4,6 +4,7 @@ import SwiftUI
 struct AskView: View {
     @EnvironmentObject var car: Car
     @StateObject private var ask = Ask.shared
+    @StateObject private var accounts = Accounts.shared
     @Environment(\.dismiss) private var dismiss
     @State private var input = ""
     @State private var showSent = false
@@ -40,7 +41,17 @@ struct AskView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 10) {
                         intro
-                        ForEach(ask.turns) { Bubble(text: $0.text, mine: $0.fromOwner).id($0.id) }
+                        ForEach(ask.turns) { turn in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Bubble(text: turn.text, mine: turn.fromOwner)
+                                if let charged = turn.chargedCents {
+                                    Text(Ask.paidNote(charged: charged, left: turn.balanceCents))
+                                        .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                                        .padding(.horizontal, 4)
+                                }
+                            }
+                            .id(turn.id)
+                        }
                         if ask.waiting {
                             HStack(spacing: 10) {
                                 ProgressView().tint(Theme.aqua)
@@ -50,6 +61,12 @@ struct AskView: View {
                         }
                         if let e = ask.error {
                             Text(e).font(.system(size: 13)).foregroundStyle(Theme.bad).padding(4)
+                        }
+                        if !ask.waiting, ask.error == nil,
+                           let notice = Ask.notice(freeLeft: ask.freeLeft, paid: ask.paidLast, day: ask.day,
+                                                   today: Ask.utcDay(Date()), balanceCents: accounts.account?.balanceCents) {
+                            Text(verbatim: Ask.noticeText(notice))
+                                .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(4)
                         }
                         Text("AI answers can be wrong. Check anything important with a qualified EV shop. Questions, answers and the readings sent with them go to Ocean Live's server and to Anthropic, and Ocean Live keeps them for 90 days for research.")
                             .font(.system(size: 11)).foregroundStyle(Theme.dim)

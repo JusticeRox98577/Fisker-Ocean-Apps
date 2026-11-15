@@ -10,6 +10,12 @@ object Tips {
     /** One-time consumable products in Google Play, smallest first. */
     val PRODUCT_IDS = listOf("tip_small", "tip_medium", "tip_large")
 
+    /**
+     * True for a purchase of tips only. Anything else (such as the pre-registration reward,
+     * [Balance.REWARD_PRODUCT]) is never consumed as a tip.
+     */
+    fun isTip(products: List<String>): Boolean = products.isNotEmpty() && products.all { it in PRODUCT_IDS }
+
     const val DAY_MS = 86_400_000L
 
     /** No banner in the first days after the app is first opened. */

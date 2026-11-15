@@ -54,6 +54,9 @@ struct RootView: View {
         }
         // Connects only once the app is actually on screen, never from a launch in the background.
         .task { car.setInBackground(scenePhase != .active) }
+        // The App Store pre-order credit: at launch and after each sign-in. Only StoreKit and the Ocean Live
+        // server; never the car. Does nothing without a pre-order or once the server has settled it.
+        .task(id: accounts.token) { await Rewards.shared.claimIfDue() }
         .onChange(of: scenePhase) { _, phase in
             // Off screen, a parked car is left to sleep after a while; back on screen connects again.
             car.setInBackground(phase != .active)

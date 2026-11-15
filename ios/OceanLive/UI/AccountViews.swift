@@ -425,6 +425,11 @@ struct AccountSection: View {
                         .padding(.top, 8)
                 }
 
+                if accounts.account?.balanceCents != nil || accounts.account?.earlySupporter == true {
+                    Rectangle().fill(Theme.edge).frame(height: 1).padding(.vertical, 14)
+                    balance
+                }
+
                 Rectangle().fill(Theme.edge).frame(height: 1).padding(.vertical, 14)
                 GhostButton(title: String(localized: "Sign out"), color: .white) { confirmSignOut = true }
                     .disabled(busy)
@@ -460,7 +465,41 @@ struct AccountSection: View {
             Button("Delete account", role: .destructive) { deleteAccount() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This deletes your account, your sign-in details and your logged AI questions. It can't be undone. Car data on this phone isn't affected.")
+            Text("This deletes your account, your sign-in details, your balance and badges, and your logged AI questions. Any balance left is lost. It can't be undone. Car data on this phone isn't affected.")
+        }
+    }
+
+    /// The balance (spent in the app on extra AI questions and add-ons) and the Early supporter badge.
+    @ViewBuilder private var balance: some View {
+        if let cents = accounts.account?.balanceCents {
+            HStack {
+                Text("Balance").font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                Spacer()
+                Text(verbatim: Money.format(cents: cents))
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(cents > 0 ? Theme.aqua : Theme.dim)
+            }
+            .accessibilityElement(children: .combine)
+            Text("Pays for AI questions beyond the free ones each day, and for future add-ons.")
+                .font(.footnote).foregroundStyle(Theme.dim)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 4)
+        }
+        if accounts.account?.earlySupporter == true {
+            HStack(spacing: 12) {
+                Image("EarlySupporter")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Early supporter").font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                    Text("Thanks for supporting Ocean Live from the start.").font(.footnote).foregroundStyle(Theme.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .padding(.top, accounts.account?.balanceCents != nil ? 12 : 0)
         }
     }
 

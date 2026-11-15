@@ -10,21 +10,48 @@ struct AccountInfo: Codable, Equatable, Sendable {
     let email: String?
     let name: String?
     let providers: [String]
+    /// The account balance in US cents (pays for extra AI questions and add-ons). Nil when the server
+    /// didn't say; optional so an account saved by an older version still decodes.
+    let balanceCents: Int?
+    /// Badge ids, e.g. "early_supporter". Optional for the same reason.
+    let badges: [String]?
 
-    init(id: String, email: String?, name: String?, providers: [String]) {
+    static let earlySupporterBadge = "early_supporter"
+
+    init(id: String, email: String?, name: String?, providers: [String], balanceCents: Int? = nil, badges: [String]? = nil) {
         self.id = id
         self.email = email
         self.name = name
         self.providers = providers
+        self.balanceCents = balanceCents
+        self.badges = badges
     }
 
-    /// From the server's JSON (`{id, email, name, created, providers}`), or nil without an id.
+    /// From the server's JSON (`{id, email, name, created, providers, balanceCents, badges}`), or nil without an id.
     init?(json: [String: Any]) {
         guard let id = json["id"] as? String, !id.isEmpty else { return nil }
         self.id = id
         email = (json["email"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         name = (json["name"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         providers = json["providers"] as? [String] ?? []
+        balanceCents = Money.cents(json["balanceCents"]).map { max(0, $0) }
+        badges = json["badges"] as? [String]
+    }
+
+    var earlySupporter: Bool { badges?.contains(Self.earlySupporterBadge) ?? false }
+
+    /// This account with the balance and badges of `old` filled in where the server's reply left them out
+    /// (sign-in and rename replies may not carry them). Only for the same account.
+    func keeping(_ old: AccountInfo?) -> AccountInfo {
+        guard let old, old.id == id else { return self }
+        return AccountInfo(id: id, email: email, name: name, providers: providers,
+                           balanceCents: balanceCents ?? old.balanceCents, badges: badges ?? old.badges)
+    }
+
+    /// The same account with a new balance (and badges, when given). A nil balance keeps the current one.
+    func with(balanceCents: Int?, badges: [String]? = nil) -> AccountInfo {
+        AccountInfo(id: id, email: email, name: name, providers: providers,
+                    balanceCents: balanceCents.map { max(0, $0) } ?? self.balanceCents, badges: badges ?? self.badges)
     }
 }
 
@@ -319,7 +346,9 @@ final class Accounts: ObservableObject {
         if keychainLocked { load() }
     }
 
-    private func save(token: String, account: AccountInfo) {
+    private func save(token: String, account newAccount: AccountInfo) {
+        // Replies that leave out the balance or badges keep the ones already known for this account.
+        let account = newAccount.keeping(self.account)
         SecretStore.set(token, for: SecretStore.sessionAccount)
         UserDefaults.standard.set(try? JSONEncoder().encode(account), forKey: Self.accountKey)
         UserDefaults.standard.set(true, forKey: Self.installMarkerKey)
@@ -469,6 +498,13 @@ final class Accounts: ObservableObject {
     /// A 401 for `token`: signed out, unless another sign-in replaced it meanwhile.
     private func ended(_ token: String) {
         if self.token == token { sessionEnded() }
+    }
+
+    /// A newer balance (and badges) from "Any questions?" or a reward claim, for the account signed in with
+    /// `token`. Nothing changes when that session has ended or been replaced since.
+    func updateBalance(cents: Int?, badges: [String]? = nil, token: String?) {
+        guard let token, self.token == token, let account, cents != nil || badges != nil else { return }
+        save(token: token, account: account.with(balanceCents: cents, badges: badges))
     }
 
     /// For "Any questions?": its 401 means the same as one here.

@@ -78,10 +78,15 @@
         <div><dt>Sign-in methods</dt><dd id="acc-providers"></dd></div>
       </dl>
 
-      <!--
-        Future: credits and badges belong here, between the account facts and the forms below.
-        They don't exist yet, so nothing is shown for them. Add them only once the server has them.
-      -->
+      <div class="stack wallet" aria-labelledby="balance-title">
+        <h2 id="balance-title">Balance</h2>
+        <p class="balance"><span id="acc-balance">$0.00</span></p>
+        <p class="small muted">Spent in the app on extra "Any questions?" questions after the free ones each day, and on add-ons later. It can't be cashed out. <a href="https://oceanlive.org/preregistration-terms">Reward terms</a></p>
+        <div id="badges" class="badges" hidden>
+          <h3 class="small muted">Badges</h3>
+          <ul id="badge-list" class="badge-list"></ul>
+        </div>
+      </div>
 
       <form id="name-form" class="stack" novalidate>
         <h2>Display name</h2>
@@ -106,6 +111,7 @@
           <li>your linked sign-in methods (Google, Apple, email)</li>
           <li>your sign-in sessions on every device, so they are all signed out</li>
           <li>your logged "Any questions?" questions with their answers and the readings sent with them</li>
+          <li>your balance, its history of credits and spends, and your badges. Any balance left is lost.</li>
           <li>any personal daily question limit set for your account</li>
         </ul>
         <p class="small muted">Car data on your phones is not touched: it was never on the server. Short-lived counters expire on their own within about a day. If you sign in again later, a new, empty account is made. <a href="https://oceanlive.org/delete-account">More about deleting</a></p>
@@ -117,7 +123,7 @@
   <dialog id="delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-desc">
     <form id="delete-form" class="stack" method="dialog" novalidate>
       <h2 id="delete-title">Delete your account?</h2>
-      <p id="delete-desc" class="small">This can't be undone. Your account, sign-ins, sessions and logged questions are deleted.</p>
+      <p id="delete-desc" class="small">This can't be undone. Your account, sign-ins, sessions, logged questions, balance and badges are deleted.</p>
       <label for="delete-confirm">Type <strong>delete</strong> to confirm</label>
       <input id="delete-confirm" name="confirm" type="text" autocomplete="off" spellcheck="false" autocapitalize="off">
       <p id="delete-error" class="field-error" role="alert"></p>

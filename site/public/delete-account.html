@@ -86,6 +86,8 @@
           <tr><td>Sign-in sessions on all your devices</td><td>Deleted, so every device is signed out</td></tr>
           <tr><td>Logged "Any questions?" questions linked to the account, with their answers and the readings sent with them (this includes questions the phone asked before you signed in, which are linked at sign-in)</td><td>Deleted</td></tr>
           <tr><td>Any personal daily question limit set for your account</td><td>Deleted</td></tr>
+          <tr><td>Your balance of Ocean Live credit, its ledger of credits and spends, and badges such as Early supporter</td><td>Deleted. Unused credit is lost and can't be paid out</td></tr>
+          <tr><td>The SHA-256 hash of the store purchase reference (Google Play purchase token or App Store app transaction ID) of a reward the account claimed, with its date</td><td>Kept, with no account ID or anything else, so the same store purchase can't be rewarded twice</td></tr>
           <tr><td>Short-lived counters (questions per day, email code requests per hour), stored only as hashes or IDs</td><td>Not deleted by this; they expire on their own within about a day</td></tr>
           <tr><td>A sign-in code entry (your email address and a hash of a code you asked for but didn't use)</td><td>Deleted. Unused entries are also removed automatically within a day after the code expires</td></tr>
           <tr><td>Car data on your phone (drives, charges, 12V and fault history, settings)</td><td>Not affected. It was never on the server. Clear it in the app or delete the app to remove it.</td></tr>

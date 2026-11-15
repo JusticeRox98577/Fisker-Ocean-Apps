@@ -1,6 +1,7 @@
 # Ocean Live privacy policy
 
-Last updated: 15 November 2026 (added: mailing list, tester invitations, account website)
+Last updated: 15 November 2026 (added: mailing list, tester invitations, account website,
+balance and pre-registration rewards)
 
 Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other
 Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps,
@@ -13,10 +14,14 @@ and the Ocean Live mailing list.
   Google or a 6-digit email code, and on iPhone also with Sign in with Apple). The account
   holds your email address and a display name, and you can delete it at any time, in the app
   or at account.oceanlive.org. See [Accounts](#accounts).
+* Your account can hold a balance of Ocean Live credit and badges, such as the US$5 and Early
+  supporter badge for pre-registering on Google Play or pre-ordering on the App Store. See
+  [Balance and rewards](#balance-and-rewards).
 * What the app reads from your car stays on your phone, except what you choose to send below.
 * Data leaves your phone only when you sign in or manage your account (opening the account
-  settings checks it with the server), when you ask a question in "Any questions?", or if you
-  turn on live data to A Better Route Planner (ABRP) yourself.
+  settings checks it with the server), when you ask a question in "Any questions?", when the
+  app claims a pre-registration or pre-order reward for your account, or if you turn on live
+  data to A Better Route Planner (ABRP) yourself.
 * The mailing list on oceanlive.org is separate from the app and only for people who sign up
   and confirm. It keeps your email address and language until you unsubscribe. Testers may be
   asked once by email whether they want to join. See [Mailing list](#mailing-list).
@@ -133,12 +138,16 @@ Who processes it:
   email address and name, signed so the server can check it is genuine. **Apple** does the
   same when you use Sign in with Apple on iPhone. The server only downloads
   Google's and Apple's public keys to check these; it sends them nothing about you.
+* **Google Play** checks a pre-registration reward when the app claims one (see
+  [Balance and rewards](#balance-and-rewards)).
 * **Anthropic** only receives questions, as described above.
 
 The account and its sign-in methods are kept until you delete the account. To delete it, open
 Ocean Live and go to Settings, Account, Delete account. This deletes, straight away, the
 account, its sign-in methods, all its sessions (every device is signed out), the logged
-questions linked to it and any personal question limit set for it. Car data on your phone is
+questions linked to it, any personal question limit set for it, and its balance, ledger and
+badges (unused credit is lost; only the hashed store reference of a claimed reward stays, see
+Balance and rewards). Car data on your phone is
 not affected. An email-code entry for your address (see Email codes) is removed too. The
 short-lived counters above expire on their own within about a day. You can also delete it on
 the account website (below). See https://oceanlive.org/delete-account.
@@ -163,6 +172,48 @@ Google is offered there, the page loads Google's sign-in button from Google, so 
 your IP address when you open it.
 
 oceanlive.org itself still sets no cookies.
+
+### Balance and rewards
+
+Your account can hold a balance of Ocean Live credit, and badges. The balance pays for extra
+"Any questions?" questions after the free daily ones (each costs what that answer cost the
+developer at Anthropic, rounded up to the next cent), and for Ocean Live add-ons when they're
+offered. If you pre-registered for Ocean Live on Google Play, or pre-ordered it on the App
+Store, the app claims US$5 of credit and an Early supporter badge for the account you're signed
+in to (see https://oceanlive.org/preregistration-terms).
+
+What the server stores for this, in the same database as the account:
+
+* **Balance:** the amount, in cents, and when it last changed.
+* **Ledger:** one line per credit or spend, with the amount, the kind (reward, question, add-on
+  or a correction by the developer), a reference and the date. For a question the reference is
+  the question's ID; the ledger line holds only the amount, not the question, and stays after
+  the question itself is deleted at 90 days. For a reward the reference identifies the store
+  purchase so it can't be claimed twice: for Google Play a SHA-256 hash of the purchase token,
+  for the App Store a SHA-256 hash of Apple's ID for your download of the app (its app
+  transaction ID).
+* **Badges:** which badge the account has and when it was added.
+
+How a reward is checked:
+
+* **Google Play:** Google Play gives the reward to the app as an item. The app confirms it with
+  Google Play straight away, so Google doesn't take it back while you're not signed in yet.
+  When you're signed in, the app sends the item's product ID and purchase token to the Ocean
+  Live server, which asks Google Play's developer API whether it is genuine, and confirms it
+  there if the app hasn't. Google receives only the purchase token it issued; the server tells
+  Google nothing else about you.
+* **App Store:** the app sends the server the App Store's signed record of your download of the
+  app, which says when you pre-ordered. It also holds the app version, the download date and a
+  value for checking the device. The server checks Apple's signature itself, without contacting
+  Apple, and keeps only a SHA-256 hash of the app transaction ID (in the ledger reference).
+
+The balance, ledger and badges are kept until you delete the account, and deleting it deletes
+them straight away. Only one thing stays after the account is deleted: the hashed store reference
+of a reward it claimed, with its date, in a separate list with no account ID and nothing else,
+kept with no end date so the same store purchase can never be rewarded twice. The legal basis for
+that is legitimate interest (preventing the same reward from being paid out twice). Credit has no cash value and can't be moved to another account. The legal
+basis in the EU and UK is performance of a contract (keeping your credit and badge and letting
+you spend it).
 
 ## A Better Route Planner (optional)
 

@@ -33,8 +33,23 @@ The apps keep the token and send it as `Authorization: Bearer <token>`. An email
 Apple says is verified links to an existing account with the same address.
 
 Deleting an account removes the account, its sign-in methods, every session (so all devices are
-signed out), its logged questions and any personal question limit. Car data is never on the
+signed out), its logged questions, its balance, ledger and badges, and any personal question limit.
+Only the hashed reference of a store reward it claimed is kept, so that purchase can't be claimed
+again. Car data is never on the
 server.
+
+## Balance and rewards
+
+An account can have a balance in US dollars. It pays for extra "Any questions?" questions after the
+free ones each day: each costs what Claude charged for that answer, rounded up to the next cent, and
+a question that fails costs nothing. Anonymous installs never use a balance.
+
+Owners who pre-registered on Google Play or pre-ordered on the App Store get US$5 and an "Early
+supporter" badge, once per store account and once per Ocean Live account. The Worker checks a Play
+reward with the Google Play Developer API, and verifies an App Store `AppTransaction` itself: its
+ES256 signature and certificate chain up to Apple Root CA - G3, the bundle ID and the pre-order date.
+Every credit and spend is a ledger row with a unique reference, so nothing is credited or charged
+twice. Store references are stored as SHA-256 hashes.
 
 ## The web account page
 
@@ -47,7 +62,7 @@ Those files are only served on that host.
   account has (for "Hide My Email", the private relay address, which forwards it).
   The page never creates an account: a sign-in that matches no account is refused, so nobody
   ends up in a new, empty account by mistake.
-* **See** the account's email, name, created date and linked sign-in methods. **Rename** it,
+* **See** the account's email, name, created date, linked sign-in methods, balance and badges. **Rename** it,
   **sign out** of this browser, or **delete** the account (after typing a confirmation).
 
 The page never sees the session token. After sign-in the Worker sets one cookie,
@@ -70,12 +85,15 @@ and the cookie is not accepted on the API host.
 | `POST /auth/google`, `POST /auth/apple` | Sign in with a Google or Apple identity token (Apple: apps only) |
 | `GET`, `PATCH`, `DELETE /account` | Show, rename or delete the signed-in account |
 | `POST /auth/signout` | End this session |
+| `POST /rewards/play`, `POST /rewards/apple` | Claim the pre-registration / pre-order reward (apps) |
 
 ## Code
 
 * [`src/index.ts`](src/index.ts): routing by host, `/ask`, `/health`, the daily cleanup.
 * [`src/auth.ts`](src/auth.ts): sign-in, sessions (bearer and cookie) and the account endpoints.
 * [`src/email.ts`](src/email.ts): the sign-in code email.
+* [`src/balance.ts`](src/balance.ts), [`src/rewards.ts`](src/rewards.ts): the balance, ledger, badges and reward endpoints.
+* [`src/play.ts`](src/play.ts), [`src/apple.ts`](src/apple.ts), [`src/x509.ts`](src/x509.ts): checking Google Play and App Store rewards.
 * [`account/`](account/): the web account page.
 * [`migrations/`](migrations/): the D1 tables.
 * [`test/`](test/): tests that run in the Workers runtime.

@@ -3,9 +3,11 @@ package com.justicemw.oceanlive.ui
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -37,16 +40,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.justicemw.oceanlive.PlayRewards
 import com.justicemw.oceanlive.R
 import com.justicemw.oceanlive.car.Accounts
 import com.justicemw.oceanlive.car.AuthConfig
+import com.justicemw.oceanlive.car.Balance
 import kotlinx.coroutines.launch
+
+/** [cents] as US dollars in the app's language. */
+@Composable
+fun money(cents: Int): String = Balance.format(cents, LocalConfiguration.current.locales[0])
 
 private tailrec fun Context.activity(): Activity? = when (this) {
     is Activity -> this
@@ -83,6 +94,7 @@ fun SignInScreen() {
     var code by rememberSaveable { mutableStateOf("") }
     var codeSent by rememberSaveable { mutableStateOf(false) }
     var retry by remember { mutableStateOf(0) }
+    val reward by PlayRewards.state.collectAsState()
 
     LaunchedEffect(retry) {
         loaded = false
@@ -114,6 +126,11 @@ fun SignInScreen() {
             Text(stringResource(R.string.account_signin_title), color = Aqua, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(10.dp))
             Text(stringResource(R.string.account_signin_body), color = Dim, fontSize = 14.sp)
+            if (reward.waiting) {
+                // Google Play asks apps to say how to claim a reward that needs an account.
+                Spacer(Modifier.height(10.dp))
+                Text(stringResource(R.string.reward_sign_in, money(Balance.REWARD_CENTS)), color = Aqua, fontSize = 14.sp)
+            }
             Spacer(Modifier.height(24.dp))
             val c = config
             when {
@@ -180,6 +197,7 @@ fun AccountSection() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val state by Accounts.state.collectAsState()
+    val reward by PlayRewards.state.collectAsState()
     val account = state.account
     var name by rememberSaveable(account?.name) { mutableStateOf(account?.name.orEmpty()) }
     var busy by remember { mutableStateOf(false) }
@@ -202,6 +220,23 @@ fun AccountSection() {
             }
             Text(stringResource(R.string.account_signed_in_with, names.joinToString(", ")), color = Dim, fontSize = 13.sp)
         }
+        account?.balanceCents?.let { cents ->
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.balance_label, money(cents)), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.balance_note), color = Dim, fontSize = 12.sp)
+        }
+        if (account != null && Balance.EARLY_SUPPORTER in account.badges) {
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(painterResource(R.drawable.badge_early_supporter), contentDescription = null, modifier = Modifier.size(44.dp))
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    Text(stringResource(R.string.badge_early_supporter), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.badge_early_supporter_note), color = Dim, fontSize = 12.sp)
+                }
+            }
+        }
+        reward.error?.let { Text(stringResource(it), color = Bad, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)) }
         Spacer(Modifier.height(8.dp))
         AccountField(stringResource(R.string.account_name), name, KeyboardType.Text) { name = it.take(60) }
         if (name.trim() != account?.name.orEmpty()) {

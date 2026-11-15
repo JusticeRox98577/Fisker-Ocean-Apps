@@ -17,9 +17,11 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import guide from "../knowledge/ocean-guide.md";
-import { handleAuth, sessionAccount, WEB_HOST, type Account, type AuthEnv } from "./auth";
+import { handleAuth, sessionAccount, WEB_HOST, type Account } from "./auth";
+import { balanceOf, centsFor, holdQuestion, releaseHold, settleQuestion } from "./balance";
+import { handleRewards, type RewardsEnv } from "./rewards";
 
-export interface Env extends AuthEnv {
+export interface Env extends RewardsEnv {
   ANTHROPIC_API_KEY: string;
   /** Random string used to hash IP addresses for the per-network limit. */
   IP_SALT?: string;
@@ -37,6 +39,12 @@ export interface Env extends AuthEnv {
   ALLOW_ANONYMOUS?: string;
   /** The web account page's files (account/), served only on account.oceanlive.org. */
   ASSETS?: Fetcher;
+  /** Paid questions (from the account balance) per account per day, after the free ones. Default 50. */
+  PAID_DAILY_LIMIT?: string;
+  /** A paid question needs at least this balance in cents before it is asked. Default 3. */
+  PAID_MIN_BALANCE_CENTS?: string;
+  /** Tests only: replaces fetch() for calls to Anthropic. */
+  ANTHROPIC_FETCH?: typeof fetch;
 }
 
 const MODEL = "claude-opus-5-5";
@@ -107,6 +115,8 @@ export default {
     if (url.hostname === WEB_HOST) return withWebHeaders(await accountSite(request, env, url.pathname), env);
     const auth = await handleAuth(request, env, url.pathname);
     if (auth) return auth;
+    const reward = await handleRewards(request, env, url.pathname);
+    if (reward) return reward;
     if (url.pathname !== "/ask") return json({ error: "not_found" }, 404);
     if (request.method !== "POST") return json({ error: "method" }, 405);
 
@@ -146,28 +156,71 @@ export default {
     const ipLimit = hasCustom ? Infinity : intVar(env.IP_DAILY_LIMIT, 40);
 
     if (spent >= capMicros) return json({ error: "budget" }, 503);
-    if (deviceCount >= deviceLimit || ipCount >= ipLimit) return json({ error: "rate_limited" }, 429);
+
+    // Signed-in accounts can pay from their balance once the free questions of the day are used up.
+    // Anonymous installs never use a balance; a hand-set limit of 0 blocks paid questions too.
+    let balance = account && env.LOG_DB ? await balanceOf(env.LOG_DB, account.id) : 0;
+    const limited = (reason: string) => json({ error: "rate_limited", reason, balanceCents: balance }, 429);
+    const minCents = Math.max(1, intVar(env.PAID_MIN_BALANCE_CENTS, 3));
+    const paid = deviceCount >= deviceLimit;
+    if (paid) {
+      if (!account || !env.LOG_DB || (hasCustom && custom === 0)) return limited("free_used");
+      if (balance < minCents) return limited(balance > 0 ? "low_balance" : "free_used");
+    }
+    if (ipCount >= ipLimit) return limited("network");
+
+    // A paid question reserves the minimum in D1 before asking (atomic, with the daily paid count), so
+    // parallel requests can't all be answered from one balance. The real cost is settled after.
+    const holdRef = paid ? `hold:${crypto.randomUUID()}` : "";
+    if (paid) {
+      const held = await holdQuestion(env.LOG_DB!, account!.id, minCents, holdRef, `${day}T00:00:00.000Z`, intVar(env.PAID_DAILY_LIMIT, 50));
+      if (held !== "held") {
+        balance = await balanceOf(env.LOG_DB!, account!.id);
+        return limited(held === "paid_limit" ? "paid_limit" : balance > 0 ? "low_balance" : "free_used");
+      }
+    }
 
     // Count the question before asking, so parallel requests can't slip past the limit.
     const dayTtl = 60 * 60 * 26;
     await Promise.all([
-      env.ASK_KV.put(deviceKey, String(deviceCount + 1), { expirationTtl: dayTtl }),
+      paid ? Promise.resolve() : env.ASK_KV.put(deviceKey, String(deviceCount + 1), { expirationTtl: dayTtl }),
       env.ASK_KV.put(ipKey, String(ipCount + 1), { expirationTtl: dayTtl }),
     ]);
+    let holdOpen = paid;
 
-    const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 1 });
+    const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 1, ...(env.ANTHROPIC_FETCH ? { fetch: env.ANTHROPIC_FETCH } : {}) });
     let costMicros = 0;
     try {
       const { answer, micros } = await ask(client, env, body);
       costMicros = micros;
-      ctx.waitUntil(log(env, request, body, answer, micros, account));
-      if (!answer) return json({ error: "no_answer" }, 422);
-      return json({ answer, remainingToday: Math.max(0, deviceLimit - deviceCount - 1) });
+      if (!paid || !answer) {
+        ctx.waitUntil(log(env, request, body, answer, micros, account));
+        // A declined paid question costs the owner nothing (the hold is given back in finally).
+        if (!answer) return json({ error: "no_answer" }, 422);
+        return json({ answer, remainingToday: Math.max(0, deviceLimit - deviceCount - 1), ...(account ? { balanceCents: balance } : {}) });
+      }
+      // Paid: the log row's ID makes the charge happen once. Rounded up to the next cent, at least 1, never
+      // more than the balance (the balance can't go below 0).
+      const id = await log(env, request, body, answer, micros, account);
+      let chargedCents = minCents;
+      let balanceCents = balance - minCents;
+      try {
+        const r = await settleQuestion(env.LOG_DB!, account!.id, holdRef, centsFor(micros), `question:${id ?? `x${crypto.randomUUID()}`}`);
+        chargedCents = r.charged;
+        balanceCents = r.balance;
+      } catch {
+        // The answer is already paid for upstream; a failed settle never withholds it, and the hold stays charged.
+        balanceCents = await balanceOf(env.LOG_DB!, account!.id);
+      }
+      holdOpen = false;
+      return json({ answer, remainingToday: 0, paid: true, chargedCents, balanceCents });
     } catch (e) {
       if (e instanceof Anthropic.RateLimitError) return json({ error: "busy" }, 503);
       if (e instanceof Anthropic.APIError) return json({ error: "upstream", status: e.status ?? 0 }, 502);
       return json({ error: "upstream" }, 502);
     } finally {
+      // Failed, declined or crashed before settling: the hold goes back.
+      if (holdOpen) await releaseHold(env.LOG_DB!, account!.id, holdRef).catch(() => undefined);
       if (costMicros > 0) {
         // KV is eventually consistent, so the cap can be overshot by a few questions at most.
         const latest = await readInt(env.ASK_KV, spendKey);
@@ -241,12 +294,12 @@ function withWebHeaders(res: Response, env: Env): Response {
   return out;
 }
 
-/** Saves one answered (or declined) question to the research log. Never fails the request. */
-async function log(env: Env, request: Request, body: AskBody, answer: string, micros: number, account: Account | null): Promise<void> {
-  if (!env.LOG_DB) return;
+/** Saves one answered (or declined) question to the research log and returns its row ID. Never fails the request. */
+async function log(env: Env, request: Request, body: AskBody, answer: string, micros: number, account: Account | null): Promise<number | null> {
+  if (!env.LOG_DB) return null;
   const last = body.messages[body.messages.length - 1];
   try {
-    await env.LOG_DB.prepare(
+    const r = await env.LOG_DB.prepare(
       "INSERT INTO questions (ts, device, lang, question, history, car, answer, cost_micros, model, account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
       .bind(
@@ -262,8 +315,10 @@ async function log(env: Env, request: Request, body: AskBody, answer: string, mi
         account?.id ?? null,
       )
       .run();
+    return r.meta.last_row_id ?? null;
   } catch {
     // Logging is best effort: a missing table or a full database never breaks an answer.
+    return null;
   }
 }
 

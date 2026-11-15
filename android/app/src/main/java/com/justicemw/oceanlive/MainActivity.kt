@@ -113,6 +113,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         Car.init(this)
         Accounts.init(this)
+        // Before TipJar: its first Google Play query can find the pre-registration reward.
+        PlayRewards.init(this)
         TipJar.init(this)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Aqua, background = Bg, surface = CardBg)) {
@@ -166,6 +168,8 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     BackHandler(enabled = showAsk) { showAsk = false }
     val askChat by Ask.chat.collectAsState()
     val accountState by Accounts.state.collectAsState()
+    // A pre-registration reward found before signing in is sent once there's an account.
+    LaunchedEffect(accountState.token) { if (accountState.token != null) PlayRewards.claimSaved(context) }
     val onAsk: (() -> Unit)? = if (Ask.enabled) ({ showAsk = true }) else null
     // "Support Ocean Live" (tips) covers the tabs the same way.
     var showSupport by rememberSaveable { mutableStateOf(false) }
@@ -237,6 +241,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                     onSend = { q, car -> Ask.send(context, q, car) },
                     onClear = { Ask.clear() },
                     onBack = { showAsk = false },
+                    balanceCents = accountState.account?.balanceCents,
                 )
             }
             return@BoxWithConstraints

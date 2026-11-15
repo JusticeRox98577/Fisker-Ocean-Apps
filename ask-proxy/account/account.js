@@ -78,9 +78,41 @@ function showAccount(a, focus = true) {
   $("acc-created").textContent = isNaN(created) ? a.created : created.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
   $("acc-providers").textContent = (a.providers || []).map((p) => PROVIDERS[p] || p).join(", ") || "None";
   $("name").value = a.name || "";
-  // Future: credits and badges would be filled in here once the server has them (see index.html).
+  showWallet(a);
   show("account");
   if (focus) focusHeading("account-title");
+}
+
+const BADGES = {
+  early_supporter: { name: "Early supporter", icon: "/icons/early-supporter-badge.svg", about: "Pre-registered on Google Play or pre-ordered on the App Store." },
+};
+
+/** Balance (US cents from the server) and badges. Spending happens in the app. */
+function showWallet(a) {
+  const cents = Number.isFinite(a.balanceCents) ? a.balanceCents : 0;
+  $("acc-balance").textContent = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(cents / 100);
+  const list = $("badge-list");
+  list.replaceChildren();
+  for (const id of a.badges || []) {
+    const b = BADGES[id];
+    if (!b) continue;
+    const li = document.createElement("li");
+    const img = document.createElement("img");
+    img.src = b.icon;
+    img.width = 56;
+    img.height = 56;
+    img.alt = "";
+    const text = document.createElement("div");
+    const strong = document.createElement("strong");
+    strong.textContent = b.name;
+    const p = document.createElement("p");
+    p.className = "small muted";
+    p.textContent = b.about;
+    text.append(strong, p);
+    li.append(img, text);
+    list.append(li);
+  }
+  $("badges").hidden = list.children.length === 0;
 }
 
 $("name-form").addEventListener("submit", async (e) => {

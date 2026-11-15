@@ -5,6 +5,27 @@ struct AskTurn: Identifiable, Equatable {
     let id = UUID()
     let fromOwner: Bool
     let text: String
+    /// For an answer paid from the account balance: what it cost and what is left, in US cents.
+    var chargedCents: Int? = nil
+    var balanceCents: Int? = nil
+}
+
+/// An answer from the proxy. `paid` means the free questions for today were used up and the answer was
+/// paid from the account balance. `remainingToday` is how many free questions are left today.
+struct AskAnswer: Equatable {
+    let text: String
+    var paid = false
+    var chargedCents: Int?
+    var balanceCents: Int?
+    var remainingToday: Int?
+}
+
+/// What "Any questions?" says about free questions and the balance, from the last answer.
+enum AskNotice: Equatable {
+    /// Free questions are used up; the next ones are paid from this balance (cents).
+    case usesBalance(Int)
+    /// Free questions are used up and the balance can't pay for another.
+    case freeUsedUp
 }
 
 /// "Any questions?": sends the owner's question to the Ocean Live proxy (ask-proxy/), which asks
@@ -29,6 +50,11 @@ final class Ask: ObservableObject {
     @Published private(set) var error: String?
     /// The question that failed, to put back into the text field.
     @Published private(set) var retry: String?
+    /// From the last answer: free questions left, whether it was paid, and the UTC day it was for.
+    /// Kept when the chat is cleared, since it is about the day, not the chat.
+    @Published private(set) var freeLeft: Int?
+    @Published private(set) var paidLast = false
+    @Published private(set) var day: String?
 
     private static let maxTurns = 12
 
@@ -57,8 +83,17 @@ final class Ask: ObservableObject {
         if case .failure(let f) = result, f.signedOut { Accounts.shared.unauthorized(token: token) }
         switch result {
         case .success(let answer):
-            turns.append(AskTurn(fromOwner: false, text: answer))
+            turns.append(AskTurn(fromOwner: false, text: answer.text,
+                                 chargedCents: answer.paid ? answer.chargedCents : nil,
+                                 balanceCents: answer.paid ? answer.balanceCents : nil))
+            freeLeft = answer.remainingToday
+            paidLast = answer.paid
+            day = Self.utcDay(Date())
+            Accounts.shared.updateBalance(cents: answer.balanceCents, token: token)
         case .failure(let message):
+            if message.balanceCents != nil {
+                Accounts.shared.updateBalance(cents: message.balanceCents, token: token)
+            }
             // Take the question back out so the owner can try again; the text field gets it back.
             turns.removeLast()
             error = message.text
@@ -80,18 +115,87 @@ final class Ask: ObservableObject {
         let text: String
         /// The server answered 401: the session is gone.
         var signedOut = false
+        /// The account balance the server reported with the error, in US cents.
+        var balanceCents: Int? = nil
     }
 
-    /// What the proxy's error codes mean for the owner.
-    nonisolated static func errorMessage(status: Int, error: String?) -> String {
+    /// A paid question needs at least this balance (the server's PAID_MIN_BALANCE_CENTS default).
+    nonisolated static let minPaidCents = 3
+
+    /// What the proxy's error codes mean for the owner. A 429 carries a `reason`: free_used, low_balance,
+    /// paid_limit or network (the shared per-network limit, even with free questions left). Without one
+    /// (a server from before the balance) it goes by `balanceCents`, where zero means used up.
+    nonisolated static func errorMessage(status: Int, error: String?, balanceCents: Int? = nil, reason: String? = nil) -> String {
         if error == "signin_required" || status == 401 { return String(localized: "Sign in again to ask questions.") }
-        if error == "rate_limited" || status == 429 { return String(localized: "That's all the questions for today. Try again tomorrow.") }
+        if error == "rate_limited" || status == 429 {
+            let freeUsed = String(localized: "You've used today's free questions. They reset at midnight UTC.")
+            let lowBalance = String(localized: "You've used today's free questions and your balance is too low for another. They reset at midnight UTC.")
+            let limit = String(localized: "That's all the questions for today. Try again tomorrow.")
+            switch reason {
+            case "free_used": return freeUsed
+            case "low_balance": return lowBalance
+            case "paid_limit", "network": return limit
+            default:
+                guard let balanceCents else { return limit }
+                if balanceCents <= 0 { return freeUsed }
+                return balanceCents < minPaidCents ? lowBalance : limit
+            }
+        }
         if error == "budget" { return String(localized: "Questions are paused until next month.") }
         if error == "no_answer" { return String(localized: "Couldn't answer that one. Try asking another way.") }
         return String(localized: "Couldn't reach the questions service. Try again in a moment.")
     }
 
-    private nonisolated static func post(_ url: URL, body: [String: Any], token: String?) async -> Result<String, Failure> {
+    /// The notice under the chat, like Android's: nothing while free questions are left, otherwise whether
+    /// further questions today use the balance (at least `minPaidCents`) or the free ones are simply used up.
+    /// `day` is the UTC day of the last answer; free questions come back at midnight UTC.
+    nonisolated static func notice(freeLeft: Int?, paid: Bool, day: String?, today: String, balanceCents: Int?) -> AskNotice? {
+        guard day == today else { return nil }
+        if !paid, freeLeft.map({ $0 > 0 }) ?? true { return nil }
+        let balance = balanceCents ?? 0
+        return balance >= minPaidCents ? .usesBalance(balance) : .freeUsedUp
+    }
+
+    nonisolated static func noticeText(_ notice: AskNotice) -> String {
+        switch notice {
+        case .usesBalance(let cents): return String(localized: "Further questions today use your balance (\(Money.format(cents: cents)))")
+        case .freeUsedUp: return String(localized: "You've used today's free questions. They reset at midnight UTC.")
+        }
+    }
+
+    /// The UTC date of `date` as yyyy-MM-dd, like the proxy's daily count.
+    nonisolated static func utcDay(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+
+    /// "Paid from your balance: $0.02 · $4.98 left", or without the part left when the server didn't say.
+    nonisolated static func paidNote(charged: Int, left: Int?) -> String {
+        let paid = Money.format(cents: charged)
+        guard let left else { return String(localized: "Paid from your balance: \(paid)") }
+        return String(localized: "Paid from your balance: \(paid) · \(Money.format(cents: left)) left")
+    }
+
+    /// Reads the proxy's reply. Pure, so it is unit tested.
+    nonisolated static func reply(status: Int, json: [String: Any]?) -> Result<AskAnswer, Failure> {
+        let answer = (json?["answer"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let balance = Money.cents(json?["balanceCents"]).map { max(0, $0) }
+        if (200..<300).contains(status), !answer.isEmpty {
+            return .success(AskAnswer(text: answer, paid: json?["paid"] as? Bool ?? false,
+                                      chargedCents: Money.cents(json?["chargedCents"]), balanceCents: balance,
+                                      remainingToday: Money.cents(json?["remainingToday"]).map { max(0, $0) }))
+        }
+        let error = json?["error"] as? String
+        let reason = json?["reason"] as? String
+        return .failure(Failure(text: errorMessage(status: status, error: error, balanceCents: balance, reason: reason),
+                                signedOut: status == 401, balanceCents: balance))
+    }
+
+    private nonisolated static func post(_ url: URL, body: [String: Any], token: String?) async -> Result<AskAnswer, Failure> {
         var request = URLRequest(url: url, timeoutInterval: 90)
         request.httpMethod = "POST"
         request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
@@ -101,9 +205,7 @@ final class Ask: ObservableObject {
             let (data, response) = try await URLSession.shared.data(for: request)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-            let answer = (json?["answer"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            if (200..<300).contains(status), !answer.isEmpty { return .success(answer) }
-            return .failure(Failure(text: errorMessage(status: status, error: json?["error"] as? String), signedOut: status == 401))
+            return reply(status: status, json: json)
         } catch let e as URLError where e.code == .notConnectedToInternet || e.code == .networkConnectionLost {
             return .failure(Failure(text: String(localized: "No internet")))
         } catch {

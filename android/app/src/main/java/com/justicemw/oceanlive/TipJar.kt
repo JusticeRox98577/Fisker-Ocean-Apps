@@ -7,6 +7,7 @@ import android.content.SharedPreferences
 import android.os.Build
 import androidx.annotation.StringRes
 import androidx.core.content.edit
+import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClient.BillingResponseCode
 import com.android.billingclient.api.BillingClientStateListener
@@ -170,6 +171,8 @@ object TipJar {
     private fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
         when (result.responseCode) {
             BillingResponseCode.OK -> {
+                // A pre-registration reward can arrive here too while the app is open.
+                PlayRewards.onPurchases(purchases.orEmpty(), ::acknowledge)
                 val ours = purchases.orEmpty().filter(::isOurTip)
                 if (ours.isEmpty()) _state.update { it.copy(buying = null) }
                 ours.forEach { handle(it, celebrate = true) }
@@ -253,14 +256,26 @@ object TipJar {
     private fun finishEarlier(c: BillingClient) {
         c.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build()) { result, purchases ->
             if (result.responseCode != BillingResponseCode.OK) return@queryPurchasesAsync
+            // The pre-registration reward shows up here (a purchase made outside the app).
+            PlayRewards.onPurchases(purchases, ::acknowledge)
             val ours = purchases.filter(::isOurTip)
             if (ours.none { it.purchaseState == Purchase.PurchaseState.PENDING }) _state.update { it.copy(pending = false) }
             ours.forEach { handle(it, celebrate = false) }
         }
     }
 
-    private fun isOurTip(p: Purchase): Boolean =
-        p.packageName == app?.packageName && p.products.isNotEmpty() && p.products.all { it in Tips.PRODUCT_IDS }
+    private fun isOurTip(p: Purchase): Boolean = p.packageName == app?.packageName && Tips.isTip(p.products)
+
+    /**
+     * Acknowledges a purchase that isn't consumed (the pre-registration reward), so Google Play
+     * keeps it instead of refunding it after 3 days. [done] gets true once Google Play has it.
+     */
+    private fun acknowledge(token: String, done: (Boolean) -> Unit) {
+        val c = client?.takeIf { it.isReady } ?: return done(false)
+        c.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(token).build()) { result ->
+            done(result.responseCode == BillingResponseCode.OK)
+        }
+    }
 
     private fun failure(code: Int): Availability = when (code) {
         BillingResponseCode.BILLING_UNAVAILABLE,

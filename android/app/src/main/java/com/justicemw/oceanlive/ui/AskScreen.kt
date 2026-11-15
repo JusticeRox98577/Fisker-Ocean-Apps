@@ -52,12 +52,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.justicemw.oceanlive.R
+import com.justicemw.oceanlive.car.Ask
 import com.justicemw.oceanlive.car.AskChat
+import com.justicemw.oceanlive.car.AskTurn
+import com.justicemw.oceanlive.car.Balance
 import kotlinx.coroutines.launch
 
 /**
  * "Any questions?": a simple chat with Claude about the Fisker Ocean and the app.
- * [carSummary] is what would be sent with a question when [shareCar] is on.
+ * [carSummary] is what would be sent with a question when [shareCar] is on. [balanceCents] is the
+ * account's balance, which pays for questions once the free ones for the day are used up.
  */
 @Composable
 fun AskScreen(
@@ -68,6 +72,7 @@ fun AskScreen(
     onSend: suspend (question: String, car: String?) -> Unit,
     onClear: () -> Unit,
     onBack: () -> Unit,
+    balanceCents: Int? = null,
 ) {
     val scope = rememberCoroutineScope()
     var input by rememberSaveable { mutableStateOf("") }
@@ -154,7 +159,7 @@ fun AskScreen(
                         }
                     }
                 }
-                items(chat.turns) { t -> Bubble(t.text, t.fromOwner) }
+                items(chat.turns) { t -> Bubble(t) }
                 if (chat.waiting) {
                     item {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
@@ -165,6 +170,17 @@ fun AskScreen(
                     }
                 }
                 chat.error?.let { e -> item { Text(stringResource(e), color = Bad, fontSize = 13.sp, modifier = Modifier.padding(4.dp)) } }
+                val notice = if (chat.error != null || chat.waiting) null
+                else Balance.askNotice(chat.freeLeft, chat.paidLast, chat.day, Ask.utcDay(System.currentTimeMillis()), balanceCents)
+                notice?.let { n ->
+                    item {
+                        val text = when (n) {
+                            is Balance.AskNotice.UsesBalance -> stringResource(R.string.ask_uses_balance, money(n.balanceCents))
+                            Balance.AskNotice.FreeUsedUp -> stringResource(R.string.ask_error_free_used)
+                        }
+                        Text(text, color = Dim, fontSize = 13.sp, modifier = Modifier.padding(4.dp))
+                    }
+                }
                 item { Text(stringResource(R.string.ask_disclaimer), color = Dim, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)) }
             }
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -194,15 +210,24 @@ fun AskScreen(
 }
 
 @Composable
-private fun Bubble(text: String, mine: Boolean) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
+private fun Bubble(turn: AskTurn) {
+    val mine = turn.fromOwner
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
         SelectionContainer {
             Text(
-                text, color = if (mine) Color(0xFF04121C) else Color.White, fontSize = 15.sp,
+                turn.text, color = if (mine) Color(0xFF04121C) else Color.White, fontSize = 15.sp,
                 modifier = Modifier.widthIn(max = 560.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .then(if (mine) Modifier.background(OceanBrush) else Modifier.background(CardBg).border(1.dp, CardEdge, RoundedCornerShape(16.dp)))
                     .padding(12.dp),
+            )
+        }
+        val paid = turn.paidCents
+        if (!mine && paid != null) {
+            val left = turn.balanceCents
+            Text(
+                if (left != null) stringResource(R.string.ask_paid_left, money(paid), money(left)) else stringResource(R.string.ask_paid, money(paid)),
+                color = Dim, fontSize = 12.sp, modifier = Modifier.padding(start = 6.dp, top = 4.dp),
             )
         }
     }

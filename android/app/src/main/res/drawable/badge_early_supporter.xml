@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Early supporter badge (pre-registration reward), from badge/early-supporter-badge.svg. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- ribbon tails -->
+    <path android:fillColor="#2A9FB0" android:pathData="M176,330 L130,476 L180,452 L206,496 L244,360 Z" />
+    <path android:fillColor="#2A9FB0" android:pathData="M336,330 L382,476 L332,452 L306,496 L268,360 Z" />
+    <path android:fillColor="#1F7F8E" android:pathData="M176,330 L150,412 L196,380 Z" />
+    <path android:fillColor="#1F7F8E" android:pathData="M336,330 L362,412 L316,380 Z" />
+    <!-- scalloped rosette -->
+    <group android:translateX="256" android:translateY="232">
+        <path android:pathData="M0,-196 L26,-170 L61,-186 L77,-153 L114,-159 L117,-122 L153,-114 L144,-78 L175,-58 L156,-26 L178,4 L152,28 L164,63 L130,77 L130,114 L93,118 L80,153 L44,144 L22,175 L-7,152 L-36,174 L-56,143 L-93,149 L-104,113 L-141,109 L-138,72 L-171,55 L-155,21 L-178,-8 L-150,-30 L-160,-66 L-125,-80 L-123,-117 L-86,-120 L-71,-155 L-36,-145 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="-178" android:startY="-196" android:endX="178" android:endY="175">
+                    <item android:offset="0" android:color="#FFF9DC9A" />
+                    <item android:offset="0.5" android:color="#FFF6C977" />
+                    <item android:offset="1" android:color="#FFC9933F" />
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+    <path android:fillColor="#071A33" android:pathData="M106,232 A150,150 0 1,0 406,232 A150,150 0 1,0 106,232 Z" />
+    <path android:strokeColor="#F6C977" android:strokeWidth="6" android:pathData="M114,232 A142,142 0 1,0 398,232 A142,142 0 1,0 114,232 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="256" android:startY="90" android:endX="256" android:endY="374">
+                <item android:offset="0" android:color="#FF123563" />
+                <item android:offset="1" android:color="#FF071A33" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- sea and waves, clipped to the face -->
+    <group>
+        <clip-path android:pathData="M118,232 A138,138 0 1,0 394,232 A138,138 0 1,0 118,232 Z" />
+        <path android:pathData="M100,262 C150,236 190,288 240,262 C290,236 330,288 380,262 C400,252 410,252 420,256 L420,400 L100,400 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="260" android:startY="243" android:endX="260" android:endY="400">
+                    <item android:offset="0" android:color="#FF5CE1E6" />
+                    <item android:offset="1" android:color="#FF2A9FB0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:fillColor="#1F7F8E" android:pathData="M100,300 C150,276 190,326 240,300 C290,276 330,326 380,300 C400,290 410,290 420,294 L420,400 L100,400 Z" />
+    </group>
+    <!-- star -->
+    <path
+        android:fillColor="#F6C977"
+        android:strokeColor="#FFF3D6"
+        android:strokeWidth="4"
+        android:strokeLineJoin="round"
+        android:pathData="M256,112 L282,168 L343,174 L297,215 L310,275 L256,244 L202,275 L215,215 L169,174 L230,168 Z" />
+</vector>

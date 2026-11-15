@@ -12,6 +12,7 @@
  * Tables: see migrations/0002_accounts.sql.
  */
 
+import { badgesOf, balanceOf } from "./balance";
 import { emailLang, signInEmail } from "./email";
 
 export interface AuthEnv {
@@ -243,10 +244,15 @@ async function signIn(
 
 async function accountInfo(db: D1Database, a: Account) {
   const ids = await db.prepare("SELECT provider FROM identities WHERE account_id = ? ORDER BY created").bind(a.id).all<{ provider: string }>();
-  return { id: a.id, email: a.email, name: a.name, created: a.created, providers: ids.results.map((r) => r.provider) };
+  const [balanceCents, badges] = await Promise.all([balanceOf(db, a.id), badgesOf(db, a.id)]);
+  return { id: a.id, email: a.email, name: a.name, created: a.created, providers: ids.results.map((r) => r.provider), balanceCents, badges };
 }
 
-/** Removes the account, its sign-ins, sessions, pending email codes, logged questions and any hand-set question limit. */
+/**
+ * Removes the account, its sign-ins, sessions, pending email codes, logged questions, balance, ledger, badges
+ * and any hand-set question limit. Only the hashed references of store rewards it claimed stay (claimed_rewards),
+ * so the same store purchase can't be claimed again.
+ */
 async function deleteAccount(env: AuthEnv, id: string) {
   const db = env.LOG_DB!;
   await db.batch([
@@ -258,6 +264,9 @@ async function deleteAccount(env: AuthEnv, id: string) {
         "UNION SELECT lower(subject) FROM identities WHERE account_id = ? AND provider = 'email')",
     ).bind(id, id),
     db.prepare("DELETE FROM questions WHERE account_id = ?").bind(id),
+    db.prepare("DELETE FROM ledger WHERE account_id = ?").bind(id),
+    db.prepare("DELETE FROM balances WHERE account_id = ?").bind(id),
+    db.prepare("DELETE FROM badges WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM sessions WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM identities WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM accounts WHERE id = ?").bind(id),

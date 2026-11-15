@@ -17,6 +17,15 @@ Each `## x.y.z` section is used as the release notes for that version.
   rename or delete your account without the app. It uses one cookie, only to keep you signed in
 * Service status: status.oceanlive.org shows whether the website, the app server and the
   mail server are up
+* Account balance: your Ocean Live account can now hold credit, shown in Settings → Account
+  (and at account.oceanlive.org). When today's free questions are used up, "Any questions?"
+  can keep answering from your balance: each extra question costs what its answer cost,
+  rounded up to the next cent, and the chat shows what it cost and what's left. A question
+  that fails costs nothing. Credit will also pay for add-ons when there are any
+* Pre-registration reward: if you pre-registered on Google Play or pre-ordered on the App
+  Store, signing in adds US$5 of credit and an Early supporter badge to your account, once
+  per store account and once per Ocean Live account. Terms: oceanlive.org/preregistration-terms.
+  The privacy policy says what's stored for the balance and how a reward is checked
 
 ## 3.4.0
 
