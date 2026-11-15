@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Privacy policy · Ocean Live</title>
-<meta name="description" content="How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds, what &quot;Any questions?&quot; sends, and how to have it deleted.">
+<meta name="description" content="How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds, what &quot;Any questions?&quot; sends, the email list, and how to have it deleted.">
 <link rel="canonical" href="https://oceanlive.org/privacy">
 <meta property="og:url" content="https://oceanlive.org/privacy">
 <meta name="theme-color" content="#0B2545">
@@ -16,7 +16,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ocean Live">
 <meta property="og:title" content="Privacy policy · Ocean Live">
-<meta property="og:description" content="How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds, what &quot;Any questions?&quot; sends, and how to have it deleted.">
+<meta property="og:description" content="How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds, what &quot;Any questions?&quot; sends, the email list, and how to have it deleted.">
 <meta property="og:image" content="https://oceanlive.org/icons/icon-512.png">
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
@@ -57,14 +57,14 @@
     <div class="lightbar" aria-hidden="true"></div>
     <div class="eyebrow">Privacy policy</div>
     <h1>Ocean Live privacy policy</h1>
-    <p>Last updated: 13 November 2026 (added: accounts)</p>
+    <p>Last updated: 15 November 2026 (added: mailing list)</p>
   </div>
 </section>
 
 <article class="doc">
   <div class="wrap narrow">
     <div class="sheet">
-    <p>Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps.</p>
+    <p>Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps, and the Ocean Live mailing list.</p>
 
     <ul class="toc" aria-label="Sections">
       <li><a href="#short">The short version</a></li>
@@ -75,6 +75,7 @@
       <li><a href="#accounts">Accounts</a></li>
       <li><a href="#abrp">ABRP</a></li>
       <li><a href="#watches">Watches, widgets and car screens</a></li>
+      <li><a href="#mailing-list">Mailing list</a></li>
       <li><a href="#children">Children</a></li>
       <li><a href="#changes">Changes</a></li>
       <li><a href="#contact">Contact</a></li>
@@ -88,6 +89,7 @@
         <li>Version 3.4 has no account. From the next version, the app asks you to sign in once (with Google or a 6-digit email code, and on iPhone also with Sign in with Apple). The account holds your email address and a display name, and you can delete it in the app at any time. See <a href="#accounts">Accounts</a>.</li>
         <li>What the app reads from your car stays on your phone, except what you choose to send below.</li>
         <li>Data leaves your phone only when you sign in or manage your account (opening the account settings checks it with the server), when you ask a question in "Any questions?", or if you turn on live data to A Better Route Planner (ABRP) yourself.</li>
+        <li>The mailing list on oceanlive.org is separate from the app and only for people who sign up and confirm. It keeps your email address and language until you unsubscribe. See <a href="#mailing-list">Mailing list</a>.</li>
         <li>Questions (and, unless you turn it off, your car's latest readings) are answered by Claude, an AI made by Anthropic, through a small server the developer runs. For research, the developer keeps each question, its answer, the readings sent with it and a random install ID for 90 days, then deletes them.</li>
       </ul>
     </div>
@@ -145,6 +147,22 @@
     <h2 id="watches">Watches, widgets and CarPlay / Android Auto</h2>
     <p>The watch apps, widgets, Live Activity, CarPlay and Android Auto only show data your phone already has. The watch receives it directly from your phone through the platform's own phone-to-watch connection.</p>
 
+    <h2 id="mailing-list">Mailing list (only if you sign up)</h2>
+    <p>On oceanlive.org you can sign up for Ocean Live news: an email when there's a new release or an important fix, a few times a year. Nobody is added without confirming. After you sign up, you get an email with a link, and you are only on the list once you open it and press <strong>Confirm my subscription</strong>.</p>
+    <p>What the Ocean Live mail server stores, in a Cloudflare D1 database that only the developer can read:</p>
+    <ul>
+      <li>your email address and the language for the emails (English, German, French, Spanish or Dutch, taken from your browser);</li>
+      <li>whether you have confirmed, when you signed up and when you confirmed, and which version of the sign-up wording you agreed to;</li>
+      <li>until you confirm: a hash of the confirmation code, when it expires and how many confirmation emails were sent;</li>
+      <li>a random code for your unsubscribe link;</li>
+      <li>for each news email: whether it was sent to you, and the delivery service's message ID or error.</li>
+    </ul>
+    <p>To limit abuse, the server also counts sign-ups per network for an hour, stored only as a salted hash of the IP address and deleted within about a day. That count is not linked to your email address.</p>
+    <p>Why: only to send you Ocean Live news. Your address is never sold or shared, and never used for anything else. The emails have no ads. Like the sign-in email, they load their banner from oceanlive.org, so opening one with images shown sends a request to Cloudflare (your IP address and the time).</p>
+    <p>Who processes it: <strong>Cloudflare</strong> stores it and runs the server; <strong>Resend</strong> delivers the emails, so it receives your email address and each email.</p>
+    <p>How long: a sign-up that isn't confirmed is deleted after 7 days. Unsubscribing deletes your address straight away. Every email has an unsubscribe link, and mail apps that show an Unsubscribe button (such as Gmail) unsubscribe you in one click. You can also email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> to have your address deleted, or to ask what is held.</p>
+    <p>The legal basis in the EU and UK is your consent, which you can withdraw at any time by unsubscribing.</p>
+
     <h2 id="children">Children</h2>
     <p>Ocean Live is meant for vehicle owners and is not directed at children.</p>
 
@@ -156,7 +174,7 @@
 
     <div class="callout sand">
       <h2 id="website">This website</h2>
-      <p>oceanlive.org sets no cookies and uses no analytics or trackers. Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+      <p>oceanlive.org sets no cookies and uses no analytics or trackers. The only thing it collects is what you type into the mailing list form, if you sign up (see <a href="#mailing-list">Mailing list</a>). Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     </div>
     </div>
   </div>
@@ -179,6 +197,7 @@
           <li><a href="/#download">Download</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">Releases</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">Changelog</a></li>
+          <li><a href="/news">News by email</a></li>
           <li><a href="/#faq">FAQ</a></li>
         </ul>
       </div>

@@ -46,3 +46,7 @@
 
 /downloads/preview/*
   X-Robots-Tag: noindex
+
+# Mailing list confirm and unsubscribe pages (the links in its emails): never in search results.
+/list/*
+  X-Robots-Tag: noindex

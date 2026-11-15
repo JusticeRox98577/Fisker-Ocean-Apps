@@ -82,6 +82,7 @@ for (const f of files.filter((f) => f.endsWith(".html"))) {
 }
 
 // JS modules: static imports, dynamic imports, fetch and loaded scripts.
+const workerSrc = readFileSync(fileURLToPath(new URL("../src/worker.js", import.meta.url)), "utf8");
 const importMap = JSON.parse(readFileSync(join(ROOT, "index.html"), "utf8").match(/<script type="importmap">([\s\S]*?)<\/script>/)[1]).imports;
 function resolveSpecifier(spec, from) {
   if (spec.startsWith("/")) return join(ROOT, spec);
@@ -103,7 +104,13 @@ for (const f of files.filter((f) => f.endsWith(".js") && !rel(f).startsWith("ven
     const target = resolveSpecifier(s, f);
     if (!target || !existsSync(target)) fail(where, `import "${s}" does not resolve`);
   }
+  // /api/ paths are answered by src/worker.js, not by a file: each one a page uses must be one it forwards.
+  for (const m of src.matchAll(/["'](\/api\/[^"'?#]*)["']/g)) {
+    checked++;
+    if (!workerSrc.includes(`"${m[1]}"`)) fail(where, `${m[1]} is not an endpoint in src/worker.js`);
+  }
   for (const m of src.matchAll(/(?:fetch|loadModel|load)\(\s*["'](\/[^/"'][^"']*)["']/g)) {
+    if (m[1].startsWith("/api/")) continue; // checked above
     // /downloads/ is staged by tools/deploy.mjs at deploy time and is never in git.
     if (m[1].startsWith("/downloads/")) {
       if (m[1].startsWith("/downloads/preview/")) fail(where, `the pages must not use the preview channel (${m[1]})`);

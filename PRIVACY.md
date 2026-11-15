@@ -1,9 +1,10 @@
 # Ocean Live privacy policy
 
-Last updated: 13 November 2026 (added: accounts)
+Last updated: 15 November 2026 (added: mailing list)
 
 Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other
-Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps.
+Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps,
+and the Ocean Live mailing list.
 
 ## The short version
 
@@ -16,6 +17,9 @@ Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple W
 * Data leaves your phone only when you sign in or manage your account (opening the account
   settings checks it with the server), when you ask a question in "Any questions?", or if you
   turn on live data to A Better Route Planner (ABRP) yourself.
+* The mailing list on oceanlive.org is separate from the app and only for people who sign up
+  and confirm. It keeps your email address and language until you unsubscribe. See
+  [Mailing list](#mailing-list).
 * Questions (and, unless you turn it off, your car's latest readings) are answered by Claude,
   an AI made by Anthropic, through a small server the developer runs. For research, the
   developer keeps each question, its answer, the readings sent with it and a random install
@@ -156,6 +160,46 @@ under ABRP's own privacy policy. Remove the token and key to stop it at any time
 The watch apps, widgets, Live Activity, CarPlay and Android Auto only show data your phone
 already has. The watch receives it directly from your phone through the platform's own
 phone-to-watch connection.
+
+## Mailing list (only if you sign up)
+
+On oceanlive.org you can sign up for Ocean Live news: an email when there's a new release or
+an important fix, a few times a year. Nobody is added without confirming. After you sign up,
+you get an email with a link, and you are only on the list once you open it and press
+**Confirm my subscription**.
+
+What the Ocean Live mail server stores, in a Cloudflare D1 database that only the developer
+can read:
+
+* your email address and the language for the emails (English, German, French, Spanish or
+  Dutch, taken from your browser);
+* whether you have confirmed, when you signed up and when you confirmed, and which version of
+  the sign-up wording you agreed to;
+* until you confirm: a hash of the confirmation code, when it expires and how many
+  confirmation emails were sent;
+* a random code for your unsubscribe link;
+* for each news email: whether it was sent to you, and the delivery service's message ID or
+  error.
+
+To limit abuse, the server also counts sign-ups per network for an hour, stored only as a
+salted hash of the IP address and deleted within about a day. That count is not linked to your
+email address.
+
+Why: only to send you Ocean Live news. Your address is never sold or shared, and never used
+for anything else. The emails have no ads. Like the sign-in email, they load their banner from
+oceanlive.org, so opening one with images shown sends a request to Cloudflare (your IP address
+and the time).
+
+Who processes it: **Cloudflare** stores it and runs the server; **Resend** delivers the
+emails, so it receives your email address and each email.
+
+How long: a sign-up that isn't confirmed is deleted after 7 days. Unsubscribing deletes your
+address straight away. Every email has an unsubscribe link, and mail apps that show an
+Unsubscribe button (such as Gmail) unsubscribe you in one click. You can also email
+justice@oceanlive.org to have your address deleted, or to ask what is held.
+
+The legal basis in the EU and UK is your consent, which you can withdraw at any time by
+unsubscribing.
 
 ## Children
 

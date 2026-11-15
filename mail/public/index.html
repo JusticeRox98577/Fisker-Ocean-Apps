@@ -41,6 +41,7 @@
     <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></symbol>
     <symbol id="i-unread" viewBox="0 0 24 24"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h9"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><circle cx="19" cy="18" r="3"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+    <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
   </svg>
 
   <!-- Sign in -->
@@ -77,6 +78,7 @@
         <li><a href="#/inbox" data-folder="inbox"><svg class="i" aria-hidden="true"><use href="#i-inbox"/></svg><span>Inbox</span><b class="count" id="count-inbox"></b></a></li>
         <li><a href="#/sent" data-folder="sent"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg><span>Sent</span></a></li>
         <li><a href="#/trash" data-folder="trash"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg><span>Trash</span></a></li>
+        <li class="folders-sep"><a href="#/list" data-folder="list"><svg class="i" aria-hidden="true"><use href="#i-megaphone"/></svg><span>Mailing list</span></a></li>
       </ul>
       <div class="rail-foot">
         <p class="muted small">Signed in as</p>
@@ -101,6 +103,62 @@
       </section>
 
       <section class="reader" id="reader" aria-label="Message"></section>
+    </main>
+
+    <!-- Mailing list (Ocean Live news) -->
+    <main id="list-main" class="list-main" tabindex="-1" aria-labelledby="list-title" hidden>
+      <div class="lv">
+        <header class="lv-head">
+          <h1 id="list-title">Mailing list</h1>
+          <p class="muted" id="lv-counts" role="status" aria-live="polite">Loading…</p>
+        </header>
+        <div id="lv-notices"></div>
+
+        <section class="lv-card" aria-labelledby="lv-compose-title">
+          <h2 id="lv-compose-title">Write to subscribers</h2>
+          <p class="muted small">From <span id="lv-from" class="lv-strong"></span>. Plain text; links become clickable.
+            Every email gets a footer saying why they get it, an unsubscribe link and the postal address.</p>
+          <form id="lv-form" class="lv-form" novalidate>
+            <label for="lv-subject">Subject</label>
+            <input id="lv-subject" type="text" maxlength="200" required autocomplete="off" aria-describedby="lv-error">
+            <label for="lv-text">Message</label>
+            <textarea id="lv-text" rows="12" maxlength="20000" required aria-describedby="lv-error"></textarea>
+            <p id="lv-error" class="field-error" role="alert"></p>
+            <div class="lv-actions">
+              <button class="btn btn-ghost" type="button" id="lv-test"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg>Send test to me</button>
+              <button class="btn btn-primary" type="submit" id="lv-send"><svg class="i" aria-hidden="true"><use href="#i-megaphone"/></svg><span>Send to subscribers</span></button>
+            </div>
+            <p id="lv-progress" class="lv-progress" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="lv-card" aria-labelledby="lv-campaigns-title">
+          <h2 id="lv-campaigns-title">Sent news</h2>
+          <ul id="lv-campaigns" class="lv-campaigns"></ul>
+        </section>
+
+        <section class="lv-card" aria-labelledby="lv-subs-title">
+          <h2 id="lv-subs-title">Subscribers</h2>
+          <div class="lv-filters">
+            <label class="visually-hidden" for="lv-q">Search addresses</label>
+            <input id="lv-q" type="search" placeholder="Search addresses" autocomplete="off" spellcheck="false">
+            <label class="visually-hidden" for="lv-status">Show</label>
+            <select id="lv-status">
+              <option value="">Everyone</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="pending">Not confirmed yet</option>
+            </select>
+          </div>
+          <div class="lv-table-wrap">
+            <table class="lv-table">
+              <thead><tr><th scope="col">Email</th><th scope="col">Status</th><th scope="col">Language</th><th scope="col">Signed up</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
+              <tbody id="lv-subs"></tbody>
+            </table>
+          </div>
+          <p id="lv-subs-status" class="muted small" role="status" aria-live="polite"></p>
+          <button class="btn btn-ghost btn-small" id="lv-more" type="button" hidden>Load more</button>
+        </section>
+      </div>
     </main>
 
     <button class="fab only-narrow" id="fab" type="button" aria-label="Compose"><svg class="i"><use href="#i-pen"/></svg></button>

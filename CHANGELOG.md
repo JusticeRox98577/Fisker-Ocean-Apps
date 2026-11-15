@@ -2,6 +2,12 @@
 
 Each `## x.y.z` section is used as the release notes for that version.
 
+## Unreleased
+
+* News by email: sign up at oceanlive.org/news (or in the downloads section of the home page)
+  to get an email when there's a new release or an important fix. Nobody is added without
+  confirming by email, and every email has a one-click unsubscribe that deletes your address
+
 ## 3.4.0
 
 * "Any questions?": tap the **?** at the top to ask Claude, Anthropic's AI, about your

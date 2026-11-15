@@ -3,9 +3,24 @@
  * - email(): Cloudflare Email Routing hands over mail for @oceanlive.org; known mailboxes are stored, others rejected.
  * - fetch(): the JSON API under /api/ (the web app in public/ is served as static files).
  * - scheduled(): daily clean-up.
+ * The mailing list's public endpoints (/api/list/subscribe, confirm, unsubscribe) need no session; oceanlive.org
+ * forwards them here. Everything else under /api/ needs a webmail session (and CSRF for changes).
  */
 import { csrfOk, getSession, login, logout } from "./auth";
 import { type Env, num } from "./env";
+import {
+  cleanupList,
+  confirm,
+  continueCampaign,
+  createCampaign,
+  deleteSubscriber,
+  listSubscribers,
+  overview,
+  sendTest,
+  subscribe,
+  unsubscribe,
+  unsubscribePage,
+} from "./list";
 import { createMailbox, listMailboxes, renameMailbox } from "./mailboxes";
 import {
   attachment,
@@ -32,6 +47,12 @@ async function api(req: Request, env: Env): Promise<Response> {
 
   if (path === "/api/login" && method === "POST") return login(req, env);
 
+  // Mailing list, public: matched by exact path and method, before the session check.
+  if (path === "/api/list/subscribe" && method === "POST") return subscribe(req, env);
+  if (path === "/api/list/confirm" && method === "POST") return confirm(req, env);
+  if (path === "/api/list/unsubscribe" && method === "POST") return unsubscribe(req, env);
+  if (path === "/api/list/unsubscribe" && method === "GET") return unsubscribePage(req, env);
+
   const session = await getSession(req, env);
   if (path === "/api/session" && method === "GET") {
     if (!session) return fail(401, "Signed out.");
@@ -51,6 +72,12 @@ async function api(req: Request, env: Env): Promise<Response> {
   if (path === "/api/mailboxes" && method === "POST") return createMailbox(req, env);
   if (path === "/api/mailbox" && method === "PATCH") return renameMailbox(req, env, session);
 
+  // Mailing list, owner.
+  if (path === "/api/list" && method === "GET") return overview(env);
+  if (path === "/api/list/subscribers" && method === "GET") return listSubscribers(url, env);
+  if (path === "/api/list/test" && method === "POST") return sendTest(req, env, session);
+  if (path === "/api/list/campaigns" && method === "POST") return createCampaign(req, env, session);
+
   let m = new RegExp(`^/api/messages/${ID}$`).exec(path);
   if (m) {
     if (method === "GET") return readMessage(env, session, m[1]);
@@ -63,6 +90,10 @@ async function api(req: Request, env: Env): Promise<Response> {
   if (m && method === "GET") return rawMessage(env, session, m[1]);
   m = new RegExp(`^/api/messages/${ID}/attachments/${ATT}$`).exec(path);
   if (m && method === "GET") return attachment(env, session, m[1], m[2]);
+  m = new RegExp(`^/api/list/subscribers/${ID}$`).exec(path);
+  if (m && method === "DELETE") return deleteSubscriber(env, m[1]);
+  m = new RegExp(`^/api/list/campaigns/${ID}/continue$`).exec(path);
+  if (m && method === "POST") return continueCampaign(env, m[1]);
 
   return fail(404, "Not found.");
 }
@@ -98,5 +129,6 @@ export default {
       .bind(cutoff)
       .all<{ id: string }>();
     for (const r of results) await purge(env, r.id);
+    await cleanupList(env, now);
   },
 } satisfies ExportedHandler<Env>;

@@ -1,7 +1,7 @@
-// Writes the document pages (privacy, delete account, credits, 404) with the shared header and
-// footer. The home page (public/index.html) is written by hand. Run after editing a page body here
+// Writes the document pages (privacy, delete account, credits, news, the mailing list's confirm and
+// unsubscribe pages, 404) with the shared header and footer. The home page (public/index.html) is written by hand. Run after editing a page body here
 // or the shared parts: node tools/build-pages.mjs   (from site/)
-import { writeFileSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 
 const PUB = new URL("../public/", import.meta.url);
 const REPO = "https://github.com/JusticeRox98577/Fisker-Ocean-Apps";
@@ -12,7 +12,14 @@ const index = readFileSync(new URL("index.html", PUB), "utf8");
 const footer = index.slice(index.indexOf('<footer class="site-footer">'), index.indexOf("</footer>") + "</footer>".length);
 if (!footer.startsWith("<footer")) throw new Error("footer not found in index.html");
 
-function page({ file, title, description, canonical, body, noindex = false }) {
+// The mailing list sign-up form is shared with index.html (#news) in the same way.
+const LIST_START = "<!-- LIST FORM";
+const LIST_END = "<!-- /LIST FORM -->";
+const listForm = index.slice(index.indexOf("-->", index.indexOf(LIST_START)) + 3, index.indexOf(LIST_END)).trim();
+if (!listForm.startsWith('<form class="list-form"')) throw new Error("mailing list form not found in index.html");
+const LIST_JS = '<script type="module" src="/js/list.js"></script>';
+
+function page({ file, title, description, canonical, body, noindex = false, scripts = "" }) {
   const html = `<!doctype html>
 <html lang="en" class="no-js">
 <head>
@@ -38,7 +45,7 @@ ${canonical ? `<link rel="canonical" href="${canonical}">\n<meta property="og:ur
 <link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/styles.css">
 <script src="/app.js" defer></script>
-</head>
+${scripts ? `${scripts}\n` : ""}</head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <div class="paper" aria-hidden="true"></div>
@@ -73,6 +80,7 @@ ${footer}
 </html>
 `;
   // Always LF, whatever line endings the checkout (or index.html) has, so pages never end up mixed.
+  mkdirSync(new URL(".", new URL(file, PUB)), { recursive: true });
   writeFileSync(new URL(file, PUB), html.replace(/\r\n?/g, "\n"));
   console.log("wrote", file, html.length, "bytes");
 }
@@ -90,15 +98,15 @@ const docHero = (eyebrow, h1, sub) => `<section class="doc-hero">
 page({
   file: "privacy.html",
   title: "Privacy policy · Ocean Live",
-  description: "How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds, what &quot;Any questions?&quot; sends, and how to have it deleted.",
+  description: "How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds, what &quot;Any questions?&quot; sends, the email list, and how to have it deleted.",
   canonical: "https://oceanlive.org/privacy",
   body: `
-${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 13 November 2026 (added: accounts)")}
+${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 November 2026 (added: mailing list)")}
 
 <article class="doc">
   <div class="wrap narrow">
     <div class="sheet">
-    <p>Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps.</p>
+    <p>Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps, and the Ocean Live mailing list.</p>
 
     <ul class="toc" aria-label="Sections">
       <li><a href="#short">The short version</a></li>
@@ -109,6 +117,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 13 Novem
       <li><a href="#accounts">Accounts</a></li>
       <li><a href="#abrp">ABRP</a></li>
       <li><a href="#watches">Watches, widgets and car screens</a></li>
+      <li><a href="#mailing-list">Mailing list</a></li>
       <li><a href="#children">Children</a></li>
       <li><a href="#changes">Changes</a></li>
       <li><a href="#contact">Contact</a></li>
@@ -122,6 +131,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 13 Novem
         <li>Version 3.4 has no account. From the next version, the app asks you to sign in once (with Google or a 6-digit email code, and on iPhone also with Sign in with Apple). The account holds your email address and a display name, and you can delete it in the app at any time. See <a href="#accounts">Accounts</a>.</li>
         <li>What the app reads from your car stays on your phone, except what you choose to send below.</li>
         <li>Data leaves your phone only when you sign in or manage your account (opening the account settings checks it with the server), when you ask a question in "Any questions?", or if you turn on live data to A Better Route Planner (ABRP) yourself.</li>
+        <li>The mailing list on oceanlive.org is separate from the app and only for people who sign up and confirm. It keeps your email address and language until you unsubscribe. See <a href="#mailing-list">Mailing list</a>.</li>
         <li>Questions (and, unless you turn it off, your car's latest readings) are answered by Claude, an AI made by Anthropic, through a small server the developer runs. For research, the developer keeps each question, its answer, the readings sent with it and a random install ID for 90 days, then deletes them.</li>
       </ul>
     </div>
@@ -179,6 +189,22 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 13 Novem
     <h2 id="watches">Watches, widgets and CarPlay / Android Auto</h2>
     <p>The watch apps, widgets, Live Activity, CarPlay and Android Auto only show data your phone already has. The watch receives it directly from your phone through the platform's own phone-to-watch connection.</p>
 
+    <h2 id="mailing-list">Mailing list (only if you sign up)</h2>
+    <p>On oceanlive.org you can sign up for Ocean Live news: an email when there's a new release or an important fix, a few times a year. Nobody is added without confirming. After you sign up, you get an email with a link, and you are only on the list once you open it and press <strong>Confirm my subscription</strong>.</p>
+    <p>What the Ocean Live mail server stores, in a Cloudflare D1 database that only the developer can read:</p>
+    <ul>
+      <li>your email address and the language for the emails (English, German, French, Spanish or Dutch, taken from your browser);</li>
+      <li>whether you have confirmed, when you signed up and when you confirmed, and which version of the sign-up wording you agreed to;</li>
+      <li>until you confirm: a hash of the confirmation code, when it expires and how many confirmation emails were sent;</li>
+      <li>a random code for your unsubscribe link;</li>
+      <li>for each news email: whether it was sent to you, and the delivery service's message ID or error.</li>
+    </ul>
+    <p>To limit abuse, the server also counts sign-ups per network for an hour, stored only as a salted hash of the IP address and deleted within about a day. That count is not linked to your email address.</p>
+    <p>Why: only to send you Ocean Live news. Your address is never sold or shared, and never used for anything else. The emails have no ads. Like the sign-in email, they load their banner from oceanlive.org, so opening one with images shown sends a request to Cloudflare (your IP address and the time).</p>
+    <p>Who processes it: <strong>Cloudflare</strong> stores it and runs the server; <strong>Resend</strong> delivers the emails, so it receives your email address and each email.</p>
+    <p>How long: a sign-up that isn't confirmed is deleted after 7 days. Unsubscribing deletes your address straight away. Every email has an unsubscribe link, and mail apps that show an Unsubscribe button (such as Gmail) unsubscribe you in one click. You can also email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> to have your address deleted, or to ask what is held.</p>
+    <p>The legal basis in the EU and UK is your consent, which you can withdraw at any time by unsubscribing.</p>
+
     <h2 id="children">Children</h2>
     <p>Ocean Live is meant for vehicle owners and is not directed at children.</p>
 
@@ -190,7 +216,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 13 Novem
 
     <div class="callout sand">
       <h2 id="website">This website</h2>
-      <p>oceanlive.org sets no cookies and uses no analytics or trackers. Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+      <p>oceanlive.org sets no cookies and uses no analytics or trackers. The only thing it collects is what you type into the mailing list form, if you sign up (see <a href="#mailing-list">Mailing list</a>). Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     </div>
     </div>
   </div>
@@ -346,6 +372,87 @@ ${docHero("Credits", "Credits and licences", "The work this website is built wit
 
     <h2 id="app">Ocean Live</h2>
     <p>The Ocean Live apps and this website are source-available under the Ocean Live <a href="${REPO}/blob/main/LICENSE" rel="noopener">LICENSE</a>, except the third-party works listed above, which stay under their own licences: the 3D model and everything drawn from it (models/ocean.glb, the blueprint drawing and the email banner) under CC BY 4.0, three.js under MIT, GSAP under its Standard License, and the fonts under the SIL Open Font License. Ocean Live is an independent, owner-made app, not affiliated with or endorsed by Fisker Inc.</p>
+    </div>
+  </div>
+</article>`,
+});
+
+// ── News: the mailing list sign-up page ──
+page({
+  file: "news.html",
+  title: "News by email · Ocean Live",
+  description: "Get an email when there's a new Ocean Live release or an important fix. A few emails a year, no ads, unsubscribe in one click.",
+  canonical: "https://oceanlive.org/news",
+  scripts: LIST_JS,
+  body: `
+${docHero("News", "Ocean Live news by email", "New releases and important fixes, a few times a year.")}
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+    ${listForm}
+
+    <h2 id="what">What you get</h2>
+    <ul>
+      <li>An email when there's a new release of the apps, with what changed.</li>
+      <li>An email when there's an important fix, for example one that affects your car's 12V battery or a security problem.</li>
+      <li>Nothing else: no ads, and your address is never shared.</li>
+    </ul>
+
+    <h2 id="how">How it works</h2>
+    <ul>
+      <li>After you sign up, we email you a link. You're only on the list once you open it and confirm. If you don't, your address is deleted after 7 days.</li>
+      <li>Every email has an unsubscribe link. Unsubscribing deletes your address straight away.</li>
+      <li>Details are in the <a href="/privacy#mailing-list">privacy policy</a>. Prefer not to sign up? The <a href="${REPO}/releases" rel="noopener">releases on GitHub</a> and the <a href="${REPO}/blob/main/CHANGELOG.md" rel="noopener">changelog</a> have the same news.</li>
+    </ul>
+    </div>
+  </div>
+</article>`,
+});
+
+// ── Mailing list: confirm (the link in the confirmation email: /list/confirm#t=<token>) ──
+page({
+  file: "list/confirm.html",
+  title: "Confirm your subscription · Ocean Live",
+  description: "Confirm that you want Ocean Live news by email.",
+  noindex: true,
+  scripts: LIST_JS,
+  body: `
+${docHero("Mailing list", "Confirm your subscription", "One more step: confirm that you want Ocean Live news by email.")}
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+    <div class="list-action" data-list="confirm">
+      <p class="list-status" role="status" aria-live="polite" tabindex="-1"></p>
+      <button class="btn btn-primary" type="button" hidden>Confirm my subscription</button>
+    </div>
+    <p class="list-nojs">Confirming needs JavaScript. Turn it on for oceanlive.org and open the link in the email again.</p>
+    <p class="file-meta">Didn't sign up? Close this page and you won't hear from us. Unconfirmed sign-ups are deleted after 7 days. <a href="/privacy#mailing-list">Privacy policy</a>.</p>
+    </div>
+  </div>
+</article>`,
+});
+
+// ── Mailing list: unsubscribe (the link in every news email: /list/unsubscribe#t=<token>) ──
+page({
+  file: "list/unsubscribe.html",
+  title: "Unsubscribe · Ocean Live",
+  description: "Stop Ocean Live news emails and delete your address from the list.",
+  noindex: true,
+  scripts: LIST_JS,
+  body: `
+${docHero("Mailing list", "Unsubscribe", "Stop Ocean Live news emails. Your email address is deleted from the list.")}
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+    <div class="list-action" data-list="unsubscribe">
+      <p class="list-status" role="status" aria-live="polite" tabindex="-1"></p>
+      <button class="btn btn-primary" type="button" hidden>Unsubscribe</button>
+    </div>
+    <p class="list-nojs">Unsubscribing here needs JavaScript. Use the Unsubscribe button in your mail app instead, or email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> and we'll remove you.</p>
+    <p class="file-meta">Changed your mind later? You can sign up again at <a href="/news">oceanlive.org/news</a>.</p>
     </div>
   </div>
 </article>`,

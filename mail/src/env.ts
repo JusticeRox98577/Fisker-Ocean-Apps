@@ -9,8 +9,22 @@ export interface Env {
   SEND_PER_DAY: string;
   MAX_RECIPIENTS: string;
   TRASH_DAYS: string;
+  /** Mailing list: the public site (links in emails), sender, reply address, postal address for the footer. */
+  LIST_SITE: string;
+  LIST_FROM: string;
+  LIST_REPLY_TO: string;
+  LIST_POSTAL_ADDRESS: string;
+  /** Optional host for the RFC 8058 one-click unsubscribe URL (default: LIST_SITE). */
+  LIST_UNSUB_BASE?: string;
+  /** Mailing list limits. */
+  LIST_SEND_PER_DAY: string;
+  LIST_BATCH: string;
+  LIST_SIGNUPS_PER_IP_HOUR: string;
+  LIST_CONFIRMS_PER_DAY: string;
   /** Secret: the PIN for every mailbox. */
   MAIL_PIN?: string;
+  /** Optional secret: salt for the hashed per-network sign-up counter (falls back to RESEND_API_KEY). */
+  LIST_IP_SALT?: string;
   /** Secret: Resend API key. */
   RESEND_API_KEY?: string;
   /** Tests only: replaces the Resend API call. */

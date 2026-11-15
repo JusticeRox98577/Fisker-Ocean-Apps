@@ -2,17 +2,22 @@
 
 The Ocean Live website: plain HTML, CSS and JavaScript ES modules in `public/`, with no build
 step, no frameworks, no cookies, no analytics and no third-party requests (the APK downloads
-are served from the site too, see [Download channels](#download-channels)). It is served by a Cloudflare Worker with static
-assets only (no Worker script), configured in `wrangler.jsonc`.
+are served from the site too, see [Download channels](#download-channels)). It is served by a Cloudflare Worker,
+configured in `wrangler.jsonc`: static assets, plus a small script (`src/worker.js`) that runs only for
+`/api/*` and forwards the mailing list's public endpoints to the mail Worker (see [Mailing list](#mailing-list)).
 
 | File | What it is |
 | --- | --- |
-| `public/index.html` | Home page: the scroll story over the 3D blueprint (hero, live data, doors, "the real thing", 12V, fault codes, platforms, what you need, downloads, privacy, car sleep, FAQ) |
+| `public/index.html` | Home page: the scroll story over the 3D blueprint (hero, live data, doors, "the real thing", 12V, fault codes, platforms, what you need, downloads with the mailing list sign-up, privacy, car sleep, FAQ) |
+| `public/news.html` | Mailing list sign-up page (`/news`) |
+| `public/list/confirm.html`, `public/list/unsubscribe.html` | The pages the mailing list's emails link to (`noindex`) |
 | `public/privacy.html` | Privacy policy, from `PRIVACY.md` (the store privacy policy URL: `https://oceanlive.org/privacy`) |
 | `public/delete-account.html` | How to delete an account (the Google Play URL: `https://oceanlive.org/delete-account`) |
 | `public/credits.html` | Credits and licences: the 3D model (CC BY 4.0), three.js, GSAP, fonts |
 | `public/404.html` | Not found page |
 | `public/styles.css`, `public/app.js` | Shared styles and script (reveals, count-ups, progress bar, and the download buttons from `/downloads/latest.json`) |
+| `public/js/list.js` | The mailing list sign-up form and the confirm and unsubscribe buttons |
+| `src/worker.js` | The `/api/*` script: the mailing list proxy (tested by `tools/worker.test.mjs`) |
 | `public/js/blueprint.js`, `public/js/scene/*.js` | The 3D blueprint (home page only), see below |
 | `public/models/ocean.glb` | The car, made by `tools/build-model.mjs` |
 | `public/img/ocean-blueprint.svg` | Static side elevation shown without 3D, made by `tools/make-blueprint-svg.mjs` |
@@ -53,12 +58,41 @@ One-off Node scripts in `tools/` (never deployed). Their npm packages live in `t
 | `measure-batteries.mjs` | Prints the wheel centres, underbody height, windshield base (cowl) and bonnet height used to place the x-ray batteries |
 | `make-blueprint-svg.mjs` | Draws `public/img/ocean-blueprint.svg` from the model |
 | `vendor.mjs` | Copies the pinned three.js and GSAP files into `public/vendor/` |
-| `build-pages.mjs` | Writes privacy, delete-account, credits and 404 with the shared header and footer |
+| `build-pages.mjs` | Writes privacy, delete-account, credits, news, the two mailing list pages and 404 with the shared header and footer (and the sign-up form, copied from `index.html`) |
 | `deploy.mjs` | Deploys the site with wrangler, keeping or replacing the APK download channels (see [Deploy](#deploy)) |
-| `check-site.mjs` | Checks every local reference, anchors, the CSP hash and that nothing loads from a third party |
+| `check-site.mjs` | Checks every local reference, anchors, the CSP hash, that nothing loads from a third party, and that every `/api/` path the pages use is one `src/worker.js` forwards |
+| `worker.test.mjs` | Tests `src/worker.js` with fake bindings (`node --test site/tools/worker.test.mjs`) |
 | `serve.mjs` | Local preview with the `_headers` applied (`node tools/serve.mjs`, then open http://localhost:8787) |
 
 When `PRIVACY.md` changes, update the privacy page in `tools/build-pages.mjs` to match and run it.
+
+## Mailing list
+
+People sign up for Ocean Live news (new releases, important fixes) on the home page (`#news`) or
+`/news`. Everything else, the subscribers, the emails and sending them, lives in the mail Worker
+(`mail/`, `ocean-live-mail`); see the mailing list section of `mail/README.md`. The site only
+forwards three same-origin endpoints to it through the `MAIL` service binding, so the CSP keeps
+`connect-src 'self'`:
+
+| Request | Sent by |
+| --- | --- |
+| `POST /api/list/subscribe` `{email, lang, website}` | The sign-up form (`website` is a hidden honeypot field) |
+| `POST /api/list/confirm` `{token}` | `/list/confirm#t=<token>`, the link in the confirmation email |
+| `POST /api/list/unsubscribe` `{token}` | `/list/unsubscribe#t=<token>`, the link in every news email |
+| `POST /api/list/unsubscribe?t=<token>` | Mail apps' one-click unsubscribe (RFC 8058, the `List-Unsubscribe` header) |
+
+Each answers `{"ok":true}` or `{"error":"..."}` with a 4xx or 5xx status, and the pages show the
+error as written. The token is in the fragment (`#t=`), so it never reaches a server log, and the
+pages send nothing until the button is pressed, because mail scanners open links too. A `GET` of
+`/api/list/unsubscribe?t=` (someone opening the header link in a browser) redirects to the
+unsubscribe page. Any other `/api/` path is a 404; the owner's list endpoints are only on
+mail.oceanlive.org. Cookies are not forwarded.
+
+Deploy order: in `mail/`, run `npx wrangler d1 migrations apply ocean-live-mail --remote` and then
+`npx wrangler deploy` **before** the site changes are pushed or merged to `main`. A push to `main`
+deploys the site automatically, and `ocean-live-mail` already exists, so nothing else enforces the
+order. If the site does go first, a 401 or 404 from the mail Worker becomes "The mailing list isn't
+available right now" (503) rather than the old Worker's "Signed out."
 
 ## Preview
 
@@ -67,13 +101,16 @@ cd site
 npx wrangler dev
 ```
 
+`node tools/serve.mjs` serves the static files only: the mailing list forms answer with an error
+there, as they do in `wrangler dev` unless the mail Worker runs locally too.
+
 ## Deploy
 
 GitHub Actions deploys the site; you rarely need to by hand.
 
 | What runs | What it deploys |
 | --- | --- |
-| Site workflow (push to `main` touching `site/`, or a manual run from `main`) | The site, after `check-site.mjs`; both download channels stay as they are |
+| Site workflow (push to `main` touching `site/`, or a manual run from `main`) | The site, after `check-site.mjs` and `worker.test.mjs`; both download channels stay as they are |
 | Android workflow, push to `main` | The site from the current `main`, plus the new APKs on the **preview** channel |
 | Android workflow, manual release run (from `main` or a `release-*` tag) | The site from the current `main`, plus that run's new APKs on the **stable** channel (the public download) |
 

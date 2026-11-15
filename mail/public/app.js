@@ -13,6 +13,7 @@ const state = {
   openId: null,
   open: null, // the message being read
   loading: false,
+  view: "mail", // mail | list
 };
 const FOLDER_NAMES = { inbox: "Inbox", sent: "Sent", trash: "Trash" };
 
@@ -149,8 +150,10 @@ function parseHash() {
 }
 async function route() {
   if (!state.me) return;
-  const { folder, id } = parseHash();
   closeRail();
+  if (location.hash.startsWith("#/list")) { showListView(); return; }
+  hideListView();
+  const { folder, id } = parseHash();
   if (folder !== state.folder || !state.messages.length) {
     const changed = folder !== state.folder;
     state.folder = folder;
@@ -164,10 +167,12 @@ async function route() {
 window.addEventListener("hashchange", route);
 
 function markNav() {
+  const current = state.view === "list" ? "list" : state.folder;
   for (const a of document.querySelectorAll(".folders a")) {
-    if (a.dataset.folder === state.folder) a.setAttribute("aria-current", "page");
+    if (a.dataset.folder === current) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   }
+  if (state.view === "list") return;
   $("#folder-title").textContent = FOLDER_NAMES[state.folder];
   $("#search").placeholder = `Search ${FOLDER_NAMES[state.folder]}`;
 }
@@ -634,6 +639,206 @@ $("#new-box-form").addEventListener("submit", async (e) => {
     $("#n-local").focus();
   }
 });
+
+// ---------- Mailing list ----------
+const lv = { overview: null, subs: [], next: null, q: "", status: "", sending: false };
+
+function showListView() {
+  state.view = "list";
+  $("#main").hidden = true;
+  $("#list-main").hidden = false;
+  $(".search").hidden = true;
+  $("#fab").hidden = true;
+  document.title = `Mailing list · Ocean Live Mail`;
+  markNav();
+  loadListOverview();
+  loadSubscribers();
+}
+function hideListView() {
+  if (state.view !== "list") return;
+  state.view = "mail";
+  $("#list-main").hidden = true;
+  $("#main").hidden = false;
+  $(".search").hidden = false;
+  $("#fab").hidden = false;
+  refreshCounts();
+}
+
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+async function loadListOverview() {
+  try {
+    const o = await api("/api/list");
+    lv.overview = o;
+    renderListOverview();
+  } catch (ex) {
+    $("#lv-counts").textContent = ex.message;
+  }
+}
+
+function renderListOverview() {
+  const o = lv.overview;
+  $("#lv-counts").textContent =
+    `${o.confirmed} confirmed · ${o.pending} not confirmed yet · ${o.sentToday} of ${o.perDay} list emails sent today (UTC; news, tests and confirmations)`;
+  $("#lv-from").textContent = o.from;
+  const notices = [];
+  if (!o.sendingReady) {
+    notices.push(h("p", { class: "notice warn", role: "note" }, icon("alert"),
+      h("span", {}, "Sending isn't set up yet: the RESEND_API_KEY secret is missing.")));
+  }
+  if (!o.postalAddress) {
+    notices.push(h("p", { class: "notice warn", role: "note" }, icon("alert"),
+      h("span", {}, "No postal address is set. US anti-spam law (CAN-SPAM) asks for one in marketing email. Set LIST_POSTAL_ADDRESS in wrangler.jsonc and deploy.")));
+  }
+  $("#lv-notices").replaceChildren(...notices);
+  $("#lv-send span").textContent = `Send to ${plural(o.confirmed, "subscriber", "subscribers")}`;
+  $("#lv-send").disabled = lv.sending || !o.confirmed;
+
+  const ul = $("#lv-campaigns");
+  if (!o.campaigns.length) {
+    ul.replaceChildren(h("li", { class: "muted" }, "Nothing sent yet."));
+    return;
+  }
+  ul.replaceChildren(...o.campaigns.map((c) => {
+    const counts = `${c.sent} of ${c.total} sent${c.failed ? ` · ${c.failed} failed` : ""}`;
+    return h("li", {},
+      h("span", { class: "lv-c-subj" }, c.subject),
+      h("span", { class: "muted small" }, `${yearFmt.format(new Date(c.createdAt))} · ${counts}${c.status === "sending" ? " · not finished" : ""}`),
+      c.status === "sending" && !lv.sending
+        ? h("button", { class: "btn btn-ghost btn-small", type: "button", onclick: () => runCampaign({ campaign: c }, true) }, "Continue sending")
+        : null,
+    );
+  }));
+}
+
+async function loadSubscribers({ append = false } = {}) {
+  const params = new URLSearchParams();
+  if (lv.q) params.set("q", lv.q);
+  if (lv.status) params.set("status", lv.status);
+  if (append && lv.next) params.set("cursor", lv.next);
+  const status = $("#lv-subs-status");
+  if (!append) status.textContent = "Loading…";
+  try {
+    const data = await api(`/api/list/subscribers?${params}`);
+    lv.subs = append ? lv.subs.concat(data.subscribers) : data.subscribers;
+    lv.next = data.next;
+    status.textContent = lv.subs.length ? "" : lv.q || lv.status ? "No addresses match." : "Nobody has signed up yet.";
+    renderSubscribers();
+  } catch (ex) {
+    status.textContent = ex.message;
+  }
+}
+
+const LANG_NAMES = { en: "English", de: "German", fr: "French", es: "Spanish", nl: "Dutch" };
+function renderSubscribers() {
+  $("#lv-subs").replaceChildren(...lv.subs.map((s) => h("tr", {},
+    h("td", { class: "lv-email" }, s.email),
+    h("td", {}, s.status === "confirmed" ? "Confirmed" : "Not confirmed yet"),
+    h("td", {}, LANG_NAMES[s.lang] || s.lang),
+    h("td", {}, h("time", { datetime: new Date(s.createdAt).toISOString() }, yearFmt.format(new Date(s.createdAt)))),
+    h("td", {}, h("button", { class: "btn btn-danger btn-small", type: "button", "aria-label": `Remove ${s.email}`, onclick: () => removeSubscriber(s) }, "Remove")),
+  )));
+  $("#lv-more").hidden = !lv.next;
+}
+
+async function removeSubscriber(s) {
+  if (!confirm(`Remove ${s.email} from the list? The address is deleted.`)) return;
+  try {
+    await api(`/api/list/subscribers/${s.id}`, { method: "DELETE" });
+    lv.subs = lv.subs.filter((x) => x.id !== s.id);
+    renderSubscribers();
+    toast(`${s.email} removed`);
+    loadListOverview();
+  } catch (ex) { toast(ex.message, { error: true }); }
+}
+
+let lvSearchTimer;
+$("#lv-q").addEventListener("input", (e) => {
+  clearTimeout(lvSearchTimer);
+  lvSearchTimer = setTimeout(() => { lv.q = e.target.value.trim(); loadSubscribers(); }, 300);
+});
+$("#lv-status").addEventListener("change", (e) => { lv.status = e.target.value; loadSubscribers(); });
+$("#lv-more").addEventListener("click", () => loadSubscribers({ append: true }));
+
+function readListForm() {
+  const err = $("#lv-error");
+  err.textContent = "";
+  const subject = $("#lv-subject").value.trim();
+  const text = $("#lv-text").value;
+  if (!subject) { err.textContent = "Add a subject."; $("#lv-subject").focus(); return null; }
+  if (!text.trim()) { err.textContent = "Write the email first."; $("#lv-text").focus(); return null; }
+  return { subject, text };
+}
+
+function setListBusy(busy) {
+  lv.sending = busy;
+  $("#lv-test").disabled = busy;
+  $("#lv-send").disabled = busy || !lv.overview?.confirmed;
+}
+
+$("#lv-test").addEventListener("click", async () => {
+  const c = readListForm();
+  if (!c) return;
+  setListBusy(true);
+  try {
+    const r = await api("/api/list/test", { method: "POST", json: c });
+    toast(`Test sent to ${r.to}`);
+    loadListOverview();
+  } catch (ex) {
+    $("#lv-error").textContent = ex.message;
+  } finally {
+    setListBusy(false);
+  }
+});
+
+$("#lv-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (lv.sending) return;
+  const c = readListForm();
+  if (!c) return;
+  const n = lv.overview?.confirmed ?? 0;
+  if (!n) { $("#lv-error").textContent = "Nobody has confirmed a subscription yet."; return; }
+  if (!confirm(`Send "${c.subject}" to ${plural(n, "subscriber", "subscribers")}? This can't be undone.`)) return;
+  setListBusy(true);
+  $("#lv-progress").textContent = "Sending…";
+  try {
+    const first = await api("/api/list/campaigns", { method: "POST", json: c });
+    $("#lv-form").reset();
+    await runCampaign(first, false);
+  } catch (ex) {
+    $("#lv-error").textContent = ex.message;
+    $("#lv-progress").textContent = "";
+    setListBusy(false);
+  }
+});
+
+function progressText(s) {
+  const c = s.campaign;
+  const counts = `${c.sent} of ${c.total} sent${c.failed ? `, ${c.failed} failed` : ""}`;
+  if (c.status === "done") return `Done: ${counts}.`;
+  if (s.paused) return `${s.message || "Paused."} So far ${counts}.`;
+  return `Sending "${c.subject}": ${counts}…`;
+}
+
+/** Calls Continue until the campaign is done or pauses (daily limit, Resend busy or failing). */
+async function runCampaign(state0, resume) {
+  setListBusy(true);
+  renderListOverview();
+  let s = state0;
+  try {
+    if (resume) s = await api(`/api/list/campaigns/${s.campaign.id}/continue`, { method: "POST" });
+    while (s.campaign.status === "sending" && !s.paused) {
+      $("#lv-progress").textContent = progressText(s);
+      s = await api(`/api/list/campaigns/${s.campaign.id}/continue`, { method: "POST" });
+    }
+    $("#lv-progress").textContent = progressText(s);
+  } catch (ex) {
+    $("#lv-progress").textContent = `${ex.message} You can continue sending from the list below.`;
+  } finally {
+    setListBusy(false);
+    loadListOverview();
+  }
+}
 
 // ---------- Keyboard shortcuts: c = compose, / = search ----------
 document.addEventListener("keydown", (e) => {

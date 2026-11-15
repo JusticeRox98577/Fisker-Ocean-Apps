@@ -31,6 +31,7 @@
 <script type="importmap">{"imports":{"three":"/vendor/three/three.module.min.js","three/addons/":"/vendor/three/addons/"}}</script>
 <script src="/app.js" defer></script>
 <script type="module" src="/js/blueprint.js"></script>
+<script type="module" src="/js/list.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -543,6 +544,26 @@
         <a class="btn btn-ghost btn-block" href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">What's new (changelog)</a>
       </div>
     </div>
+
+    <div class="list-panel panel reveal" id="news">
+      <h3>Release news by email</h3>
+      <!-- LIST FORM (tools/build-pages.mjs copies this into /news) -->
+      <form class="list-form" data-list="subscribe" aria-label="Release news by email">
+        <label class="list-label" for="list-email">Email address</label>
+        <div class="list-row">
+          <input class="list-input" id="list-email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" aria-describedby="list-consent">
+          <button class="btn btn-primary" type="submit">Sign up</button>
+        </div>
+        <div class="list-hp" aria-hidden="true">
+          <label for="list-website">Leave this empty</label>
+          <input id="list-website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <p class="list-consent" id="list-consent">Get an email when there's a new Ocean Live release or an important fix. A few emails a year, no ads. We'll send a link to confirm, and every email has an unsubscribe link. <a href="/privacy#mailing-list">Privacy policy</a>.</p>
+        <p class="list-status" role="status" aria-live="polite" tabindex="-1"></p>
+      </form>
+      <p class="list-nojs">The sign-up form needs JavaScript. Without it, you can follow <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">the releases on GitHub</a>.</p>
+      <!-- /LIST FORM -->
+    </div>
   </div>
 </section>
 
@@ -678,6 +699,7 @@
           <li><a href="/#download">Download</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">Releases</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">Changelog</a></li>
+          <li><a href="/news">News by email</a></li>
           <li><a href="/#faq">FAQ</a></li>
         </ul>
       </div>

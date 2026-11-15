@@ -257,6 +257,43 @@ label { font-weight: 500; font-size: .9rem; }
 .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ---------- Mailing list ---------- */
+.folders-sep { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px; }
+.list-main { min-height: 0; overflow-y: auto; overscroll-behavior: contain; outline: none; }
+.lv { max-width: 920px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 16px; }
+.lv-head { display: grid; gap: 4px; }
+.lv-head h1 { font-size: 1.6rem; }
+.lv .notice { margin: 0; }
+.lv-card { display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px 18px 20px; min-width: 0; }
+.lv-strong { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.lv-form { display: grid; gap: 8px; }
+.lv-form label { margin-top: 4px; }
+.lv-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.lv-progress { font-weight: 500; }
+.lv-progress:empty { display: none; }
+.lv-campaigns { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.lv-campaigns li { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.lv-campaigns li:last-child { border-bottom: 0; }
+.lv-campaigns li > .muted:only-child { grid-column: 1 / -1; }
+.lv-c-subj { font-weight: 600; overflow-wrap: anywhere; grid-column: 1; }
+.lv-campaigns li > .small { grid-column: 1; }
+.lv-campaigns li > .btn { grid-column: 2; grid-row: 1 / span 2; }
+.lv-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.lv-filters input { flex: 1 1 220px; width: auto; }
+select {
+  min-height: 44px; padding: 0 36px 0 12px; border-radius: 10px; border: 1px solid var(--line-strong);
+  background: rgba(4, 18, 38, .7); color: var(--ink); font: 400 1rem/1.4 var(--font-body); cursor: pointer;
+}
+select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(92,225,230,.25); }
+select option { background: var(--panel-solid); color: var(--ink); }
+.lv-table-wrap { overflow-x: auto; margin: 0 -4px; }
+.lv-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.lv-table th { text-align: left; font-weight: 600; color: var(--ink-muted); padding: 8px 8px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+.lv-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+.lv-table td.lv-email { white-space: normal; overflow-wrap: anywhere; min-width: 160px; }
+.lv-table td:last-child { text-align: right; }
+#lv-more { justify-self: center; }
+
 /* ---------- Layout by width ---------- */
 /* Phones: one pane at a time, folders in a drawer. */
 @media (max-width: 767px) {
@@ -275,7 +312,7 @@ label { font-weight: 500; font-size: .9rem; }
   .only-narrow { display: none !important; }
   .app { grid-template-columns: var(--rail-w) 1fr; }
   .rail { grid-row: 2; }
-  .panes { grid-row: 2; }
+  .panes, .list-main { grid-row: 2; }
   .topbar { padding: 0 12px 0 16px; }
   .brand { width: calc(var(--rail-w) - 24px); }
 }

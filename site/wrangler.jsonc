@@ -1,15 +1,24 @@
 {
-  // Ocean Live website: static files only, no Worker script.
+  // Ocean Live website: static files, plus src/worker.js for /api/* only (the mailing list proxy).
   "name": "ocean-live-site",
+  "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
   // workers.dev stays on so CI can read the live downloads (oceanlive.org's bot protection blocks GitHub's runners).
   "workers_dev": true,
   "preview_urls": false,
   "assets": {
     "directory": "./public",
+    "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "html_handling": "auto-trailing-slash"
+    "html_handling": "auto-trailing-slash",
+    // Only /api/* reaches the script; every other path is served from public/ without it.
+    "run_worker_first": ["/api/*"]
   },
+  // The mailing list lives in the mail Worker (mail/). Apply its migration and deploy it before
+  // pushing site changes to main (a push deploys the site): see README.md, "Deploy order".
+  "services": [
+    { "binding": "MAIL", "service": "ocean-live-mail" }
+  ],
   "routes": [
     { "pattern": "oceanlive.org", "custom_domain": true },
     { "pattern": "www.oceanlive.org", "custom_domain": true }

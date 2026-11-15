@@ -27,6 +27,8 @@ jobs:
           node-version: "22"
       - name: Check the site
         run: node site/tools/check-site.mjs
+      - name: Test the mailing list proxy (src/worker.js)
+        run: node --test site/tools/worker.test.mjs
       - name: Deploy to oceanlive.org
         if: github.ref == 'refs/heads/main'
         env:

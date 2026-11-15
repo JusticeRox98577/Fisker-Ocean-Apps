@@ -28,7 +28,8 @@
   // Raw messages, bodies and attachments.
   "r2_buckets": [{ "binding": "STORE", "bucket_name": "ocean-live-mail" }],
 
-  // Every day at 04:23 UTC: drop expired sessions and counters, empty Trash older than TRASH_DAYS.
+  // Every day at 04:23 UTC: drop expired sessions and counters, empty Trash older than TRASH_DAYS,
+  // delete mailing-list sign-ups that were not confirmed within 7 days.
   "triggers": { "crons": ["23 4 * * *"] },
 
   "vars": {
@@ -42,10 +43,31 @@
     "SEND_PER_DAY": "150",
     "MAX_RECIPIENTS": "50",
     // Days a message stays in Trash before it is deleted for good.
-    "TRASH_DAYS": "30"
+    "TRASH_DAYS": "30",
+
+    // Mailing list (Ocean Live news). Links in its emails point at this site, which forwards /api/list/* here.
+    "LIST_SITE": "https://oceanlive.org",
+    // Sender and reply address. news@ needs no mailbox: replies go to LIST_REPLY_TO.
+    "LIST_FROM": "Ocean Live <news@oceanlive.org>",
+    "LIST_REPLY_TO": "justice@oceanlive.org",
+    // Postal address in the footer of every news email (US CAN-SPAM asks for one). Empty: no address line.
+    "LIST_POSTAL_ADDRESS": "",
+    // Host for the one-click unsubscribe URL in the List-Unsubscribe header. Empty: LIST_SITE. Mail providers
+    // POST to it from their servers, so it must not be behind a bot challenge (README: "One-click unsubscribe").
+    "LIST_UNSUB_BASE": "",
+    // All list emails per UTC day: news, tests and confirmation emails together, and news per Continue request.
+    // Resend's free plan allows 100 a day for the whole account, shared with webmail sends and the app's
+    // sign-in codes, so this leaves them room. Raise it only on a paid plan.
+    "LIST_SEND_PER_DAY": "60",
+    "LIST_BATCH": "50",
+    // Sign-ups per network (IPv4 address or IPv6 /64, stored hashed) per hour, and confirmation emails per
+    // UTC day in total (part of LIST_SEND_PER_DAY, not on top of it).
+    "LIST_SIGNUPS_PER_IP_HOUR": "5",
+    "LIST_CONFIRMS_PER_DAY": "20"
   }
 
   // Secrets, set with `npx wrangler secret put <NAME>`, never written here:
   //   MAIL_PIN        the PIN that signs in to every mailbox (use 8+ digits)
   //   RESEND_API_KEY  a Resend API key with sending access for oceanlive.org
+  //   LIST_IP_SALT    optional: a random string that salts the hashed sign-up counter (else the API key does)
 }

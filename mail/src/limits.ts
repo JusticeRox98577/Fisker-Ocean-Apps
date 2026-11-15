@@ -1,17 +1,17 @@
 /** Fixed-window counters in D1, for sign-in and sending limits. */
 
-export async function bump(db: D1Database, key: string, windowMs: number, now = Date.now()): Promise<number> {
+export async function bump(db: D1Database, key: string, windowMs: number, now = Date.now(), by = 1): Promise<number> {
   const row = await db
     .prepare(
-      `INSERT INTO counters (key, count, reset_at) VALUES (?1, 1, ?2)
+      `INSERT INTO counters (key, count, reset_at) VALUES (?1, ?4, ?2)
        ON CONFLICT(key) DO UPDATE SET
-         count = CASE WHEN reset_at <= ?3 THEN 1 ELSE count + 1 END,
+         count = CASE WHEN reset_at <= ?3 THEN ?4 ELSE count + ?4 END,
          reset_at = CASE WHEN reset_at <= ?3 THEN ?2 ELSE reset_at END
        RETURNING count`,
     )
-    .bind(key, now + windowMs, now)
+    .bind(key, now + windowMs, now, by)
     .first<{ count: number }>();
-  return row?.count ?? 1;
+  return row?.count ?? by;
 }
 
 export async function current(db: D1Database, key: string, now = Date.now()): Promise<number> {
