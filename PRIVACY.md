@@ -1,6 +1,6 @@
 # Ocean Live privacy policy
 
-Last updated: 15 November 2026 (added: mailing list)
+Last updated: 15 November 2026 (added: mailing list, tester invitations, account website)
 
 Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other
 Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps,
@@ -9,17 +9,17 @@ and the Ocean Live mailing list.
 ## The short version
 
 * No ads, no tracking.
-* Version 3.4 has no account. From the next version, the app asks you to sign in once (with
+* From version 3.4, the app asks you to sign in once (with
   Google or a 6-digit email code, and on iPhone also with Sign in with Apple). The account
-  holds your email address and a display name, and you can delete it in the app at any time.
-  See [Accounts](#accounts).
+  holds your email address and a display name, and you can delete it at any time, in the app
+  or at account.oceanlive.org. See [Accounts](#accounts).
 * What the app reads from your car stays on your phone, except what you choose to send below.
 * Data leaves your phone only when you sign in or manage your account (opening the account
   settings checks it with the server), when you ask a question in "Any questions?", or if you
   turn on live data to A Better Route Planner (ABRP) yourself.
 * The mailing list on oceanlive.org is separate from the app and only for people who sign up
-  and confirm. It keeps your email address and language until you unsubscribe. See
-  [Mailing list](#mailing-list).
+  and confirm. It keeps your email address and language until you unsubscribe. Testers may be
+  asked once by email whether they want to join. See [Mailing list](#mailing-list).
 * Questions (and, unless you turn it off, your car's latest readings) are answered by Claude,
   an AI made by Anthropic, through a small server the developer runs. For research, the
   developer keeps each question, its answer, the readings sent with it and a random install
@@ -94,7 +94,7 @@ anything important with a qualified EV shop.
 
 ## Accounts
 
-Version 3.4 has no account. From the next version, the app asks you to sign in once before
+From version 3.4, the app asks you to sign in once before
 you use it, with Google or with a 6-digit code sent to your email address; the iPhone app also
 offers Sign in with Apple. There are no passwords. The account keeps your "Any questions?" questions, and their
 daily limit, secure and tied to you, also when you change phones. Your car data never goes to
@@ -140,13 +140,29 @@ Ocean Live and go to Settings, Account, Delete account. This deletes, straight a
 account, its sign-in methods, all its sessions (every device is signed out), the logged
 questions linked to it and any personal question limit set for it. Car data on your phone is
 not affected. An email-code entry for your address (see Email codes) is removed too. The
-short-lived counters above expire on their own within about a day. If you can't use the app
-any more, see https://oceanlive.org/delete-account.
+short-lived counters above expire on their own within about a day. You can also delete it on
+the account website (below). See https://oceanlive.org/delete-account.
 
 <!-- Owner review: legal basis for account data. -->
 The legal basis in the EU and UK for account data is performance of a contract (providing the
 signed-in app and keeping your questions with your account); for the abuse and rate-limit
 counters it is the developer's legitimate interest.
+
+### The account website
+
+You can also manage your account without the app at https://account.oceanlive.org: sign in
+with a 6-digit email code (or with Google, when it's offered there; Sign in with Apple isn't)
+to see your account and its sign-in methods, rename it, sign out or delete it. It uses the
+same account, the same server and the same processors as the app, described above.
+
+Signing in there sets one cookie. It is strictly necessary: it only keeps you signed in, holds
+the session token (the server keeps only its hash, as for the app) and is sent only to
+account.oceanlive.org. A session there lasts 30 days from its last use; signing out ends it
+and removes the cookie. The account website uses no analytics or trackers. If Sign in with
+Google is offered there, the page loads Google's sign-in button from Google, so Google sees
+your IP address when you open it.
+
+oceanlive.org itself still sets no cookies.
 
 ## A Better Route Planner (optional)
 
@@ -200,6 +216,21 @@ justice@oceanlive.org to have your address deleted, or to ask what is held.
 
 The legal basis in the EU and UK is your consent, which you can withdraw at any time by
 unsubscribing.
+
+### Invitations for testers
+
+People who test Ocean Live may get **one** email from the developer asking whether they want
+these news emails. To send it, their email address goes to Resend. It creates an unconfirmed
+sign-up like the one above: nothing more is sent unless they press **Confirm my subscription**,
+and if they don't, it is deleted after 7 days like any unconfirmed sign-up.
+
+So that nobody is invited twice, or after leaving the list, the server keeps a SHA-256 hash of
+the address (not the address itself) for everyone who was invited, unsubscribed, was removed,
+or let a sign-up lapse. It is kept with no end date and used for nothing else. A hash can't be
+read back, but someone who already knows an address can check it against the hash, so it still
+counts as personal data. Email justice@oceanlive.org to have it removed (you could then be
+invited again). The legal basis in the EU and UK is legitimate interests: asking testers once,
+and respecting the answer.
 
 ## Children
 

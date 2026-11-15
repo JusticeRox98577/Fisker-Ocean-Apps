@@ -10,10 +10,14 @@
  * the conversation, the answer, the car readings sent with it, the install ID, the phone's
  * language and the cost. A daily cron deletes entries older than LOG_RETENTION_DAYS (90).
  * Owners are told in the app and in PRIVACY.md. IP addresses are never logged.
+ *
+ * Hosts: api.oceanlive.org and the workers.dev address (older app builds) serve the app API.
+ * account.oceanlive.org serves the web account page (the files in account/) and the account
+ * endpoints with a cookie session; nothing else. GET /health answers on every host.
  */
 import Anthropic from "@anthropic-ai/sdk";
 import guide from "../knowledge/ocean-guide.md";
-import { handleAuth, sessionAccount, type Account, type AuthEnv } from "./auth";
+import { handleAuth, sessionAccount, WEB_HOST, type Account, type AuthEnv } from "./auth";
 
 export interface Env extends AuthEnv {
   ANTHROPIC_API_KEY: string;
@@ -31,6 +35,8 @@ export interface Env extends AuthEnv {
    * answered and counted per install. Set to "false" once the account update is out.
    */
   ALLOW_ANONYMOUS?: string;
+  /** The web account page's files (account/), served only on account.oceanlive.org. */
+  ASSETS?: Fetcher;
 }
 
 const MODEL = "claude-opus-5-5";
@@ -97,6 +103,8 @@ interface AskBody {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/health") return health(request);
+    if (url.hostname === WEB_HOST) return withWebHeaders(await accountSite(request, env, url.pathname), env);
     const auth = await handleAuth(request, env, url.pathname);
     if (auth) return auth;
     if (url.pathname !== "/ask") return json({ error: "not_found" }, 404);
@@ -178,6 +186,60 @@ export default {
     await env.LOG_DB.prepare("DELETE FROM email_codes WHERE expires < ?").bind(new Date().toISOString()).run();
   },
 } satisfies ExportedHandler<Env>;
+
+/** For the status page: no auth, no external calls, never cached. */
+function health(request: Request): Response {
+  if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "method" }, 405);
+  return json({ ok: true, service: "api", time: new Date().toISOString() });
+}
+
+/** account.oceanlive.org: the account endpoints (cookie session) and the page's static files. */
+async function accountSite(request: Request, env: Env, path: string): Promise<Response> {
+  const auth = await handleAuth(request, env, path, true);
+  if (auth) return auth;
+  if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "method" }, 405);
+  if (!env.ASSETS) return json({ error: "not_found" }, 404);
+  return env.ASSETS.fetch(request);
+}
+
+/**
+ * Locks the account page down: same-origin only, except what Google's sign-in button needs when a web
+ * client ID is set (https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
+ */
+function withWebHeaders(res: Response, env: Env): Response {
+  const google = !!env.GOOGLE_WEB_CLIENT_ID?.trim();
+  const gsi = (s: string) => (google ? ` https://accounts.google.com/gsi/${s}` : "");
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self'${gsi("client")}`,
+    `style-src 'self'${gsi("style")}`,
+    `connect-src 'self'${gsi("")}`,
+    `frame-src ${google ? "https://accounts.google.com/gsi/" : "'none'"}`,
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "manifest-src 'self'",
+    "worker-src 'none'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+  const out = new Response(res.body, res);
+  const h = out.headers;
+  h.set("Content-Security-Policy", csp);
+  h.set("X-Content-Type-Options", "nosniff");
+  h.set("X-Frame-Options", "DENY");
+  // Google's button checks the page's origin, so send the origin (never the path) cross-origin.
+  h.set("Referrer-Policy", "strict-origin");
+  h.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()");
+  h.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  // Google's sign-in can use a popup that reports back to this page.
+  h.set("Cross-Origin-Opener-Policy", google ? "same-origin-allow-popups" : "same-origin");
+  h.set("X-Robots-Tag", "noindex, nofollow");
+  if (!h.has("Cache-Control")) h.set("Cache-Control", "no-cache");
+  return out;
+}
 
 /** Saves one answered (or declined) question to the research log. Never fails the request. */
 async function log(env: Env, request: Request, body: AskBody, answer: string, micros: number, account: Account | null): Promise<void> {

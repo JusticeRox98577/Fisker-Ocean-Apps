@@ -3,6 +3,7 @@
  * - email(): Cloudflare Email Routing hands over mail for @oceanlive.org; known mailboxes are stored, others rejected.
  * - fetch(): the JSON API under /api/ (the web app in public/ is served as static files).
  * - scheduled(): daily clean-up.
+ * GET /api/health is public (status page).
  * The mailing list's public endpoints (/api/list/subscribe, confirm, unsubscribe) need no session; oceanlive.org
  * forwards them here. Everything else under /api/ needs a webmail session (and CSRF for changes).
  */
@@ -14,6 +15,7 @@ import {
   continueCampaign,
   createCampaign,
   deleteSubscriber,
+  invite,
   listSubscribers,
   overview,
   sendTest,
@@ -45,6 +47,8 @@ async function api(req: Request, env: Env): Promise<Response> {
   const path = url.pathname;
   const method = req.method;
 
+  // Public health check for status.oceanlive.org: no session, no database, no outside calls.
+  if (path === "/api/health" && method === "GET") return json({ ok: true, service: "mail" });
   if (path === "/api/login" && method === "POST") return login(req, env);
 
   // Mailing list, public: matched by exact path and method, before the session check.
@@ -77,6 +81,7 @@ async function api(req: Request, env: Env): Promise<Response> {
   if (path === "/api/list/subscribers" && method === "GET") return listSubscribers(url, env);
   if (path === "/api/list/test" && method === "POST") return sendTest(req, env, session);
   if (path === "/api/list/campaigns" && method === "POST") return createCampaign(req, env, session);
+  if (path === "/api/list/invite" && method === "POST") return invite(req, env);
 
   let m = new RegExp(`^/api/messages/${ID}$`).exec(path);
   if (m) {

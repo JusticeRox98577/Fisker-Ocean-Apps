@@ -132,6 +132,24 @@
           </form>
         </section>
 
+        <section class="lv-card" aria-labelledby="lv-invite-title">
+          <h2 id="lv-invite-title">Invite testers</h2>
+          <p class="muted small" id="lv-invite-help">Each address gets one email asking if they want Ocean Live news.
+            They only join if they click the confirmation link in it (it works for 7 days); otherwise they hear nothing more.
+            Addresses already on the list or invited before are skipped. Invitations count against the daily list limit;
+            what doesn't fit today waits for tomorrow.</p>
+          <form id="lv-invite-form" class="lv-form lv-invite" novalidate>
+            <label for="lv-invite-emails">Addresses, one per line or separated by commas</label>
+            <textarea id="lv-invite-emails" rows="6" spellcheck="false" autocomplete="off" autocapitalize="off"
+              aria-describedby="lv-invite-help lv-invite-error"></textarea>
+            <p id="lv-invite-error" class="field-error" role="alert"></p>
+            <div class="lv-actions">
+              <button class="btn btn-primary" type="submit" id="lv-invite-send"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg><span>Send invitations</span></button>
+            </div>
+            <p id="lv-invite-result" class="lv-progress" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+
         <section class="lv-card" aria-labelledby="lv-campaigns-title">
           <h2 id="lv-campaigns-title">Sent news</h2>
           <ul id="lv-campaigns" class="lv-campaigns"></ul>

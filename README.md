@@ -6,12 +6,14 @@ from the next version you sign in once (Google or an email code). Data leaves yo
 when you sign in or manage your account, ask a question in "Any questions?", or send live data
 to A Better Route Planner if you set that up.
 
-| Folder | App |
+| Folder | What it is |
 | --- | --- |
 | `android` | Android phone app (Kotlin, Jetpack Compose) and Wear OS app (`android/wear`) |
 | `ios` | iPhone app (Swift, SwiftUI, CoreBluetooth), widgets and Live Activity (`OceanLiveWidgets`), Apple Watch app (`OceanLiveWatch`) |
-| `ask-proxy` | Cloudflare Worker behind "Any questions?": holds the Anthropic API key, rate limits and caps spend |
-| `mail` | Private webmail for the oceanlive.org mailboxes at mail.oceanlive.org (Cloudflare Worker, Email Routing in, Resend out) |
+| `ask-proxy` | The app server (Cloudflare Worker): "Any questions?", accounts, and the web account page at account.oceanlive.org. See [ask-proxy/README.md](ask-proxy/README.md) |
+| `site` | The website, [oceanlive.org](https://oceanlive.org). See [site/README.md](site/README.md) |
+| `status` | The status page at status.oceanlive.org. See [status/README.md](status/README.md) |
+| `mail` | Private webmail for the oceanlive.org mailboxes at mail.oceanlive.org, and the news mailing list. See [mail/README.md](mail/README.md) |
 
 Both phone apps have the same features and decode the car the same way; their unit tests
 share the same expected values. Download the latest Android release from
@@ -99,87 +101,16 @@ ControlDTCSetting on (`85 01`); restarting sends ECUReset (`11 03`, or `11 01` f
 telematics units). Nothing else is ever written to the car, and the app never uses
 security access.
 
-## Building
-
-### Android
-
-Open the `android` folder in Android Studio and press Run, or from a terminal:
-
-```
-cd android
-./gradlew testDebugUnitTest assembleRelease
-```
-
-This builds the phone app and the Wear OS app. Official builds are signed only with the
-owner's private upload key, which is never committed. Without it, release builds come out
-unsigned; for your own use, build debug (`assembleDebug`) or sign with your own key. If you
-have a key, put it in `android/keystore.properties`:
-
-```
-storeFile=C:/path/to/ocean-upload.jks
-storePassword=...
-keyAlias=...
-keyPassword=...
-```
-
-### iPhone
-
-The Xcode project is generated from `ios/project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen).
-On a Mac:
-
-```
-brew install xcodegen
-cd ios
-xcodegen generate
-open OceanLive.xcodeproj
-```
-
-Bundle IDs: `com.justice.OceanABRP` (app, CarPlay driving-task entitlement, App Group
-`group.com.justice.OceanABRP`), `com.justice.OceanABRP.widgets` (widgets, same App Group) and
-`com.justice.OceanABRP.watchkitapp` (Apple Watch).
-
-## GitHub Actions
-
-| Workflow | On push to main | On manual run (Actions tab, Run workflow) |
-| --- | --- | --- |
-| Android | Unit tests and signed APK build artifacts (phone and Wear OS), also put on the unlisted preview channel of oceanlive.org (`/downloads/preview/`); pull requests only check that it compiles | Also Play bundles, a GitHub release with the APKs, named from the app version, with notes from CHANGELOG.md, and the same APKs as the public download on oceanlive.org |
-| iOS | Unsigned build and IPA artifact | Also signs and uploads to TestFlight |
-| Site | Checks and deploys oceanlive.org (on changes in `site/`), keeping the APK downloads that are live | The same, from `main` |
-
-Deploys to oceanlive.org run one at a time (the Android publish job and the Site workflow share
-one queue). See [site/README.md](site/README.md#deploy).
-
-Manual iOS runs have two switches: **Include the widgets and Live Activity** (on by default)
-and **Include the Apple Watch app** (off by default; tick it for full builds).
-
-Each finished release is tagged `release-x.y.z`. To rebuild one, choose its tag instead of
-`main` when running a workflow.
-
-Secrets used by the manual runs:
-
-* Android signing (every APK and bundle): `ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
-* iOS TestFlight: `ASC_KEY_P8`, `ASC_KEY_ID`, `ASC_ISSUER_ID`
-* oceanlive.org (Site workflow and the Android publish job): the `CLOUDFLARE_API_TOKEN` secret, plus the repository variable `CLOUDFLARE_ACCOUNT_ID`. Make the token from Cloudflare's "Edit Cloudflare Workers" template, or by hand with Account: Workers Scripts Edit and, for the oceanlive.org zone, Zone: Workers Routes Edit and DNS Edit (the deploy attaches oceanlive.org and www.oceanlive.org as custom domains)
-
-Without the Cloudflare token or account ID, a push skips the preview, while the publish job of
-a manual Android run (after the GitHub release) and the Site workflow fail.
-
-All oceanlive.org deploys share one queue, and GitHub keeps only one waiting run in it, so a
-newer deploy can cancel a waiting release publish. The manual Android run then fails with
-"The publish job was cancelled"; use **Re-run failed jobs** on that run to publish the release.
-
-Without the Android secrets, a push only checks that the app compiles, and a manual Android
-run fails rather than publish an unsigned release. Without the iOS secrets, the TestFlight
-upload is skipped.
-
-Repository variable (not a secret) used by every build: `OCEAN_ASK_URL`, the "Any questions?"
-server address ending in `/ask`. Without it the **?** button is hidden. See
-[ask-proxy/README.md](ask-proxy/README.md).
-
-## Feedback
+## Feedback and contributing
 
 Found a bug or have an idea? [Open an issue](https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose).
-Screenshots or photos from the car help a lot.
+Screenshots or photos from the car help a lot. Please report security problems privately, as
+described in [SECURITY.md](SECURITY.md), not in a public issue.
+
+Changes are welcome within the terms of the [license](LICENSE). Keep the Android and iPhone apps
+in step: both decode the car the same way and their unit tests share the same expected values, so
+a change to one usually needs the same change and test in the other. Each part of the repository
+has its own tests; please add or update them with your change.
 
 ## Privacy
 

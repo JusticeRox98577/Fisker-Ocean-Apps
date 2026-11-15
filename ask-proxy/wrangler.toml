@@ -1,9 +1,22 @@
-# Ocean Live "Any questions?" proxy. Deploy steps: README.md in this folder.
+# Ocean Live app server: "Any questions?", accounts and the web account page.
 name = "ocean-live-ask"
 main = "src/index.ts"
 compatibility_date = "2026-11-01"
 compatibility_flags = ["nodejs_compat"]
+# Older app builds use the workers.dev address, so it stays on.
 workers_dev = true
+# api.oceanlive.org: the app API. account.oceanlive.org: the web account page.
+routes = [
+  { pattern = "api.oceanlive.org", custom_domain = true },
+  { pattern = "account.oceanlive.org", custom_domain = true },
+]
+
+# The web account page. The Worker runs first on every request and only serves these files
+# when the host is account.oceanlive.org; on other hosts the same paths are 404.
+[assets]
+directory = "./account"
+binding = "ASSETS"
+run_worker_first = true
 
 # The knowledge guide is bundled into the Worker as text.
 [[rules]]
@@ -32,12 +45,12 @@ crons = ["17 3 * * *"]
 [vars]
 # Days to keep the research log. PRIVACY.md promises 90; change both together.
 LOG_RETENTION_DAYS = "90"
-# Accounts (see README.md, "Accounts"). Answer questions from apps without an account (3.4)?
+# Accounts. Answer questions from apps without an account (3.4)?
 # Set to "false" once the account update has been out for a while.
 ALLOW_ANONYMOUS = "true"
 # Sign in with Apple: the iPhone app's bundle ID.
 APPLE_AUDIENCES = "com.justice.OceanABRP"
-# Sign in with Google: your OAuth client IDs (see README.md, "Accounts"). Empty hides Google.
+# Sign in with Google: your OAuth client IDs. Empty hides Google.
 GOOGLE_WEB_CLIENT_ID = ""
 GOOGLE_IOS_CLIENT_ID = ""
 # Email codes: the sender, on a domain verified in Resend. Email sign-in only shows once the

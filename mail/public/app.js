@@ -641,7 +641,7 @@ $("#new-box-form").addEventListener("submit", async (e) => {
 });
 
 // ---------- Mailing list ----------
-const lv = { overview: null, subs: [], next: null, q: "", status: "", sending: false };
+const lv = { overview: null, subs: [], next: null, q: "", status: "", sending: false, inviting: false };
 
 function showListView() {
   state.view = "list";
@@ -679,7 +679,7 @@ async function loadListOverview() {
 function renderListOverview() {
   const o = lv.overview;
   $("#lv-counts").textContent =
-    `${o.confirmed} confirmed · ${o.pending} not confirmed yet · ${o.sentToday} of ${o.perDay} list emails sent today (UTC; news, tests and confirmations)`;
+    `${o.confirmed} confirmed · ${o.pending} not confirmed yet · ${o.sentToday} of ${o.perDay} list emails sent today (UTC; news, tests, confirmations and invitations)`;
   $("#lv-from").textContent = o.from;
   const notices = [];
   if (!o.sendingReady) {
@@ -839,6 +839,58 @@ async function runCampaign(state0, resume) {
     loadListOverview();
   }
 }
+
+// ---------- Mailing list: invite testers ----------
+const MAX_INVITES = 200;
+
+/** One address per line or comma; "Name <a@b.c>" keeps just the address. Lowercase, no duplicates. */
+function parseInviteList(text) {
+  const out = [];
+  for (const part of text.split(/[\n,;]+/)) {
+    const angle = /<([^<>]*)>/.exec(part);
+    const email = (angle ? angle[1] : part).trim().toLowerCase();
+    if (email && !out.includes(email)) out.push(email);
+  }
+  return out;
+}
+
+function inviteResultText(r) {
+  const parts = [`Invited ${r.invited}.`];
+  if (r.deferred.length) parts.push(`${r.deferred.length} left for tomorrow: paste the list again then.`);
+  if (r.skipped) parts.push(`Skipped ${plural(r.skipped, "address", "addresses")} already on the list or invited before.`);
+  if (r.failed.length) parts.push(`${r.failed.length} failed: ${r.failed.map((f) => `${f.email} (${f.error})`).join("; ")}`);
+  return parts.join(" ");
+}
+
+$("#lv-invite-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (lv.inviting) return;
+  const box = $("#lv-invite-emails");
+  const err = $("#lv-invite-error");
+  const result = $("#lv-invite-result");
+  err.textContent = "";
+  const emails = parseInviteList(box.value);
+  if (!emails.length) { err.textContent = "Paste at least one address."; box.focus(); return; }
+  if (emails.length > MAX_INVITES) { err.textContent = `Invite at most ${MAX_INVITES} addresses at a time.`; box.focus(); return; }
+  if (!confirm(`Send an invitation to ${plural(emails.length, "address", "addresses")}? Addresses already on the list or invited before are skipped. Nobody joins without clicking the link.`)) return;
+  lv.inviting = true;
+  $("#lv-invite-send").disabled = true;
+  result.textContent = "Sending invitations…";
+  try {
+    const r = await api("/api/list/invite", { method: "POST", json: { emails } });
+    result.textContent = inviteResultText(r);
+    if (!r.deferred.length && !r.failed.length) box.value = "";
+    loadListOverview();
+    loadSubscribers();
+  } catch (ex) {
+    result.textContent = "";
+    err.textContent = ex.message;
+    box.focus();
+  } finally {
+    lv.inviting = false;
+    $("#lv-invite-send").disabled = false;
+  }
+});
 
 // ---------- Keyboard shortcuts: c = compose, / = search ----------
 document.addEventListener("keydown", (e) => {

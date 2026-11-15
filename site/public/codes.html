@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fisker Ocean fault codes · Ocean Live</title>
+<meta name="description" content="How Fisker Ocean fault codes are built, the codes confirmed on real Ocean cars, the modules Ocean Live scans, and what to do about a code.">
+<link rel="canonical" href="https://oceanlive.org/codes">
+<meta property="og:url" content="https://oceanlive.org/codes">
+<meta name="theme-color" content="#0B2545">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ocean Live">
+<meta property="og:title" content="Fisker Ocean fault codes · Ocean Live">
+<meta property="og:description" content="How Fisker Ocean fault codes are built, the codes confirmed on real Ocean cars, the modules Ocean Live scans, and what to do about a code.">
+<meta property="og:image" content="https://oceanlive.org/icons/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="The Ocean Live app icon">
+<meta name="twitter:card" content="summary">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
+<script type="module" src="/js/codes.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="paper" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<header class="site-header" id="top">
+  <nav class="wrap nav" aria-label="Main">
+    <a class="brand" href="/" aria-label="Ocean Live home">
+      <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+      Ocean Live
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="/#live">Live data</a></li>
+      <li><a href="/#features">Features</a></li>
+      <li><a href="/#battery">12V</a></li>
+      <li><a href="/#faults">Fault codes</a></li>
+      <li><a href="/#privacy">Privacy</a></li>
+      <li><a href="/#faq">FAQ</a></li>
+      <li class="nav-menu-only"><a href="/#download">Downloads</a></li>
+    </ul>
+    <a class="btn btn-primary btn-small nav-cta" href="/#download">Downloads</a>
+  </nav>
+</header>
+
+<main id="main">
+<section class="doc-hero">
+  <div class="wrap narrow">
+    <div class="lightbar" aria-hidden="true"></div>
+    <div class="eyebrow">Fault codes</div>
+    <h1>Fisker Ocean fault codes</h1>
+    <p>How the codes are built, the ones confirmed on Ocean cars, and what to do about them.</p>
+  </div>
+</section>
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+    <div class="callout sand">
+      <p><strong>This is not a full code table.</strong> It lists only codes confirmed on real Ocean cars, and it is not a substitute for a qualified EV technician. When you scan in Ocean Live, the app also describes standard codes, and you can import your own description lists.</p>
+    </div>
+
+    <ul class="toc" aria-label="Sections">
+      <li><a href="#built">How a code is built</a></li>
+      <li><a href="#confirmed">Confirmed Ocean codes</a></li>
+      <li><a href="#modules">Modules</a></li>
+      <li><a href="#what-to-do">What to do</a></li>
+    </ul>
+
+    <h2 id="built">How a code is built</h2>
+    <p>A code like <code>B208896</code> has three parts: a letter for the system, four characters for the base code, and two for the failure type. Some scan tools show only the first five characters, or put a dash before the failure type (<code>B2088-96</code>).</p>
+    <ul>
+      <li><code>B</code>: the system, here body</li>
+      <li><code>2088</code>: the base code, which says what part or signal it is about</li>
+      <li><code>96</code>: the failure type, here component internal failure</li>
+    </ul>
+    <p>On the Ocean, <code>B208896</code> means: overhead console touch controller not responding.</p>
+
+    <h3 id="systems">The first letter</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Letter</th><th scope="col">System</th></tr></thead>
+        <tbody>
+          <tr><td><code>P</code></td><td>Powertrain</td></tr>
+          <tr><td><code>C</code></td><td>Chassis</td></tr>
+          <tr><td><code>B</code></td><td>Body</td></tr>
+          <tr><td><code>U</code></td><td>Network</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="suffixes">Common failure types (the last two characters)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Ending</th><th scope="col">Usually means</th></tr></thead>
+        <tbody>
+          <tr><td><code>11</code></td><td>Short to ground</td></tr>
+          <tr><td><code>12</code></td><td>Short to battery</td></tr>
+          <tr><td><code>13</code></td><td>Open circuit</td></tr>
+          <tr><td><code>16</code></td><td>Voltage below threshold</td></tr>
+          <tr><td><code>17</code></td><td>Voltage above threshold</td></tr>
+          <tr><td><code>1C</code></td><td>Voltage out of range</td></tr>
+          <tr><td><code>31</code></td><td>No signal</td></tr>
+          <tr><td><code>54</code></td><td>Missing calibration</td></tr>
+          <tr><td><code>55</code></td><td>Not configured</td></tr>
+          <tr><td><code>62</code></td><td>Signal compare failure</td></tr>
+          <tr><td><code>81</code></td><td>Invalid serial data</td></tr>
+          <tr><td><code>86</code></td><td>Invalid signal</td></tr>
+          <tr><td><code>87</code></td><td>Missing message</td></tr>
+          <tr><td><code>88</code></td><td>Bus off</td></tr>
+          <tr><td><code>96</code></td><td>Component internal failure</td></tr>
+          <tr><td><code>F1</code></td><td>Safety/integrity check</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="states">Active, pending, stored</h3>
+    <p>Ocean Live marks each code <strong>Active now</strong> (the fault is present now), <strong>Pending</strong>, <strong>Stored</strong> (it happened before) or <strong>Warning lamp</strong> (the module asked for a warning light).</p>
+
+    <h2 id="confirmed">Codes confirmed on Ocean cars</h2>
+    <p>These codes have been seen and confirmed on real Ocean cars. Search by code (paste one, with or without a dash) or by a word.</p>
+    <form class="codes-search" role="search" hidden>
+      <label class="codes-label" for="codes-q">Search the confirmed codes</label>
+      <input class="codes-input" id="codes-q" type="search" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search" placeholder="B208896 or steering">
+      <p class="codes-status" role="status" aria-live="polite"></p>
+    </form>
+    <div class="table-wrap">
+      <table class="codes-table">
+        <thead><tr><th scope="col">Code</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+          <tr data-i="0"><td><code>U15AD87</code></td><td>Lost communication with the power steering module</td></tr>
+          <tr data-i="1"><td><code>U1613F1</code></td><td>End-to-end message check failed (a message failed its integrity check)</td></tr>
+          <tr data-i="2"><td><code>U199701</code></td><td>Lost communication with HV coolant heater H (cabin heating may not work)</td></tr>
+          <tr data-i="3"><td><code>U199702</code></td><td>Lost communication with HV coolant heater B (HV battery heater may not work)</td></tr>
+          <tr data-i="4"><td><code>U201162</code> <code>U201262</code></td><td>Communication verification failure</td></tr>
+          <tr data-i="5"><td><code>B20FE16</code></td><td>Trailer module supply voltage below threshold (trailer lamps may not light fully)</td></tr>
+          <tr data-i="6"><td><code>B208896</code></td><td>Overhead console touch controller not responding</td></tr>
+          <tr data-i="7"><td><code>B178854</code></td><td>Module not coded (configuration missing)</td></tr>
+          <tr data-i="8"><td><code>C21A531</code></td><td>Front camera: no signal on its Ethernet link (timeout)</td></tr>
+          <tr data-i="9"><td><code>C21A586</code></td><td>Front camera: invalid signal on its Ethernet link</td></tr>
+          <tr data-i="10"><td><code>U114281</code> <code>U1142F1</code></td><td>Climate control value invalid / signal outdated<span class="code-note">Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update.</span></td></tr>
+          <tr data-i="11"><td><code>U114381</code> <code>U1143F1</code></td><td>Stability control (ABS) value invalid / signal outdated<span class="code-note">Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update.</span></td></tr>
+          <tr data-i="12"><td><code>U114581</code> <code>U1145F1</code></td><td>Cockpit controller value invalid / signal outdated<span class="code-note">Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update.</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Many U-codes (lost communication, signal outdated, integrity check failed) appear after a module was asleep, the 12V dipped, or software was updated, and often clear and stay clear. Codes that come back right after clearing, or that come with a warning on the car's screen, point to a real problem.</p>
+
+    <h2 id="modules">The modules Ocean Live scans</h2>
+    <p><strong>Scan all modules</strong> reads stored codes from 39 modules. Their short names, as the app shows them:</p>
+    <ul class="modules-list">
+      <li><strong>BMS</strong>: HV battery</li>
+      <li><strong>BCM</strong>: body control</li>
+      <li><strong>VCU</strong>: vehicle control</li>
+      <li><strong>MCU_F / MCU_R</strong>: front / rear motor</li>
+      <li><strong>PDU</strong>: power distribution</li>
+      <li><strong>PIU</strong>: power integration unit</li>
+      <li><strong>WTC and BTC</strong>: HV coolant heaters A and B</li>
+      <li><strong>ECC</strong>: climate</li>
+      <li><strong>RAC</strong>: rear climate</li>
+      <li><strong>ESP</strong>: stability control</li>
+      <li><strong>IBOOSTER</strong>: brake booster</li>
+      <li><strong>EPS and EPS2</strong>: power steering and backup</li>
+      <li><strong>ACU</strong>: airbags</li>
+      <li><strong>PKC</strong>: keys and NFC</li>
+      <li><strong>ICC</strong>: cockpit and screens</li>
+      <li><strong>GW</strong>: gateway</li>
+      <li><strong>TBOX_EU / TBOX_US</strong>: telematics</li>
+      <li><strong>HYDRA</strong>: driver assist</li>
+      <li><strong>FCM</strong>: front camera</li>
+      <li><strong>MRR</strong>: front radar</li>
+      <li><strong>CMRR_FL/FR/RL/RR</strong>: corner radars</li>
+      <li><strong>OHC</strong>: overhead console</li>
+      <li><strong>CIM</strong>: steering column</li>
+      <li><strong>MFSS</strong>: steering wheel switches</li>
+      <li><strong>DSMC / PSM</strong>: driver / passenger seat</li>
+      <li><strong>PWC_L / PWC_R</strong>: wireless phone chargers</li>
+      <li><strong>PLGM</strong>: power liftgate</li>
+      <li><strong>TRM</strong>: trailer module</li>
+      <li><strong>AMP</strong>: audio amplifier</li>
+      <li><strong>VSP</strong>: pedestrian warning speaker</li>
+    </ul>
+
+    <h2 id="what-to-do">What to do about a code</h2>
+    <ol>
+      <li>Scan: open <span class="path"><span>Faults</span><i>→</i><span>Scan all modules</span></span>. It takes about a minute. Tap <strong>Active now</strong> to see active codes first. <strong>New</strong> marks codes that weren't there in the last scan. Some lists may be incomplete; scanning again usually fills them in.</li>
+      <li>Tap a code to see what it affects, possible causes and how it's fixed, when known.</li>
+      <li>Tap <strong>Share report</strong> to keep a text report, or to send it to a shop. Do this before clearing anything.</li>
+      <li>Not sure? Tap the round <strong>?</strong> at the top and ask "Any questions?". It can see the codes from your last scan (unless you turn off "Include my car's readings").</li>
+    </ol>
+
+    <h3 id="clearing">Clearing codes and restarting a module</h3>
+    <p><strong>Clear codes</strong> (one module or every module) and <strong>Restart</strong> are the only things in Ocean Live that change anything in the car. Before you use them:</p>
+    <ul>
+      <li>The car is on and in Park, your foot is on the brake, the charging cable is unplugged and the climate is off.</li>
+      <li>The app checks that the car is still and almost no power flows, and stops if that changes. Messages like "The car is moving. Park it first." mean a safety check stopped it.</li>
+      <li>Restart is not offered for the brakes, steering, airbags, drive motors, gateway or battery management.</li>
+      <li>Clearing erases the history a workshop would use, so share the report first. Clearing doesn't fix anything: codes for faults still present come back straight away. A restart is not a repair.</li>
+    </ul>
+    <div class="callout">
+      <p>Airbag (ACU), brake (ESP, IBOOSTER), steering (EPS) and high-voltage (BMS, PDU, PIU, MCU) faults should go to a qualified EV shop. An insulation (isolation) fault is a safety issue: don't open anything.</p>
+    </div>
+    <p class="file-meta">This page is made from the <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/ask-proxy/knowledge/ocean-guide.md" rel="noopener">Ocean owner guide</a> that "Any questions?" answers from. More on using the app: <a href="/help">Help</a>.</p>
+    </div>
+  </div>
+</article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/">
+          <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+          Ocean Live
+        </a>
+        <p>Battery, 12V, trips and fault codes for the Fisker Ocean, read from the car through a Bluetooth OBD adapter.</p>
+      </div>
+      <div>
+        <h2>App</h2>
+        <ul>
+          <li><a href="/#download">Download</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">Releases</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">Changelog</a></li>
+          <li><a href="/help">Help</a></li>
+          <li><a href="/codes">Fault codes</a></li>
+          <li><a href="/news">News by email</a></li>
+          <li><a href="/#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Project</h2>
+        <ul>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">GitHub</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/LICENSE" rel="noopener">License</a></li>
+          <li><a href="/credits">Credits</a></li>
+          <li><a href="https://status.oceanlive.org/" rel="noopener">Service status</a></li>
+          <li><a href="mailto:justice@oceanlive.org">Contact</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">Report a bug</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/security/advisories/new" rel="noopener">Report a vulnerability</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Privacy</h2>
+        <ul>
+          <li><a href="/privacy">Privacy policy</a></li>
+          <li><a href="https://account.oceanlive.org/" rel="noopener">Your account</a></li>
+          <li><a href="/delete-account">Delete your account</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="disclaimer">
+      <p>Ocean Live is an independent, owner-made app. It is not affiliated with or endorsed by Fisker Inc. "Fisker" and "Fisker Ocean" are trademarks of their respective owners and are used only to describe the vehicle the app works with. Other names are trademarks of their owners.</p>
+      <p>3D model: <a href="https://sketchfab.com/3d-models/fisker-ocean-low-poly-f506bfe876864c04b68bdfc59070739a" rel="noopener">"Fisker Ocean (low-poly)"</a> by <a href="https://sketchfab.com/LagzDesign" rel="noopener">LagzDesign</a>, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>, changed: drawn as lines, compressed, doors separated. <a href="/credits">All credits</a>.</p>
+      <p>Use at your own risk. Values shown by the app are not a dealer diagnosis. © 2026 Ocean Live.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

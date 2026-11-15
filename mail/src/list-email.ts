@@ -1,5 +1,6 @@
 /**
- * Mailing-list emails: the sign-up confirmation (five languages) and the news email the owner writes.
+ * Mailing-list emails: the sign-up confirmation (five languages), the one-time invitation to testers
+ * (English) and the news email the owner writes.
  *
  * Same look as the app's sign-in email (ask-proxy/src/email.ts): blueprint navy, the hosted banner, table
  * layout with inline styles, no scripts, no tracking. It is copied in a smaller form, not imported, because
@@ -133,6 +134,57 @@ export function confirmEmail(lang: ListLang, link: string, site: string): Email 
     note(t.ignore);
   const footer = footerLine(t.footer, site);
   return { subject: t.subject, text, html: frame(lang, t.subject, t.label, body, [footer]) };
+}
+
+/** Wording of the tester invitation (English only). Kept together so the tests can check it. */
+export const INVITE = {
+  subject: "Would you like Ocean Live news by email?",
+  label: "Ocean Live news",
+  heading: "Want Ocean Live news?",
+  why: "You're getting this because you test Ocean Live (the Fisker Ocean app).",
+  what: "Justice is starting a mailing list for Ocean Live news: new releases and important fixes, a few emails a year, no ads.",
+  ask: "If you'd like those emails, confirm here:",
+  button: "Yes, send me Ocean Live news",
+  orLink: "Or open this link:",
+  expiry: "The link works for 7 days.",
+  ignore: "If you don't confirm, you won't be added and you won't hear from this list again.",
+  footer: "Ocean Live · independent app for the Fisker Ocean · oceanlive.org",
+};
+
+/** The invitation sent once to a tester. `link` is the normal confirm link (token in its #fragment). */
+export function inviteEmail(link: string, site: string): Email {
+  const t = INVITE;
+  const text = [
+    t.heading,
+    "",
+    t.why,
+    "",
+    t.what,
+    "",
+    t.ask,
+    link,
+    "",
+    t.expiry,
+    "",
+    t.ignore,
+    "",
+    "--",
+    t.footer.replace("oceanlive.org", site),
+    "",
+  ].join("\n");
+  const para = (s: string, bottom = 16) =>
+    `<p style="margin:0 0 ${bottom}px;font-family:${BODY};font-size:17px;line-height:27px;color:${C.muted}">${esc(s)}</p>`;
+  const body =
+    `<h1 style="margin:0 0 12px;font-family:${SANS};font-size:28px;line-height:36px;font-weight:700;color:${C.ink}">${esc(t.heading)}</h1>` +
+    para(t.why) +
+    para(t.what) +
+    para(t.ask, 20) +
+    button(t.button, link) +
+    `<p style="margin:22px 0 4px;font-family:${BODY};font-size:14px;line-height:22px;color:${C.muted}">${esc(t.orLink)}</p>` +
+    `<p style="margin:0 0 18px;font-family:${BODY};font-size:14px;line-height:22px;word-break:break-all"><a href="${esc(link)}" style="color:${C.cyan}">${esc(link)}</a></p>` +
+    `<p style="margin:0 0 18px;font-family:${BODY};font-size:15px;line-height:24px;color:${C.muted}">${esc(t.expiry)}</p>` +
+    note(t.ignore);
+  return { subject: t.subject, text, html: frame("en", t.subject, t.label, body, [footerLine(t.footer, site)]) };
 }
 
 export interface CampaignParts {

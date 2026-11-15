@@ -7,6 +7,16 @@ Each `## x.y.z` section is used as the release notes for that version.
 * News by email: sign up at oceanlive.org/news (or in the downloads section of the home page)
   to get an email when there's a new release or an important fix. Nobody is added without
   confirming by email, and every email has a one-click unsubscribe that deletes your address
+* Help on the website: oceanlive.org/help explains the adapter you need, getting connected,
+  each tab, the 12V watch, car screens and watches, your account and what to do when
+  something doesn't work
+* Fault codes on the website: oceanlive.org/codes explains how Ocean fault codes are built,
+  lists the codes confirmed on real Ocean cars (search by code or word) and the modules the app
+  scans, and says when clearing codes is safe. It is not a full code table
+* Your account on the web: at account.oceanlive.org you can sign in with an email code to see,
+  rename or delete your account without the app. It uses one cookie, only to keep you signed in
+* Service status: status.oceanlive.org shows whether the website, the app server and the
+  mail server are up
 
 ## 3.4.0
 

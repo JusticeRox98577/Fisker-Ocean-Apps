@@ -27,7 +27,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       short: ${{ steps.version.outputs.short }}
     env:
-      # "Any questions?" proxy address (repository variable, see ask-proxy/README.md). Empty hides the button.
+      # "Any questions?" proxy address (repository variable; the app server is in ask-proxy/). Empty hides the button.
       OCEAN_ASK_URL: ${{ vars.OCEAN_ASK_URL }}
     defaults:
       run:

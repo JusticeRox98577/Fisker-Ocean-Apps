@@ -1,6 +1,8 @@
-// Writes the document pages (privacy, delete account, credits, news, the mailing list's confirm and
-// unsubscribe pages, 404) with the shared header and footer. The home page (public/index.html) is written by hand. Run after editing a page body here
-// or the shared parts: node tools/build-pages.mjs   (from site/)
+// Writes the document pages (privacy, delete account, pre-registration terms, credits, help, fault
+// codes, news, the mailing list's confirm and unsubscribe pages, 404) with the shared header and
+// footer. The home page (public/index.html) is written by hand. Run after editing a page body here
+// or the shared parts: node tools/build-pages.mjs   (from site/). The fault codes page reads
+// public/data/ocean-codes.json: run tools/build-codes.mjs first when the owner guide changes.
 import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 
 const PUB = new URL("../public/", import.meta.url);
@@ -18,6 +20,12 @@ const LIST_END = "<!-- /LIST FORM -->";
 const listForm = index.slice(index.indexOf("-->", index.indexOf(LIST_START)) + 3, index.indexOf(LIST_END)).trim();
 if (!listForm.startsWith('<form class="list-form"')) throw new Error("mailing list form not found in index.html");
 const LIST_JS = '<script type="module" src="/js/list.js"></script>';
+
+// The confirmed Ocean codes, modules and suffixes, from the owner guide (tools/build-codes.mjs).
+const CODES = JSON.parse(readFileSync(new URL("data/ocean-codes.json", PUB), "utf8"));
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const ACCOUNT = "https://account.oceanlive.org/";
+const path = (...steps) => `<span class="path">${steps.map((s) => `<span>${s}</span>`).join("<i>→</i>")}</span>`;
 
 function page({ file, title, description, canonical, body, noindex = false, scripts = "" }) {
   const html = `<!doctype html>
@@ -101,7 +109,7 @@ page({
   description: "How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds, what &quot;Any questions?&quot; sends, the email list, and how to have it deleted.",
   canonical: "https://oceanlive.org/privacy",
   body: `
-${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 November 2026 (added: mailing list)")}
+${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 November 2026 (added: mailing list, tester invitations, account website)")}
 
 <article class="doc">
   <div class="wrap narrow">
@@ -115,6 +123,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
       <li><a href="#questions">"Any questions?"</a></li>
       <li><a href="#research-log">Research log</a></li>
       <li><a href="#accounts">Accounts</a></li>
+      <li><a href="#account-website">Account website</a></li>
       <li><a href="#abrp">ABRP</a></li>
       <li><a href="#watches">Watches, widgets and car screens</a></li>
       <li><a href="#mailing-list">Mailing list</a></li>
@@ -128,10 +137,10 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
       <h2 id="short">The short version</h2>
       <ul>
         <li>No ads, no tracking.</li>
-        <li>Version 3.4 has no account. From the next version, the app asks you to sign in once (with Google or a 6-digit email code, and on iPhone also with Sign in with Apple). The account holds your email address and a display name, and you can delete it in the app at any time. See <a href="#accounts">Accounts</a>.</li>
+        <li>From version 3.4, the app asks you to sign in once (with Google or a 6-digit email code, and on iPhone also with Sign in with Apple). The account holds your email address and a display name, and you can delete it at any time, in the app or at account.oceanlive.org. See <a href="#accounts">Accounts</a>.</li>
         <li>What the app reads from your car stays on your phone, except what you choose to send below.</li>
         <li>Data leaves your phone only when you sign in or manage your account (opening the account settings checks it with the server), when you ask a question in "Any questions?", or if you turn on live data to A Better Route Planner (ABRP) yourself.</li>
-        <li>The mailing list on oceanlive.org is separate from the app and only for people who sign up and confirm. It keeps your email address and language until you unsubscribe. See <a href="#mailing-list">Mailing list</a>.</li>
+        <li>The mailing list on oceanlive.org is separate from the app and only for people who sign up and confirm. It keeps your email address and language until you unsubscribe. Testers may be asked once by email whether they want to join. See <a href="#mailing-list">Mailing list</a>.</li>
         <li>Questions (and, unless you turn it off, your car's latest readings) are answered by Claude, an AI made by Anthropic, through a small server the developer runs. For research, the developer keeps each question, its answer, the readings sent with it and a random install ID for 90 days, then deletes them.</li>
       </ul>
     </div>
@@ -164,7 +173,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
     <p>Don't put personal details in questions. Answers come from an AI and can be wrong; check anything important with a qualified EV shop.</p>
 
     <h2 id="accounts">Accounts</h2>
-    <p>Version 3.4 has no account. From the next version, the app asks you to sign in once before you use it, with Google or with a 6-digit code sent to your email address; the iPhone app also offers Sign in with Apple. There are no passwords. The account keeps your "Any questions?" questions, and their daily limit, secure and tied to you, also when you change phones. Your car data never goes to your account: it stays on your phone, and the app works offline after signing in.</p>
+    <p>From version 3.4, the app asks you to sign in once before you use it, with Google or with a 6-digit code sent to your email address; the iPhone app also offers Sign in with Apple. There are no passwords. The account keeps your "Any questions?" questions, and their daily limit, secure and tied to you, also when you change phones. Your car data never goes to your account: it stays on your phone, and the app works offline after signing in.</p>
     <p>What the Ocean Live server stores for an account, in the same Cloudflare D1 database as the research log, which only the developer can read:</p>
     <ul>
       <li><strong>The account:</strong> a random account ID, your email address (as verified by Google, by the email code, or by Apple, which may give a private relay address instead), a display name (from Google or Apple at first; you can change it in the app), and when the account was created and last used.</li>
@@ -180,8 +189,12 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
       <li><strong>Google</strong>, when you sign in with Google: Google tells the server your Google account ID, email address and name, signed so the server can check it is genuine. <strong>Apple</strong> does the same when you use Sign in with Apple on iPhone. The server only downloads Google's and Apple's public keys to check these; it sends them nothing about you.</li>
       <li><strong>Anthropic</strong> only receives questions, as described above.</li>
     </ul>
-    <p>The account and its sign-in methods are kept until you delete the account. To delete it, open Ocean Live and go to <span class="path"><span>Settings</span><i>→</i><span>Account</span><i>→</i><span>Delete account</span></span>. This deletes, straight away, the account, its sign-in methods, all its sessions (every device is signed out), the logged questions linked to it and any personal question limit set for it. Car data on your phone is not affected. An email-code entry for your address (see Email codes) is removed too. The short-lived counters above expire on their own within about a day. If you can't use the app any more, see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+    <p>The account and its sign-in methods are kept until you delete the account. To delete it, open Ocean Live and go to <span class="path"><span>Settings</span><i>→</i><span>Account</span><i>→</i><span>Delete account</span></span>. This deletes, straight away, the account, its sign-in methods, all its sessions (every device is signed out), the logged questions linked to it and any personal question limit set for it. Car data on your phone is not affected. An email-code entry for your address (see Email codes) is removed too. The short-lived counters above expire on their own within about a day. You can also delete it on the <a href="#account-website">account website</a>. See <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     ${/* Owner review: legal basis for account data. */ ""}<p>The legal basis in the EU and UK for account data is performance of a contract (providing the signed-in app and keeping your questions with your account); for the abuse and rate-limit counters it is the developer's legitimate interest.</p>
+
+    <h3 id="account-website">The account website</h3>
+    <p>You can also manage your account without the app at <a href="${ACCOUNT}" rel="noopener">account.oceanlive.org</a>: sign in with a 6-digit email code (or with Google, when it's offered there; Sign in with Apple isn't) to see your account and its sign-in methods, rename it, sign out or delete it. It uses the same account, the same server and the same processors as the app, described above.</p>
+    <p>Signing in there sets one cookie. It is strictly necessary: it only keeps you signed in, holds the session token (the server keeps only its hash, as for the app) and is sent only to account.oceanlive.org. A session there lasts 30 days from its last use; signing out ends it and removes the cookie. The account website uses no analytics or trackers. If Sign in with Google is offered there, the page loads Google's sign-in button from Google, so Google sees your IP address when you open it.</p>
 
     <h2 id="abrp">A Better Route Planner (optional)</h2>
     <p>If you enter your own ABRP token and API key, Ocean Live sends live telemetry (charge, power, voltage, current, battery temperature, odometer, charging state and, if you allow it, your location) to ABRP's servers (Iternio) so ABRP can plan your route. That data is handled under ABRP's own privacy policy. Remove the token and key to stop it at any time.</p>
@@ -204,6 +217,9 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
     <p>Who processes it: <strong>Cloudflare</strong> stores it and runs the server; <strong>Resend</strong> delivers the emails, so it receives your email address and each email.</p>
     <p>How long: a sign-up that isn't confirmed is deleted after 7 days. Unsubscribing deletes your address straight away. Every email has an unsubscribe link, and mail apps that show an Unsubscribe button (such as Gmail) unsubscribe you in one click. You can also email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> to have your address deleted, or to ask what is held.</p>
     <p>The legal basis in the EU and UK is your consent, which you can withdraw at any time by unsubscribing.</p>
+    <h3 id="invitations">Invitations for testers</h3>
+    <p>People who test Ocean Live may get <strong>one</strong> email from the developer asking whether they want these news emails. To send it, their email address goes to Resend. It creates an unconfirmed sign-up like the one above: nothing more is sent unless they press <strong>Confirm my subscription</strong>, and if they don't, it is deleted after 7 days like any unconfirmed sign-up.</p>
+    <p>So that nobody is invited twice, or after leaving the list, the server keeps a SHA-256 hash of the address (not the address itself) for everyone who was invited, unsubscribed, was removed, or let a sign-up lapse. It is kept with no end date and used for nothing else. A hash can't be read back, but someone who already knows an address can check it against the hash, so it still counts as personal data. Email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> to have it removed (you could then be invited again). The legal basis in the EU and UK is legitimate interests: asking testers once, and respecting the answer.</p>
 
     <h2 id="children">Children</h2>
     <p>Ocean Live is meant for vehicle owners and is not directed at children.</p>
@@ -216,7 +232,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
 
     <div class="callout sand">
       <h2 id="website">This website</h2>
-      <p>oceanlive.org sets no cookies and uses no analytics or trackers. The only thing it collects is what you type into the mailing list form, if you sign up (see <a href="#mailing-list">Mailing list</a>). Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+      <p>oceanlive.org sets no cookies and uses no analytics or trackers. (The <a href="#account-website">account website</a>, account.oceanlive.org, sets one strictly necessary sign-in cookie.) The only thing it collects is what you type into the mailing list form, if you sign up (see <a href="#mailing-list">Mailing list</a>). Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     </div>
     </div>
   </div>
@@ -266,7 +282,8 @@ ${docHero("Account", "Delete your Ocean Live account", "How to delete your accou
     <p>Questions asked from an install that never signed in aren't linked to any account. They are kept under that install's random ID and deleted automatically after 90 days (see below to have them deleted sooner).</p>
 
     <h2 id="without-app">Without the app</h2>
-    <p>If you no longer have the app, or can't sign in, ask the developer through GitHub:</p>
+    <p>Go to <a href="${ACCOUNT}" rel="noopener">account.oceanlive.org</a>, sign in with a 6-digit code sent to the email address on your account (or with Google, when it's offered there), and delete the account. It deletes the same data as the app, straight away. Sign in with Apple isn't available there. If you used Apple, ask for the code at the email address on your account: with "Hide My Email" that is Apple's private relay address, which forwards it to you. If the code doesn't arrive, use the app or ask below. That page can't create an account, so a sign-in that matches no account is refused instead of opening an empty one.</p>
+    <p>If you can't sign in at all, ask the developer:</p>
     <ul>
       <li>Email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> from the address on your account, asking for your account to be deleted. Or open an issue at <a href="${REPO}/issues/new/choose" rel="noopener">${REPO.replace("https://", "")}/issues</a> (issues are public).</li>
       <li>Issues are public: anyone can see what you post there. You can include your <strong>account ID</strong> (shown under Settings, Account) or your <strong>install ID</strong> (shown in the chat under "Show what's sent") to speed things up, or leave them out and ask for a private way to send them.</li>
@@ -453,6 +470,260 @@ ${docHero("Mailing list", "Unsubscribe", "Stop Ocean Live news emails. Your emai
     </div>
     <p class="list-nojs">Unsubscribing here needs JavaScript. Use the Unsubscribe button in your mail app instead, or email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> and we'll remove you.</p>
     <p class="file-meta">Changed your mind later? You can sign up again at <a href="/news">oceanlive.org/news</a>.</p>
+    </div>
+  </div>
+</article>`,
+});
+
+// ── Fault codes: only what the owner guide says (data/ocean-codes.json), never the full code table ──
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+const example = CODES.codes.find((e) => e.codes.includes("B208896"));
+const suffixKeys = Object.keys(CODES.suffixes).sort();
+page({
+  file: "codes.html",
+  title: "Fisker Ocean fault codes · Ocean Live",
+  description: "How Fisker Ocean fault codes are built, the codes confirmed on real Ocean cars, the modules Ocean Live scans, and what to do about a code.",
+  canonical: "https://oceanlive.org/codes",
+  scripts: '<script type="module" src="/js/codes.js"></script>',
+  body: `
+${docHero("Fault codes", "Fisker Ocean fault codes", "How the codes are built, the ones confirmed on Ocean cars, and what to do about them.")}
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+    <div class="callout sand">
+      <p><strong>This is not a full code table.</strong> It lists only codes confirmed on real Ocean cars, and it is not a substitute for a qualified EV technician. When you scan in Ocean Live, the app also describes standard codes, and you can import your own description lists.</p>
+    </div>
+
+    <ul class="toc" aria-label="Sections">
+      <li><a href="#built">How a code is built</a></li>
+      <li><a href="#confirmed">Confirmed Ocean codes</a></li>
+      <li><a href="#modules">Modules</a></li>
+      <li><a href="#what-to-do">What to do</a></li>
+    </ul>
+
+    <h2 id="built">How a code is built</h2>
+    <p>A code like <code>B208896</code> has three parts: a letter for the system, four characters for the base code, and two for the failure type. Some scan tools show only the first five characters, or put a dash before the failure type (<code>B2088-96</code>).</p>
+    <ul>
+      <li><code>B</code>: the system, here ${CODES.systems.B}</li>
+      <li><code>2088</code>: the base code, which says what part or signal it is about</li>
+      <li><code>96</code>: the failure type, here ${esc(CODES.suffixes["96"])}</li>
+    </ul>
+    ${example ? `<p>On the Ocean, <code>B208896</code> means: ${esc(example.meaning.toLowerCase())}.</p>` : ""}
+
+    <h3 id="systems">The first letter</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Letter</th><th scope="col">System</th></tr></thead>
+        <tbody>
+${Object.entries(CODES.systems).map(([k, v]) => `          <tr><td><code>${esc(k)}</code></td><td>${esc(cap(v))}</td></tr>`).join("\n")}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="suffixes">Common failure types (the last two characters)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Ending</th><th scope="col">Usually means</th></tr></thead>
+        <tbody>
+${suffixKeys.map((k) => `          <tr><td><code>${esc(k)}</code></td><td>${esc(cap(CODES.suffixes[k]))}</td></tr>`).join("\n")}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="states">Active, pending, stored</h3>
+    <p>Ocean Live marks each code <strong>Active now</strong> (the fault is present now), <strong>Pending</strong>, <strong>Stored</strong> (it happened before) or <strong>Warning lamp</strong> (the module asked for a warning light).</p>
+
+    <h2 id="confirmed">Codes confirmed on Ocean cars</h2>
+    <p>These codes have been seen and confirmed on real Ocean cars. Search by code (paste one, with or without a dash) or by a word.</p>
+    <form class="codes-search" role="search" hidden>
+      <label class="codes-label" for="codes-q">Search the confirmed codes</label>
+      <input class="codes-input" id="codes-q" type="search" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search" placeholder="B208896 or steering">
+      <p class="codes-status" role="status" aria-live="polite"></p>
+    </form>
+    <div class="table-wrap">
+      <table class="codes-table">
+        <thead><tr><th scope="col">Code</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+${CODES.codes.map((e, i) => `          <tr data-i="${i}"><td>${e.codes.map((c) => `<code>${esc(c)}</code>`).join(" ")}</td><td>${esc(e.meaning)}${e.note ? `<span class="code-note">${esc(e.note)}</span>` : ""}</td></tr>`).join("\n")}
+        </tbody>
+      </table>
+    </div>
+    <p>Many U-codes (lost communication, signal outdated, integrity check failed) appear after a module was asleep, the 12V dipped, or software was updated, and often clear and stay clear. Codes that come back right after clearing, or that come with a warning on the car's screen, point to a real problem.</p>
+
+    <h2 id="modules">The modules Ocean Live scans</h2>
+    <p><strong>Scan all modules</strong> reads stored codes from 39 modules. Their short names, as the app shows them:</p>
+    <ul class="modules-list">
+${CODES.modules.map((m) => `      <li><strong>${esc(m.ids)}</strong>: ${esc(m.name)}</li>`).join("\n")}
+    </ul>
+
+    <h2 id="what-to-do">What to do about a code</h2>
+    <ol>
+      <li>Scan: open ${path("Faults", "Scan all modules")}. It takes about a minute. Tap <strong>Active now</strong> to see active codes first. <strong>New</strong> marks codes that weren't there in the last scan. Some lists may be incomplete; scanning again usually fills them in.</li>
+      <li>Tap a code to see what it affects, possible causes and how it's fixed, when known.</li>
+      <li>Tap <strong>Share report</strong> to keep a text report, or to send it to a shop. Do this before clearing anything.</li>
+      <li>Not sure? Tap the round <strong>?</strong> at the top and ask "Any questions?". It can see the codes from your last scan (unless you turn off "Include my car's readings").</li>
+    </ol>
+
+    <h3 id="clearing">Clearing codes and restarting a module</h3>
+    <p><strong>Clear codes</strong> (one module or every module) and <strong>Restart</strong> are the only things in Ocean Live that change anything in the car. Before you use them:</p>
+    <ul>
+      <li>The car is on and in Park, your foot is on the brake, the charging cable is unplugged and the climate is off.</li>
+      <li>The app checks that the car is still and almost no power flows, and stops if that changes. Messages like "The car is moving. Park it first." mean a safety check stopped it.</li>
+      <li>Restart is not offered for the brakes, steering, airbags, drive motors, gateway or battery management.</li>
+      <li>Clearing erases the history a workshop would use, so share the report first. Clearing doesn't fix anything: codes for faults still present come back straight away. A restart is not a repair.</li>
+    </ul>
+    <div class="callout">
+      <p>Airbag (ACU), brake (ESP, IBOOSTER), steering (EPS) and high-voltage (BMS, PDU, PIU, MCU) faults should go to a qualified EV shop. An insulation (isolation) fault is a safety issue: don't open anything.</p>
+    </div>
+    <p class="file-meta">This page is made from the <a href="${REPO}/blob/main/ask-proxy/knowledge/ocean-guide.md" rel="noopener">Ocean owner guide</a> that "Any questions?" answers from. More on using the app: <a href="/help">Help</a>.</p>
+    </div>
+  </div>
+</article>`,
+});
+
+// ── Help: how to use the app, from the owner guide (ask-proxy/knowledge/ocean-guide.md) and the FAQ ──
+page({
+  file: "help.html",
+  title: "Help · Ocean Live",
+  description: "How to use Ocean Live with your Fisker Ocean: the adapter you need, getting connected, each tab, the 12V watch, car screens and watches, your account, and what to do when something doesn't work.",
+  canonical: "https://oceanlive.org/help",
+  body: `
+${docHero("Help", "Using Ocean Live", "Getting connected, what each tab does, the 12V watch, and what to do when something doesn't work.")}
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+    <ul class="toc" aria-label="Sections">
+      <li><a href="#need">What you need</a></li>
+      <li><a href="#connect">Getting connected</a></li>
+      <li><a href="#tabs">The tabs</a></li>
+      <li><a href="#readings">Readings</a></li>
+      <li><a href="#sleep">12V and car sleep</a></li>
+      <li><a href="#car-watch">Car screens and watches</a></li>
+      <li><a href="#account">Your account</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      <li><a href="#trouble">Troubleshooting</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+
+    <h2 id="need">What you need</h2>
+    <ul>
+      <li>A Bluetooth LE OBD adapter that speaks ELM327. The Vgate vLinker FD+ is the one most Ocean owners use; the OBDLink CX works too. Adapters that only do classic Bluetooth don't work on iPhone.</li>
+      <li>Ocean Live on your phone: see <a href="/#download">Downloads</a>.</li>
+    </ul>
+
+    <h2 id="connect">Getting connected</h2>
+    <ol>
+      <li>Plug the adapter into the car's OBD port and turn the car on.</li>
+      <li>Open Ocean Live. On the <strong>Live</strong> tab, tap <strong>Find adapter</strong> and pick your adapter.</li>
+      <li>The app remembers it. Next time, tap <strong>Connect to</strong> and your adapter's name, or <strong>Choose a different adapter</strong>.</li>
+    </ol>
+    <p>In ${path("Settings", "Adapter")} you'll find <strong>Connect automatically when the app opens</strong> (on by default) and <strong>Forget saved adapter</strong>. The header shows the state: Connected, Connecting, Looking for adapters, Reconnecting or Not connected. In landscape, a <strong>Connect</strong> / <strong>Disconnect</strong> button sits at the top right.</p>
+
+    <h2 id="tabs">The tabs</h2>
+    <p>The Android and iPhone apps have the same five tabs at the bottom (on Android in landscape they move to a strip on the left): Live, Battery, Trips, Faults and Settings. The round <strong>?</strong> at the top opens "Any questions?".</p>
+
+    <h3 id="live">Live</h3>
+    <ul>
+      <li>The charge ring with state of charge and estimated range, the power going in or out, and whether the car is charging, DC fast charging, driving or parked.</li>
+      <li>While charging, <strong>This charge</strong>: energy added, charging time, start time, peak power and the time to your charge alert level. While driving, <strong>This drive</strong>: distance, energy used, efficiency and time.</li>
+      <li><strong>Battery</strong>: pack voltage, current, battery temperature, cell spread, odometer and 12V (tap the 12V tile for the 12V screen).</li>
+      <li><strong>While parked</strong>: how much charge was lost since the app last saw the car.</li>
+      <li>Range is estimated from your own recent drives and the usable capacity set in ${path("Settings", "Car")}.</li>
+    </ul>
+
+    <h3 id="battery">Battery</h3>
+    <ul>
+      <li><strong>Battery health</strong>: measured capacity, usable now and rated usable. The car doesn't report battery health; the app measures it from charging. Keep the app connected through a charge that adds at least 20%. Until then it shows "Not measured yet".</li>
+      <li><strong>Parked drain</strong>: the average loss per day while parked.</li>
+      <li><strong>Cells</strong>: highest, average and lowest cell voltage and the spread.</li>
+      <li><strong>Temperatures</strong> and <strong>High voltage</strong>: battery and coolant temperatures, pack voltage, current, power and isolation resistance, plus the VIN and charging totals.</li>
+      <li><strong>Share battery report</strong>: a one-page PDF of all of this and the latest fault scan, for a buyer or a shop. It uses what the app already has and doesn't read from the car.</li>
+      <li><strong>See the 12V history</strong>: the 12V graph for 24 hours to 90 days, resting voltages, how often the car charged the 12V and the overnight drop. <strong>Share 12V data</strong> as CSV, a picture or a PDF.</li>
+    </ul>
+
+    <h3 id="trips">Trips</h3>
+    <ul>
+      <li>Filter <strong>All</strong>, <strong>Drives</strong> or <strong>Charges</strong>, with totals, regen and this month's charging and its cost.</li>
+      <li>Tap a charge for its <strong>Charging curve</strong> (kW against %), average power, implied capacity and cost. Drives show distance, energy, efficiency and regen.</li>
+      <li>Costs need your prices in ${path("Settings", "Charging cost")}. <strong>Export CSV</strong> saves the history. <strong>Clear history</strong> deletes everything, including the data for measuring battery capacity, and can't be undone; you can also delete single entries.</li>
+      <li>Drives and charges only appear if the app was connected during them.</li>
+    </ul>
+
+    <h3 id="faults">Faults</h3>
+    <p><strong>Scan all modules</strong> reads stored fault codes from 39 modules in about a minute. Tap a code for what it affects and how it's fixed, when known. <strong>Share report</strong> sends a text report and <strong>Past scans</strong> keeps earlier ones. ${path("Faults", "Module versions", "Read module versions")} lists each module's software version and part number, and changes nothing. How codes work, the codes confirmed on Ocean cars, and when clearing codes is safe: <a href="/codes">Fault codes</a>.</p>
+
+    <h3 id="settings">Settings</h3>
+    <ul>
+      <li><strong>Car</strong>: your model and usable battery in kWh, used for range and charge time estimates.</li>
+      <li><strong>Charging cost</strong>: currency symbol, home price and DC fast price per kWh.</li>
+      <li><strong>Units and screen</strong>: miles, Fahrenheit, and keeping the screen on while connected.</li>
+      <li><strong>Adapter</strong>: connect automatically, the saved adapter, and the 12V watch (see <a href="#sleep">12V and car sleep</a>).</li>
+      <li><strong>Alerts</strong>: charge alerts (at a high level, at a low level, when charging stops) and <strong>Battery warnings</strong> (12V low, uneven cells, hot pack). They work while the app is connected, also in the background; 12V warnings while the car sleeps need the 12V watch. Your phone must allow notifications.</li>
+      <li><strong>ABRP</strong>: to send live data to A Better Route Planner, paste the ABRP generic token (in ABRP: open the car, Live data, Generic) and a free telemetry API key from ABRP. Both are needed. <strong>Include phone location</strong> is optional. ABRP only gets data while the app is connected.</li>
+      <li><strong>Advanced</strong>: <strong>Flip current sign</strong>, only if charging shows as using power on your car.</li>
+    </ul>
+
+    <h2 id="readings">What some readings mean</h2>
+    <ul>
+      <li><strong>Cell spread</strong> (highest minus lowest cell voltage): under 60 mV is normal. It widens near empty and full and under heavy load. A spread that keeps growing over weeks is worth a shop check.</li>
+      <li><strong>Insulation (isolation) resistance</strong>: how well the high-voltage system is isolated from the car body. Very large values are normal. A value that falls sharply, or an isolation fault code, is a safety issue for a qualified shop: don't open anything.</li>
+      <li><strong>Pack temperatures</strong>: a cold pack limits charging and regen; a hot pack limits power.</li>
+      <li><strong>Power and current</strong> are positive while energy flows into the pack (charging, regen).</li>
+    </ul>
+
+    <h2 id="sleep">12V and car sleep</h2>
+    <p>The Ocean's 12V battery runs its computers, locks and contactors. If it goes flat, the car can't start its high-voltage system. Every diagnostic request wakes modules on the car's network, and a car kept awake drains its 12V, so Ocean Live stops talking to the car as soon as it stops answering, and after 10 minutes parked with the app in the background (unless CarPlay or Android Auto is showing it). It never sends keep-alive messages. Messages like "The car is asleep. Ocean Live stopped reading so it can sleep" are normal; opening the app connects again.</p>
+    <p><strong>Watch 12V while the car sleeps</strong> (in ${path("Settings", "Adapter")}, off by default) asks only the adapter for its own supply voltage every 30 minutes (or 5 or 10), which puts nothing on the car's network, then disconnects so the adapter sleeps too. On iPhone, iOS only allows occasional background checks, so readings are less regular than on Android.</p>
+    <ul>
+      <li>12.4 V or more at rest (after the car has slept) is healthy.</li>
+      <li>Under 12.4 V at rest means the 12V battery is weak or something draws power while parked. Under 12.0 V the car may not wake up.</li>
+      <li>Over 13.2 V means the car is charging its 12V, which is normal while it's awake.</li>
+      <li>A healthy car loses only a few hundredths of a volt a night.</li>
+    </ul>
+    <p>A plugged-in OBD adapter drains the 12V a little (a vLinker FD+ uses about 51 mA awake and 3 mA asleep, by Vgate's figures). If you park for weeks, unplug it. <strong>Keep the adapter connected</strong> is only for adapters that can't be woken over Bluetooth.</p>
+
+    <h2 id="car-watch">Android Auto, CarPlay, watches and widgets</h2>
+    <ul>
+      <li><strong>Android Auto and CarPlay</strong> show live charge, power, the current charge or drive and the battery readings, updated every second. The phone app must be connected to the adapter.</li>
+      <li><strong>Landscape and split screen</strong>: the charge ring on the left, readings and Connect on the right, made for running next to ABRP.</li>
+      <li><strong>Wear OS and Apple Watch apps, and widgets</strong> only show what your phone already has; they never talk to the car. The Android widget and the iPhone Home and Lock Screen widgets show charge and range ("Tap to connect" opens the app).</li>
+      <li>On iPhone (iOS 18 or later), a <strong>Live Activity</strong> shows charging progress on the Lock Screen and in the Dynamic Island.</li>
+    </ul>
+
+    <h2 id="account">Your account</h2>
+    <p>From version 3.4, Ocean Live asks you to sign in once, with no password: with Google or a 6-digit code sent to your email, and on iPhone also with Sign in with Apple. The account keeps your "Any questions?" questions tied to you when you change phones. Your car data stays on your phone, and the app works offline after signing in.</p>
+    <ul>
+      <li>Rename or delete your account in ${path("Settings", "Account")}.</li>
+      <li>Without the app, sign in at <a href="${ACCOUNT}" rel="noopener">account.oceanlive.org</a> to see, rename or delete it.</li>
+      <li>What deleting removes: <a href="/delete-account">Delete your Ocean Live account</a>.</li>
+    </ul>
+
+    <h2 id="privacy">Privacy</h2>
+    <p>No ads, no tracking. What the app reads from your car stays on your phone. Data leaves it only when you sign in or manage your account, when you ask "Any questions?" (the chat shows exactly what's sent under <strong>Show what's sent</strong>), or if you turn on ABRP yourself. Everything is in the <a href="/privacy">privacy policy</a>.</p>
+
+    <h2 id="trouble">Troubleshooting</h2>
+    <h3 id="cant-connect">Can't connect</h3>
+    <ul>
+      <li>Check that Bluetooth is on and Ocean Live has Bluetooth permission, the adapter is plugged in and lit, and the car is on (not asleep).</li>
+      <li>Close other apps that may be holding the adapter, including other OBD apps, then tap <strong>Find adapter</strong> again.</li>
+      <li>"This doesn't look like an OBD adapter" means a different Bluetooth device was picked.</li>
+      <li>"The car was parked with the app closed for 10 minutes" is normal: the app stops on purpose so the 12V doesn't drain. Opening the app (or plugging in the car screen) connects again.</li>
+    </ul>
+    <h3 id="other-problems">Other messages</h3>
+    <ul>
+      <li>"The car is moving. Park it first.", "The car is charging. Unplug it first." or "Power is flowing into or out of the battery" mean a safety check stopped a clear or restart. See <a href="/codes#clearing">Clearing codes</a>.</li>
+      <li>"Needs a security key Ocean Live doesn't have" means the app can't change that module.</li>
+      <li>Battery health says "Not measured yet": keep the app connected through a charge that adds at least 20%.</li>
+      <li>A drive or charge is missing: the app only records them while it's connected.</li>
+      <li>Charging shows as using power: turn on <strong>Flip current sign</strong> in ${path("Settings", "Advanced")}.</li>
+      <li>"Any questions?" or signing in doesn't work: check whether the Ocean Live server is up at <a href="https://status.oceanlive.org/" rel="noopener">status.oceanlive.org</a>.</li>
+    </ul>
+    <p>More guides are coming. Can't find what you need? Ask "Any questions?" in the app, or get in touch.</p>
+
+    <h2 id="contact">Contact</h2>
+    <p>Email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> or <a href="${REPO}/issues/new/choose" rel="noopener">open an issue on GitHub</a> (issues are public). Screenshots or photos from the car help a lot. For a security problem, <a href="${REPO}/security/advisories/new" rel="noopener">report a vulnerability</a> privately instead.</p>
     </div>
   </div>
 </article>`,

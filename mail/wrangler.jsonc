@@ -1,5 +1,5 @@
 {
-  // Ocean Live Mail: private webmail for the oceanlive.org mailboxes. Setup: README.md in this folder.
+  // Ocean Live Mail: private webmail for the oceanlive.org mailboxes. What it is: README.md in this folder.
   "name": "ocean-live-mail",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
@@ -51,7 +51,7 @@
     "LIST_FROM": "Ocean Live <news@oceanlive.org>",
     "LIST_REPLY_TO": "justice@oceanlive.org",
     // Host for the one-click unsubscribe URL in the List-Unsubscribe header. Empty: LIST_SITE. Mail providers
-    // POST to it from their servers, so it must not be behind a bot challenge (README: "One-click unsubscribe").
+    // POST to it from their servers, so it must not be behind a bot challenge.
     "LIST_UNSUB_BASE": "",
     // All list emails per UTC day: news, tests and confirmation emails together, and news per Continue request.
     // Resend's free plan allows 100 a day for the whole account, shared with webmail sends and the app's

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#071A33">
+  <title>Your account · Ocean Live</title>
+  <meta name="description" content="See, rename, sign out of or delete your Ocean Live account.">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/account.css">
+  <script type="module" src="/account.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <a class="brand" href="https://oceanlive.org/">
+      <img src="/icons/logo-rounded-96.webp" width="36" height="36" alt="">
+      <span>Ocean Live</span>
+    </a>
+    <a class="top-link" href="https://oceanlive.org/">oceanlive.org</a>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <!-- Shown while the page checks for a session. -->
+    <section id="loading" class="card" aria-busy="true">
+      <p class="muted">Loading…</p>
+    </section>
+
+    <!-- Signed out -->
+    <section id="signin" class="card" aria-labelledby="signin-title" hidden>
+      <h1 id="signin-title" tabindex="-1">Sign in to your account</h1>
+      <p class="muted">The same Ocean Live account you use in the app. There is no password: we email you a 6-digit code.</p>
+
+      <form id="email-form" class="stack" novalidate>
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" autocomplete="email" inputmode="email" spellcheck="false" required>
+        <p id="email-error" class="field-error" role="alert"></p>
+        <button class="btn btn-primary btn-block" type="submit">Email me a code</button>
+      </form>
+
+      <form id="code-form" class="stack" novalidate hidden>
+        <p id="code-sent" class="muted"></p>
+        <label for="code">6-digit code</label>
+        <input id="code" name="code" type="text" autocomplete="one-time-code" inputmode="numeric" maxlength="7" spellcheck="false" required>
+        <p id="code-error" class="field-error" role="alert"></p>
+        <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+        <div class="row">
+          <button id="code-resend" class="link-btn" type="button">Send a new code</button>
+          <button id="code-back" class="link-btn" type="button">Use a different email</button>
+        </div>
+      </form>
+
+      <div id="google" class="google" hidden>
+        <p class="or"><span>or</span></p>
+        <div id="google-button" class="google-button"></div>
+        <p id="google-error" class="field-error" role="alert"></p>
+      </div>
+
+      <p class="note small muted">Signed in with Apple in the iPhone app? Sign in with Apple isn't available on the web. Use an email code sent to the address your account has: if you chose "Hide My Email", that is the private relay address Apple made for Ocean Live, which forwards the code to you. If it doesn't arrive, use Settings, Account in the app, or <a href="https://oceanlive.org/delete-account#without-app">ask the developer</a>. Accounts are made in the app; this page can't create one.</p>
+      <p class="note small muted">Signing in here sets one cookie that keeps you signed in on this browser until 30 days after you last use this page. It is only used for signing in. <a href="https://oceanlive.org/privacy">Privacy</a></p>
+    </section>
+
+    <!-- Signed in -->
+    <section id="account" class="card" aria-labelledby="account-title" hidden>
+      <h1 id="account-title" tabindex="-1">Your account</h1>
+
+      <dl class="facts">
+        <div><dt>Email</dt><dd id="acc-email"></dd></div>
+        <div><dt>Name</dt><dd id="acc-name"></dd></div>
+        <div><dt>Created</dt><dd id="acc-created"></dd></div>
+        <div><dt>Sign-in methods</dt><dd id="acc-providers"></dd></div>
+      </dl>
+
+      <!--
+        Future: credits and badges belong here, between the account facts and the forms below.
+        They don't exist yet, so nothing is shown for them. Add them only once the server has them.
+      -->
+
+      <form id="name-form" class="stack" novalidate>
+        <h2>Display name</h2>
+        <label for="name">Name on your account</label>
+        <input id="name" name="name" type="text" autocomplete="nickname" maxlength="60">
+        <p class="small muted">Up to 60 characters. Leave it empty to have no name.</p>
+        <p id="name-error" class="field-error" role="alert"></p>
+        <button class="btn btn-ghost" type="submit">Save name</button>
+      </form>
+
+      <div class="stack">
+        <h2>Sign out</h2>
+        <p class="small muted">Signs out this browser only. Your phones stay signed in.</p>
+        <button id="signout" class="btn btn-ghost" type="button">Sign out</button>
+      </div>
+
+      <div class="stack danger-zone">
+        <h2>Delete your account</h2>
+        <p class="small">This deletes, straight away and for good:</p>
+        <ul class="small">
+          <li>your account: ID, email address, display name, created and last-used dates</li>
+          <li>your linked sign-in methods (Google, Apple, email)</li>
+          <li>your sign-in sessions on every device, so they are all signed out</li>
+          <li>your logged "Any questions?" questions with their answers and the readings sent with them</li>
+          <li>any personal daily question limit set for your account</li>
+        </ul>
+        <p class="small muted">Car data on your phones is not touched: it was never on the server. Short-lived counters expire on their own within about a day. If you sign in again later, a new, empty account is made. <a href="https://oceanlive.org/delete-account">More about deleting</a></p>
+        <button id="delete-open" class="btn btn-danger" type="button">Delete account…</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-desc">
+    <form id="delete-form" class="stack" method="dialog" novalidate>
+      <h2 id="delete-title">Delete your account?</h2>
+      <p id="delete-desc" class="small">This can't be undone. Your account, sign-ins, sessions and logged questions are deleted.</p>
+      <label for="delete-confirm">Type <strong>delete</strong> to confirm</label>
+      <input id="delete-confirm" name="confirm" type="text" autocomplete="off" spellcheck="false" autocapitalize="off">
+      <p id="delete-error" class="field-error" role="alert"></p>
+      <div class="row end">
+        <button id="delete-cancel" class="btn btn-ghost" type="button">Cancel</button>
+        <button id="delete-go" class="btn btn-danger-solid" type="submit" disabled>Delete for good</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="foot small muted">
+    <a href="https://oceanlive.org/privacy">Privacy</a>
+    <a href="https://oceanlive.org/delete-account">Deleting an account</a>
+    <a href="mailto:justice@oceanlive.org">Contact</a>
+  </footer>
+</body>
+</html>

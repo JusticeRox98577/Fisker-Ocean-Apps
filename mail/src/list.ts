@@ -7,14 +7,18 @@
  *   POST /api/list/unsubscribe  { token }  or  ?t=<token> with List-Unsubscribe=One-Click (RFC 8058)
  *   GET  /api/list/unsubscribe?t=<token>   -> redirect to the unsubscribe page (never unsubscribes on GET)
  *
- * Owner (webmail session + CSRF): overview, subscribers, test email, campaigns sent in chunks under a daily cap.
+ * Owner (webmail session + CSRF): overview, subscribers, test email, campaigns sent in chunks under a daily cap,
+ * and tester invitations (one confirmation email per address, ever; nobody joins without confirming).
  */
 import { type Env, type Session, num } from "./env";
 import { bump, current } from "./limits";
-import { type Email, campaignEmail, confirmEmail, listLang } from "./list-email";
+import { type Email, campaignEmail, confirmEmail, inviteEmail, listLang } from "./list-email";
 import { fail, isValidAddress, json, newId, oneLine, randomToken, sha256hex } from "./util";
 
 export const CONSENT_VERSION = "site-v1";
+export const INVITE_CONSENT_VERSION = "invite-v1";
+/** Most addresses one invite request takes. */
+export const MAX_INVITES = 200;
 const HOUR_MS = 3600 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 const CONFIRM_MS = 7 * DAY_MS;
@@ -232,10 +236,28 @@ export async function confirm(req: Request, env: Env, now = Date.now()): Promise
   return OK();
 }
 
-/** Deletes a subscriber and their deliveries; queued ones come off their campaign's total. */
-function deleteSubscriberStatements(env: Env, where: string, value: string): D1PreparedStatement[] {
+/** Remembers addresses that must never get a tester invitation (as hashes only). */
+const noInviteStatements = async (env: Env, emails: string[], now: number) =>
+  Promise.all(
+    emails.map(async (email) =>
+      env.DB.prepare("INSERT INTO list_invites (email_hash, invited_at) VALUES (?1, ?2) ON CONFLICT(email_hash) DO NOTHING").bind(
+        await inviteHash(email),
+        now,
+      ),
+    ),
+  );
+
+/**
+ * Deletes a subscriber and their deliveries; queued ones come off their campaign's total. The address is
+ * kept as a hash in list_invites first, so someone who left the list is never sent a tester invitation.
+ * The DELETE of the subscriber row is always the last statement.
+ */
+async function deleteSubscriberStatements(env: Env, where: "id" | "unsub_token", value: string, now = Date.now()): Promise<D1PreparedStatement[]> {
+  const row = await env.DB.prepare(`SELECT email FROM list_subscribers WHERE ${where} = ?1`).bind(value).first<{ email: string }>();
+  if (!row) return [];
   const sub = `(SELECT id FROM list_subscribers WHERE ${where} = ?1)`;
   return [
+    ...(await noInviteStatements(env, [row.email], now)),
     env.DB.prepare(
       `UPDATE list_campaigns SET total = total - 1
        WHERE id IN (SELECT campaign_id FROM list_deliveries WHERE subscriber_id = ${sub} AND status = 'queued')`,
@@ -254,7 +276,10 @@ export async function unsubscribe(req: Request, env: Env): Promise<Response> {
     token = String(body?.token ?? "");
   }
   // Mail providers POST "List-Unsubscribe=One-Click" (form-encoded or multipart); the body itself needs no checking.
-  if (token.length >= 20 && token.length <= 100) await env.DB.batch(deleteSubscriberStatements(env, "unsub_token", token));
+  if (token.length >= 20 && token.length <= 100) {
+    const statements = await deleteSubscriberStatements(env, "unsub_token", token);
+    if (statements.length) await env.DB.batch(statements);
+  }
   return OK();
 }
 
@@ -353,8 +378,9 @@ export async function listSubscribers(url: URL, env: Env): Promise<Response> {
 
 /** DELETE /api/list/subscribers/:id */
 export async function deleteSubscriber(env: Env, id: string): Promise<Response> {
-  const out = await env.DB.batch(deleteSubscriberStatements(env, "id", id));
-  if (!out[2].meta.changes) return fail(404, "That subscriber isn't on the list any more.");
+  const statements = await deleteSubscriberStatements(env, "id", id);
+  const out = statements.length ? await env.DB.batch(statements) : [];
+  if (!out.at(-1)?.meta.changes) return fail(404, "That subscriber isn't on the list any more.");
   return OK();
 }
 
@@ -371,7 +397,7 @@ function readCampaign(body: Record<string, unknown> | null): { subject: string; 
 
 function unsubscribeLinks(env: Env, token: string) {
   // Mail providers POST the one-click URL from their own servers: LIST_UNSUB_BASE can point it at a host
-  // that bot protection doesn't challenge (README: "One-click unsubscribe").
+  // that bot protection doesn't challenge.
   const oneClickBase = (env.LIST_UNSUB_BASE || "").replace(/\/+$/, "") || site(env);
   return {
     page: `${site(env)}/list/unsubscribe#t=${token}`,
@@ -587,9 +613,154 @@ async function finishIfDone(env: Env, id: string, extra: Record<string, unknown>
   return campaignState(env, id, extra);
 }
 
-/** Daily clean-up: unconfirmed sign-ups go after 7 days. */
+// ---------- Tester invitations ----------
+
+/**
+ * Plain SHA-256 on purpose: a salt from a secret would forget everyone the day the secret changes. It is still
+ * personal data (anyone holding a candidate address can check it), and the privacy policy says so.
+ */
+function inviteHash(email: string) {
+  return sha256hex(`invite:${email}`);
+}
+
+/** "Name <a@b.c>" or "a@b.c": the address, trimmed and lowercase. */
+function inviteAddress(v: unknown): string {
+  if (typeof v !== "string") return "";
+  const angle = /<([^<>]*)>/.exec(v);
+  return (angle ? angle[1] : v).trim().toLowerCase();
+}
+
+/**
+ * POST /api/list/invite { emails: string[] }: asks testers once whether they want the news.
+ * Each address not on the list and never invited before gets a pending row (source 'invite') and one
+ * invitation email with the normal confirm link. Nobody is added without confirming, and nobody is invited
+ * twice or after leaving: invited, unsubscribed, removed and lapsed addresses are remembered as hashes.
+ * Invitations use the same daily budget as confirmation emails. What doesn't fit today comes back in
+ * `deferred` with no row created, so sending the same list again tomorrow carries on.
+ */
+export async function invite(req: Request, env: Env, now = Date.now()): Promise<Response> {
+  if (!sendingReady(env)) return fail(503, "Sending isn't set up yet: the RESEND_API_KEY secret is missing.");
+  const body = await readJson(req);
+  const raw = body?.emails;
+  if (!Array.isArray(raw) || !raw.length) return fail(400, "Paste at least one address.", { field: "emails" });
+  if (raw.length > MAX_INVITES) return fail(400, `Invite at most ${MAX_INVITES} addresses at a time.`, { field: "emails" });
+
+  const emails: string[] = [];
+  const invalid: string[] = [];
+  for (const v of raw) {
+    const email = inviteAddress(v);
+    if (!email || email.length > 254 || !isValidAddress(email)) invalid.push(oneLine(String(v ?? ""), 100));
+    else if (!emails.includes(email)) emails.push(email);
+  }
+  if (invalid.length) {
+    const shown = invalid.slice(0, 5).map((x) => x || "(empty)").join(", ");
+    return fail(400, `${invalid.length === 1 ? "This doesn't" : "These don't"} look like email addresses: ${shown}${invalid.length > 5 ? ", …" : ""}. Fix or remove them, then try again.`, {
+      field: "emails",
+      invalid,
+    });
+  }
+
+  // On the list (pending or confirmed), invited before, or left the list: skip, send nothing.
+  const hashes = new Map<string, string>();
+  for (const email of emails) hashes.set(email, await inviteHash(email));
+  const [onList, invitedBefore] = await env.DB.batch([
+    env.DB.prepare("SELECT email FROM list_subscribers WHERE email IN (SELECT value FROM json_each(?1))").bind(JSON.stringify(emails)),
+    env.DB.prepare("SELECT email_hash FROM list_invites WHERE email_hash IN (SELECT value FROM json_each(?1))").bind(JSON.stringify([...hashes.values()])),
+  ]);
+  const known = new Set<string>([
+    ...(onList.results as { email: string }[]).map((r) => r.email),
+    ...(invitedBefore.results as { email_hash: string }[]).map((r) => r.email_hash),
+  ]);
+  const fresh = emails.filter((e) => !known.has(e) && !known.has(hashes.get(e)!));
+  let skipped = emails.length - fresh.length;
+
+  // The same daily budget as confirmation emails, so the list never eats Resend's room for webmail and sign-in codes.
+  const [confirmsToday, sentToday] = await Promise.all([current(env.DB, confirmsKey(now), now), current(env.DB, sentKey(now), now)]);
+  const room = Math.max(
+    0,
+    Math.min(num(env.LIST_CONFIRMS_PER_DAY, DEFAULT_CONFIRMS_PER_DAY) - confirmsToday, num(env.LIST_SEND_PER_DAY, DEFAULT_PER_DAY) - sentToday),
+  );
+  const deferred = fresh.slice(room);
+  const failed: { email: string; error: string }[] = [];
+  let invited = 0;
+  const todo = fresh.slice(0, room);
+
+  for (let start = 0; start < todo.length; start += RESEND_BATCH_MAX) {
+    const chunk = await Promise.all(
+      todo.slice(start, start + RESEND_BATCH_MAX).map(async (email) => {
+        const token = randomToken(32);
+        return { email, token, id: newId(now), hash: await sha256hex(token) };
+      }),
+    );
+    // Rows first, so a confirm link works the moment the email arrives.
+    const ins = await env.DB.batch(
+      chunk.map((p) =>
+        env.DB.prepare(
+          `INSERT INTO list_subscribers (id, email, lang, status, source, consent, confirm_hash, confirm_expires, confirm_sent_at,
+             confirm_sends, unsub_token, created_at)
+           VALUES (?1, ?2, 'en', 'pending', 'invite', ?3, ?4, ?5, ?6, 1, ?7, ?6)
+           ON CONFLICT(email) DO NOTHING`,
+        ).bind(p.id, p.email, INVITE_CONSENT_VERSION, p.hash, now + CONFIRM_MS, now, randomToken(32)),
+      ),
+    );
+    // Signed up on the site at the same moment: that sign-up sent its own email.
+    const ready = chunk.filter((_, i) => ins[i].meta.changes);
+    skipped += chunk.length - ready.length;
+    if (!ready.length) continue;
+
+    const res = await resend(
+      env,
+      "/emails/batch",
+      ready.map((p) => message(env, p.email, inviteEmail(`${site(env)}/list/confirm#t=${p.token}`, site(env)))),
+      { "x-batch-validation": "permissive" },
+    );
+    const drop = (ids: string[]) =>
+      ids.length
+        ? env.DB.batch(ids.map((id) => env.DB.prepare("DELETE FROM list_subscribers WHERE id = ?1 AND status = 'pending'").bind(id)))
+        : Promise.resolve([]);
+    if (!res.ok) {
+      console.error("list invite batch failed", res.status, res.name, res.message);
+      await drop(ready.map((p) => p.id));
+      if (res.status === 429) {
+        // Resend's own quota is used up: these and the rest wait for tomorrow, like the daily budget.
+        deferred.unshift(...ready.map((p) => p.email), ...todo.slice(start + RESEND_BATCH_MAX));
+        break;
+      }
+      for (const p of ready) failed.push({ email: p.email, error: `Resend didn't send it: ${res.message}` });
+      continue;
+    }
+    const data = res.data as { errors?: { index?: number; message?: string }[] };
+    const errors = new Map<number, string>();
+    for (const e of data.errors ?? []) if (typeof e.index === "number") errors.set(e.index, oneLine(e.message ?? "Rejected", 300));
+    await drop(ready.filter((_, i) => errors.has(i)).map((p) => p.id));
+    ready.forEach((p, i) => {
+      const err = errors.get(i);
+      if (err) failed.push({ email: p.email, error: `Resend refused it: ${err}` });
+    });
+    const sent = ready.filter((_, i) => !errors.has(i));
+    if (sent.length) {
+      await env.DB.batch(
+        sent.map((p) => env.DB.prepare("INSERT INTO list_invites (email_hash, invited_at) VALUES (?1, ?2) ON CONFLICT(email_hash) DO NOTHING").bind(hashes.get(p.email)!, now)),
+      );
+      invited += sent.length;
+    }
+  }
+
+  if (invited) {
+    const untilMidnight = utcDay(now).untilMidnight;
+    await Promise.all([bump(env.DB, confirmsKey(now), untilMidnight, now, invited), bump(env.DB, sentKey(now), untilMidnight, now, invited)]);
+  }
+  return json({ invited, skipped, deferred, failed });
+}
+
+/**
+ * Daily clean-up: unconfirmed sign-ups go after 7 days. Their addresses are kept as hashes in list_invites,
+ * so someone who chose not to confirm is never sent a tester invitation either.
+ */
 export async function cleanupList(env: Env, now = Date.now()): Promise<void> {
-  await env.DB.prepare("DELETE FROM list_subscribers WHERE status = 'pending' AND (confirm_expires IS NULL OR confirm_expires <= ?1) AND created_at <= ?2")
-    .bind(now, now - 60 * 1000)
-    .run();
+  const expired = "status = 'pending' AND (confirm_expires IS NULL OR confirm_expires <= ?1) AND created_at <= ?2";
+  const rows = await env.DB.prepare(`SELECT email FROM list_subscribers WHERE ${expired}`).bind(now, now - 60 * 1000).all<{ email: string }>();
+  const emails = rows.results.map((r) => r.email);
+  for (let i = 0; i < emails.length; i += 50) await env.DB.batch(await noInviteStatements(env, emails.slice(i, i + 50), now));
+  await env.DB.prepare(`DELETE FROM list_subscribers WHERE ${expired}`).bind(now, now - 60 * 1000).run();
 }

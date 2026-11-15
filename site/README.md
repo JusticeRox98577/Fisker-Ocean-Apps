@@ -1,164 +1,43 @@
 # oceanlive.org
 
-The Ocean Live website: plain HTML, CSS and JavaScript ES modules in `public/`, with no build
-step, no frameworks, no cookies, no analytics and no third-party requests (the APK downloads
-are served from the site too, see [Download channels](#download-channels)). It is served by a Cloudflare Worker,
-configured in `wrangler.jsonc`: static assets, plus a small script (`src/worker.js`) that runs only for
-`/api/*` and forwards the mailing list's public endpoints to the mail Worker (see [Mailing list](#mailing-list)).
+The Ocean Live website: what the app does, the Android downloads, help, fault codes, the
+mailing list sign-up, and the privacy policy and account pages the app stores link to.
 
-| File | What it is |
+It is plain HTML, CSS and JavaScript ES modules, with no frameworks, no cookies, no analytics
+and no third-party requests: fonts, scripts, the 3D model and the downloads are all served from
+oceanlive.org. A small Cloudflare Worker serves the files and passes the mailing list's public
+endpoints on to the mail Worker (`mail/`), so the pages only ever talk to oceanlive.org.
+
+## Pages
+
+| Page | What it is |
 | --- | --- |
-| `public/index.html` | Home page: the scroll story over the 3D blueprint (hero, live data, doors, "the real thing", 12V, fault codes, platforms, what you need, downloads with the mailing list sign-up, privacy, car sleep, FAQ) |
-| `public/news.html` | Mailing list sign-up page (`/news`) |
-| `public/list/confirm.html`, `public/list/unsubscribe.html` | The pages the mailing list's emails link to (`noindex`) |
-| `public/privacy.html` | Privacy policy, from `PRIVACY.md` (the store privacy policy URL: `https://oceanlive.org/privacy`) |
-| `public/delete-account.html` | How to delete an account (the Google Play URL: `https://oceanlive.org/delete-account`) |
-| `public/credits.html` | Credits and licences: the 3D model (CC BY 4.0), three.js, GSAP, fonts |
-| `public/404.html` | Not found page |
-| `public/styles.css`, `public/app.js` | Shared styles and script (reveals, count-ups, progress bar, and the download buttons from `/downloads/latest.json`) |
-| `public/js/list.js` | The mailing list sign-up form and the confirm and unsubscribe buttons |
-| `src/worker.js` | The `/api/*` script: the mailing list proxy (tested by `tools/worker.test.mjs`) |
-| `public/js/blueprint.js`, `public/js/scene/*.js` | The 3D blueprint (home page only), see below |
-| `public/models/ocean.glb` | The car, made by `tools/build-model.mjs` |
-| `public/img/ocean-blueprint.svg` | Static side elevation shown without 3D, made by `tools/make-blueprint-svg.mjs` |
-| `public/vendor/` | three.js 0.186.1 and GSAP 3.15.0 (pinned, with their licences), made by `tools/vendor.mjs` |
-| `public/fonts/` | Space Grotesk, Inter and Architects Daughter (woff2, SIL OFL), self-hosted |
-| `public/_headers` | Security and cache headers. The CSP allows the inline import map in `index.html` by its hash: if you change the import map, update the hash (`tools/check-site.mjs` tells you) |
+| `/` (`public/index.html`) | Home page: the scroll story over a hand-drawn 3D blueprint of the Ocean (live data, doors, 12V, fault codes, platforms, what you need, downloads, privacy, car sleep, FAQ) |
+| `/help` | How to use the app: the adapter, getting connected, each tab, the 12V watch, car screens and watches, your account, troubleshooting |
+| `/codes` | How Ocean fault codes are built, the codes confirmed on real Ocean cars (with search), the modules the app scans and when clearing codes is safe |
+| `/news`, `/list/confirm`, `/list/unsubscribe` | Mailing list sign-up, and the pages its emails link to |
+| `/privacy` | Privacy policy, the same text as `PRIVACY.md` |
+| `/delete-account` | How to delete an account and what is deleted |
+| `/preregistration-terms` | Terms of the Google Play pre-registration reward |
+| `/credits` | Credits and licences |
 
-Design: `design-system/ocean-live/MASTER.md`, overridden by `design-system/ocean-live/pages/home.md`.
+The fault codes page is made only from the public owner guide
+(`ask-proxy/knowledge/ocean-guide.md`); it is not a full code table.
 
-## The 3D blueprint
+## How it is organised
 
-`js/blueprint.js` starts after the first paint, only with WebGL 2, and never with reduced motion or
-Save-Data (those visitors keep the static drawing). The modules in `js/scene/`:
-
-| Module | Does |
+| Path | What it is |
 | --- | --- |
-| `main.js` | Puts it together; renders on demand (scrolling, tweens, springs, draw-in, a short idle drift), pauses when the tab is hidden, disposes on `pagehide` |
-| `renderer.js` | Renderer, performance tiers (high: bloom, shadows, transmission glass; medium: physical materials, sprite glow; low: "lite-lit", standard materials, hemisphere + key light, glow sprites, DPR 1; software renderers start there and the watchdog never drops below it), timing probe and the 20 ms frame-time watchdog |
-| `model.js` | Loads `ocean.glb`, bakes the transforms, cuts the doors, makes the shaded materials (materialise sweep and x-ray) |
-| `doorcut.js` | The door outlines and triangle selection (pure functions; `tools/measure-doors.mjs` checks them against the model) |
-| `lines.js` | Hand-drawn line shader: double stroke, wobble, overshoot, draw-in, scan band |
-| `doors.js` | Weighted door motion (under-damped spring) |
-| `lighting.js` | Environment, moving lights, light bar and headlight boot-up, floor reflection, contact shadow, light shafts, solid x-ray batteries (high-voltage pack and 12V), bloom |
-| `story.js` | The GSAP ScrollTrigger timeline (`scrub: 1`) between the `data-scene` sections |
-| `overlays.js` | Handwritten callouts, dimension lines and module dots |
+| `public/` | Everything the site serves |
+| `public/styles.css`, `public/app.js` | Shared styles and script |
+| `public/js/` | Page modules: the mailing list forms, the fault code search and the 3D blueprint (`js/scene/`) |
+| `public/data/ocean-codes.json` | The data behind `/codes` |
+| `src/worker.js` | The Worker script for `/api/*` (the mailing list) |
+| `tools/` | Node scripts that write the generated pages, the code data, the 3D model and the blueprint drawing, and check the site |
+| `design-system/` | The site's design notes |
 
-Add `?debug` to the URL to get `window.__oceanLive`, and `?tier=low|medium|high` to pin a tier.
-
-## Tools
-
-One-off Node scripts in `tools/` (never deployed). Their npm packages live in `tools/.cache`
-(`npm install` there): `@gltf-transform/*`, `meshoptimizer`, `three@0.186.1`, `gsap@3.15.0`, `esbuild`.
-
-| Script | Does |
-| --- | --- |
-| `build-model.mjs` | `tools/source/ocean-source.glb` (the original, with `LICENSE-CREDIT.txt`) to `public/models/ocean.glb` |
-| `measure-doors.mjs` | Prints the door cut on the real geometry (box values, triangle counts, ASCII side view) |
-| `measure-batteries.mjs` | Prints the wheel centres, underbody height, windshield base (cowl) and bonnet height used to place the x-ray batteries |
-| `make-blueprint-svg.mjs` | Draws `public/img/ocean-blueprint.svg` from the model |
-| `vendor.mjs` | Copies the pinned three.js and GSAP files into `public/vendor/` |
-| `build-pages.mjs` | Writes privacy, delete-account, credits, news, the two mailing list pages and 404 with the shared header and footer (and the sign-up form, copied from `index.html`) |
-| `deploy.mjs` | Deploys the site with wrangler, keeping or replacing the APK download channels (see [Deploy](#deploy)) |
-| `check-site.mjs` | Checks every local reference, anchors, the CSP hash, that nothing loads from a third party, and that every `/api/` path the pages use is one `src/worker.js` forwards |
-| `worker.test.mjs` | Tests `src/worker.js` with fake bindings (`node --test site/tools/worker.test.mjs`) |
-| `serve.mjs` | Local preview with the `_headers` applied (`node tools/serve.mjs`, then open http://localhost:8787) |
-
-When `PRIVACY.md` changes, update the privacy page in `tools/build-pages.mjs` to match and run it.
-
-## Mailing list
-
-People sign up for Ocean Live news (new releases, important fixes) on the home page (`#news`) or
-`/news`. Everything else, the subscribers, the emails and sending them, lives in the mail Worker
-(`mail/`, `ocean-live-mail`); see the mailing list section of `mail/README.md`. The site only
-forwards three same-origin endpoints to it through the `MAIL` service binding, so the CSP keeps
-`connect-src 'self'`:
-
-| Request | Sent by |
-| --- | --- |
-| `POST /api/list/subscribe` `{email, lang, website}` | The sign-up form (`website` is a hidden honeypot field) |
-| `POST /api/list/confirm` `{token}` | `/list/confirm#t=<token>`, the link in the confirmation email |
-| `POST /api/list/unsubscribe` `{token}` | `/list/unsubscribe#t=<token>`, the link in every news email |
-| `POST /api/list/unsubscribe?t=<token>` | Mail apps' one-click unsubscribe (RFC 8058, the `List-Unsubscribe` header) |
-
-Each answers `{"ok":true}` or `{"error":"..."}` with a 4xx or 5xx status, and the pages show the
-error as written. The token is in the fragment (`#t=`), so it never reaches a server log, and the
-pages send nothing until the button is pressed, because mail scanners open links too. A `GET` of
-`/api/list/unsubscribe?t=` (someone opening the header link in a browser) redirects to the
-unsubscribe page. Any other `/api/` path is a 404; the owner's list endpoints are only on
-mail.oceanlive.org. Cookies are not forwarded.
-
-Deploy order: in `mail/`, run `npx wrangler d1 migrations apply ocean-live-mail --remote` and then
-`npx wrangler deploy` **before** the site changes are pushed or merged to `main`. A push to `main`
-deploys the site automatically, and `ocean-live-mail` already exists, so nothing else enforces the
-order. If the site does go first, a 401 or 404 from the mail Worker becomes "The mailing list isn't
-available right now" (503) rather than the old Worker's "Signed out."
-
-## Preview
-
-```bash
-cd site
-npx wrangler dev
-```
-
-`node tools/serve.mjs` serves the static files only: the mailing list forms answer with an error
-there, as they do in `wrangler dev` unless the mail Worker runs locally too.
-
-## Deploy
-
-GitHub Actions deploys the site; you rarely need to by hand.
-
-| What runs | What it deploys |
-| --- | --- |
-| Site workflow (push to `main` touching `site/`, or a manual run from `main`) | The site, after `check-site.mjs` and `worker.test.mjs`; both download channels stay as they are |
-| Android workflow, push to `main` | The site from the current `main`, plus the new APKs on the **preview** channel |
-| Android workflow, manual release run (from `main` or a `release-*` tag) | The site from the current `main`, plus that run's new APKs on the **stable** channel (the public download) |
-
-The Android publish job always checks out the current `main` for the site, so a slow APK build
-or a release from an older tag never rolls back site changes; only the APKs come from its run.
-
-Both workflows share the `oceanlive-deploy` concurrency group, so deploys run one at a time.
-GitHub keeps only one waiting run per group, so a newer deploy can cancel a waiting one. A
-cancelled stable publish makes the manual Android run fail; use **Re-run failed jobs** on that run.
-They need the `CLOUDFLARE_API_TOKEN` secret and the `CLOUDFLARE_ACCOUNT_ID` repository variable.
-
-### Download channels
-
-The APKs are not in git. Each channel is a folder on the site with fixed file names and a
-`latest.json` (`version`, `short`, `build`, `commit`, `date`, and for `android` and `wear` the
-`name`, `path`, `size` and `sha256`):
-
-| Channel | Files | Used by |
-| --- | --- | --- |
-| stable | `https://oceanlive.org/downloads/OceanLive-Android.apk`, `.../OceanLive-Wear.apk`, `.../latest.json` | The download section (`app.js` reads `/downloads/latest.json`; without it the buttons open the latest GitHub release) |
-| preview | `https://oceanlive.org/downloads/preview/OceanLive-Android.apk`, `.../preview/OceanLive-Wear.apk`, `.../preview/latest.json` | Nothing links to it (and it is `noindex`): the latest build from `main`, for testing |
-
-The same stable APKs are attached to the GitHub release of that run.
-
-`tools/deploy.mjs` does every deploy. Because a deploy replaces all static files, it first
-downloads the live files of each channel it is not replacing (from `latest.json`), checks
-their SHA-256 and size, and puts them in `public/downloads/`; then it runs
-`npx --yes wrangler@4.162.0 deploy` and deletes `public/downloads/` again (it is git-ignored).
-A channel that was never published (404) is skipped; a hash mismatch or a failed download stops
-the deploy, so the live downloads are never lost. Each APK must be under 25 MiB (the Workers
-static assets limit per file).
-
-```bash
-# Site only, keeping both channels (needs Node.js 20 or later)
-node site/tools/deploy.mjs
-# New APKs on one channel
-node site/tools/deploy.mjs --channel preview --android app.apk --wear wear.apk \
-  --version 3.5.0 --build 123 --commit <sha>
-# Fetch, verify and stage the downloads without deploying
-node site/tools/deploy.mjs --dry-run
-```
-
-Wrangler takes `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from the environment, or
-your own `npx wrangler login`. Always deploy with `tools/deploy.mjs`: a bare `wrangler deploy`
-would remove the downloads.
-
-The routes in `wrangler.jsonc` attach `oceanlive.org` and `www.oceanlive.org` to the Worker as
-custom domains; Cloudflare creates the DNS records and certificates on the first deploy.
+The 3D blueprint only starts with WebGL 2, and never with reduced motion or Save-Data; those
+visitors see a static drawing instead.
 
 ## Licences
 

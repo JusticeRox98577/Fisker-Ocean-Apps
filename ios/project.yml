@@ -37,7 +37,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
-        # "Any questions?" proxy address (see ask-proxy/README.md). Empty hides the feature; CI passes
+        # "Any questions?" proxy address (the app server in ask-proxy/). Empty hides the feature; CI passes
         # OCEAN_ASK_URL=https://.../ask to xcodebuild from the repository variable of the same name.
         OCEAN_ASK_URL: ""
     entitlements:

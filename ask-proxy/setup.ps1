@@ -4,7 +4,7 @@
 #   cd ask-proxy
 #   powershell -ExecutionPolicy Bypass -File .\setup.ps1
 #
-# It does what README.md describes by hand, in an order that works on a first run:
+# It runs the whole first-time setup, in an order that works on a first run:
 #   1. checks Node.js 20 or later and runs npm install
 #   2. logs you in to Cloudflare (your browser opens; you sign in yourself)
 #   3. creates the ASK_KV namespace and writes its id into wrangler.toml

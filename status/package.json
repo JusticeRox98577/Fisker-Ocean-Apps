@@ -1,0 +1,18 @@
+{
+  "name": "ocean-live-status",
+  "private": true,
+  "description": "Public status page for Ocean Live at status.oceanlive.org: checks the site, the app server and mail every 5 minutes.",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.2",
+    "@cloudflare/workers-types": "^5.20261114.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.162.0"
+  }
+}

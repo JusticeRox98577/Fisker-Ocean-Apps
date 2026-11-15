@@ -5,6 +5,10 @@
  * their published keys; email codes are sent through Resend) and then issues its own random
  * session token. Only a SHA-256 hash of each token is stored. No passwords exist anywhere.
  *
+ * The apps keep the token and send it as "Authorization: Bearer <token>". The web account page at
+ * account.oceanlive.org never sees it: the Worker keeps it in a host-only, HttpOnly session cookie
+ * (see WEB_COOKIE) and only accepts changes that come from that page's own origin.
+ *
  * Tables: see migrations/0002_accounts.sql.
  */
 
@@ -23,6 +27,8 @@ export interface AuthEnv {
   RESEND_API_KEY?: string;
   /** Sender for code emails, e.g. "Ocean Live <login@yourdomain.com>". */
   EMAIL_FROM?: string;
+  /** Tests only: replaces fetch() for calls to Resend. */
+  RESEND_FETCH?: typeof fetch;
 }
 
 export interface Account {
@@ -32,64 +38,97 @@ export interface Account {
   created: string;
 }
 
+const DAY = 86_400_000;
 const SESSION_DAYS = 365;
+/** Web sessions are shorter: the page is used now and then, sometimes on a shared computer. */
+const WEB_SESSION_DAYS = 30;
 const CODE_MINUTES = 10;
 const CODE_ATTEMPTS = 5;
 const MAX_NAME = 60;
 
-/** Handles /auth/* and /account. Returns null for other paths. */
-export async function handleAuth(request: Request, env: AuthEnv, path: string): Promise<Response | null> {
+/** The web account page. Its session cookie is only read on this host. */
+export const WEB_HOST = "account.oceanlive.org";
+export const WEB_ORIGIN = `https://${WEB_HOST}`;
+/** "__Host-": Secure, Path=/ and no Domain, so the browser keeps it to account.oceanlive.org alone. */
+export const WEB_COOKIE = "__Host-olaccount";
+
+/**
+ * Handles /auth/* and /account. Returns null for other paths.
+ *
+ * `web` is true for requests to account.oceanlive.org: the session comes from the cookie instead of a
+ * bearer token, sign-ins set the cookie instead of returning the token, and anything other than GET
+ * must carry that page's Origin (the CSRF guard; SameSite=Strict is the second one).
+ */
+export async function handleAuth(request: Request, env: AuthEnv, path: string, web = false): Promise<Response | null> {
   if (path !== "/account" && !path.startsWith("/auth/")) return null;
+  if (web && request.method !== "GET" && request.method !== "HEAD" && request.headers.get("Origin") !== WEB_ORIGIN) {
+    return json({ error: "origin" }, 403);
+  }
   if (!env.LOG_DB) return json({ error: "accounts_unavailable" }, 503);
   const db = env.LOG_DB;
   // Android's HttpURLConnection can't send PATCH, so it sends POST with this header.
   const method = request.method === "POST" && request.headers.get("X-HTTP-Method-Override") === "PATCH" ? "PATCH" : request.method;
+  const token = web ? cookieToken(request) : bearer(request);
   try {
-    if (path === "/auth/config" && method === "GET") return json(config(env));
+    if (path === "/auth/config" && method === "GET") return json(web ? webConfig(env) : config(env));
     if (path === "/account") {
-      const account = await sessionAccount(request, env);
-      if (!account) return json({ error: "signin_required" }, 401);
-      if (method === "GET") return json(await accountInfo(db, account));
+      const account = await sessionAccount(request, env, token);
+      if (!account) return web && token ? clearCookie(json({ error: "signin_required" }, 401)) : json({ error: "signin_required" }, 401);
+      // The web cookie is sent again on each use, so it lasts WEB_SESSION_DAYS from last use like the session row.
+      const keep = (res: Response) => (web && token ? setCookie(res, token) : res);
+      if (method === "GET") return keep(json(await accountInfo(db, account)));
       if (method === "PATCH") {
         const body = (await request.json()) as { name?: unknown };
         const name = cleanName(body.name);
         await db.prepare("UPDATE accounts SET name = ? WHERE id = ?").bind(name, account.id).run();
-        return json(await accountInfo(db, { ...account, name }));
+        return keep(json(await accountInfo(db, { ...account, name })));
       }
       if (method === "DELETE") {
         await deleteAccount(env, account.id);
-        return json({ ok: true });
+        return web ? clearCookie(json({ ok: true })) : json({ ok: true });
       }
       return json({ error: "method" }, 405);
     }
     if (method !== "POST") return json({ error: "method" }, 405);
     const body = (await request.json()) as Record<string, unknown>;
-    const device = typeof body.device === "string" && /^[A-Za-z0-9-]{8,64}$/.test(body.device) ? body.device : null;
+    // The web page has no install whose questions could be linked.
+    const device = !web && typeof body.device === "string" && /^[A-Za-z0-9-]{8,64}$/.test(body.device) ? body.device : null;
+    // App sign-ins return the token; web sign-ins put it in the cookie and return only the account.
+    // The web page never creates accounts (they are made in the apps): an unknown sign-in gets no_account,
+    // so nobody signs in to a new empty account and deletes that one thinking it was theirs.
+    const done = (s: { token: string; account: unknown } | null) =>
+      !s ? json({ error: "no_account" }, 404) : web ? setCookie(json({ account: s.account }), s.token) : json(s);
+    const days = web ? WEB_SESSION_DAYS : SESSION_DAYS;
+    const create = !web;
     switch (path) {
       case "/auth/apple": {
+        // Apple on the web needs a Services ID this server doesn't have.
+        if (web) return json({ error: "method_unavailable" }, 503);
         const aud = list(env.APPLE_AUDIENCES);
         if (aud.length === 0) return json({ error: "method_unavailable" }, 503);
         const claims = await verifyJwt(String(body.identityToken ?? ""), APPLE_KEYS, ["https://appleid.apple.com"], aud);
         if (!claims || !(await nonceMatches(claims, body.nonce))) return json({ error: "invalid_token" }, 401);
         const verified = claims.email_verified === true || claims.email_verified === "true";
-        return json(await signIn(env, "apple", String(claims.sub), verified ? str(claims.email) : null, cleanName(body.name), device));
+        return done(await signIn(env, "apple", String(claims.sub), verified ? str(claims.email) : null, cleanName(body.name), device, days, create));
       }
       case "/auth/google": {
-        const aud = googleAudiences(env);
+        // The web page signs in with the web client ID only.
+        const aud = web ? list(env.GOOGLE_WEB_CLIENT_ID) : googleAudiences(env);
         if (aud.length === 0) return json({ error: "method_unavailable" }, 503);
         const claims = await verifyJwt(String(body.idToken ?? ""), GOOGLE_KEYS, ["https://accounts.google.com", "accounts.google.com"], aud);
         if (!claims || !(await nonceMatches(claims, body.nonce))) return json({ error: "invalid_token" }, 401);
         const verified = claims.email_verified === true || claims.email_verified === "true";
-        return json(await signIn(env, "google", String(claims.sub), verified ? str(claims.email) : null, cleanName(claims.name), device));
+        return done(await signIn(env, "google", String(claims.sub), verified ? str(claims.email) : null, cleanName(claims.name), device, days, create));
       }
       case "/auth/email/start":
         return await emailStart(request, env, body.email);
-      case "/auth/email/verify":
-        return await emailVerify(env, body.email, body.code, device);
+      case "/auth/email/verify": {
+        const r = await emailVerify(env, body.email, body.code, device, days, create);
+        return r instanceof Response ? r : done(r);
+      }
       case "/auth/signout": {
-        const token = bearer(request);
         if (token) await db.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(await sha256Hex(token)).run();
-        return json({ ok: true });
+        return web ? clearCookie(json({ ok: true })) : json({ ok: true });
       }
     }
     return json({ error: "not_found" }, 404);
@@ -126,9 +165,17 @@ function config(env: AuthEnv) {
   };
 }
 
-/** The signed-in account for a request's "Authorization: Bearer <token>", or null. */
-export async function sessionAccount(request: Request, env: AuthEnv): Promise<Account | null> {
-  const token = bearer(request);
+/** What the web page can offer: email codes and, with a web client ID, Google. Never Apple. */
+function webConfig(env: AuthEnv) {
+  const id = env.GOOGLE_WEB_CLIENT_ID?.trim() || null;
+  return { apple: false, google: !!id, email: !!env.RESEND_API_KEY && !!env.EMAIL_FROM, googleWebClientId: id };
+}
+
+/**
+ * The signed-in account for a session token, or null. Without `token`, the request's
+ * "Authorization: Bearer <token>" is used (the apps).
+ */
+export async function sessionAccount(request: Request, env: AuthEnv, token: string | null = bearer(request)): Promise<Account | null> {
   if (!token || !env.LOG_DB) return null;
   const hash = await sha256Hex(token);
   const row = await env.LOG_DB.prepare(
@@ -140,19 +187,33 @@ export async function sessionAccount(request: Request, env: AuthEnv): Promise<Ac
     await env.LOG_DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(hash).run();
     return null;
   }
-  // Rolling expiry, written at most once a day.
-  if (now - Date.parse(row.last_used) > 86_400_000) {
+  // Rolling expiry, written at most once a day. A session keeps the length it started with
+  // (expires - last_used): a year for the apps, WEB_SESSION_DAYS for the web page.
+  if (now - Date.parse(row.last_used) > DAY) {
     const iso = new Date(now).toISOString();
+    const life = Math.min(SESSION_DAYS * DAY, Math.max(DAY, Date.parse(row.expires) - Date.parse(row.last_used)));
     await env.LOG_DB.batch([
-      env.LOG_DB.prepare("UPDATE sessions SET last_used = ?, expires = ? WHERE token_hash = ?").bind(iso, new Date(now + SESSION_DAYS * 86_400_000).toISOString(), hash),
+      env.LOG_DB.prepare("UPDATE sessions SET last_used = ?, expires = ? WHERE token_hash = ?").bind(iso, new Date(now + life).toISOString(), hash),
       env.LOG_DB.prepare("UPDATE accounts SET last_seen = ? WHERE id = ?").bind(iso, row.id),
     ]);
   }
   return { id: row.id, email: row.email, name: row.name, created: row.created };
 }
 
-/** Finds or creates the account for a verified identity, links this install's past questions and starts a session. */
-async function signIn(env: AuthEnv, provider: string, subject: string, email: string | null, name: string | null, device: string | null) {
+/**
+ * Finds or creates the account for a verified identity, links this install's past questions and starts a session.
+ * With `create` false (the web page), an identity with no account gets null and nothing is written.
+ */
+async function signIn(
+  env: AuthEnv,
+  provider: string,
+  subject: string,
+  email: string | null,
+  name: string | null,
+  device: string | null,
+  days = SESSION_DAYS,
+  create = true,
+) {
   const db = env.LOG_DB!;
   const now = new Date().toISOString();
   const mail = email?.trim().toLowerCase() || null;
@@ -161,6 +222,7 @@ async function signIn(env: AuthEnv, provider: string, subject: string, email: st
     // Same verified email from another sign-in method: same account.
     accountId = (await db.prepare("SELECT id FROM accounts WHERE email = ?").bind(mail).first<{ id: string }>())?.id;
   }
+  if (!accountId && !create) return null;
   if (!accountId) {
     accountId = crypto.randomUUID();
     await db.prepare("INSERT INTO accounts (id, email, name, created, last_seen) VALUES (?, ?, ?, ?, ?)").bind(accountId, mail, name, now, now).run();
@@ -174,7 +236,7 @@ async function signIn(env: AuthEnv, provider: string, subject: string, email: st
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   const token = base64url(bytes);
   await db.prepare("INSERT INTO sessions (token_hash, account_id, created, last_used, expires) VALUES (?, ?, ?, ?, ?)")
-    .bind(await sha256Hex(token), accountId, now, now, new Date(Date.now() + SESSION_DAYS * 86_400_000).toISOString()).run();
+    .bind(await sha256Hex(token), accountId, now, now, new Date(Date.now() + days * DAY).toISOString()).run();
   const account = (await db.prepare("SELECT id, email, name, created FROM accounts WHERE id = ?").bind(accountId).first<Account>())!;
   return { token, account: await accountInfo(db, account) };
 }
@@ -226,7 +288,7 @@ async function emailStart(request: Request, env: AuthEnv, raw: unknown): Promise
     .bind(email, await codeHash(env, email, code), expires).run();
 
   const mail = signInEmail(emailLang(request.headers.get("Accept-Language") ?? ""), code, CODE_MINUTES);
-  const res = await fetch("https://api.resend.com/emails", {
+  const res = await (env.RESEND_FETCH ?? fetch)("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: env.EMAIL_FROM, to: [email], subject: mail.subject, text: mail.text, html: mail.html }),
@@ -235,7 +297,7 @@ async function emailStart(request: Request, env: AuthEnv, raw: unknown): Promise
   return json({ ok: true });
 }
 
-async function emailVerify(env: AuthEnv, rawEmail: unknown, rawCode: unknown, device: string | null): Promise<Response> {
+async function emailVerify(env: AuthEnv, rawEmail: unknown, rawCode: unknown, device: string | null, days: number, create = true) {
   const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
   const code = typeof rawCode === "string" ? rawCode.replace(/\D/g, "") : "";
   const db = env.LOG_DB!;
@@ -247,7 +309,7 @@ async function emailVerify(env: AuthEnv, rawEmail: unknown, rawCode: unknown, de
     return json({ error: "wrong_code" }, 401);
   }
   await db.prepare("DELETE FROM email_codes WHERE email = ?").bind(email).run();
-  return json(await signIn(env, "email", email, email, null, device));
+  return await signIn(env, "email", email, email, null, device, days, create);
 }
 
 function codeHash(env: AuthEnv, email: string, code: string) {
@@ -314,6 +376,24 @@ function bearer(request: Request): string | null {
   const h = request.headers.get("Authorization") ?? "";
   const m = /^Bearer ([A-Za-z0-9_-]{20,200})$/.exec(h);
   return m ? m[1] : null;
+}
+
+function cookieToken(request: Request): string | null {
+  for (const part of (request.headers.get("Cookie") ?? "").split(";")) {
+    const [k, v] = part.trim().split("=");
+    if (k === WEB_COOKIE) return v && /^[A-Za-z0-9_-]{20,200}$/.test(v) ? v : null;
+  }
+  return null;
+}
+
+function setCookie(res: Response, token: string): Response {
+  res.headers.append("Set-Cookie", `${WEB_COOKIE}=${token}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${WEB_SESSION_DAYS * 86_400}`);
+  return res;
+}
+
+function clearCookie(res: Response): Response {
+  res.headers.append("Set-Cookie", `${WEB_COOKIE}=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0`);
+  return res;
 }
 
 function cleanName(v: unknown): string | null {

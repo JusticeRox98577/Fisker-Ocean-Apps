@@ -1,291 +1,86 @@
-# Ocean Live "Any questions?" proxy
-
-A small Cloudflare Worker between the apps and Claude. It holds the Anthropic API key (the
-apps never see it), limits each install to 10 questions a day and each network to 40, and
-stops answering once $10 has been spent in a month. For research, it logs every question with
-its answer, the readings sent with it and the install ID to a D1 database, and deletes
-entries after 90 days. IP addresses are only kept as salted hashes in the daily counters,
-never in the log.
-
-Claude (Claude Opus 5.5) answers from `knowledge/ocean-guide.md`, which is sent as a cached
-system prompt, and looks fault codes up in a table you upload to Workers KV. The table is
-never committed to this public repo.
-
-## Deploy (you run these; nothing here deploys itself)
-
-You need a free Cloudflare account and Node.js 20 or later.
-
-**One step on Windows:** `setup.ps1` runs everything below in order (install, sign-in, KV,
-D1, secrets, fault code table, deploy, a test question) and prints the address for
-`OCEAN_ASK_URL`. It asks you to sign in to Cloudflare in the browser and to paste your
-Anthropic API key; it never stores or shows the key. Safe to run again.
-
-```powershell
-cd ask-proxy
-powershell -ExecutionPolicy Bypass -File .setup.ps1
-```
-
-The same steps by hand:
-
-```bash
-cd ask-proxy
-npm install
-npx wrangler login
-npx wrangler kv namespace create ASK_KV
-```
-
-Put the `id` it prints into `wrangler.toml` in place of `REPLACE_WITH_YOUR_KV_NAMESPACE_ID`.
-Then set the two secrets (each one asks you to paste the value):
-
-```bash
-npx wrangler secret put ANTHROPIC_API_KEY
-npx wrangler secret put IP_SALT
-```
-
-`IP_SALT` can be any long random string. Upload the fault code table (any of the JSON
-formats Ocean Live imports; several files can be given, the first one wins):
-
-```bash
-node scripts/build-dtc-kv.mjs "path/to/fisker-dtc-descriptions.json"
-npx wrangler kv bulk put dtc-kv.json --binding ASK_KV --remote
-```
-
-Create the research log database and its table:
-
-```bash
-npx wrangler d1 create ocean-live-ask-log
-```
-
-Put the `database_id` it prints into `wrangler.toml` in place of
-`REPLACE_WITH_YOUR_D1_DATABASE_ID`, then:
-
-```bash
-npx wrangler d1 migrations apply ocean-live-ask-log --remote
-```
-
-Deploy:
-
-```bash
-npx wrangler deploy
-```
-
-Wrangler prints the address, such as `https://ocean-live-ask.<your-subdomain>.workers.dev`.
-The apps use that address followed by `/ask`.
-
-## Point the apps at it
-
-The address isn't secret, but it's yours, so it isn't hard-coded. Builds without it hide the
-"Any questions?" button.
-
-* **GitHub Actions:** add a repository variable (Settings, Secrets and variables, Actions,
-  Variables) named `OCEAN_ASK_URL` with the full address ending in `/ask`. Both workflows
-  pass it to the builds.
-* **Local Android builds:** add `oceanAskUrl=https://.../ask` to `android/local.properties`
-  or set the `OCEAN_ASK_URL` environment variable.
-* **Local iPhone builds:** set `OCEAN_ASK_URL` before `xcodegen generate`, or pass
-  `OCEAN_ASK_URL=https://.../ask` to `xcodebuild`.
-
-## Google and Apple sign-in setup
-
-The apps ask `GET /auth/config` which sign-in methods are set up and only show those, so
-nothing breaks before you do this. Client IDs aren't secret, but they are yours, so they live
-in `wrangler.toml` and never in the apps.
-
-### Google
-
-1. Go to [console.cloud.google.com](https://console.cloud.google.com), create a project
-   (for example "Ocean Live") and select it.
-2. **APIs & Services > OAuth consent screen** (called "Google Auth Platform > Branding" in
-   newer consoles):
-   * User type: **External**.
-   * App name: **Ocean Live**. User support email and developer contact: an address of your
-     choice.
-   * Authorised domain: **oceanlive.org**. Privacy policy: **https://oceanlive.org/privacy**.
-   * Scopes (Data access): **openid**, **.../auth/userinfo.email**, **.../auth/userinfo.profile**.
-     These are not sensitive, so Google needs no review.
-   * Audience: **Publish app** (In production). While it says "Testing", only the test users
-     you list can sign in.
-3. **APIs & Services > Credentials > Create credentials > OAuth client ID**, three times (four
-   clients in all):
-   1. **Web application**, name "Ocean Live server". No origins or redirect URIs needed. Its
-      client ID is `GOOGLE_WEB_CLIENT_ID`: Android asks Google for tokens made out to it, and
-      the server checks them against it.
-   2. **Android**, name "Ocean Live Android (upload key)": package name
-      **com.justicemw.oceanlive**, SHA-1 of your upload key:
-
-      ```powershell
-      keytool -list -v -keystore <path to ocean-upload.jks> -alias <your key alias>
-      ```
-
-      (`keytool` is in the JDK's `bin` folder; copy the `SHA1:` line.)
-   3. **Android** again, name "Ocean Live Android (Play)": same package name, with the SHA-1 of
-      the **app signing key** from Play Console > your app > **Test and release > App
-      integrity > App signing**. Installs from Google Play are signed with this key, not the
-      upload key, so without this client Google sign-in fails for store installs.
-      (Optional: a third Android client with the SHA-1 of `~/.android/debug.keystore` for
-      local debug builds; its password is `android`.)
-   4. **iOS**, name "Ocean Live iPhone": bundle ID **com.justice.OceanABRP**. Its client ID is
-      `GOOGLE_IOS_CLIENT_ID`.
-
-   The Android clients have no ID to copy anywhere: Google matches the package name and
-   signing certificate when the app asks for a token. Changes can take a few minutes (rarely
-   hours) to reach Google's servers.
-
-### Apple
-
-1. [developer.apple.com/account](https://developer.apple.com/account) > **Certificates,
-   Identifiers & Profiles > Identifiers > com.justice.OceanABRP**.
-2. Tick **Sign in with Apple** (leave it as a primary App ID), **Save**, confirm.
-3. With automatic signing, Xcode and the release workflow regenerate the provisioning
-   profiles on the next build; nothing else to do. `APPLE_AUDIENCES` in `wrangler.toml` is
-   already the bundle ID.
-
-Apple sign-in is iPhone only. Android shows Google and the email code: Apple on Android would
-need a Services ID, a web redirect and a client secret that expires every six months, which
-this server does not do.
-
-### Turn them on
-
-Put the two IDs from Google into `[vars]` in `wrangler.toml`:
-
-```toml
-GOOGLE_WEB_CLIENT_ID = "<the Web application client ID>"
-GOOGLE_IOS_CLIENT_ID = "<the iOS client ID>"
-```
-
-and deploy:
-
-```powershell
-npx.cmd wrangler deploy
-```
-
-Check it: `curl -s https://<your worker>/auth/config` should show `"google":true`,
-`"apple":true` and both client IDs. Sign in once on each phone.
-
-What the server checks, for the record: Google tokens must be signed by Google's current keys,
-come from `accounts.google.com` or `https://accounts.google.com`, be made out to one of the two
-client IDs (Android tokens to the web ID, iPhone tokens to the iOS ID) and not be expired.
-Apple tokens must be signed by Apple's keys, come from `https://appleid.apple.com`, be made out
-to a bundle ID in `APPLE_AUDIENCES` and not be expired. When an app sends the nonce it asked
-for, the token must carry it (as sent, or as its SHA-256 for Apple). An email from Google or
-Apple is only stored, and only links to an existing account with the same email, when the
-provider says it is verified. Signing keys are cached for an hour and refetched when a token
-names a key the cache doesn't have.
-
-## Test it
-
-```bash
-curl -s https://ocean-live-ask.<your-subdomain>.workers.dev/ask \
-  -H "content-type: application/json" \
-  -d '{"device":"test-device-1","messages":[{"role":"user","text":"What does B208896 mean?"}]}'
-```
-
-## Limits and cost
-
-Change the limits in `[vars]` in `wrangler.toml` and deploy again:
-
-| Variable | Default | Meaning |
-| --- | --- | --- |
-| `MONTHLY_CAP_USD` | `10` | Stop answering after this many dollars in a calendar month (UTC) |
-| `DEVICE_DAILY_LIMIT` | `10` | Questions per app install per day |
-| `IP_DAILY_LIMIT` | `40` | Questions per network per day |
-
-The spend counter is worked out from the token counts Claude returns at Claude Opus 5.5 list
-prices. KV is eventually consistent, so a burst of questions can go a few cents past the
-cap. To be safe, also set a monthly spend limit for the key's workspace in the Anthropic
-Console.
-
-A typical question costs about 1 to 5 cents: the knowledge guide is about 3,000 tokens and is
-read from the prompt cache when questions come within 5 minutes of each other.
-
-### More (or fewer) questions for one device
-
-Owners see their install ID under "Show what's sent" in the chat. Give that device its own
-daily limit (it takes effect within about a minute, no redeploy or app update needed):
-
-```bash
-npx wrangler kv key put "limit:THEIR-INSTALL-ID" 100 --binding ASK_KV --remote
-```
-
-`0` blocks the device. A device with its own limit isn't held back by the per-network limit,
-but the monthly spend cap still applies to everyone together, so raise `MONTHLY_CAP_USD` if
-you hand out a lot. See who has their own limit, or go back to the default:
-
-```bash
-npx wrangler kv key list --prefix "limit:" --binding ASK_KV --remote
-```
-
-```bash
-npx wrangler kv key delete "limit:THEIR-INSTALL-ID" --binding ASK_KV --remote
-```
-
-## Research log
-
-Each answered question is a row in the `questions` table: time (UTC), install ID, phone
-language, the question, the earlier messages of the chat, the car readings and fault codes
-sent with it, the answer (empty when Claude declined), cost and model. A daily cron job
-deletes rows older than `LOG_RETENTION_DAYS` (90). PRIVACY.md promises that period, so
-change both together.
-
-Latest questions:
-
-```bash
-npx wrangler d1 execute ocean-live-ask-log --remote --command "SELECT ts, lang, question, answer FROM questions ORDER BY ts DESC LIMIT 20"
-```
-
-Everything, as a SQL file to analyse offline (keep it private; it holds owners' data):
-
-```bash
-npx wrangler d1 export ocean-live-ask-log --remote --output questions.sql
-```
-
-**Deletion requests.** The chat screen shows each owner their install ID under "Show what's
-sent". When someone asks you to delete their questions:
-
-```bash
-npx wrangler d1 execute ocean-live-ask-log --remote --command "DELETE FROM questions WHERE device = 'THEIR-INSTALL-ID'"
-```
-
-Use the log only for research into what owners ask and how good the answers are. Don't
-publish raw entries or try to work out who someone is.
-
-## Updating the knowledge
-
-Edit `knowledge/ocean-guide.md` and run `npx wrangler deploy`. Keep it to facts you are
-allowed to share; it is public in this repo.
-
-## Check it compiles
-
-```bash
-npm run check
-npx wrangler deploy --dry-run --outdir dist
-```
-
-## Store listings: what to change when this ships
-
-The current listings say the only network use is ABRP. Once a build with the button goes out,
-update them (the apps can't do this for you):
-
-**Description, both stores** (replace the "only ABRP" sentence):
-
-> No account and no tracking. Data leaves your phone only when you ask a question in "Any
-> questions?" (answered by Claude, Anthropic's AI, with your latest readings unless you turn
-> that off) or send live data to A Better Route Planner.
-
-**Google Play, Data safety:**
-
-* Data collected: **App activity > Other user-generated content** (questions and answers),
-  **Device or other IDs** (the random install ID) and, when readings are shared, **Other
-  info** (vehicle battery readings and fault codes).
-* Purposes: **App functionality** and **Analytics** (the research log). Not used for
-  advertising. Processed by a service provider (Anthropic) on your behalf, which Play treats
-  as not "shared".
-* Data is encrypted in transit: **Yes**. Collection is optional: **Yes** (only when a question
-  is asked). Users can request deletion: **Yes**, by sending their install ID (see Research
-  log above). Kept for 90 days.
-
-**App Store, App Privacy:**
-
-* **User Content > Other User Content** (questions, answers and readings) and **Identifiers >
-  Device ID** (the random install ID): used for **App Functionality** and **Analytics**,
-  **linked to the user** (through the install ID), **not used for tracking**.
+# Ocean Live app server
+
+A small Cloudflare Worker that the Ocean Live apps talk to. It does three things:
+
+* **"Any questions?"**: the apps send a question here and the Worker asks Claude. It holds the
+  Anthropic API key, so the apps never see it, and keeps use within daily limits and a monthly
+  spend cap.
+* **Accounts**: sign-in with Apple (iPhone), Google or a 6-digit email code. There are no
+  passwords.
+* **The web account page** at [account.oceanlive.org](https://account.oceanlive.org), where an
+  owner can see, rename, sign out of or delete their account without the app.
+
+It answers on `api.oceanlive.org`. Older app builds use its `workers.dev` address, which keeps
+working.
+
+## How "Any questions?" answers
+
+Claude (Claude Opus 5.5) answers from [`knowledge/ocean-guide.md`](knowledge/ocean-guide.md),
+which is sent as a cached system prompt, and looks fault codes up on demand in a table stored in
+Workers KV. That table is never committed to this public repo
+(see [`scripts/build-dtc-kv.mjs`](scripts/build-dtc-kv.mjs)).
+
+For research into what owners ask and how good the answers are, each answered question is logged
+with its answer, the readings sent with it and the install ID (and the account, once signed in).
+Entries are deleted automatically after 90 days. IP addresses are never logged; the daily counters
+only keep salted hashes of them. [PRIVACY.md](../PRIVACY.md) has the details.
+
+## Accounts
+
+The Worker checks each sign-in itself: Apple and Google identity tokens are verified against the
+providers' published keys (signature, issuer, audience, expiry, and the nonce when the app sent
+one), and email codes expire after 10 minutes and allow only a few tries. It then issues its own
+random session token. Only a SHA-256 hash of each token is stored.
+
+The apps keep the token and send it as `Authorization: Bearer <token>`. An email that Google or
+Apple says is verified links to an existing account with the same address.
+
+Deleting an account removes the account, its sign-in methods, every session (so all devices are
+signed out), its logged questions and any personal question limit. Car data is never on the
+server.
+
+## The web account page
+
+`account.oceanlive.org` is served by this same Worker from the files in [`account/`](account/):
+plain HTML, CSS and one script module, with no third-party code unless Google sign-in is turned
+on. Those files are only served on that host; on `api.oceanlive.org` and `workers.dev` the same
+paths are 404.
+
+* **Sign in** with an email code, or with Google when it is set up. Sign in with Apple is not
+  offered on the web: it would need an Apple "Services ID" and web redirect that this server does
+  not have. Owners who use Apple in the app can sign in with an email code sent to the address
+  their account has (for "Hide My Email", the private relay address, which forwards it).
+  The page never creates an account: a sign-in that matches no account is refused with
+  `no_account`, so nobody ends up in a new, empty account by mistake.
+* **See** the account's email, name, created date and linked sign-in methods. **Rename** it,
+  **sign out** of this browser, or **delete** the account (after typing a confirmation).
+
+The page never sees the session token. After sign-in the Worker sets one cookie,
+`__Host-olaccount`: `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/`, no `Domain`, so it is
+only ever sent back to `account.oceanlive.org`. It lasts 30 days from last use: the Worker sends
+it again whenever the page loads or renames the account. Every request that changes
+something (sign-in, rename, sign-out, delete) must carry the page's own `Origin`, so another site
+can't act with it. The page has a strict Content Security Policy: same-origin only, plus exactly
+what Google's sign-in button needs when Google is on. Bearer tokens are not accepted on this host,
+and the cookie is not accepted on the API host.
+
+## Endpoints
+
+| Method and path | What it does |
+| --- | --- |
+| `POST /ask` | Ask a question (apps) |
+| `GET /health` | `{"ok":true,"service":"api","time":...}`, no auth, never cached. Used by the status page |
+| `GET /auth/config` | Which sign-in methods are set up |
+| `POST /auth/email/start`, `POST /auth/email/verify` | Email a 6-digit code, then sign in with it |
+| `POST /auth/google`, `POST /auth/apple` | Sign in with a Google or Apple identity token (Apple: apps only) |
+| `GET`, `PATCH`, `DELETE /account` | Show, rename or delete the signed-in account |
+| `POST /auth/signout` | End this session |
+
+## Code
+
+* [`src/index.ts`](src/index.ts): routing by host, `/ask`, `/health`, the daily cleanup.
+* [`src/auth.ts`](src/auth.ts): sign-in, sessions (bearer and cookie) and the account endpoints.
+* [`src/email.ts`](src/email.ts): the sign-in code email.
+* [`account/`](account/): the web account page.
+* [`migrations/`](migrations/): the D1 tables.
+* [`test/`](test/): tests that run in the Workers runtime.

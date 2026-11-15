@@ -57,7 +57,7 @@
     <div class="lightbar" aria-hidden="true"></div>
     <div class="eyebrow">Privacy policy</div>
     <h1>Ocean Live privacy policy</h1>
-    <p>Last updated: 15 November 2026 (added: mailing list)</p>
+    <p>Last updated: 15 November 2026 (added: mailing list, tester invitations, account website)</p>
   </div>
 </section>
 
@@ -73,6 +73,7 @@
       <li><a href="#questions">"Any questions?"</a></li>
       <li><a href="#research-log">Research log</a></li>
       <li><a href="#accounts">Accounts</a></li>
+      <li><a href="#account-website">Account website</a></li>
       <li><a href="#abrp">ABRP</a></li>
       <li><a href="#watches">Watches, widgets and car screens</a></li>
       <li><a href="#mailing-list">Mailing list</a></li>
@@ -86,10 +87,10 @@
       <h2 id="short">The short version</h2>
       <ul>
         <li>No ads, no tracking.</li>
-        <li>Version 3.4 has no account. From the next version, the app asks you to sign in once (with Google or a 6-digit email code, and on iPhone also with Sign in with Apple). The account holds your email address and a display name, and you can delete it in the app at any time. See <a href="#accounts">Accounts</a>.</li>
+        <li>From version 3.4, the app asks you to sign in once (with Google or a 6-digit email code, and on iPhone also with Sign in with Apple). The account holds your email address and a display name, and you can delete it at any time, in the app or at account.oceanlive.org. See <a href="#accounts">Accounts</a>.</li>
         <li>What the app reads from your car stays on your phone, except what you choose to send below.</li>
         <li>Data leaves your phone only when you sign in or manage your account (opening the account settings checks it with the server), when you ask a question in "Any questions?", or if you turn on live data to A Better Route Planner (ABRP) yourself.</li>
-        <li>The mailing list on oceanlive.org is separate from the app and only for people who sign up and confirm. It keeps your email address and language until you unsubscribe. See <a href="#mailing-list">Mailing list</a>.</li>
+        <li>The mailing list on oceanlive.org is separate from the app and only for people who sign up and confirm. It keeps your email address and language until you unsubscribe. Testers may be asked once by email whether they want to join. See <a href="#mailing-list">Mailing list</a>.</li>
         <li>Questions (and, unless you turn it off, your car's latest readings) are answered by Claude, an AI made by Anthropic, through a small server the developer runs. For research, the developer keeps each question, its answer, the readings sent with it and a random install ID for 90 days, then deletes them.</li>
       </ul>
     </div>
@@ -122,7 +123,7 @@
     <p>Don't put personal details in questions. Answers come from an AI and can be wrong; check anything important with a qualified EV shop.</p>
 
     <h2 id="accounts">Accounts</h2>
-    <p>Version 3.4 has no account. From the next version, the app asks you to sign in once before you use it, with Google or with a 6-digit code sent to your email address; the iPhone app also offers Sign in with Apple. There are no passwords. The account keeps your "Any questions?" questions, and their daily limit, secure and tied to you, also when you change phones. Your car data never goes to your account: it stays on your phone, and the app works offline after signing in.</p>
+    <p>From version 3.4, the app asks you to sign in once before you use it, with Google or with a 6-digit code sent to your email address; the iPhone app also offers Sign in with Apple. There are no passwords. The account keeps your "Any questions?" questions, and their daily limit, secure and tied to you, also when you change phones. Your car data never goes to your account: it stays on your phone, and the app works offline after signing in.</p>
     <p>What the Ocean Live server stores for an account, in the same Cloudflare D1 database as the research log, which only the developer can read:</p>
     <ul>
       <li><strong>The account:</strong> a random account ID, your email address (as verified by Google, by the email code, or by Apple, which may give a private relay address instead), a display name (from Google or Apple at first; you can change it in the app), and when the account was created and last used.</li>
@@ -138,8 +139,12 @@
       <li><strong>Google</strong>, when you sign in with Google: Google tells the server your Google account ID, email address and name, signed so the server can check it is genuine. <strong>Apple</strong> does the same when you use Sign in with Apple on iPhone. The server only downloads Google's and Apple's public keys to check these; it sends them nothing about you.</li>
       <li><strong>Anthropic</strong> only receives questions, as described above.</li>
     </ul>
-    <p>The account and its sign-in methods are kept until you delete the account. To delete it, open Ocean Live and go to <span class="path"><span>Settings</span><i>→</i><span>Account</span><i>→</i><span>Delete account</span></span>. This deletes, straight away, the account, its sign-in methods, all its sessions (every device is signed out), the logged questions linked to it and any personal question limit set for it. Car data on your phone is not affected. An email-code entry for your address (see Email codes) is removed too. The short-lived counters above expire on their own within about a day. If you can't use the app any more, see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+    <p>The account and its sign-in methods are kept until you delete the account. To delete it, open Ocean Live and go to <span class="path"><span>Settings</span><i>→</i><span>Account</span><i>→</i><span>Delete account</span></span>. This deletes, straight away, the account, its sign-in methods, all its sessions (every device is signed out), the logged questions linked to it and any personal question limit set for it. Car data on your phone is not affected. An email-code entry for your address (see Email codes) is removed too. The short-lived counters above expire on their own within about a day. You can also delete it on the <a href="#account-website">account website</a>. See <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     <p>The legal basis in the EU and UK for account data is performance of a contract (providing the signed-in app and keeping your questions with your account); for the abuse and rate-limit counters it is the developer's legitimate interest.</p>
+
+    <h3 id="account-website">The account website</h3>
+    <p>You can also manage your account without the app at <a href="https://account.oceanlive.org/" rel="noopener">account.oceanlive.org</a>: sign in with a 6-digit email code (or with Google, when it's offered there; Sign in with Apple isn't) to see your account and its sign-in methods, rename it, sign out or delete it. It uses the same account, the same server and the same processors as the app, described above.</p>
+    <p>Signing in there sets one cookie. It is strictly necessary: it only keeps you signed in, holds the session token (the server keeps only its hash, as for the app) and is sent only to account.oceanlive.org. A session there lasts 30 days from its last use; signing out ends it and removes the cookie. The account website uses no analytics or trackers. If Sign in with Google is offered there, the page loads Google's sign-in button from Google, so Google sees your IP address when you open it.</p>
 
     <h2 id="abrp">A Better Route Planner (optional)</h2>
     <p>If you enter your own ABRP token and API key, Ocean Live sends live telemetry (charge, power, voltage, current, battery temperature, odometer, charging state and, if you allow it, your location) to ABRP's servers (Iternio) so ABRP can plan your route. That data is handled under ABRP's own privacy policy. Remove the token and key to stop it at any time.</p>
@@ -162,6 +167,9 @@
     <p>Who processes it: <strong>Cloudflare</strong> stores it and runs the server; <strong>Resend</strong> delivers the emails, so it receives your email address and each email.</p>
     <p>How long: a sign-up that isn't confirmed is deleted after 7 days. Unsubscribing deletes your address straight away. Every email has an unsubscribe link, and mail apps that show an Unsubscribe button (such as Gmail) unsubscribe you in one click. You can also email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> to have your address deleted, or to ask what is held.</p>
     <p>The legal basis in the EU and UK is your consent, which you can withdraw at any time by unsubscribing.</p>
+    <h3 id="invitations">Invitations for testers</h3>
+    <p>People who test Ocean Live may get <strong>one</strong> email from the developer asking whether they want these news emails. To send it, their email address goes to Resend. It creates an unconfirmed sign-up like the one above: nothing more is sent unless they press <strong>Confirm my subscription</strong>, and if they don't, it is deleted after 7 days like any unconfirmed sign-up.</p>
+    <p>So that nobody is invited twice, or after leaving the list, the server keeps a SHA-256 hash of the address (not the address itself) for everyone who was invited, unsubscribed, was removed, or let a sign-up lapse. It is kept with no end date and used for nothing else. A hash can't be read back, but someone who already knows an address can check it against the hash, so it still counts as personal data. Email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> to have it removed (you could then be invited again). The legal basis in the EU and UK is legitimate interests: asking testers once, and respecting the answer.</p>
 
     <h2 id="children">Children</h2>
     <p>Ocean Live is meant for vehicle owners and is not directed at children.</p>
@@ -174,7 +182,7 @@
 
     <div class="callout sand">
       <h2 id="website">This website</h2>
-      <p>oceanlive.org sets no cookies and uses no analytics or trackers. The only thing it collects is what you type into the mailing list form, if you sign up (see <a href="#mailing-list">Mailing list</a>). Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+      <p>oceanlive.org sets no cookies and uses no analytics or trackers. (The <a href="#account-website">account website</a>, account.oceanlive.org, sets one strictly necessary sign-in cookie.) The only thing it collects is what you type into the mailing list form, if you sign up (see <a href="#mailing-list">Mailing list</a>). Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     </div>
     </div>
   </div>
@@ -197,6 +205,8 @@
           <li><a href="/#download">Download</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">Releases</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">Changelog</a></li>
+          <li><a href="/help">Help</a></li>
+          <li><a href="/codes">Fault codes</a></li>
           <li><a href="/news">News by email</a></li>
           <li><a href="/#faq">FAQ</a></li>
         </ul>
@@ -207,6 +217,7 @@
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">GitHub</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/LICENSE" rel="noopener">License</a></li>
           <li><a href="/credits">Credits</a></li>
+          <li><a href="https://status.oceanlive.org/" rel="noopener">Service status</a></li>
           <li><a href="mailto:justice@oceanlive.org">Contact</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">Report a bug</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/security/advisories/new" rel="noopener">Report a vulnerability</a></li>
@@ -216,6 +227,7 @@
         <h2>Privacy</h2>
         <ul>
           <li><a href="/privacy">Privacy policy</a></li>
+          <li><a href="https://account.oceanlive.org/" rel="noopener">Your account</a></li>
           <li><a href="/delete-account">Delete your account</a></li>
         </ul>
       </div>

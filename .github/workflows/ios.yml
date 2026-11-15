@@ -32,7 +32,7 @@ jobs:
       WIDGETS: ${{ github.event_name != 'workflow_dispatch' || inputs.include_widgets }}
       # The Apple Watch app is left out unless a manual run asks for it.
       WATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.include_watch }}
-      # "Any questions?" proxy address (repository variable, see ask-proxy/README.md). Empty hides the button.
+      # "Any questions?" proxy address (repository variable; the app server is in ask-proxy/). Empty hides the button.
       OCEAN_ASK_URL: ${{ vars.OCEAN_ASK_URL }}
     defaults:
       run:

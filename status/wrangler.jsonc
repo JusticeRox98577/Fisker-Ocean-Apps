@@ -1,0 +1,41 @@
+// Ocean Live Status: the public status page at status.oceanlive.org.
+// It is its own Worker so it keeps working when the app server is down.
+{
+  "name": "ocean-live-status",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "status.oceanlive.org", "custom_domain": true }],
+
+  // The page (public/) is served as static files; /api/* always runs the Worker.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Check results and daily totals.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ocean-live-status",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Every 5 minutes: check each service, then tidy up old results.
+  "triggers": { "crons": ["*/5 * * * *"] },
+
+  "vars": {
+    // What is checked. Each address can be changed here without a code change.
+    "SITE_URL": "https://oceanlive.org/",
+    "API_URL": "https://api.oceanlive.org/health",
+    "MAIL_URL": "https://mail.oceanlive.org/api/health",
+    // A short message shown at the top of the page, for example planned work. Empty: no message.
+    "NOTICE": "",
+    // How long a /api/status answer is reused, in seconds.
+    "CACHE_SECONDS": "30"
+  }
+}

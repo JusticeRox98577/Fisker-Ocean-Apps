@@ -15,7 +15,7 @@ if (uploadFile.exists()) uploadFile.inputStream().use { upload.load(it) }
 val uploadStore: String? = upload.getProperty("storeFile") ?: System.getenv("ANDROID_STORE_FILE")
 val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 3400
 
-// "Any questions?" proxy address (see ask-proxy/README.md). Not secret, but the owner's own, so it comes
+// "Any questions?" proxy address (the app server in ask-proxy/). Not secret, but the owner's own, so it comes
 // from local.properties or the OCEAN_ASK_URL variable. Empty hides the feature.
 val local = Properties()
 val localFile = rootProject.file("local.properties")

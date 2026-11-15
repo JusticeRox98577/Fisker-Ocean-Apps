@@ -15,7 +15,7 @@
     "run_worker_first": ["/api/*"]
   },
   // The mailing list lives in the mail Worker (mail/). Apply its migration and deploy it before
-  // pushing site changes to main (a push deploys the site): see README.md, "Deploy order".
+  // pushing site changes to main (a push deploys the site).
   "services": [
     { "binding": "MAIL", "service": "ocean-live-mail" }
   ],

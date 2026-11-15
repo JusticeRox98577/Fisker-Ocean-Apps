@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#071A33">
+  <meta name="description" content="Live status of Ocean Live: the website, the app server and email.">
+  <title>Ocean Live Status</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to status</a>
+  <header class="top">
+    <div class="wrap top-row">
+      <a class="brand" href="https://oceanlive.org/">
+        <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+        Ocean Live
+      </a>
+      <span class="top-label">Status</span>
+    </div>
+  </header>
+
+  <main id="main" class="wrap" tabindex="-1">
+    <p class="notice" id="notice" role="note" hidden></p>
+
+    <section class="overall" id="overall" data-state="loading" aria-labelledby="overall-title">
+      <span class="lamp" aria-hidden="true"></span>
+      <div>
+        <h1 id="overall-title">Checking…</h1>
+        <p class="muted" id="checked" aria-live="polite">Reading the latest results.</p>
+      </div>
+    </section>
+    <noscript><p class="notice">This page needs JavaScript to show results. The raw numbers are at <a href="/api/status">/api/status</a>.</p></noscript>
+
+    <section aria-labelledby="services-title">
+      <h2 id="services-title" class="section-title">Services</h2>
+      <ul class="services" id="services"></ul>
+    </section>
+
+    <section class="about" aria-labelledby="about-title">
+      <h2 id="about-title" class="section-title">About this page</h2>
+      <p>Each service is checked every 5 minutes from Cloudflare's network. The bars show the share of checks
+        that worked in each hour of the last day and each day of the last 90 days (UTC). The page updates
+        itself every minute.</p>
+      <p>This page sets no cookies and keeps nothing about visitors. Problem with the app?
+        Write to <a href="mailto:support@oceanlive.org">support@oceanlive.org</a>.</p>
+    </section>
+  </main>
+
+  <footer class="foot wrap">
+    <a href="https://oceanlive.org/">oceanlive.org</a>
+    <a href="https://oceanlive.org/privacy.html">Privacy</a>
+  </footer>
+
+  <template id="service-tpl">
+    <li class="service">
+      <div class="service-head">
+        <span class="lamp" aria-hidden="true"></span>
+        <div class="service-name">
+          <h3></h3>
+          <p class="muted about-line"></p>
+        </div>
+        <p class="service-state"></p>
+      </div>
+      <div class="bars-block">
+        <p class="bars-label"><span>Last 24 hours</span><span class="pct pct-24"></span></p>
+        <div class="bars bars-24" role="img"></div>
+      </div>
+      <div class="bars-block">
+        <p class="bars-label"><span>Last 90 days</span><span class="pct pct-90"></span></p>
+        <div class="bars bars-90" role="img"></div>
+      </div>
+    </li>
+  </template>
+</body>
+</html>

@@ -1,0 +1,236 @@
+{
+ "source": "ask-proxy/knowledge/ocean-guide.md",
+ "systems": {
+  "P": "powertrain",
+  "C": "chassis",
+  "B": "body",
+  "U": "network"
+ },
+ "suffixes": {
+  "11": "short to ground",
+  "12": "short to battery",
+  "13": "open circuit",
+  "16": "voltage below threshold",
+  "17": "voltage above threshold",
+  "31": "no signal",
+  "54": "missing calibration",
+  "55": "not configured",
+  "62": "signal compare failure",
+  "81": "invalid serial data",
+  "86": "invalid signal",
+  "87": "missing message",
+  "88": "bus off",
+  "96": "component internal failure",
+  "1C": "voltage out of range",
+  "F1": "safety/integrity check"
+ },
+ "codes": [
+  {
+   "codes": [
+    "U15AD87"
+   ],
+   "meaning": "Lost communication with the power steering module"
+  },
+  {
+   "codes": [
+    "U1613F1"
+   ],
+   "meaning": "End-to-end message check failed (a message failed its integrity check)"
+  },
+  {
+   "codes": [
+    "U199701"
+   ],
+   "meaning": "Lost communication with HV coolant heater H (cabin heating may not work)"
+  },
+  {
+   "codes": [
+    "U199702"
+   ],
+   "meaning": "Lost communication with HV coolant heater B (HV battery heater may not work)"
+  },
+  {
+   "codes": [
+    "U201162",
+    "U201262"
+   ],
+   "meaning": "Communication verification failure"
+  },
+  {
+   "codes": [
+    "B20FE16"
+   ],
+   "meaning": "Trailer module supply voltage below threshold (trailer lamps may not light fully)"
+  },
+  {
+   "codes": [
+    "B208896"
+   ],
+   "meaning": "Overhead console touch controller not responding"
+  },
+  {
+   "codes": [
+    "B178854"
+   ],
+   "meaning": "Module not coded (configuration missing)"
+  },
+  {
+   "codes": [
+    "C21A531"
+   ],
+   "meaning": "Front camera: no signal on its Ethernet link (timeout)"
+  },
+  {
+   "codes": [
+    "C21A586"
+   ],
+   "meaning": "Front camera: invalid signal on its Ethernet link"
+  },
+  {
+   "codes": [
+    "U114281",
+    "U1142F1"
+   ],
+   "meaning": "Climate control value invalid / signal outdated",
+   "note": "Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update."
+  },
+  {
+   "codes": [
+    "U114381",
+    "U1143F1"
+   ],
+   "meaning": "Stability control (ABS) value invalid / signal outdated",
+   "note": "Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update."
+  },
+  {
+   "codes": [
+    "U114581",
+    "U1145F1"
+   ],
+   "meaning": "Cockpit controller value invalid / signal outdated",
+   "note": "Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update."
+  }
+ ],
+ "modules": [
+  {
+   "ids": "BMS",
+   "name": "HV battery"
+  },
+  {
+   "ids": "BCM",
+   "name": "body control"
+  },
+  {
+   "ids": "VCU",
+   "name": "vehicle control"
+  },
+  {
+   "ids": "MCU_F / MCU_R",
+   "name": "front / rear motor"
+  },
+  {
+   "ids": "PDU",
+   "name": "power distribution"
+  },
+  {
+   "ids": "PIU",
+   "name": "power integration unit"
+  },
+  {
+   "ids": "WTC and BTC",
+   "name": "HV coolant heaters A and B"
+  },
+  {
+   "ids": "ECC",
+   "name": "climate"
+  },
+  {
+   "ids": "RAC",
+   "name": "rear climate"
+  },
+  {
+   "ids": "ESP",
+   "name": "stability control"
+  },
+  {
+   "ids": "IBOOSTER",
+   "name": "brake booster"
+  },
+  {
+   "ids": "EPS and EPS2",
+   "name": "power steering and backup"
+  },
+  {
+   "ids": "ACU",
+   "name": "airbags"
+  },
+  {
+   "ids": "PKC",
+   "name": "keys and NFC"
+  },
+  {
+   "ids": "ICC",
+   "name": "cockpit and screens"
+  },
+  {
+   "ids": "GW",
+   "name": "gateway"
+  },
+  {
+   "ids": "TBOX_EU / TBOX_US",
+   "name": "telematics"
+  },
+  {
+   "ids": "HYDRA",
+   "name": "driver assist"
+  },
+  {
+   "ids": "FCM",
+   "name": "front camera"
+  },
+  {
+   "ids": "MRR",
+   "name": "front radar"
+  },
+  {
+   "ids": "CMRR_FL/FR/RL/RR",
+   "name": "corner radars"
+  },
+  {
+   "ids": "OHC",
+   "name": "overhead console"
+  },
+  {
+   "ids": "CIM",
+   "name": "steering column"
+  },
+  {
+   "ids": "MFSS",
+   "name": "steering wheel switches"
+  },
+  {
+   "ids": "DSMC / PSM",
+   "name": "driver / passenger seat"
+  },
+  {
+   "ids": "PWC_L / PWC_R",
+   "name": "wireless phone chargers"
+  },
+  {
+   "ids": "PLGM",
+   "name": "power liftgate"
+  },
+  {
+   "ids": "TRM",
+   "name": "trailer module"
+  },
+  {
+   "ids": "AMP",
+   "name": "audio amplifier"
+  },
+  {
+   "ids": "VSP",
+   "name": "pedestrian warning speaker"
+  }
+ ]
+}
