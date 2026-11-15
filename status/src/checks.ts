@@ -28,7 +28,7 @@ export function services(env: Env): Service[] {
   return [
     { id: "site", name: "Website", about: "oceanlive.org", url: env.SITE_URL, kind: "page" },
     { id: "api", name: "App server", about: "Ask, sign-in and accounts in the app", url: env.API_URL, kind: "health" },
-    { id: "mail", name: "Email", about: "Sign-in codes and replies from Ocean Live", url: env.MAIL_URL, kind: "health" },
+    { id: "mail", name: "Email", about: "Ocean Live email (webmail and mailing list)", url: env.MAIL_URL, kind: "health" },
   ];
 }
 

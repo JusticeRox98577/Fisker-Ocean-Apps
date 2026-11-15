@@ -1,5 +1,5 @@
 /**
- * The admin page at admin.oceanlive.org: find an account, change its balance or badge, manage admins.
+ * The admin page at admin.oceanlive.org: usage and reports, find an account, change its balance or badge, manage admins.
  *
  * Everything here answers only on ADMIN_HOST; on every other host /admin/* is a plain 404.
  *
@@ -7,8 +7,8 @@
  * address, not an Ocean Live account:
  *   - owners: the addresses in the secret ADMIN_EMAILS (comma-separated). Unset or empty: no owners.
  *   - admins: addresses an owner added on the page (table `admins`).
- * Owners can add and remove admins; admins can change balances and badges only. Owners can't be
- * removed on the page (only by changing the secret). The store review address (REVIEW_EMAIL) is
+ * Owners can add and remove admins; admins can change balances and badges and see usage and reports.
+ * Owners can't be removed on the page (only by changing the secret). The store review address (REVIEW_EMAIL) is
  * never an admin, and app sessions (bearer tokens, the account page's cookie) count for nothing here.
  *
  * A sign-in that isn't an admin gets 403 not_admin and no session. Admin sessions last 12 hours,
@@ -28,8 +28,10 @@
  *   POST /admin/admins/add          owners only: { email }
  *   POST /admin/admins/remove       owners only: { email }
  *   GET  /admin/log                 owners only: the last 100 admin actions
+ *   GET  /admin/usage, /admin/usage/questions, /admin/reports, POST /admin/reports/resolve
+ *                                   the Usage tab, owners and admins (see usage.ts)
  * Writes are limited to ADMIN_WRITE_LIMIT (100) per admin per day and each one is written to admin_log.
- * Tables: migrations/0005_admin.sql.
+ * Tables: migrations/0005_admin.sql, 0006_usage.sql.
  */
 
 import page from "../admin/index.html?raw";
@@ -48,11 +50,12 @@ import {
   type AuthEnv,
 } from "./auth";
 import { badgesOf, balanceOf, EARLY_SUPPORTER } from "./balance";
+import { listReports, recentQuestions, resolveReport, usageSummary, type UsageEnv } from "./usage";
 
-export interface AdminEnv extends AuthEnv {
+export interface AdminEnv extends AuthEnv, UsageEnv {
   /** Secret: the owners' Google addresses, comma-separated. */
   ADMIN_EMAILS?: string;
-  /** Balance, badge and admin changes per admin per day. Default 100. */
+  /** Balance, badge, admin and report changes per admin per day. Default 100. */
   ADMIN_WRITE_LIMIT?: string;
 }
 
@@ -135,10 +138,17 @@ export async function adminSite(request: Request, env: AdminEnv, url: URL): Prom
       case "/admin/log":
         if (!owner) return ownerOnly();
         return read ? json({ log: await recentLog(db) }) : json({ error: "method" }, 405);
+      case "/admin/usage":
+        return read ? json(await usageSummary(env, db)) : json({ error: "method" }, 405);
+      case "/admin/usage/questions":
+        return read ? json(await recentQuestions(db, url.searchParams)) : json({ error: "method" }, 405);
+      case "/admin/reports":
+        return read ? json(await listReports(db, url.searchParams)) : json({ error: "method" }, 405);
       case "/admin/balance":
       case "/admin/badge":
       case "/admin/admins/add":
-      case "/admin/admins/remove": {
+      case "/admin/admins/remove":
+      case "/admin/reports/resolve": {
         if (method !== "POST") return json({ error: "method" }, 405);
         if (path.startsWith("/admin/admins/") && !owner) return ownerOnly();
         const body = (await request.json()) as Record<string, unknown>;
@@ -147,6 +157,7 @@ export async function adminSite(request: Request, env: AdminEnv, url: URL): Prom
         if (path === "/admin/balance") return await adjustBalance(env, db, admin, body);
         if (path === "/admin/badge") return await setBadge(env, db, admin, body);
         if (path === "/admin/admins/add") return await addAdmin(env, db, admin, body);
+        if (path === "/admin/reports/resolve") return await resolveReport(db, admin.email, body);
         return await removeAdmin(env, db, admin, body);
       }
     }

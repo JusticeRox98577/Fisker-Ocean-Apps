@@ -9,8 +9,9 @@ A small Cloudflare Worker that the Ocean Live apps talk to. It does four things:
 * **The web account page** at [account.oceanlive.org](https://account.oceanlive.org), where an
   owner can see, rename, sign out of or delete their account without the app.
 * **An admin page** at `admin.oceanlive.org` for the people who run Ocean Live: Sign in with
-  Google, admins only. It looks an account up and changes its balance or badge; every change is
-  recorded with the admin who made it.
+  Google, admins only. It shows usage (questions, AI cost, accounts, credit) and the logged
+  questions and reports without who asked, looks an account up and changes its balance or badge;
+  every change is recorded with the admin who made it.
 
 It answers on `api.oceanlive.org`.
 

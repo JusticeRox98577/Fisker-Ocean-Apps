@@ -37,91 +37,194 @@
 
     <!-- Signed in -->
     <div id="app" class="stack-lg" hidden>
-      <section class="card stack" aria-labelledby="find-title">
-        <h1 id="find-title" tabindex="-1">Find an account</h1>
-        <form id="find-form" class="row-form" novalidate>
-          <label for="find">Email address or account ID</label>
-          <div class="row">
-            <input id="find" name="find" type="text" autocomplete="off" spellcheck="false" autocapitalize="off" required>
-            <button class="btn btn-primary" type="submit">Find</button>
+      <nav class="tabs" role="tablist" aria-label="Admin sections">
+        <button id="tab-usage" class="tab" type="button" role="tab" aria-selected="true" aria-controls="panel-usage">Usage</button>
+        <button id="tab-reports" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-reports" tabindex="-1">Reports <span id="reports-badge" class="count" hidden><span id="reports-count"></span><span class="sr-only"> open</span></span></button>
+        <button id="tab-accounts" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-accounts" tabindex="-1">Accounts</button>
+        <button id="tab-admins" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-admins" tabindex="-1" hidden>Admins</button>
+      </nav>
+
+      <!-- Usage: the first view -->
+      <div id="panel-usage" class="stack-lg" role="tabpanel" aria-labelledby="tab-usage" tabindex="-1">
+        <section class="card stack" aria-labelledby="usage-title">
+          <div class="row between">
+            <h1 id="usage-title" tabindex="-1">Usage</h1>
+            <button id="usage-refresh" class="btn btn-ghost" type="button">Refresh</button>
           </div>
-          <p id="find-error" class="field-error" role="alert"></p>
-        </form>
-        <ul id="results" class="results" hidden></ul>
-      </section>
+          <p id="usage-when" class="small muted"></p>
+          <p id="usage-error" class="field-error" role="alert"></p>
+          <ul id="cards" class="cards" aria-label="Summary"></ul>
+        </section>
 
-      <section id="account" class="card stack" aria-labelledby="acc-title" hidden>
-        <h2 id="acc-title" tabindex="-1">Account</h2>
-        <p id="acc-review" class="warn small" hidden>This is the store review account. It can't have a balance or badges.</p>
-        <dl class="facts">
-          <div><dt>Email</dt><dd id="acc-email"></dd></div>
-          <div><dt>Name</dt><dd id="acc-name"></dd></div>
-          <div><dt>Account ID</dt><dd id="acc-id" class="mono"></dd></div>
-          <div><dt>Created</dt><dd id="acc-created"></dd></div>
-          <div><dt>Sign-in methods</dt><dd id="acc-providers"></dd></div>
-          <div><dt>Balance</dt><dd id="acc-balance" class="big"></dd></div>
-          <div><dt>Badges</dt><dd id="acc-badges"></dd></div>
-        </dl>
+        <section class="card stack" aria-labelledby="chart-title">
+          <h2 id="chart-title">Last 30 days</h2>
+          <figure class="chart">
+            <figcaption class="small muted">Questions per day</figcaption>
+            <div id="chart-questions"></div>
+          </figure>
+          <figure class="chart">
+            <figcaption class="small muted">AI cost per day (US dollars)</figcaption>
+            <div id="chart-cost"></div>
+          </figure>
+          <details>
+            <summary>Show as a table</summary>
+            <div class="table-wrap">
+              <table>
+                <caption class="sr-only">Questions and AI cost per day, last 30 days (UTC)</caption>
+                <thead><tr><th scope="col">Day (UTC)</th><th scope="col">Questions</th><th scope="col">AI cost</th></tr></thead>
+                <tbody id="days-table"></tbody>
+              </table>
+            </div>
+          </details>
+        </section>
 
-        <form id="balance-form" class="stack" novalidate>
-          <h3>Change the balance</h3>
+        <section class="card stack" aria-labelledby="split-title">
+          <h2 id="split-title">Who asks</h2>
+          <p class="small muted">Questions in the last 30 days.</p>
+          <div class="split">
+            <div class="table-wrap">
+              <table>
+                <caption>By phone language</caption>
+                <thead><tr><th scope="col">Language</th><th scope="col">Questions</th><th scope="col">Share</th></tr></thead>
+                <tbody id="lang-table"></tbody>
+              </table>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption>Signed in or not</caption>
+                <thead><tr><th scope="col">Asked</th><th scope="col">Questions</th><th scope="col">Share</th></tr></thead>
+                <tbody id="signed-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="card stack" aria-labelledby="recent-title">
+          <h2 id="recent-title">Recent questions</h2>
+          <p class="small muted">Newest first, 50 at a time. Who asked is never shown. Open a question to read the answer and the car readings sent with it. A paid question whose charge never settled shows as free here (the paid cards count it).</p>
+          <p id="recent-error" class="field-error" role="alert"></p>
+          <ol id="recent" class="qlist"></ol>
+          <button id="recent-more" class="btn btn-ghost" type="button" hidden>Show older questions</button>
+        </section>
+
+        <section class="card stack" aria-labelledby="links-title">
+          <h2 id="links-title">Elsewhere</h2>
+          <ul class="links">
+            <li><a href="https://status.oceanlive.org/" rel="noreferrer">Status page</a> <span class="small muted">status.oceanlive.org</span></li>
+            <li><a href="https://mail.oceanlive.org/" rel="noreferrer">Webmail and mailing list</a> <span class="small muted">mail.oceanlive.org, where the mailing list numbers are</span></li>
+            <li><a href="https://console.anthropic.com/" rel="noreferrer">Anthropic Console</a> <span class="small muted">AI usage and billing</span></li>
+            <li><a href="https://dash.cloudflare.com/" rel="noreferrer">Cloudflare dashboard</a> <span class="small muted">Workers, D1, KV</span></li>
+            <li><a href="https://resend.com/emails" rel="noreferrer">Resend</a> <span class="small muted">sign-in code emails</span></li>
+          </ul>
+        </section>
+      </div>
+
+      <!-- Reports -->
+      <div id="panel-reports" class="stack-lg" role="tabpanel" aria-labelledby="tab-reports" tabindex="-1" hidden>
+        <section class="card stack" aria-labelledby="reports-title">
+          <h1 id="reports-title" tabindex="-1">Reports</h1>
+          <p class="small muted">Answers people reported from the app, newest first. Who reported is never shown. Resolve a report once you've looked at it.</p>
           <fieldset class="choice">
-            <legend>Change</legend>
-            <label><input type="radio" name="dir" value="add" checked> Add credit</label>
-            <label><input type="radio" name="dir" value="remove"> Remove credit</label>
+            <legend>Show</legend>
+            <label><input type="radio" name="rstatus" value="open" checked> Open</label>
+            <label><input type="radio" name="rstatus" value="all"> All</label>
           </fieldset>
-          <label for="amount">Amount in US dollars</label>
-          <input id="amount" name="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="5.00" required>
-          <label for="note">Note (required, 3 to 200 characters)</label>
-          <input id="note" name="note" type="text" maxlength="200" autocomplete="off" required>
-          <p class="small muted">The note and your email are kept in the account's ledger.</p>
-          <p id="balance-error" class="field-error" role="alert"></p>
-          <button class="btn btn-primary" type="submit">Change balance…</button>
-        </form>
+          <p id="reports-error" class="field-error" role="alert"></p>
+          <ol id="reports" class="qlist"></ol>
+          <button id="reports-more" class="btn btn-ghost" type="button" hidden>Show older reports</button>
+        </section>
+      </div>
 
-        <div class="stack">
-          <h3>Early supporter badge</h3>
-          <p id="badge-state" class="small"></p>
-          <p id="badge-error" class="field-error" role="alert"></p>
-          <button id="badge-toggle" class="btn btn-ghost" type="button"></button>
-        </div>
+      <!-- Accounts -->
+      <div id="panel-accounts" class="stack-lg" role="tabpanel" aria-labelledby="tab-accounts" tabindex="-1" hidden>
+        <section class="card stack" aria-labelledby="find-title">
+          <h1 id="find-title" tabindex="-1">Find an account</h1>
+          <form id="find-form" class="row-form" novalidate>
+            <label for="find">Email address or account ID</label>
+            <div class="row">
+              <input id="find" name="find" type="text" autocomplete="off" spellcheck="false" autocapitalize="off" required>
+              <button class="btn btn-primary" type="submit">Find</button>
+            </div>
+            <p id="find-error" class="field-error" role="alert"></p>
+          </form>
+          <ul id="results" class="results" hidden></ul>
+        </section>
 
-        <div class="stack">
-          <h3>Ledger</h3>
-          <p class="small muted">The last 50 entries, newest first.</p>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th scope="col">Date (UTC)</th><th scope="col">Change</th><th scope="col">Kind</th><th scope="col">Note</th></tr></thead>
-              <tbody id="ledger"></tbody>
-            </table>
+        <section id="account" class="card stack" aria-labelledby="acc-title" hidden>
+          <h2 id="acc-title" tabindex="-1">Account</h2>
+          <p id="acc-review" class="warn small" hidden>This is the store review account. It can't have a balance or badges.</p>
+          <dl class="facts">
+            <div><dt>Email</dt><dd id="acc-email"></dd></div>
+            <div><dt>Name</dt><dd id="acc-name"></dd></div>
+            <div><dt>Account ID</dt><dd id="acc-id" class="mono"></dd></div>
+            <div><dt>Created</dt><dd id="acc-created"></dd></div>
+            <div><dt>Sign-in methods</dt><dd id="acc-providers"></dd></div>
+            <div><dt>Balance</dt><dd id="acc-balance" class="big"></dd></div>
+            <div><dt>Badges</dt><dd id="acc-badges"></dd></div>
+          </dl>
+
+          <form id="balance-form" class="stack" novalidate>
+            <h3>Change the balance</h3>
+            <fieldset class="choice">
+              <legend>Change</legend>
+              <label><input type="radio" name="dir" value="add" checked> Add credit</label>
+              <label><input type="radio" name="dir" value="remove"> Remove credit</label>
+            </fieldset>
+            <label for="amount">Amount in US dollars</label>
+            <input id="amount" name="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="5.00" required>
+            <label for="note">Note (required, 3 to 200 characters)</label>
+            <input id="note" name="note" type="text" maxlength="200" autocomplete="off" required>
+            <p class="small muted">The note and your email are kept in the account's ledger.</p>
+            <p id="balance-error" class="field-error" role="alert"></p>
+            <button class="btn btn-primary" type="submit">Change balance…</button>
+          </form>
+
+          <div class="stack">
+            <h3>Early supporter badge</h3>
+            <p id="badge-state" class="small"></p>
+            <p id="badge-error" class="field-error" role="alert"></p>
+            <button id="badge-toggle" class="btn btn-ghost" type="button"></button>
           </div>
-        </div>
-      </section>
+
+          <div class="stack">
+            <h3>Ledger</h3>
+            <p class="small muted">The last 50 entries, newest first.</p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th scope="col">Date (UTC)</th><th scope="col">Change</th><th scope="col">Kind</th><th scope="col">Note</th></tr></thead>
+                <tbody id="ledger"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <!-- Owners only -->
-      <section id="admins" class="card stack" aria-labelledby="admins-title" hidden>
-        <h2 id="admins-title">Admins</h2>
-        <p class="small muted">Admins can change balances and badges. Only owners can add or remove admins. Owners are set on the server and can't be removed here.</p>
-        <ul id="admin-list" class="admin-list"></ul>
-        <form id="admin-form" class="row-form" novalidate>
-          <label for="admin-email">Add an admin by Google email address</label>
-          <div class="row">
-            <input id="admin-email" name="email" type="email" autocomplete="off" spellcheck="false" autocapitalize="off" required>
-            <button class="btn btn-ghost" type="submit">Add…</button>
-          </div>
-          <p id="admin-error" class="field-error" role="alert"></p>
-        </form>
-      </section>
+      <div id="panel-admins" class="stack-lg" role="tabpanel" aria-labelledby="tab-admins" tabindex="-1" hidden>
+        <section id="admins" class="card stack" aria-labelledby="admins-title" hidden>
+          <h1 id="admins-title" tabindex="-1">Admins</h1>
+          <p class="small muted">Admins can see usage and reports and change balances and badges. Only owners can add or remove admins. Owners are set on the server and can't be removed here.</p>
+          <ul id="admin-list" class="admin-list"></ul>
+          <form id="admin-form" class="row-form" novalidate>
+            <label for="admin-email">Add an admin by Google email address</label>
+            <div class="row">
+              <input id="admin-email" name="email" type="email" autocomplete="off" spellcheck="false" autocapitalize="off" required>
+              <button class="btn btn-ghost" type="submit">Add…</button>
+            </div>
+            <p id="admin-error" class="field-error" role="alert"></p>
+          </form>
+        </section>
 
-      <section id="activity" class="card stack" aria-labelledby="activity-title" hidden>
-        <h2 id="activity-title">Recent admin activity</h2>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th scope="col">Date (UTC)</th><th scope="col">Admin</th><th scope="col">Action</th><th scope="col">Details</th></tr></thead>
-            <tbody id="log"></tbody>
-          </table>
-        </div>
-      </section>
+        <section id="activity" class="card stack" aria-labelledby="activity-title" hidden>
+          <h2 id="activity-title">Recent admin activity</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th scope="col">Date (UTC)</th><th scope="col">Admin</th><th scope="col">Action</th><th scope="col">Details</th></tr></thead>
+              <tbody id="log"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </div>
   </main>
 

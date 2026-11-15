@@ -20,6 +20,7 @@ export default defineConfig(async () => {
         },
       }),
     ],
-    test: { setupFiles: ["./test/apply-migrations.ts"] },
+    // Process CSS so "?raw" imports (the admin and account stylesheets) hold the file, as Wrangler bundles them.
+    test: { setupFiles: ["./test/apply-migrations.ts"], css: true },
   };
 });

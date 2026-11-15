@@ -74,8 +74,10 @@ Every question is logged for research: to see what owners ask and how good the a
 and to improve the knowledge Claude answers from. Each log entry holds the date and time,
 the install ID, your account ID if you are signed in, your phone's language, the question, the earlier messages of that chat, the
 readings and fault codes sent with it (if any), the answer and its cost. Entries are kept in
-a database at Cloudflare that only the developer can read, and are deleted automatically
-after 90 days. Your IP address, VIN and location are never logged. The log is never sold,
+a database at Cloudflare that only the developer and the admins they appoint can read (admins
+only through the admin page, which shows the questions, answers and readings without your
+account ID, install ID or email address; see [The admin page](#the-admin-page)), and are
+deleted automatically after 90 days. Your IP address, VIN and location are never logged. The log is never sold,
 shared or published, and is not used for advertising.
 
 To have your logged questions deleted, or to ask what is held, email justice@oceanlive.org;
@@ -99,8 +101,10 @@ wrong. A report sends the server the ID of that logged question, the reason you 
 optional note you write (up to 500 characters) and, as with a question, your session or the
 install ID, so the server can check the question is yours. The server stores the report with
 the question: the reason, the note, your account ID or install ID and the date. The developer
-reads reports to fix the answer and improve the knowledge Claude answers from; they are not
-sent to Anthropic or anyone else. A report is deleted together with its question: after 90
+and the admins they appoint read reports on the admin page, without your account ID or install
+ID, to fix the answer and improve the knowledge Claude answers from; they are not sent to
+Anthropic or anyone else. When an admin marks a report as dealt with, the report also holds
+when and the admin's email address. A report is deleted together with its question: after 90
 days, when you delete your account, or when you ask (see above). To limit abuse, the server
 counts reports per account or install for a day. Don't put personal details in the note.
 
@@ -121,7 +125,8 @@ daily limit, secure and tied to you, also when you change phones. Your car data 
 your account: it stays on your phone, and the app works offline after signing in.
 
 What the Ocean Live server stores for an account, in the same Cloudflare D1 database as the
-research log, which only the developer can read:
+research log, which only the developer can read (and admins, through the admin page; see
+[The admin page](#the-admin-page)):
 
 * **The account:** a random account ID, your email address (as verified by Google, by the
   email code, or by Apple, which may give a private relay address instead), a display name
@@ -246,6 +251,17 @@ lines, add or remove credit (a balance can't go below zero) and give or
 remove a badge. Every change records the admin's email address: in the ledger note for a credit
 change, and in a log of admin actions (the admin, what was done, the account ID and the date).
 Corrections and their log entries are deleted with your account, like the rest of the ledger.
+
+To run and improve the service, admins also see on that page: totals (questions and AI cost
+per day and month, the number of accounts, credit spent and still held in balances, rewards
+claimed, open reports), the questions asked by phone language and by signed in or not, the
+logged questions with their answers, cost and the readings sent with them, and the reports
+with their question and answer. None of this shows the account ID, install ID or email address
+of who asked or reported next to the question or report. But an admin who also looks up an
+account sees its ledger, where each paid question has a time and an amount, so a paid question
+can sometimes be matched to that account; and what someone writes in a question can itself say
+who they are. When an admin marks a report as dealt with, their email address is
+kept with the report and in the log of admin actions.
 
 For admins only, the server stores: their Google email address and who added them and when;
 for each sign-in, a hash of a random session token, kept for 12 hours; and the log of their
