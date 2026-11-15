@@ -61,7 +61,7 @@
     // Sign-ups per network (IPv4 address or IPv6 /64, stored hashed) per hour, and confirmation emails per
     // UTC day in total (part of LIST_SEND_PER_DAY, not on top of it).
     "LIST_SIGNUPS_PER_IP_HOUR": "5",
-    "LIST_CONFIRMS_PER_DAY": "20"
+    "LIST_CONFIRMS_PER_DAY": "30"
   }
 
   // Secrets, set with `npx wrangler secret put <NAME>`, never written here:
