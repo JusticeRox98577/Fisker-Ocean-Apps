@@ -593,3 +593,23 @@ describe("account page", () => {
     expect(await img.text()).not.toMatch(/<script|on\w+=/i);
   });
 });
+
+import { allowanceFor } from "../src/index";
+describe("allowanceFor", () => {
+  it("free question for a signed-in owner with a balance", () => {
+    const t = allowanceFor({ signedIn: true, canPay: true, paid: false, freeLeftAfter: 3, freePerDay: 10, balanceCents: 97 });
+    expect(t).toContain("Free questions left today after this one: 3.");
+    expect(t).toContain("This question is free.");
+    expect(t).toContain("Balance before this question: $0.97.");
+  });
+  it("paid question", () => {
+    const t = allowanceFor({ signedIn: true, canPay: true, paid: true, freeLeftAfter: 0, freePerDay: 10, balanceCents: 5 });
+    expect(t).toContain("paid from the owner's balance");
+    expect(t).toContain("$0.05");
+  });
+  it("anonymous install", () => {
+    const t = allowanceFor({ signedIn: false, canPay: false, paid: false, freeLeftAfter: 9, freePerDay: 10, balanceCents: 0 });
+    expect(t).toContain("Not signed in");
+    expect(t).not.toContain("Balance before");
+  });
+});

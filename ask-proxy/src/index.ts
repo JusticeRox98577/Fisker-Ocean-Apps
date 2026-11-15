@@ -75,6 +75,7 @@ How to answer:
 - Be practical and short: a few sentences or a short list. Plain text only, no Markdown headings or tables; simple "- " bullets are fine.
 - Use the knowledge guide below and the lookup_fault_codes tool. For any specific fault code, call the tool before explaining it.
 - When the owner's message includes readings from their car, use them, and say what they suggest. The readings are a snapshot taken by the app; they may be old.
+- A question_allowance block from the Ocean Live server says whether this question is free or paid, how many free questions are left today and the owner's balance. Use it when the owner asks about questions, limits or their balance; don't bring it up otherwise.
 - If you are not sure, or the guide does not cover it, say so plainly. Never invent specifications, part numbers, prices or procedures.
 - Safety first: high-voltage, airbag, brake and steering problems go to a qualified EV shop. Never tell the owner to open high-voltage parts, bypass safety systems or use security access.
 - Ocean Live can only read the car and, when asked, clear codes or restart a module while parked. It cannot change settings, update software or unlock features. Don't suggest it can.
@@ -235,7 +236,15 @@ export default {
     };
     const link = (id: number | null) => commitSuggestions(suggest, id);
     try {
-      const { answer, micros } = await ask(client, env, body, suggest, spend);
+      const allowanceText = allowanceFor({
+        signedIn: !!account,
+        canPay,
+        paid,
+        freeLeftAfter: paid ? 0 : Math.max(0, deviceLimit - deviceCount - 1),
+        freePerDay: deviceLimit,
+        balanceCents: balance,
+      });
+      const { answer, micros } = await ask(client, env, body, suggest, spend, allowanceText);
       if (!answer) {
         // Nothing the tool accepted is stored for a question that ends without an answer.
         suggest.pending = [];
@@ -396,6 +405,34 @@ async function log(env: Env, request: Request, body: AskBody, answer: string, mi
   }
 }
 
+/** What the server tells Claude about this question's free/paid status, so it can answer "how many questions do I have left?". */
+export function allowanceFor(a: {
+  signedIn: boolean;
+  canPay: boolean;
+  paid: boolean;
+  freeLeftAfter: number;
+  freePerDay: number;
+  balanceCents: number;
+}): string {
+  const usd = (c: number) => `$${(Math.max(0, c) / 100).toFixed(2)}`;
+  const lines = [
+    `Free questions per day (UTC): ${a.freePerDay}. Free questions left today after this one: ${a.freeLeftAfter}.`,
+    a.paid
+      ? `This question is paid from the owner's balance: its real AI cost, rounded up to the next cent, is taken after the answer.`
+      : `This question is free.`,
+  ];
+  if (a.canPay) {
+    lines.push(
+      `Balance before this question: ${usd(a.balanceCents)}. After the free questions, each question is paid from the balance automatically (usually 1-3 cents). Balance comes from the pre-registration reward or from Ocean Live; it can't be bought in the app.`,
+    );
+  } else if (!a.signedIn) {
+    lines.push(`Not signed in: no balance can be used; questions stop for the day after the free ones.`);
+  } else {
+    lines.push(`This account can't use a balance.`);
+  }
+  return lines.join("\n");
+}
+
 /**
  * Asks Claude, running its tool calls (lookup_fault_codes, suggest_knowledge) in a manual loop of at most
  * MAX_TOOL_ROUNDS tool rounds. The cost of every round is summed, so a paid question is charged (once) for all of
@@ -407,17 +444,19 @@ async function ask(
   body: AskBody,
   suggest: SuggestContext,
   spend: { micros: number },
+  allowance = "",
 ): Promise<{ answer: string; micros: number }> {
+  // Per-question context goes in the last user turn, after the cached system prompt and tools.
   const messages: Anthropic.Beta.BetaMessageParam[] = body.messages.map((m, i) => {
     const last = i === body.messages.length - 1;
-    if (!last || !body.car) return { role: m.role, content: m.text };
-    return {
-      role: "user",
-      content: [
-        { type: "text", text: `<car_readings source="Ocean Live" note="snapshot from the app, may be old">\n${body.car}\n</car_readings>` },
-        { type: "text", text: m.text },
-      ],
-    };
+    if (!last) return { role: m.role, content: m.text };
+    const content: Anthropic.Beta.BetaTextBlockParam[] = [];
+    if (allowance) content.push({ type: "text", text: `<question_allowance source="Ocean Live server">\n${allowance}\n</question_allowance>` });
+    if (body.car) {
+      content.push({ type: "text", text: `<car_readings source="Ocean Live" note="snapshot from the app, may be old">\n${body.car}\n</car_readings>` });
+    }
+    content.push({ type: "text", text: m.text });
+    return { role: "user", content };
   });
 
   // Pending and rejected suggestions are never here, only approved, non-retired notes.
