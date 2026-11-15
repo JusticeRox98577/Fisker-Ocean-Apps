@@ -1,14 +1,14 @@
 # Ocean Live Mail
 
-Private webmail for the `@oceanlive.org` mailboxes, at **https://mail.oceanlive.org**, and the sender
-of the Ocean Live news mailing list. It is a Cloudflare Worker with a small web app; only the people
-who run Ocean Live can sign in.
+Private webmail for the `@oceanlive.org` mailboxes, and the sender of the Ocean Live news mailing
+list. It is a Cloudflare Worker with a small web app; only the people who run Ocean Live can sign
+in.
 
 ## What it does
 
-- **Receives mail.** Cloudflare Email Routing hands mail for oceanlive.org to the Worker. Mail for a
-  known mailbox is parsed ([postal-mime](https://github.com/postalsys/postal-mime)) and stored; mail
-  for any other address is rejected. `+tags` work: `name+tag@oceanlive.org` lands in `name@`.
+- **Receives mail** for oceanlive.org. Mail for a known mailbox is parsed
+  ([postal-mime](https://github.com/postalsys/postal-mime)) and stored; mail for any other address
+  is rejected. `+tags` work: `name+tag@oceanlive.org` lands in `name@`.
 - **Sends mail** through the [Resend](https://resend.com) API, always from the signed-in mailbox,
   with a copy kept in Sent.
 - **Web app** (`public/`, plain HTML, CSS and JS in the oceanlive.org look): Inbox, Sent, Trash,
@@ -17,8 +17,8 @@ who run Ocean Live can sign in.
 - **Mailing list** (Ocean Live news: new releases and important fixes, a few emails a year).
   People sign up on oceanlive.org and must confirm by email before they are added (double opt-in).
   Every news email says why it was sent and has an unsubscribe link plus a one-click unsubscribe
-  header (RFC 8058); unsubscribing deletes the address. The owner can also invite app testers: each
-  tester gets one email asking if they want the news and is added only if they click its link.
+  header (RFC 8058); unsubscribing deletes the address. App testers may get one email asking if
+  they want the news, and are added only if they click its link.
 - **Health check:** `GET /api/health` answers `{ "ok": true, "service": "mail" }` for the status page.
 
 ## Privacy and security

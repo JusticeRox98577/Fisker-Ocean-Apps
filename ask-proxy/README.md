@@ -3,22 +3,19 @@
 A small Cloudflare Worker that the Ocean Live apps talk to. It does three things:
 
 * **"Any questions?"**: the apps send a question here and the Worker asks Claude. It holds the
-  Anthropic API key, so the apps never see it, and keeps use within daily limits and a monthly
-  spend cap.
+  Anthropic API key, so the apps never see it, and keeps use within fair limits.
 * **Accounts**: sign-in with Apple (iPhone), Google or a 6-digit email code. There are no
   passwords.
 * **The web account page** at [account.oceanlive.org](https://account.oceanlive.org), where an
   owner can see, rename, sign out of or delete their account without the app.
 
-It answers on `api.oceanlive.org`. Older app builds use its `workers.dev` address, which keeps
-working.
+It answers on `api.oceanlive.org`.
 
 ## How "Any questions?" answers
 
 Claude (Claude Opus 5.5) answers from [`knowledge/ocean-guide.md`](knowledge/ocean-guide.md),
-which is sent as a cached system prompt, and looks fault codes up on demand in a table stored in
-Workers KV. That table is never committed to this public repo
-(see [`scripts/build-dtc-kv.mjs`](scripts/build-dtc-kv.mjs)).
+and looks fault codes up on demand in a table kept on the server. That table is not part of this
+public repo.
 
 For research into what owners ask and how good the answers are, each answered question is logged
 with its answer, the readings sent with it and the install ID (and the account, once signed in).
@@ -29,7 +26,7 @@ only keep salted hashes of them. [PRIVACY.md](../PRIVACY.md) has the details.
 
 The Worker checks each sign-in itself: Apple and Google identity tokens are verified against the
 providers' published keys (signature, issuer, audience, expiry, and the nonce when the app sent
-one), and email codes expire after 10 minutes and allow only a few tries. It then issues its own
+one), and email codes expire after a few minutes and allow only a few tries. It then issues its own
 random session token. Only a SHA-256 hash of each token is stored.
 
 The apps keep the token and send it as `Authorization: Bearer <token>`. An email that Google or
@@ -42,16 +39,14 @@ server.
 ## The web account page
 
 `account.oceanlive.org` is served by this same Worker from the files in [`account/`](account/):
-plain HTML, CSS and one script module, with no third-party code unless Google sign-in is turned
-on. Those files are only served on that host; on `api.oceanlive.org` and `workers.dev` the same
-paths are 404.
+plain HTML, CSS and one script module, with no third-party code except Google's sign-in button.
+Those files are only served on that host.
 
-* **Sign in** with an email code, or with Google when it is set up. Sign in with Apple is not
-  offered on the web: it would need an Apple "Services ID" and web redirect that this server does
-  not have. Owners who use Apple in the app can sign in with an email code sent to the address
-  their account has (for "Hide My Email", the private relay address, which forwards it).
-  The page never creates an account: a sign-in that matches no account is refused with
-  `no_account`, so nobody ends up in a new, empty account by mistake.
+* **Sign in** with an email code or with Google. Sign in with Apple is not offered on the web.
+  Owners who use Apple in the app can sign in with an email code sent to the address their
+  account has (for "Hide My Email", the private relay address, which forwards it).
+  The page never creates an account: a sign-in that matches no account is refused, so nobody
+  ends up in a new, empty account by mistake.
 * **See** the account's email, name, created date and linked sign-in methods. **Rename** it,
   **sign out** of this browser, or **delete** the account (after typing a confirmation).
 
