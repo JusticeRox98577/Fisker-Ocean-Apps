@@ -632,6 +632,7 @@
     <string name="ask_error_signin">Vuelve a iniciar sesión para hacer preguntas.</string>
     <string name="balance_label">Saldo: %1$s</string>
     <string name="balance_note">Paga preguntas extra a la IA y futuros complementos.</string>
+    <string name="balance_auto">Se usa automáticamente para respuestas extra en ¿Preguntas? después de tus 10 gratis de cada día.</string>
     <string name="badge_early_supporter">Seguidor pionero</string>
     <string name="badge_early_supporter_note">Gracias por apoyar Ocean Live antes de su lanzamiento.</string>
     <string name="reward_added">Recompensa de prerregistro añadida: %1$s y la insignia Seguidor pionero. ¡Gracias!</string>

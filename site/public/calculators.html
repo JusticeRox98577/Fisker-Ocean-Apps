@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Charging and 12V calculators · Ocean Live</title>
+<meta name="description" content="Work out how long a Fisker Ocean charge takes and what it costs, and check what a 12V battery voltage means, using the figures in Ocean Live's owner guide.">
+<link rel="canonical" href="https://oceanlive.org/calculators">
+<meta property="og:url" content="https://oceanlive.org/calculators">
+<meta name="theme-color" content="#0B2545">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ocean Live">
+<meta property="og:title" content="Charging and 12V calculators · Ocean Live">
+<meta property="og:description" content="Work out how long a Fisker Ocean charge takes and what it costs, and check what a 12V battery voltage means, using the figures in Ocean Live's owner guide.">
+<meta property="og:image" content="https://oceanlive.org/icons/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="The Ocean Live app icon">
+<meta name="twitter:card" content="summary">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
+<script type="module" src="/js/calculators.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="paper" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<header class="site-header" id="top">
+  <nav class="wrap nav" aria-label="Main">
+    <a class="brand" href="/" aria-label="Ocean Live home">
+      <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+      Ocean Live
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="/#features">Features</a></li>
+      <li><a href="/help">Help</a></li>
+      <li><a href="/codes">Fault codes</a></li>
+      <li><a href="/calculators" aria-current="page">Calculators</a></li>
+      <li><a href="/releases">Releases</a></li>
+      <li><a href="/roadmap">Roadmap</a></li>
+      <li><a href="/site-index">All pages</a></li>
+      <li class="nav-menu-only"><a href="/#download">Downloads</a></li>
+    </ul>
+    <a class="btn btn-primary btn-small nav-cta" href="/#download">Downloads</a>
+  </nav>
+</header>
+
+<main id="main">
+<section class="doc-hero">
+  <div class="wrap narrow">
+    <div class="lightbar" aria-hidden="true"></div>
+    <div class="eyebrow">Calculators</div>
+    <h1>Charging and 12V calculators</h1>
+    <p>Rough numbers from what you type in. Ocean Live itself measures what your own car does.</p>
+  </div>
+</section>
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+<nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li aria-current="page">Calculators</li></ol></nav>
+    <ul class="toc" aria-label="Calculators">
+      <li><a href="#charge">Charging time and cost</a></li>
+      <li><a href="#twelve">12V battery check</a></li>
+    </ul>
+
+    <h2 id="charge">Charging time and cost</h2>
+    <p class="calc-nojs">The calculators need JavaScript. The sums are written out under <a href="#charge-assumptions">What it assumes</a>, if you'd rather do them by hand.</p>
+    <form class="calc" id="charge-calc" data-calc="charge" novalidate>
+      <div class="calc-grid">
+        <div class="field">
+          <label for="c-model">Car</label>
+          <select id="c-model" class="calc-input">
+            <option value="106.5">Ultra, Extreme or One (about 106.5 kWh usable)</option>
+            <option value="75">Sport (about 75 kWh usable)</option>
+            <option value="custom">My own figure</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="c-kwh">Usable battery (kWh)</label>
+          <input id="c-kwh" class="calc-input" type="number" inputmode="decimal" min="1" max="200" step="0.1" value="106.5">
+        </div>
+        <div class="field">
+          <label for="c-start">Start charge (%)</label>
+          <input id="c-start" class="calc-input" type="number" inputmode="numeric" min="0" max="100" step="1" value="20">
+        </div>
+        <div class="field">
+          <label for="c-end">End charge (%)</label>
+          <input id="c-end" class="calc-input" type="number" inputmode="numeric" min="0" max="100" step="1" value="80">
+        </div>
+        <div class="field">
+          <label for="c-kw">Average charging power (kW)</label>
+          <input id="c-kw" class="calc-input" type="number" inputmode="decimal" min="0.5" max="400" step="0.1" value="11">
+        </div>
+        <div class="field">
+          <label for="c-loss">Charging losses (%)</label>
+          <input id="c-loss" class="calc-input" type="number" inputmode="decimal" min="0" max="50" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="c-price">Price per kWh</label>
+          <input id="c-price" class="calc-input" type="number" inputmode="decimal" min="0" max="10" step="0.01" placeholder="Your price">
+        </div>
+        <div class="field">
+          <label for="c-cur">Currency symbol</label>
+          <input id="c-cur" class="calc-input" type="text" maxlength="4" value="$" autocomplete="off">
+        </div>
+      </div>
+      <output class="calc-out" for="c-kwh c-start c-end c-kw c-loss c-price" aria-live="polite"></output>
+    </form>
+    <h3 id="charge-assumptions">What it assumes</h3>
+    <ul>
+      <li>Energy into the battery = usable battery × (end % − start %). The default capacities are the ones Ocean Live assumes (from the <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/ask-proxy/knowledge/ocean-guide.md" rel="noopener">owner guide</a>): <ul><li><strong>Sport:</strong> single front motor, front-wheel drive, smaller LFP (lithium iron phosphate) battery. Ocean Live assumes about 75 kWh usable for it.</li><li><strong>Ultra</strong> and <strong>Extreme</strong> (the launch edition was called <strong>One</strong>): two motors, all-wheel drive, larger NMC battery. Ocean Live assumes about 106.5 kWh usable.</li></ul></li>
+      <li>Energy from the charger = energy into the battery ÷ (1 − losses). Losses are 0 unless you enter a figure: some energy is always lost as heat, and how much varies, so the real cost is a bit higher.</li>
+      <li>Time = energy from the charger ÷ the average power you enter. Real charging isn't constant: DC fast charging peaks are lower than the brochure figures in practice and depend heavily on battery temperature and state of charge; a cold pack charges slowly. Ocean Live's charging curve shows what the owner's own car actually does. On AC, the guide says the Ocean charges at up to about 11 kW on a suitable charger, so a bigger AC charger won't be faster than that.</li>
+      <li>Cost = energy from the charger × your price per kWh (shown once you enter a price). Prices and fees vary by charger and network; nothing here knows your tariff.</li>
+      <li>Your own numbers: the app's <span class="path"><span>Trips</span></span> tab shows each charge's curve, average power and cost, and <span class="path"><span>Battery</span><i>→</i><span>Battery health</span></span> measures your car's usable capacity.</li>
+    </ul>
+
+    <h2 id="twelve">12V battery check</h2>
+    <p>The Ocean has a conventional 12 V battery that runs the car's computers, locks and contactors. If it goes flat the car cannot start its high-voltage system. The high-voltage battery tops the 12 V up while the car is awake or charging, not continuously while asleep.</p>
+    <form class="calc" id="twelve-calc" data-calc="twelve" novalidate>
+      <div class="calc-grid">
+        <div class="field">
+          <label for="t-volts">12V reading (volts)</label>
+          <input id="t-volts" class="calc-input" type="number" inputmode="decimal" min="0" max="20" step="0.01" placeholder="12.55">
+        </div>
+        <fieldset class="field">
+          <legend>When was it read?</legend>
+          <label class="choice"><input type="radio" name="t-when" value="rest" checked> At rest, after the car slept</label>
+          <label class="choice"><input type="radio" name="t-when" value="awake"> While the car was awake or charging</label>
+        </fieldset>
+      </div>
+      <output class="calc-out" for="t-volts" aria-live="polite"></output>
+    </form>
+    <h3 id="twelve-meaning">What the voltages mean</h3>
+    <p>From the owner guide: resting voltage is read after the car has slept, before it starts charging the 12 V. 12.4 V or more is healthy. Resting under 12.4 V means the 12 V battery is weak or something draws power while parked. Under 12.0 V the car may not wake up. Over 13.2 V the car's DC-DC converter is charging the 12 V, which is normal while the car is awake. A healthy car loses only a few hundredths of a volt a night.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Reading</th><th scope="col">What it means</th></tr></thead>
+        <tbody>
+          <tr><td>12.4 V or more, at rest</td><td>Healthy</td></tr>
+          <tr><td>Under 12.4 V, at rest</td><td>The 12V battery is weak or something draws power while parked</td></tr>
+          <tr><td>Under 12.0 V</td><td>The car may not wake up</td></tr>
+          <tr><td>Over 13.2 V</td><td>The car's DC-DC converter is charging the 12V, normal while it's awake</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Leaving an OBD adapter plugged in drains the 12 V a little. A vLinker FD+ uses about 51 mA awake and about 3 mA asleep (Vgate's figures). Owners who park for weeks should unplug it. Ocean Live's 12V screen and <strong>Watch 12V while the car sleeps</strong> read this for you: see <a href="/glossary/12v-resting-voltage">12V resting voltage</a>.</p>
+    <p class="file-meta">These calculators run in your browser and send nothing anywhere. Not a dealer diagnosis.</p>
+    </div>
+  </div>
+</article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/">
+          <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+          Ocean Live
+        </a>
+        <p>Battery, 12V, trips and fault codes for the Fisker Ocean, read from the car through a Bluetooth OBD adapter.</p>
+      </div>
+      <div>
+        <h2>App</h2>
+        <ul>
+          <li><a href="/#download">Download</a></li>
+          <li><a href="/releases">Releases</a></li>
+          <li><a href="/roadmap">Roadmap</a></li>
+          <li><a href="/help">Help</a></li>
+          <li><a href="/codes">Fault codes</a></li>
+          <li><a href="/glossary">Glossary</a></li>
+          <li><a href="/calculators">Calculators</a></li>
+          <li><a href="/news">News by email</a></li>
+          <li><a href="/#faq">FAQ</a></li>
+          <li><a href="/site-index">All pages</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Project</h2>
+        <ul>
+          <li><a href="/about">About</a></li>
+          <li><a href="/press">Press kit</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">GitHub</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/LICENSE" rel="noopener">License</a></li>
+          <li><a href="/credits">Credits</a></li>
+          <li><a href="https://status.oceanlive.org/" rel="noopener">Service status</a></li>
+          <li><a href="mailto:justice@oceanlive.org">Contact</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">Report a bug</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/security/advisories/new" rel="noopener">Report a vulnerability</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Privacy</h2>
+        <ul>
+          <li><a href="/privacy">Privacy policy</a></li>
+          <li><a href="https://account.oceanlive.org/" rel="noopener">Your account</a></li>
+          <li><a href="/delete-account">Delete your account</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="disclaimer">
+      <p>Ocean Live is an independent, owner-made app. It is not affiliated with or endorsed by Fisker Inc. "Fisker" and "Fisker Ocean" are trademarks of their respective owners and are used only to describe the vehicle the app works with. Other names are trademarks of their owners.</p>
+      <p>3D model: <a href="https://sketchfab.com/3d-models/fisker-ocean-low-poly-f506bfe876864c04b68bdfc59070739a" rel="noopener">"Fisker Ocean (low-poly)"</a> by <a href="https://sketchfab.com/LagzDesign" rel="noopener">LagzDesign</a>, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>, changed: drawn as lines, compressed, doors separated. <a href="/credits">All credits</a>.</p>
+      <p>Use at your own risk. Values shown by the app are not a dealer diagnosis. © 2026 Ocean Live.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

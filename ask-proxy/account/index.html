@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#071A33">
   <title>Your account · Ocean Live</title>
-  <meta name="description" content="See, rename, sign out of or delete your Ocean Live account.">
+  <meta name="description" content="See, rename, sign out of or delete your Ocean Live account, and vote on the Ocean Live roadmap.">
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -81,7 +81,8 @@
       <div class="stack wallet" aria-labelledby="balance-title">
         <h2 id="balance-title">Balance</h2>
         <p class="balance"><span id="acc-balance">$0.00</span></p>
-        <p class="small muted">Spent in the app on extra "Any questions?" questions after the free ones each day, and on add-ons later. It can't be cashed out. <a href="https://oceanlive.org/preregistration-terms">Reward terms</a></p>
+        <p id="balance-auto" class="small">Used automatically for extra "Any questions?" answers after your <span id="free-daily">10</span> free ones each day.</p>
+        <p class="small muted">Add-ons can use it later too. It can't be cashed out. <a href="https://oceanlive.org/preregistration-terms">Reward terms</a></p>
         <div id="badges" class="badges" hidden>
           <h3 class="small muted">Badges</h3>
           <ul id="badge-list" class="badge-list"></ul>
@@ -112,18 +113,32 @@
           <li>your sign-in sessions on every device, so they are all signed out</li>
           <li>your logged "Any questions?" questions with their answers and the readings sent with them</li>
           <li>your balance, its history of credits and spends, and your badges. Any balance left is lost.</li>
+          <li>what you shared in "Any questions?" that wasn't approved yet or was turned down, and your app feedback</li>
+          <li>your roadmap votes</li>
           <li>any personal daily question limit set for your account</li>
         </ul>
-        <p class="small muted">Car data on your phones is not touched: it was never on the server. Short-lived counters expire on their own within about a day. If you sign in again later, a new, empty account is made. <a href="https://oceanlive.org/delete-account">More about deleting</a></p>
+        <p class="small muted">Car data on your phones is not touched: it was never on the server. Notes an admin already approved from what you shared stay, with nothing linking them to you. Short-lived counters expire on their own within about a day. If you sign in again later, a new, empty account is made. <a href="https://oceanlive.org/delete-account">More about deleting</a></p>
         <button id="delete-open" class="btn btn-danger" type="button">Delete account…</button>
       </div>
+    </section>
+
+    <!-- The roadmap: shown when signed in, and at /roadmap (signed out it's read-only). Who voted is never shown. -->
+    <section id="roadmap" class="card" aria-labelledby="roadmap-title" hidden>
+      <div class="stack">
+        <h2 id="roadmap-title" tabindex="-1">Roadmap</h2>
+        <p class="small muted">What's planned for Ocean Live. Vote for what you'd like most: one vote per item, and you can take it back. Only the number of votes is shown, never who voted. <a href="https://oceanlive.org/roadmap">Public roadmap</a></p>
+        <p id="roadmap-signin" class="small" hidden>Sign in above to vote.</p>
+        <p id="roadmap-review" class="small" hidden>This account can't vote.</p>
+        <p id="roadmap-error" class="field-error" role="alert"></p>
+      </div>
+      <div id="roadmap-groups" class="stack-lg"></div>
     </section>
   </main>
 
   <dialog id="delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-desc">
     <form id="delete-form" class="stack" method="dialog" novalidate>
       <h2 id="delete-title">Delete your account?</h2>
-      <p id="delete-desc" class="small">This can't be undone. Your account, sign-ins, sessions, logged questions, balance and badges are deleted.</p>
+      <p id="delete-desc" class="small">This can't be undone. Your account, sign-ins, sessions, logged questions, balance, badges and roadmap votes are deleted.</p>
       <label for="delete-confirm">Type <strong>delete</strong> to confirm</label>
       <input id="delete-confirm" name="confirm" type="text" autocomplete="off" spellcheck="false" autocapitalize="off">
       <p id="delete-error" class="field-error" role="alert"></p>
@@ -137,6 +152,7 @@
   <footer class="foot small muted">
     <a href="https://oceanlive.org/privacy">Privacy</a>
     <a href="https://oceanlive.org/delete-account">Deleting an account</a>
+    <a href="/roadmap">Roadmap</a>
     <a href="mailto:justice@oceanlive.org">Contact</a>
   </footer>
 </body>

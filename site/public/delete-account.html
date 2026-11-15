@@ -39,12 +39,13 @@
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
     <ul class="nav-links" id="nav-links">
-      <li><a href="/#live">Live data</a></li>
       <li><a href="/#features">Features</a></li>
-      <li><a href="/#battery">12V</a></li>
-      <li><a href="/#faults">Fault codes</a></li>
-      <li><a href="/#privacy">Privacy</a></li>
-      <li><a href="/#faq">FAQ</a></li>
+      <li><a href="/help">Help</a></li>
+      <li><a href="/codes">Fault codes</a></li>
+      <li><a href="/calculators">Calculators</a></li>
+      <li><a href="/releases">Releases</a></li>
+      <li><a href="/roadmap">Roadmap</a></li>
+      <li><a href="/site-index">All pages</a></li>
       <li class="nav-menu-only"><a href="/#download">Downloads</a></li>
     </ul>
     <a class="btn btn-primary btn-small nav-cta" href="/#download">Downloads</a>
@@ -86,9 +87,13 @@
           <tr><td>Sign-in sessions on all your devices</td><td>Deleted, so every device is signed out</td></tr>
           <tr><td>Logged "Any questions?" questions linked to the account, with their answers and the readings sent with them (this includes questions the phone asked before you signed in, which are linked at sign-in), and any reports you made about answers</td><td>Deleted</td></tr>
           <tr><td>Any personal daily question limit set for your account</td><td>Deleted</td></tr>
+          <tr><td>What you shared in "Any questions?" (fault code meanings, fixes and tips, car facts) that hasn't been approved yet or was turned down</td><td>Deleted</td></tr>
+          <tr><td>Feedback about the app you gave in "Any questions?"</td><td>Deleted</td></tr>
+          <tr><td>Your votes on the roadmap</td><td>Deleted (the vote counts go down)</td></tr>
+          <tr><td>Notes an admin already approved from what you shared</td><td>Kept, used in answers and shown at <a href="/community">oceanlive.org/community</a>. They hold no account ID, install ID, question link or name: those links were removed when the note was approved. Ask below if you want one taken down</td></tr>
           <tr><td>Your balance of Ocean Live credit, its ledger of credits and spends (including corrections made on the admin page, their notes and the admin log entries about them), and badges such as Early supporter</td><td>Deleted. Unused credit is lost and can't be paid out</td></tr>
           <tr><td>The SHA-256 hash of the store purchase reference (Google Play purchase token or App Store app transaction ID) of a reward the account claimed, with the date it was claimed</td><td>Kept, with no account ID, email address or anything else, only so the same store purchase can't be rewarded again to a new account</td></tr>
-          <tr><td>Short-lived counters (questions per day, email code requests per hour), stored only as hashes or IDs</td><td>Not deleted by this; they expire on their own within about a day</td></tr>
+          <tr><td>Short-lived counters (questions, things shared and roadmap vote changes per day, email code requests per hour), stored only as hashes or IDs</td><td>Not deleted by this; they expire on their own within about a day</td></tr>
           <tr><td>A sign-in code entry (your email address and a hash of a code you asked for but didn't use)</td><td>Deleted. Unused entries are also removed automatically within a day after the code expires</td></tr>
           <tr><td>Car data on your phone (drives, charges, 12V and fault history, settings)</td><td>Not affected. It was never on the server. Clear it in the app or delete the app to remove it.</td></tr>
         </tbody>
@@ -106,7 +111,7 @@
     </ul>
 
     <h2 id="questions-only">Only delete my logged questions</h2>
-    <p>To have your logged questions (and any reports about them) deleted without deleting an account, or to ask what is held, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> (or open an issue on GitHub; issues are public). They are deleted within 30 days. If you're signed in, include your account ID from <span class="path"><span>Settings</span><i>→</i><span>Account</span></span>. The app doesn't show the install ID, so for questions asked without signing in, say roughly when you asked and what about. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
+    <p>To have your logged questions (and any reports about them) deleted without deleting an account, or to ask what is held, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> (or open an issue on GitHub; issues are public). They are deleted within 30 days. If you're signed in, include your account ID from <span class="path"><span>Settings</span><i>→</i><span>Account</span></span>. The app doesn't show the install ID, so for questions asked without signing in, say roughly when you asked and what about. What you shared in "Any questions?" can be deleted the same way. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
     </div>
   </div>
 </article>
@@ -126,17 +131,22 @@
         <h2>App</h2>
         <ul>
           <li><a href="/#download">Download</a></li>
-          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">Releases</a></li>
-          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">Changelog</a></li>
+          <li><a href="/releases">Releases</a></li>
+          <li><a href="/roadmap">Roadmap</a></li>
           <li><a href="/help">Help</a></li>
           <li><a href="/codes">Fault codes</a></li>
+          <li><a href="/glossary">Glossary</a></li>
+          <li><a href="/calculators">Calculators</a></li>
           <li><a href="/news">News by email</a></li>
           <li><a href="/#faq">FAQ</a></li>
+          <li><a href="/site-index">All pages</a></li>
         </ul>
       </div>
       <div>
         <h2>Project</h2>
         <ul>
+          <li><a href="/about">About</a></li>
+          <li><a href="/press">Press kit</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">GitHub</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/LICENSE" rel="noopener">License</a></li>
           <li><a href="/credits">Credits</a></li>

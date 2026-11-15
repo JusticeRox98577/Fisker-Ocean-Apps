@@ -224,6 +224,7 @@ fun AccountSection() {
             Spacer(Modifier.height(10.dp))
             Text(stringResource(R.string.balance_label, money(cents)), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             Text(stringResource(R.string.balance_note), color = Dim, fontSize = 12.sp)
+            Text(stringResource(R.string.balance_auto), color = Dim, fontSize = 12.sp)
         }
         if (account != null && Balance.EARLY_SUPPORTER in account.badges) {
             Spacer(Modifier.height(10.dp))

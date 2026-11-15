@@ -30,8 +30,14 @@
  *   GET  /admin/log                 owners only: the last 100 admin actions
  *   GET  /admin/usage, /admin/usage/questions, /admin/reports, POST /admin/reports/resolve
  *                                   the Usage tab, owners and admins (see usage.ts)
+ *   GET  /admin/knowledge, /admin/feedback, POST /admin/knowledge/{approve,reject,edit,retire}, /admin/feedback/done
+ *                                   the Knowledge and Feedback tabs, owners and admins (see knowledge.ts)
+ *   GET  /admin/roadmap, POST /admin/roadmap/{save,order,delete,promote}
+ *                                   the Roadmap tab, owners and admins (see roadmap.ts)
+ *   GET  /admin/status              the Home tab's live status: status.oceanlive.org/api/status, fetched by the
+ *                                   server (the page's CSP stays same-origin) and cut down to a summary
  * Writes are limited to ADMIN_WRITE_LIMIT (100) per admin per day and each one is written to admin_log.
- * Tables: migrations/0005_admin.sql, 0006_usage.sql.
+ * Tables: migrations/0005_admin.sql, 0006_usage.sql, 0007_knowledge.sql, 0008_roadmap.sql.
  */
 
 import page from "../admin/index.html?raw";
@@ -50,6 +56,8 @@ import {
   type AuthEnv,
 } from "./auth";
 import { badgesOf, balanceOf, EARLY_SUPPORTER } from "./balance";
+import { isKnowledgePath, knowledgeAdmin } from "./knowledge";
+import { isRoadmapAdminPath, roadmapAdmin } from "./roadmap";
 import { listReports, recentQuestions, resolveReport, usageSummary, type UsageEnv } from "./usage";
 
 export interface AdminEnv extends AuthEnv, UsageEnv {
@@ -57,7 +65,13 @@ export interface AdminEnv extends AuthEnv, UsageEnv {
   ADMIN_EMAILS?: string;
   /** Balance, badge, admin and report changes per admin per day. Default 100. */
   ADMIN_WRITE_LIMIT?: string;
+  /** Optional service binding to the status page's Worker, for the Home tab's status summary. Without it: fetch(STATUS_URL). */
+  STATUS?: Fetcher;
+  /** Tests only: replaces fetch() for the status summary. */
+  STATUS_FETCH?: typeof fetch;
 }
+
+export const STATUS_URL = "https://status.oceanlive.org/api/status";
 
 export const ADMIN_HOST = "admin.oceanlive.org";
 export const ADMIN_ORIGIN = `https://${ADMIN_HOST}`;
@@ -124,12 +138,18 @@ export async function adminSite(request: Request, env: AdminEnv, url: URL): Prom
       return cookieToken(request) ? clearCookie(res) : res;
     }
     const owner = admin.role === "owner";
+    // The Knowledge and Feedback tabs (knowledge.ts), owners and admins; writes count against the daily limit.
+    if (isKnowledgePath(path)) return await knowledgeAdmin(request, db, env.ASK_KV, admin.email, url, () => countWrite(env, admin.email));
+    // The Roadmap tab (roadmap.ts), owners and admins.
+    if (isRoadmapAdminPath(path)) return await roadmapAdmin(request, db, admin.email, path, () => countWrite(env, admin.email));
     const notFound = () => json({ error: "not_found" }, 404);
     const ownerOnly = () => json({ error: "owner_only" }, 403);
 
     switch (path) {
       case "/admin/me":
         return read ? json({ email: admin.email, owner }) : json({ error: "method" }, 405);
+      case "/admin/status":
+        return read ? json(await statusSummary(env)) : json({ error: "method" }, 405);
       case "/admin/accounts":
         return read ? json({ accounts: await findAccounts(env, db, url.searchParams) }) : json({ error: "method" }, 405);
       case "/admin/admins":
@@ -165,6 +185,45 @@ export async function adminSite(request: Request, env: AdminEnv, url: URL): Prom
   } catch (e) {
     if (e instanceof Error && e.message === "jwks") return json({ error: "provider_unavailable" }, 502);
     return json({ error: "bad_request" }, 400);
+  }
+}
+
+// ── Status summary (Home tab) ───────────────────────────────────
+
+const STATES = new Set(["up", "down", "unknown"]);
+const OVERALL = new Set(["up", "partial", "down", "unknown"]);
+
+/**
+ * The status page's answer, cut down to what the Home tab shows. Never throws: when the status page can't be
+ * reached (5 seconds) or answers something unexpected, { ok: false }.
+ */
+export async function statusSummary(env: AdminEnv) {
+  try {
+    const signal = AbortSignal.timeout(5000);
+    const req = new Request(STATUS_URL, { headers: { Accept: "application/json" }, signal });
+    const res = env.STATUS_FETCH ? await env.STATUS_FETCH(req) : env.STATUS ? await env.STATUS.fetch(req) : await fetch(req);
+    if (!res.ok) return { ok: false, error: "status_unavailable" };
+    const data = (await res.json()) as Record<string, unknown>;
+    const overall = typeof data.overall === "string" && OVERALL.has(data.overall) ? data.overall : "unknown";
+    const services = (Array.isArray(data.services) ? data.services : []).slice(0, 20).map((raw) => {
+      const s = (raw ?? {}) as Record<string, unknown>;
+      return {
+        name: typeof s.name === "string" ? s.name.slice(0, 80) : "?",
+        state: typeof s.state === "string" && STATES.has(s.state) ? s.state : "unknown",
+        latencyMs: typeof s.latencyMs === "number" && Number.isFinite(s.latencyMs) ? Math.round(s.latencyMs) : null,
+        uptime24h: typeof s.uptime24h === "number" && Number.isFinite(s.uptime24h) ? s.uptime24h : null,
+      };
+    });
+    return {
+      ok: true,
+      overall,
+      stale: data.stale === true,
+      checkedAt: typeof data.checkedAt === "number" ? new Date(data.checkedAt).toISOString() : null,
+      notice: typeof data.notice === "string" ? data.notice.slice(0, 500) : "",
+      services,
+    };
+  } catch {
+    return { ok: false, error: "status_unavailable" };
   }
 }
 

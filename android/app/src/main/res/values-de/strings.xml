@@ -613,6 +613,7 @@
     <string name="ask_error_signin">Melde dich erneut an, um Fragen zu stellen.</string>
     <string name="balance_label">Guthaben: %1$s</string>
     <string name="balance_note">Bezahlt zusätzliche KI-Fragen und künftige Erweiterungen.</string>
+    <string name="balance_auto">Wird automatisch für weitere Antworten in Fragen? genutzt, wenn deine 10 kostenlosen pro Tag aufgebraucht sind.</string>
     <string name="badge_early_supporter">Früher Unterstützer</string>
     <string name="badge_early_supporter_note">Danke, dass du Ocean Live schon vor dem Start unterstützt hast.</string>
     <string name="reward_added">Prämie für die Vorregistrierung hinzugefügt: %1$s und das Abzeichen „Früher Unterstützer“. Danke!</string>

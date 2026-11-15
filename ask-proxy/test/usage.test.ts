@@ -150,13 +150,14 @@ interface Summary {
 const langCount = (s: Summary, lang: string) => s.languages.find((l) => l.lang === lang)?.questions ?? 0;
 
 describe("usage endpoints: who can see them", () => {
-  it("are the admin page's first view", async () => {
+  it("are the admin page's first tab after Home", async () => {
     const s = server();
     const page = await (await s.call(`${ADMIN}/`)).text();
     const tabs = [...page.matchAll(/role="tab"[^>]*aria-controls="panel-(\w+)"/g)].map((m) => m[1]);
-    expect(tabs[0]).toBe("usage");
-    expect(page).toMatch(/id="tab-usage"[^>]*aria-selected="true"/);
-    expect(page).toMatch(/id="panel-usage"(?![^>]*hidden)[^>]*>/);
+    expect(tabs.slice(0, 2)).toEqual(["home", "usage"]);
+    expect(page).toMatch(/id="tab-home"[^>]*aria-selected="true"/);
+    expect(page).toMatch(/id="panel-home"(?![^>]*hidden)[^>]*>/);
+    expect(page).toMatch(/id="panel-usage"[^>]*hidden/);
     const js = await (await s.call(`${ADMIN}/admin.js`)).text();
     for (const path of ["/admin/usage", "/admin/usage/questions", "/admin/reports", "/admin/reports/resolve"]) expect(js).toContain(path);
   });

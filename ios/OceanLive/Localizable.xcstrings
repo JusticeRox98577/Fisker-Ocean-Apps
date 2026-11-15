@@ -13767,6 +13767,34 @@
         }
       }
     },
+    "Used automatically for extra Any questions? answers after your 10 free ones each day.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird automatisch für weitere Antworten in Fragen? genutzt, wenn deine 10 kostenlosen pro Tag aufgebraucht sind."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se usa automáticamente para respuestas extra en ¿Preguntas? después de tus 10 gratis de cada día."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisé automatiquement pour les réponses supplémentaires de Des questions ? après vos 10 gratuites du jour."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wordt automatisch gebruikt voor extra antwoorden in Vragen? na je 10 gratis per dag."
+          }
+        }
+      }
+    },
     "VIN": {
       "localizations": {
         "de": {

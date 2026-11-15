@@ -620,6 +620,7 @@
     <string name="ask_error_signin">Sign in again to ask questions.</string>
     <string name="balance_label">Balance: %1$s</string>
     <string name="balance_note">Pays for extra AI questions and future add-ons.</string>
+    <string name="balance_auto">Used automatically for extra Any questions? answers after your 10 free ones each day.</string>
     <string name="badge_early_supporter">Early supporter</string>
     <string name="badge_early_supporter_note">Thanks for supporting Ocean Live before launch.</string>
     <string name="reward_added">Pre-registration reward added: %1$s and the Early supporter badge. Thank you!</string>

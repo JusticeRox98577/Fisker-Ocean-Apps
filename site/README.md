@@ -6,7 +6,9 @@ mailing list sign-up, and the privacy policy and account pages the app stores li
 It is plain HTML, CSS and JavaScript ES modules, with no frameworks, no cookies, no analytics
 and no third-party requests: fonts, scripts, the 3D model and the downloads are all served from
 oceanlive.org. A small Cloudflare Worker serves the files and passes the mailing list's public
-endpoints on to the mail Worker (`mail/`), so the pages only ever talk to oceanlive.org.
+endpoints on to the mail Worker (`mail/`) and the public roadmap on to the app server
+(`ask-proxy/`), and fills the community notes pages from the app server, so the pages only
+ever talk to oceanlive.org.
 
 ## Pages
 
@@ -20,9 +22,18 @@ endpoints on to the mail Worker (`mail/`), so the pages only ever talk to oceanl
 | `/delete-account` | How to delete an account and what is deleted |
 | `/preregistration-terms` | Terms of the Google Play pre-registration reward |
 | `/credits` | Credits and licences |
+| `/codes/<code>` | One page per fault code confirmed on Ocean cars |
+| `/modules`, `/modules/<id>` | The 39 modules the app scans, one page each |
+| `/glossary`, `/glossary/<term>` | What the readings in the app mean, one page each |
+| `/releases`, `/releases/<version>` | Every release from `CHANGELOG.md`, one page each |
+| `/calculators` | Charging time and cost, and a 12V battery check |
+| `/roadmap` | What is planned, in progress and done, with vote counts (voting is on account.oceanlive.org) |
+| `/community`, `/community/<id>` | Notes from Ocean owners, approved on the admin page (filled in by the Worker) |
+| `/about`, `/press` | Who makes Ocean Live, and the press kit |
+| `/site-index` | Every page, grouped |
 
-The fault codes page is made only from the public owner guide
-(`ask-proxy/knowledge/ocean-guide.md`); it is not a full code table.
+The fault code, module and glossary pages are made only from the public owner guide
+(`ask-proxy/knowledge/ocean-guide.md`) and the app's own module list; they are not a full code table.
 
 ## How it is organised
 
@@ -30,9 +41,9 @@ The fault codes page is made only from the public owner guide
 | --- | --- |
 | `public/` | Everything the site serves |
 | `public/styles.css`, `public/app.js` | Shared styles and script |
-| `public/js/` | Page modules: the mailing list forms, the fault code search and the 3D blueprint (`js/scene/`) |
+| `public/js/` | Page modules: the mailing list forms, the fault code search, the calculators, the roadmap and the 3D blueprint (`js/scene/`) |
 | `public/data/ocean-codes.json` | The data behind `/codes` |
-| `src/worker.js` | The Worker script for `/api/*` (the mailing list) |
+| `src/worker.js` | The Worker script for `/api/*` (the mailing list and the roadmap) and the community notes pages |
 | `tools/` | Node scripts that write the generated pages, the code data, the 3D model and the blueprint drawing, and check the site |
 | `design-system/` | The site's design notes |
 

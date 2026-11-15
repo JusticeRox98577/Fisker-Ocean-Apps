@@ -484,6 +484,10 @@ struct AccountSection: View {
                 .font(.footnote).foregroundStyle(Theme.dim)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 4)
+            Text("Used automatically for extra Any questions? answers after your 10 free ones each day.")
+                .font(.footnote).foregroundStyle(Theme.dim)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 2)
         }
         if accounts.account?.earlySupporter == true {
             HStack(spacing: 12) {

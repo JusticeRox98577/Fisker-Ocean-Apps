@@ -38,14 +38,81 @@
     <!-- Signed in -->
     <div id="app" class="stack-lg" hidden>
       <nav class="tabs" role="tablist" aria-label="Admin sections">
-        <button id="tab-usage" class="tab" type="button" role="tab" aria-selected="true" aria-controls="panel-usage">Usage</button>
+        <button id="tab-home" class="tab" type="button" role="tab" aria-selected="true" aria-controls="panel-home">Home</button>
+        <button id="tab-usage" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-usage" tabindex="-1">Usage</button>
         <button id="tab-reports" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-reports" tabindex="-1">Reports <span id="reports-badge" class="count" hidden><span id="reports-count"></span><span class="sr-only"> open</span></span></button>
+        <button id="tab-knowledge" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-knowledge" tabindex="-1">Knowledge <span id="knowledge-badge" class="count" hidden><span id="knowledge-count"></span><span class="sr-only"> to review</span></span></button>
+        <button id="tab-feedback" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-feedback" tabindex="-1">Feedback <span id="feedback-badge" class="count" hidden><span id="feedback-count"></span><span class="sr-only"> open</span></span></button>
+        <button id="tab-roadmap" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-roadmap" tabindex="-1">Roadmap</button>
         <button id="tab-accounts" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-accounts" tabindex="-1">Accounts</button>
         <button id="tab-admins" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-admins" tabindex="-1" hidden>Admins</button>
       </nav>
 
-      <!-- Usage: the first view -->
-      <div id="panel-usage" class="stack-lg" role="tabpanel" aria-labelledby="tab-usage" tabindex="-1">
+      <!-- Home: the first view. Every link in one place, the live status and what needs a look. -->
+      <div id="panel-home" class="stack-lg" role="tabpanel" aria-labelledby="tab-home" tabindex="-1">
+        <section class="card stack" aria-labelledby="home-title">
+          <div class="row between">
+            <h1 id="home-title" tabindex="-1">Home</h1>
+            <button id="home-refresh" class="btn btn-ghost" type="button">Refresh</button>
+          </div>
+          <h2 id="todo-title" class="sub-title">Needs a look</h2>
+          <ul id="todo" class="cards" aria-labelledby="todo-title"></ul>
+        </section>
+
+        <section class="card stack" aria-labelledby="live-title">
+          <h2 id="live-title">Live status</h2>
+          <p id="live-overall" class="live"><span class="dot" aria-hidden="true"></span><span id="live-text">Checking…</span></p>
+          <ul id="live-services" class="services"></ul>
+          <p id="live-when" class="small muted"></p>
+          <p class="small muted">From <a href="https://status.oceanlive.org/" rel="noreferrer">status.oceanlive.org</a>, which checks every 5 minutes.</p>
+        </section>
+
+        <section class="card stack" aria-labelledby="links-title">
+          <h2 id="links-title">Links</h2>
+          <div class="link-groups">
+            <nav class="link-group" aria-labelledby="lg-admin">
+              <h3 id="lg-admin">This page</h3>
+              <ul class="links">
+                <li><a href="#usage">Usage</a> <span class="small muted">questions, AI cost, recent questions</span></li>
+                <li><a href="#reports">Reports</a> <span class="small muted">answers people reported</span></li>
+                <li><a href="#knowledge">Knowledge</a> <span class="small muted">owners' suggestions to approve</span></li>
+                <li><a href="#feedback">Feedback</a> <span class="small muted">app feedback from the chat</span></li>
+                <li><a href="#roadmap">Roadmap</a> <span class="small muted">items, order and votes</span></li>
+                <li><a href="#accounts">Accounts and balances</a> <span class="small muted">find an account, credit, badge</span></li>
+                <li id="link-admins" hidden><a href="#admins">Admins</a> <span class="small muted">who can sign in here, activity log</span></li>
+              </ul>
+            </nav>
+            <nav class="link-group" aria-labelledby="lg-ocean">
+              <h3 id="lg-ocean">Ocean Live</h3>
+              <ul class="links">
+                <li><a href="https://oceanlive.org/" rel="noreferrer">oceanlive.org</a> <span class="small muted">the website</span></li>
+                <li><a href="https://oceanlive.org/roadmap" rel="noreferrer">Public roadmap</a> <span class="small muted">oceanlive.org/roadmap</span></li>
+                <li><a href="https://account.oceanlive.org/" rel="noreferrer">Account page</a> <span class="small muted">account.oceanlive.org, where owners vote</span></li>
+                <li><a href="https://status.oceanlive.org/" rel="noreferrer">Status page</a> <span class="small muted">status.oceanlive.org</span></li>
+                <li><a href="https://mail.oceanlive.org/" rel="noreferrer">Webmail and mailing list</a> <span class="small muted">mail.oceanlive.org</span></li>
+                <li><a href="https://api.oceanlive.org/health" rel="noreferrer">API health</a> <span class="small muted">api.oceanlive.org/health</span></li>
+              </ul>
+            </nav>
+            <nav class="link-group" aria-labelledby="lg-outside">
+              <h3 id="lg-outside">Outside dashboards</h3>
+              <ul class="links">
+                <li><a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" rel="noreferrer">Cloudflare Workers</a> <span class="small muted">deploys, logs, routes</span></li>
+                <li><a href="https://dash.cloudflare.com/?to=/:account/workers/d1" rel="noreferrer">Cloudflare D1</a> <span class="small muted">the databases</span></li>
+                <li><a href="https://console.anthropic.com/usage" rel="noreferrer">Anthropic Console</a> <span class="small muted">AI usage and billing</span></li>
+                <li><a href="https://resend.com/emails" rel="noreferrer">Resend</a> <span class="small muted">sign-in code emails</span></li>
+                <li><a href="https://play.google.com/console" rel="noreferrer">Google Play Console</a> <span class="small muted">Android app</span></li>
+                <li><a href="https://appstoreconnect.apple.com/apps" rel="noreferrer">App Store Connect</a> <span class="small muted">iPhone app</span></li>
+                <li><a href="https://console.cloud.google.com/apis/credentials" rel="noreferrer">Google Cloud credentials</a> <span class="small muted">sign-in client IDs, Play service account</span></li>
+                <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noreferrer">GitHub repository</a></li>
+                <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/actions" rel="noreferrer">GitHub Actions</a> <span class="small muted">builds</span></li>
+              </ul>
+            </nav>
+          </div>
+        </section>
+      </div>
+
+      <!-- Usage -->
+      <div id="panel-usage" class="stack-lg" role="tabpanel" aria-labelledby="tab-usage" tabindex="-1" hidden>
         <section class="card stack" aria-labelledby="usage-title">
           <div class="row between">
             <h1 id="usage-title" tabindex="-1">Usage</h1>
@@ -106,17 +173,6 @@
           <ol id="recent" class="qlist"></ol>
           <button id="recent-more" class="btn btn-ghost" type="button" hidden>Show older questions</button>
         </section>
-
-        <section class="card stack" aria-labelledby="links-title">
-          <h2 id="links-title">Elsewhere</h2>
-          <ul class="links">
-            <li><a href="https://status.oceanlive.org/" rel="noreferrer">Status page</a> <span class="small muted">status.oceanlive.org</span></li>
-            <li><a href="https://mail.oceanlive.org/" rel="noreferrer">Webmail and mailing list</a> <span class="small muted">mail.oceanlive.org, where the mailing list numbers are</span></li>
-            <li><a href="https://console.anthropic.com/" rel="noreferrer">Anthropic Console</a> <span class="small muted">AI usage and billing</span></li>
-            <li><a href="https://dash.cloudflare.com/" rel="noreferrer">Cloudflare dashboard</a> <span class="small muted">Workers, D1, KV</span></li>
-            <li><a href="https://resend.com/emails" rel="noreferrer">Resend</a> <span class="small muted">sign-in code emails</span></li>
-          </ul>
-        </section>
       </div>
 
       <!-- Reports -->
@@ -132,6 +188,63 @@
           <p id="reports-error" class="field-error" role="alert"></p>
           <ol id="reports" class="qlist"></ol>
           <button id="reports-more" class="btn btn-ghost" type="button" hidden>Show older reports</button>
+        </section>
+      </div>
+
+      <!-- Knowledge: what owners offered in the chat, and the approved notes used in answers -->
+      <div id="panel-knowledge" class="stack-lg" role="tabpanel" aria-labelledby="tab-knowledge" tabindex="-1" hidden>
+        <section class="card stack" aria-labelledby="knowledge-title">
+          <div class="row between">
+            <h1 id="knowledge-title" tabindex="-1">Knowledge to review</h1>
+            <button id="knowledge-refresh" class="btn btn-ghost" type="button">Refresh</button>
+          </div>
+          <p class="small muted">Fault code meanings, fixes and car facts owners offered in "Any questions?", oldest first. Nothing is used in answers until you approve it. Edit the title and text first: keep only what the owner said, drop anything personal, and never add specs or prices nobody confirmed. Who sent it is never shown.</p>
+          <p id="knowledge-error" class="field-error" role="alert"></p>
+          <ol id="pending" class="qlist"></ol>
+        </section>
+
+        <section class="card stack" aria-labelledby="items-title">
+          <h2 id="items-title">Approved notes</h2>
+          <p class="small muted">Every note that isn't retired goes into every answer, after the guide, newest first (about 20,000 characters at most). Changes reach answers within about a minute.</p>
+          <ol id="items" class="qlist"></ol>
+        </section>
+      </div>
+
+      <!-- Feedback: app feedback sent through the chat -->
+      <div id="panel-feedback" class="stack-lg" role="tabpanel" aria-labelledby="tab-feedback" tabindex="-1" hidden>
+        <section class="card stack" aria-labelledby="feedback-title">
+          <h1 id="feedback-title" tabindex="-1">Feedback</h1>
+          <p class="small muted">Feedback about the app that owners gave in "Any questions?", newest first. It never goes into answers. Who sent it is never shown. Mark it done once it's dealt with, or add it to the roadmap (you write the public title and text; that marks it done too).</p>
+          <fieldset class="choice">
+            <legend>Show</legend>
+            <label><input type="radio" name="fstatus" value="open" checked> Open</label>
+            <label><input type="radio" name="fstatus" value="all"> All</label>
+          </fieldset>
+          <p id="feedback-error" class="field-error" role="alert"></p>
+          <ol id="feedback" class="qlist"></ol>
+          <button id="feedback-more" class="btn btn-ghost" type="button" hidden>Show older feedback</button>
+        </section>
+      </div>
+
+      <!-- Roadmap: what's planned, with the votes from account.oceanlive.org -->
+      <div id="panel-roadmap" class="stack-lg" role="tabpanel" aria-labelledby="tab-roadmap" tabindex="-1" hidden>
+        <section class="card stack" aria-labelledby="roadmap-title">
+          <div class="row between">
+            <h1 id="roadmap-title" tabindex="-1">Roadmap</h1>
+            <button id="roadmap-refresh" class="btn btn-ghost" type="button">Refresh</button>
+          </div>
+          <p class="small muted">Shown to everyone on <a href="https://oceanlive.org/roadmap" rel="noreferrer">oceanlive.org/roadmap</a> in this order, with vote counts. Signed-in owners vote on account.oceanlive.org/roadmap; who voted is never shown. Only write what's really planned: no dates or prices nobody decided.</p>
+          <p id="roadmap-error" class="field-error" role="alert"></p>
+          <ol id="roadmap" class="qlist"></ol>
+        </section>
+
+        <section class="card stack" aria-labelledby="roadmap-new-title">
+          <h2 id="roadmap-new-title" tabindex="-1">Add an item</h2>
+          <form id="roadmap-form" class="stack" novalidate>
+            <div id="roadmap-new-fields" class="stack"></div>
+            <p id="roadmap-new-error" class="field-error" role="alert"></p>
+            <button class="btn btn-primary" type="submit">Add to the roadmap…</button>
+          </form>
         </section>
       </div>
 

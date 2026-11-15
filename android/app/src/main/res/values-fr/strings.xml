@@ -632,6 +632,7 @@
     <string name="ask_error_signin">Reconnectez-vous pour poser des questions.</string>
     <string name="balance_label">Solde : %1$s</string>
     <string name="balance_note">Sert à payer des questions IA supplémentaires et de futurs modules.</string>
+    <string name="balance_auto">Utilisé automatiquement pour les réponses supplémentaires de Des questions ? après vos 10 gratuites du jour.</string>
     <string name="badge_early_supporter">Soutien de la première heure</string>
     <string name="badge_early_supporter_note">Merci d\'avoir soutenu Ocean Live avant son lancement.</string>
     <string name="reward_added">Récompense de préinscription ajoutée : %1$s et le badge Soutien de la première heure. Merci !</string>

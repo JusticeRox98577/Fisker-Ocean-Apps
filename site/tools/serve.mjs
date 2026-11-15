@@ -25,7 +25,8 @@ createServer((req, res) => {
   let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
   let file = normalize(join(ROOT, path));
   if (!file.startsWith(normalize(ROOT))) { res.writeHead(403).end(); return; }
-  if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");
+  // /codes is codes.html even though codes/ (the per-code pages) exists, as on Cloudflare.
+  if (existsSync(file) && statSync(file).isDirectory()) file = existsSync(join(file, "index.html")) || !existsSync(file.replace(/[\\/]$/, "") + ".html") ? join(file, "index.html") : file.replace(/[\\/]$/, "") + ".html";
   else if (!existsSync(file) && existsSync(file + ".html")) file += ".html";
   let status = 200;
   if (!existsSync(file)) { status = 404; console.log("404", path); file = join(ROOT, "404.html"); if (!existsSync(file)) { res.writeHead(404).end(); return; } }

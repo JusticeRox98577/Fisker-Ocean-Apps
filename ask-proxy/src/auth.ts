@@ -14,6 +14,8 @@
 
 import { badgesOf, balanceOf } from "./balance";
 import { emailLang, signInEmail } from "./email";
+import { deleteAccountKnowledge } from "./knowledge";
+import { deleteAccountRoadmap } from "./roadmap";
 
 export interface AuthEnv {
   LOG_DB?: D1Database;
@@ -39,6 +41,8 @@ export interface AuthEnv {
   REVIEW_CODE?: string;
   /** Tests only: replaces fetch() for Apple's and Google's signing keys (nothing is cached then). */
   JWKS_FETCH?: typeof fetch;
+  /** Free "Any questions?" questions per install per day; the web account page states it under the balance. Default 10. */
+  DEVICE_DAILY_LIMIT?: string;
 }
 
 export interface Account {
@@ -180,7 +184,20 @@ function config(env: AuthEnv) {
 /** What the web page can offer: email codes and, with a web client ID, Google. Never Apple. */
 function webConfig(env: AuthEnv) {
   const id = env.GOOGLE_WEB_CLIENT_ID?.trim() || null;
-  return { apple: false, google: !!id, email: !!env.RESEND_API_KEY && !!env.EMAIL_FROM, googleWebClientId: id };
+  const free = parseInt(env.DEVICE_DAILY_LIMIT ?? "", 10);
+  return {
+    apple: false,
+    google: !!id,
+    email: !!env.RESEND_API_KEY && !!env.EMAIL_FROM,
+    googleWebClientId: id,
+    // For the line under the balance: paid questions start after this many free ones a day.
+    freeDailyQuestions: Number.isFinite(free) && free >= 0 ? free : 10,
+  };
+}
+
+/** The account of the account page's session cookie (account.oceanlive.org only), or null. */
+export async function webSessionAccount(request: Request, env: AuthEnv): Promise<Account | null> {
+  return sessionAccount(request, env, cookieToken(request));
 }
 
 /**
@@ -260,8 +277,8 @@ async function accountInfo(db: D1Database, a: Account) {
 }
 
 /**
- * Removes the account, its sign-ins, sessions, pending email codes, logged questions and their reports, balance, ledger, badges
- * and any hand-set question limit. Only the hashed references of store rewards it claimed stay (reward_claims),
+ * Removes the account, its sign-ins, sessions, pending email codes, logged questions and their reports, balance, ledger, badges,
+ * pending and rejected knowledge suggestions, app feedback, roadmap votes and any hand-set question limit. Only the hashed references of store rewards it claimed stay (reward_claims),
  * so the same store purchase can't be claimed again.
  */
 async function deleteAccount(env: AuthEnv, id: string) {
@@ -277,6 +294,10 @@ async function deleteAccount(env: AuthEnv, id: string) {
     // Reports go with their question, and the account's own reports on other questions with it.
     db.prepare("DELETE FROM reports WHERE account_id = ? OR question_id IN (SELECT id FROM questions WHERE account_id = ?)").bind(id, id),
     db.prepare("DELETE FROM questions WHERE account_id = ?").bind(id),
+    // Its pending and rejected knowledge suggestions and its app feedback; approved notes stay, unlinked (knowledge.ts).
+    // Its roadmap votes, and the link from a roadmap item to its feedback (before the feedback goes).
+    ...deleteAccountRoadmap(db, id),
+    ...deleteAccountKnowledge(db, id),
     db.prepare("DELETE FROM ledger WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM balances WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM badges WHERE account_id = ?").bind(id),

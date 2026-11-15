@@ -17,6 +17,12 @@ Each `## x.y.z` section is used as the release notes for that version.
   rename or delete your account without the app. It uses one cookie, only to keep you signed in
 * Service status: status.oceanlive.org shows whether the website, the app server and the
   mail server are up
+* More on the website: a page for each fault code confirmed on Ocean cars, each of the 39
+  modules the app scans and each reading in a new glossary (oceanlive.org/glossary), all made
+  from the owner guide; every release with its own page (oceanlive.org/releases); a charging
+  time and cost calculator and a 12V battery check (oceanlive.org/calculators); the roadmap with
+  vote counts (oceanlive.org/roadmap, voting with your account at account.oceanlive.org); an
+  about page and a press kit; and oceanlive.org/site-index with every page in one place
 * Account balance: your Ocean Live account can now hold credit, shown in Settings → Account
   (and at account.oceanlive.org). When today's free questions are used up, "Any questions?"
   can keep answering from your balance: each extra question costs what its answer cost,
@@ -29,7 +35,15 @@ Each `## x.y.z` section is used as the release notes for that version.
 * Report an answer: every answer in "Any questions?" has a Report button. Pick a reason
   (offensive, harmful, wrong or other), add a note if you like, and it goes to the developer
   with that question. A report is deleted with its question
-* Privacy policy: says how answer reports are kept, how the developer corrects a balance
+* Share what you know: tell "Any questions?" what a fault code meant on your car, a fix that
+  worked, a fact about the Ocean or feedback about the app, and it can send it to Ocean Live for
+  review. Nothing is used until an admin approves it; approved notes are kept without your name,
+  help answer everyone's questions and appear at oceanlive.org/community. App feedback goes to
+  the developer only. The privacy policy says what's stored and when it's deleted
+* Settings → Account (and account.oceanlive.org) now say under the balance that it's used
+  automatically for extra "Any questions?" answers after your 10 free ones each day
+* Privacy policy: says what's kept when you share something in "Any questions?" and for
+  roadmap votes, how answer reports are kept, how the developer corrects a balance
   (every correction notes who made it and why), and that a claimed reward's hashed store
   reference stays after an account is deleted, so the same reward can't be claimed twice.
   It no longer says the install ID is shown under "Show what's sent": to have questions

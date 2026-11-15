@@ -192,6 +192,8 @@ Android Auto and CarPlay.
   account also deletes them); if not, saying roughly when they asked and what about.
 * Each answer has a **Report** button (**Report answer** on iPhone) for an answer that is
   offensive, harmful or wrong: pick a reason, optionally add a note, and it goes to the developer.
+* Owners can share what they know in the chat (what a code meant, a fix that worked, a car fact, or app
+  feedback); an Ocean Live admin reviews it first, and only approved notes are used in answers.
 
 ### Help and privacy
 

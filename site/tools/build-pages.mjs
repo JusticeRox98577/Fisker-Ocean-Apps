@@ -1,20 +1,12 @@
 // Writes the document pages (privacy, delete account, pre-registration terms, credits, help, fault
 // codes, news, the mailing list's confirm and unsubscribe pages, 404) with the shared header and
-// footer. The home page (public/index.html) is written by hand. Run after editing a page body here
+// footer from site-layout.mjs. The home page (public/index.html) is written by hand. Run after editing a page body here
 // or the shared parts: node tools/build-pages.mjs   (from site/). The fault codes page reads
 // public/data/ocean-codes.json: run tools/build-codes.mjs first when the owner guide changes.
-import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
+import { PUB, REPO, ACCOUNT, index, esc, path, page, docHero, scannedModules, moduleSlug, codeSlug } from "./site-layout.mjs";
 
-const PUB = new URL("../public/", import.meta.url);
-const REPO = "https://github.com/JusticeRox98577/Fisker-Ocean-Apps";
-const LOGO = `<picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>`;
-
-// The footer is shared with index.html: copy it from there so the two never drift apart.
-const index = readFileSync(new URL("index.html", PUB), "utf8");
-const footer = index.slice(index.indexOf('<footer class="site-footer">'), index.indexOf("</footer>") + "</footer>".length);
-if (!footer.startsWith("<footer")) throw new Error("footer not found in index.html");
-
-// The mailing list sign-up form is shared with index.html (#news) in the same way.
+// The mailing list sign-up form is shared with index.html (#news): copy it from there.
 const LIST_START = "<!-- LIST FORM";
 const LIST_END = "<!-- /LIST FORM -->";
 const listForm = index.slice(index.indexOf("-->", index.indexOf(LIST_START)) + 3, index.indexOf(LIST_END)).trim();
@@ -23,84 +15,6 @@ const LIST_JS = '<script type="module" src="/js/list.js"></script>';
 
 // The confirmed Ocean codes, modules and suffixes, from the owner guide (tools/build-codes.mjs).
 const CODES = JSON.parse(readFileSync(new URL("data/ocean-codes.json", PUB), "utf8"));
-const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-const ACCOUNT = "https://account.oceanlive.org/";
-const path = (...steps) => `<span class="path">${steps.map((s) => `<span>${s}</span>`).join("<i>→</i>")}</span>`;
-
-function page({ file, title, description, canonical, body, noindex = false, scripts = "" }) {
-  const html = `<!doctype html>
-<html lang="en" class="no-js">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>${title}</title>
-<meta name="description" content="${description}">
-${canonical ? `<link rel="canonical" href="${canonical}">\n<meta property="og:url" content="${canonical}">\n` : ""}${noindex ? '<meta name="robots" content="noindex">\n' : ""}<meta name="theme-color" content="#0B2545">
-<meta name="color-scheme" content="dark">
-<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Ocean Live">
-<meta property="og:title" content="${title}">
-<meta property="og:description" content="${description}">
-<meta property="og:image" content="https://oceanlive.org/icons/icon-512.png">
-<meta property="og:image:width" content="512">
-<meta property="og:image:height" content="512">
-<meta property="og:image:alt" content="The Ocean Live app icon">
-<meta name="twitter:card" content="summary">
-<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/styles.css">
-<script src="/app.js" defer></script>
-${scripts ? `${scripts}\n` : ""}</head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
-<div class="paper" aria-hidden="true"></div>
-<div class="progress" aria-hidden="true"><i></i></div>
-
-<header class="site-header" id="top">
-  <nav class="wrap nav" aria-label="Main">
-    <a class="brand" href="/" aria-label="Ocean Live home">
-      ${LOGO}
-      Ocean Live
-    </a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
-    <ul class="nav-links" id="nav-links">
-      <li><a href="/#live">Live data</a></li>
-      <li><a href="/#features">Features</a></li>
-      <li><a href="/#battery">12V</a></li>
-      <li><a href="/#faults">Fault codes</a></li>
-      <li><a href="/#privacy">Privacy</a></li>
-      <li><a href="/#faq">FAQ</a></li>
-      <li class="nav-menu-only"><a href="/#download">Downloads</a></li>
-    </ul>
-    <a class="btn btn-primary btn-small nav-cta" href="/#download">Downloads</a>
-  </nav>
-</header>
-
-<main id="main">
-${body.trim()}
-</main>
-
-${footer}
-</body>
-</html>
-`;
-  // Always LF, whatever line endings the checkout (or index.html) has, so pages never end up mixed.
-  mkdirSync(new URL(".", new URL(file, PUB)), { recursive: true });
-  writeFileSync(new URL(file, PUB), html.replace(/\r\n?/g, "\n"));
-  console.log("wrote", file, html.length, "bytes");
-}
-
-const docHero = (eyebrow, h1, sub) => `<section class="doc-hero">
-  <div class="wrap narrow">
-    <div class="lightbar" aria-hidden="true"></div>
-    <div class="eyebrow">${eyebrow}</div>
-    <h1>${h1}</h1>
-    <p>${sub}</p>
-  </div>
-</section>`;
 
 // ── Privacy policy (keep in step with PRIVACY.md in the repository root) ──
 page({
@@ -109,7 +23,7 @@ page({
   description: "How Ocean Live, the independent Fisker Ocean companion app, handles your data: what stays on your phone, what an account holds (including its balance and rewards), what &quot;Any questions?&quot; sends, the email list, and how to have it deleted.",
   canonical: "https://oceanlive.org/privacy",
   body: `
-${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 November 2026 (added: mailing list, tester invitations, account website, balance and pre-registration rewards, reporting an answer, the admin page)")}
+${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 November 2026 (added: mailing list, tester invitations, account website, balance and pre-registration rewards, reporting an answer, the admin page, sharing what you know, roadmap votes)")}
 
 <article class="doc">
   <div class="wrap narrow">
@@ -123,6 +37,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
       <li><a href="#questions">"Any questions?"</a></li>
       <li><a href="#research-log">Research log</a></li>
       <li><a href="#reports">Reporting an answer</a></li>
+      <li><a href="#sharing">Sharing what you know</a></li>
       <li><a href="#accounts">Accounts</a></li>
       <li><a href="#account-website">Account website</a></li>
       <li><a href="#balance-and-rewards">Balance and rewards</a></li>
@@ -146,6 +61,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
         <li>Data leaves your phone only when you sign in or manage your account (opening the account settings checks it with the server), when you ask a question in "Any questions?" or report an answer, when the app claims a pre-registration or pre-order reward for your account, or if you turn on live data to A Better Route Planner (ABRP) yourself.</li>
         <li>The mailing list on oceanlive.org is separate from the app and only for people who sign up and confirm. It keeps your email address and language until you unsubscribe. Testers may be asked once by email whether they want to join. See <a href="#mailing-list">Mailing list</a>.</li>
         <li>Questions (and, unless you turn it off, your car's latest readings) are answered by Claude, an AI made by Anthropic, through a small server the developer runs. For research, the developer keeps each question, its answer, the readings sent with it and a random install ID for 90 days, then deletes them. If you report an answer, the report is kept with that question and deleted with it.</li>
+        <li>If you share a fault code meaning, a fix, a car fact or feedback about the app in "Any questions?", it is stored for an admin to review. Only approved notes are used: in answers for everyone and on <a href="/community">oceanlive.org/community</a>, without your name or anything linking them to you. See <a href="#sharing">Sharing what you know</a>.</li>
       </ul>
     </div>
 
@@ -175,6 +91,18 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
     <p>Apart from the log, the question server keeps counters: questions per account (or per install ID before you sign in) and per network per day (the IP address is turned into a salted hash and never stored as is), deleted after about a day, and the month's total spend. Cloudflare and Anthropic see your IP address as part of the connection.</p>
     <h3 id="reports">Reporting an answer</h3>
     <p>Each answer in the chat has a <strong>Report</strong> button (<strong>Report answer</strong> on iPhone), for an answer that is offensive, harmful or wrong. A report sends the server the ID of that logged question, the reason you pick, an optional note you write (up to 500 characters) and, as with a question, your session or the install ID, so the server can check the question is yours. The server stores the report with the question: the reason, the note, your account ID or install ID and the date. The developer and the admins they appoint read reports on the admin page, without your account ID or install ID, to fix the answer and improve the knowledge Claude answers from; they are not sent to Anthropic or anyone else. When an admin marks a report as dealt with, the report also holds when and the admin's email address. A report is deleted together with its question: after 90 days, when you delete your account, or when you ask (see above). To limit abuse, the server counts reports per account or install for a day. Don't put personal details in the note.</p>
+    <h3 id="sharing">Sharing what you know</h3>
+    <p>In "Any questions?" you can tell Claude something you know about the Ocean (what a fault code meant on your car, a fix or tip that worked, or a fact about the car) or give feedback about the app. When you clearly offer something like that, Claude can pass it on to Ocean Live for review, and says so in the chat. It sends only what you said, restated briefly, and is told to leave out names, email addresses, VINs and other personal details, but please don't include them.</p>
+    <p>What the server stores when something is sent, in the same database as the research log:</p>
+    <ul>
+      <li>the kind (fault code, fix or tip, car fact, or app feedback), a one-line summary, the details (up to 2,000 characters) and, for a fault code, the code;</li>
+      <li>the date, your account ID if you are signed in (otherwise the install ID), and a link to the logged question it came from;</li>
+      <li>a counter of how many things your account or install sent that day (at most 5 a day), deleted after about a day.</li>
+    </ul>
+    <p>Nothing is stored if the question ends without an answer. The store review account can't send anything.</p>
+    <p>The developer and the admins they appoint review what is sent on the admin page, which shows the summary, details and code, and the question it came from while that question is still in the research log, but not your account ID, install ID or email address. They can edit it, approve it or turn it down. App feedback goes to a feedback list for the developer, may be turned into an item on the public roadmap (in the admin's own words), and is never used in answers. Nothing is sent to anyone else.</p>
+    <p>When an admin approves something, its links to your account or install and to your question are removed straight away, and it becomes a note (a title and text, which the admin may have edited) with no name or identifier. Approved notes are given to Claude with every question, from everyone, marked as notes from owners that may be incomplete, and are shown publicly at <a href="/community">oceanlive.org/community</a>. An admin can retire a note at any time, which takes it out of answers and off the website. Approved notes are kept until they are retired, also after you delete your account, because nothing links them to you any more; the record of the approval keeps the summary and details that were sent, without those links, and the email address of the admin who approved it.</p>
+    <p>Items not reviewed yet are kept until an admin reviews them. Items turned down, and feedback marked as dealt with, are deleted 90 days after that. Deleting your account deletes, straight away, everything you sent that has not been approved and all your app feedback. To have what you sent deleted without deleting an account, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a>, as for the <a href="#research-log">research log</a>. The email address of the admin who reviewed an item is kept with it and in the log of admin actions. The legal basis in the EU and UK is the developer's legitimate interest in improving the answers and the app, with the information you chose to share.</p>
     <p>Anthropic processes the question to produce the answer under its commercial terms, which do not allow it to train models on this data by default, and keeps it only for a limited time; see <a href="https://www.anthropic.com/legal/privacy" rel="noopener">https://www.anthropic.com/legal/privacy</a>. On your phone, the chat lives only in the app's memory and is gone when you close the app or tap "New chat".</p>
     <p>Don't put personal details in questions. Answers come from an AI and can be wrong; check anything important with a qualified EV shop.</p>
 
@@ -196,12 +124,13 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
       <li><strong>Google Play</strong> checks a pre-registration reward when the app claims one (see <a href="#balance-and-rewards">Balance and rewards</a>).</li>
       <li><strong>Anthropic</strong> only receives questions, as described above.</li>
     </ul>
-    <p>The account and its sign-in methods are kept until you delete the account. To delete it, open Ocean Live and go to <span class="path"><span>Settings</span><i>→</i><span>Account</span><i>→</i><span>Delete account</span></span>. This deletes, straight away, the account, its sign-in methods, all its sessions (every device is signed out), the logged questions linked to it and your reports about them, any personal question limit set for it, and its balance, ledger and badges (unused credit is lost; only the hashed store reference of a claimed reward stays, see <a href="#balance-and-rewards">Balance and rewards</a>). Car data on your phone is not affected. An email-code entry for your address (see Email codes) is removed too. The short-lived counters above expire on their own within about a day. You can also delete it on the <a href="#account-website">account website</a>. See <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+    <p>The account and its sign-in methods are kept until you delete the account. To delete it, open Ocean Live and go to <span class="path"><span>Settings</span><i>→</i><span>Account</span><i>→</i><span>Delete account</span></span>. This deletes, straight away, the account, its sign-in methods, all its sessions (every device is signed out), the logged questions linked to it and your reports about them, any personal question limit set for it, what you shared in "Any questions?" that has not been approved, your app feedback, and your roadmap votes (approved notes stay, with nothing linking them to you; see <a href="#sharing">Sharing what you know</a>), and its balance, ledger and badges (unused credit is lost; only the hashed store reference of a claimed reward stays, see <a href="#balance-and-rewards">Balance and rewards</a>). Car data on your phone is not affected. An email-code entry for your address (see Email codes) is removed too. The short-lived counters above expire on their own within about a day. You can also delete it on the <a href="#account-website">account website</a>. See <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     ${/* Owner review: legal basis for account data. */ ""}<p>The legal basis in the EU and UK for account data is performance of a contract (providing the signed-in app and keeping your questions with your account); for the abuse and rate-limit counters it is the developer's legitimate interest.</p>
 
     <h3 id="account-website">The account website</h3>
     <p>You can also manage your account without the app at <a href="${ACCOUNT}" rel="noopener">account.oceanlive.org</a>: sign in with a 6-digit email code (or with Google, when it's offered there; Sign in with Apple isn't) to see your account and its sign-in methods, rename it, sign out or delete it. It uses the same account, the same server and the same processors as the app, described above.</p>
     <p>Signing in there sets one cookie. It is strictly necessary: it only keeps you signed in, holds the session token (the server keeps only its hash, as for the app) and is sent only to account.oceanlive.org. A session there lasts 30 days from its last use; signing out ends it and removes the cookie. The account website uses no analytics or trackers. If Sign in with Google is offered there, the page loads Google's sign-in button from Google, so Google sees your IP address when you open it.</p>
+    <p>The account website also has the roadmap (<a href="${ACCOUNT}roadmap" rel="noopener">account.oceanlive.org/roadmap</a>), where you can vote for items on the public Ocean Live roadmap, also shown at <a href="/roadmap">oceanlive.org/roadmap</a>. For each vote the server stores the item, your account ID and the date. Only the number of votes per item is shown, to everyone; the admin page shows the counts, not who voted. You can take a vote back at any time. Votes are deleted with your account, or when the item is deleted. To limit abuse, the server counts vote changes per account for a day.</p>
 
     <h3 id="balance-and-rewards">Balance and rewards</h3>
     <p>Your account can hold a balance of Ocean Live credit, and badges. The balance pays for extra "Any questions?" questions after the free daily ones (each costs what that answer cost the developer at Anthropic, rounded up to the next cent), and for Ocean Live add-ons when they're offered. If you pre-registered for Ocean Live on Google Play, or pre-ordered it on the App Store, the app claims US$5 of credit and an Early supporter badge for the account you're signed in to (see the <a href="/preregistration-terms">reward terms</a>).</p>
@@ -221,6 +150,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
     <h3 id="admin-page">The admin page</h3>
     <p>The developer, and people the developer appoints as admins, look after balances on a separate page, admin.oceanlive.org. Only admins can sign in there, with Google only, and app accounts can't (signing in to the app never makes anyone an admin). An admin can look up an account by its exact email address or its account ID, see its account ID, email address, display name, sign-in methods (Google, Apple or email code), creation date, balance, badges and recent ledger lines, add or remove credit (a balance can't go below zero) and give or remove a badge. Every change records the admin's email address: in the ledger note for a credit change, and in a log of admin actions (the admin, what was done, the account ID and the date). Corrections and their log entries are deleted with your account, like the rest of the ledger.</p>
     <p>To run and improve the service, admins also see on that page: totals (questions and AI cost per day and month, the number of accounts, credit spent and still held in balances, rewards claimed, open reports), the questions asked by phone language and by signed in or not, the logged questions with their answers, cost and the readings sent with them, and the reports with their question and answer. None of this shows the account ID, install ID or email address of who asked or reported next to the question or report. But an admin who also looks up an account sees its ledger, where each paid question has a time and an amount, so a paid question can sometimes be matched to that account; and what someone writes in a question can itself say who they are. When an admin marks a report as dealt with, their email address is kept with the report and in the log of admin actions.</p>
+    <p>Admins also review what owners share in "Any questions?" and the app feedback (see <a href="#sharing">Sharing what you know</a>), and write the public roadmap, where they see vote counts but not who voted. The admin's email address is kept with each review, and in the log of admin actions.</p>
     <p>For admins only, the server stores: their Google email address and who added them and when; for each sign-in, a hash of a random session token, kept for 12 hours; and the log of their actions. Signing in there sets one strictly necessary cookie, sent only to admin.oceanlive.org, that keeps the admin signed in. The page loads Google's sign-in button from Google. Removing an admin deletes their sessions straight away. The legal basis in the EU and UK is the developer's legitimate interest in running the service and keeping a record of who changed what.</p>
 
     <h2 id="abrp">A Better Route Planner (optional)</h2>
@@ -259,7 +189,7 @@ ${docHero("Privacy policy", "Ocean Live privacy policy", "Last updated: 15 Novem
 
     <div class="callout sand">
       <h2 id="website">This website</h2>
-      <p>oceanlive.org sets no cookies and uses no analytics or trackers. (The <a href="#account-website">account website</a>, account.oceanlive.org, sets one strictly necessary sign-in cookie, and so does the <a href="#admin-page">admin page</a>, admin.oceanlive.org, for admins.) The only thing it collects is what you type into the mailing list form, if you sign up (see <a href="#mailing-list">Mailing list</a>). Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
+      <p>oceanlive.org sets no cookies and uses no analytics or trackers. (The <a href="#account-website">account website</a>, account.oceanlive.org, sets one strictly necessary sign-in cookie, and so does the <a href="#admin-page">admin page</a>, admin.oceanlive.org, for admins.) The only thing it collects is what you type into the mailing list form, if you sign up (see <a href="#mailing-list">Mailing list</a>). The <a href="/roadmap">roadmap</a> and <a href="/community">community notes</a> pages read the roadmap and the approved notes from the Ocean Live server through oceanlive.org itself; nothing about you is passed on except your IP address, which is not stored. Its fonts, scripts, styles, 3D model and the app downloads (APK files and their version details) are served from oceanlive.org itself, so your browser makes no requests to anyone else. Links to GitHub (source code, releases, issues) only contact GitHub when you follow them. Account deletion: see <a href="/delete-account">Delete your Ocean Live account</a>.</p>
     </div>
     </div>
   </div>
@@ -300,9 +230,13 @@ ${docHero("Account", "Delete your Ocean Live account", "How to delete your accou
           <tr><td>Sign-in sessions on all your devices</td><td>Deleted, so every device is signed out</td></tr>
           <tr><td>Logged "Any questions?" questions linked to the account, with their answers and the readings sent with them (this includes questions the phone asked before you signed in, which are linked at sign-in), and any reports you made about answers</td><td>Deleted</td></tr>
           <tr><td>Any personal daily question limit set for your account</td><td>Deleted</td></tr>
+          <tr><td>What you shared in "Any questions?" (fault code meanings, fixes and tips, car facts) that hasn't been approved yet or was turned down</td><td>Deleted</td></tr>
+          <tr><td>Feedback about the app you gave in "Any questions?"</td><td>Deleted</td></tr>
+          <tr><td>Your votes on the roadmap</td><td>Deleted (the vote counts go down)</td></tr>
+          <tr><td>Notes an admin already approved from what you shared</td><td>Kept, used in answers and shown at <a href="/community">oceanlive.org/community</a>. They hold no account ID, install ID, question link or name: those links were removed when the note was approved. Ask below if you want one taken down</td></tr>
           <tr><td>Your balance of Ocean Live credit, its ledger of credits and spends (including corrections made on the admin page, their notes and the admin log entries about them), and badges such as Early supporter</td><td>Deleted. Unused credit is lost and can't be paid out</td></tr>
           <tr><td>The SHA-256 hash of the store purchase reference (Google Play purchase token or App Store app transaction ID) of a reward the account claimed, with the date it was claimed</td><td>Kept, with no account ID, email address or anything else, only so the same store purchase can't be rewarded again to a new account</td></tr>
-          <tr><td>Short-lived counters (questions per day, email code requests per hour), stored only as hashes or IDs</td><td>Not deleted by this; they expire on their own within about a day</td></tr>
+          <tr><td>Short-lived counters (questions, things shared and roadmap vote changes per day, email code requests per hour), stored only as hashes or IDs</td><td>Not deleted by this; they expire on their own within about a day</td></tr>
           <tr><td>A sign-in code entry (your email address and a hash of a code you asked for but didn't use)</td><td>Deleted. Unused entries are also removed automatically within a day after the code expires</td></tr>
           <tr><td>Car data on your phone (drives, charges, 12V and fault history, settings)</td><td>Not affected. It was never on the server. Clear it in the app or delete the app to remove it.</td></tr>
         </tbody>
@@ -320,7 +254,7 @@ ${docHero("Account", "Delete your Ocean Live account", "How to delete your accou
     </ul>
 
     <h2 id="questions-only">Only delete my logged questions</h2>
-    <p>To have your logged questions (and any reports about them) deleted without deleting an account, or to ask what is held, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> (or open an issue on GitHub; issues are public). They are deleted within 30 days. If you're signed in, include your account ID from ${path("Settings", "Account")}. The app doesn't show the install ID, so for questions asked without signing in, say roughly when you asked and what about. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
+    <p>To have your logged questions (and any reports about them) deleted without deleting an account, or to ask what is held, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> (or open an issue on GitHub; issues are public). They are deleted within 30 days. If you're signed in, include your account ID from ${path("Settings", "Account")}. The app doesn't show the install ID, so for questions asked without signing in, say roughly when you asked and what about. What you shared in "Any questions?" can be deleted the same way. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
     </div>
   </div>
 </article>`,
@@ -517,6 +451,17 @@ ${docHero("Mailing list", "Unsubscribe", "Stop Ocean Live news emails. Your emai
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const example = CODES.codes.find((e) => e.codes.includes("B208896"));
 const suffixKeys = Object.keys(CODES.suffixes).sort();
+// "MCU_F / MCU_R", "WTC and BTC", "CMRR_FL/FR/RL/RR": link each id that has a module page.
+const MODULE_IDS = new Set(scannedModules().map((m) => m.id));
+const linkModules = (ids) => {
+  const parts = ids.split(/(\s*\/\s*|\s+and\s+)/);
+  const prefix = (parts[0].match(/^([A-Z0-9]+_)/) || [])[1] || "";
+  return parts.map((p, i) => {
+    if (i % 2) return esc(p);
+    const id = MODULE_IDS.has(p) ? p : MODULE_IDS.has(prefix + p) ? prefix + p : null;
+    return id ? `<a href="/modules/${moduleSlug(id)}">${esc(p)}</a>` : esc(p);
+  }).join("");
+};
 page({
   file: "codes.html",
   title: "Fisker Ocean fault codes · Ocean Live",
@@ -573,7 +518,7 @@ ${suffixKeys.map((k) => `          <tr><td><code>${esc(k)}</code></td><td>${esc(
     <p>Ocean Live marks each code <strong>Active now</strong> (the fault is present now), <strong>Pending</strong>, <strong>Stored</strong> (it happened before) or <strong>Warning lamp</strong> (the module asked for a warning light).</p>
 
     <h2 id="confirmed">Codes confirmed on Ocean cars</h2>
-    <p>These codes have been seen and confirmed on real Ocean cars. Search by code (paste one, with or without a dash) or by a word.</p>
+    <p>These codes have been seen and confirmed on real Ocean cars. Search by code (paste one, with or without a dash) or by a word. Each code has its own page.</p>
     <form class="codes-search" role="search" hidden>
       <label class="codes-label" for="codes-q">Search the confirmed codes</label>
       <input class="codes-input" id="codes-q" type="search" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search" placeholder="B208896 or steering">
@@ -583,16 +528,16 @@ ${suffixKeys.map((k) => `          <tr><td><code>${esc(k)}</code></td><td>${esc(
       <table class="codes-table">
         <thead><tr><th scope="col">Code</th><th scope="col">Meaning</th></tr></thead>
         <tbody>
-${CODES.codes.map((e, i) => `          <tr data-i="${i}"><td>${e.codes.map((c) => `<code>${esc(c)}</code>`).join(" ")}</td><td>${esc(e.meaning)}${e.note ? `<span class="code-note">${esc(e.note)}</span>` : ""}</td></tr>`).join("\n")}
+${CODES.codes.map((e, i) => `          <tr data-i="${i}"><td>${e.codes.map((c) => `<a href="/codes/${codeSlug(c)}"><code>${esc(c)}</code></a>`).join(" ")}</td><td>${esc(e.meaning)}${e.note ? `<span class="code-note">${esc(e.note)}</span>` : ""}</td></tr>`).join("\n")}
         </tbody>
       </table>
     </div>
     <p>Many U-codes (lost communication, signal outdated, integrity check failed) appear after a module was asleep, the 12V dipped, or software was updated, and often clear and stay clear. Codes that come back right after clearing, or that come with a warning on the car's screen, point to a real problem.</p>
 
     <h2 id="modules">The modules Ocean Live scans</h2>
-    <p><strong>Scan all modules</strong> reads stored codes from 39 modules. Their short names, as the app shows them:</p>
+    <p><strong>Scan all modules</strong> reads stored codes from 39 modules. Their short names, as the app shows them (each has <a href="/modules">its own page</a>):</p>
     <ul class="modules-list">
-${CODES.modules.map((m) => `      <li><strong>${esc(m.ids)}</strong>: ${esc(m.name)}</li>`).join("\n")}
+${CODES.modules.map((m) => `      <li><strong>${linkModules(m.ids)}</strong>: ${esc(m.name)}</li>`).join("\n")}
     </ul>
 
     <h2 id="what-to-do">What to do about a code</h2>
@@ -614,7 +559,7 @@ ${CODES.modules.map((m) => `      <li><strong>${esc(m.ids)}</strong>: ${esc(m.na
     <div class="callout">
       <p>Airbag (ACU), brake (ESP, IBOOSTER), steering (EPS) and high-voltage (BMS, PDU, PIU, MCU) faults should go to a qualified EV shop. An insulation (isolation) fault is a safety issue: don't open anything.</p>
     </div>
-    <p class="file-meta">This page is made from the <a href="${REPO}/blob/main/ask-proxy/knowledge/ocean-guide.md" rel="noopener">Ocean owner guide</a> that "Any questions?" answers from. More on using the app: <a href="/help">Help</a>.</p>
+    <p class="file-meta">This page is made from the <a href="${REPO}/blob/main/ask-proxy/knowledge/ocean-guide.md" rel="noopener">Ocean owner guide</a> that "Any questions?" answers from. More on using the app: <a href="/help">Help</a>. What the readings mean: <a href="/glossary">Glossary</a>. What owners have found: <a href="/community">Community notes</a>. Every page: <a href="/site-index">All pages</a>.</p>
     </div>
   </div>
 </article>`,
@@ -644,6 +589,10 @@ ${docHero("Help", "Using Ocean Live", "Getting connected, what each tab does, th
       <li><a href="#trouble">Troubleshooting</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
+
+    <div class="callout">
+      <p>More on the site: <a href="/glossary">Glossary of readings</a> · <a href="/codes">Fault codes</a> and <a href="/modules">the modules the app scans</a> · <a href="/community">Community notes from owners</a> · <a href="/calculators">Charging and 12V calculators</a> · <a href="/releases">Releases</a> · <a href="/site-index">All pages</a>.</p>
+    </div>
 
     <h2 id="need">What you need</h2>
     <ul>
@@ -704,6 +653,7 @@ ${docHero("Help", "Using Ocean Live", "Getting connected, what each tab does, th
     </ul>
 
     <h2 id="readings">What some readings mean</h2>
+    <p>Each reading has its own page in the <a href="/glossary">glossary</a>.</p>
     <ul>
       <li><strong>Cell spread</strong> (highest minus lowest cell voltage): under 60 mV is normal. It widens near empty and full and under heavy load. A spread that keeps growing over weeks is worth a shop check.</li>
       <li><strong>Insulation (isolation) resistance</strong>: how well the high-voltage system is isolated from the car body. Very large values are normal. A value that falls sharply, or an isolation fault code, is a safety issue for a qualified shop: don't open anything.</li>

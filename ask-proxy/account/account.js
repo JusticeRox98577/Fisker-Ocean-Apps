@@ -81,6 +81,7 @@ function showAccount(a, focus = true) {
   showWallet(a);
   show("account");
   if (focus) focusHeading("account-title");
+  loadRoadmap(true);
 }
 
 const BADGES = {
@@ -183,6 +184,9 @@ function signedOut(note = "") {
   resetEmail();
   show("signin");
   focusHeading("signin-title");
+  // At /roadmap the list stays, read-only; elsewhere it goes with the account.
+  if (ON_ROADMAP) loadRoadmap(false);
+  else hideRoadmap();
 }
 
 function resetEmail() {
@@ -291,14 +295,149 @@ async function onGoogle(response) {
   }
 }
 
+// ── Roadmap ─────────────────────────────────────────────────
+//
+// Votes need a signed-in account (the session cookie). Titles and descriptions are set with textContent only.
+
+const ON_ROADMAP = /^\/roadmap\/?$/.test(location.pathname);
+const ROADMAP_GROUPS = [
+  ["in_progress", "In progress"],
+  ["planned", "Planned"],
+  ["done", "Done"],
+];
+const VOTE_ERRORS = {
+  signin_required: "You've been signed out. Sign in again to vote.",
+  review_account: "This account can't vote.",
+  closed: "That's done, so it can't get new votes.",
+  no_item: "That item is no longer on the roadmap. Reload the page.",
+  rate_limited: "That's a lot of votes for one day. Try again tomorrow.",
+  origin: "This request was blocked. Reload the page and try again.",
+  network: "Can't reach Ocean Live. Check your connection.",
+};
+let roadmapGen = 0;
+let focusRoadmapWhenLoaded = false;
+
+function hideRoadmap() {
+  roadmapGen++;
+  $("roadmap").hidden = true;
+  $("roadmap-groups").replaceChildren();
+}
+
+function votesText(n) {
+  return n === 1 ? "1 vote" : `${n} votes`;
+}
+
+function roadmapEntry(item, canVote) {
+  const li = document.createElement("li");
+  li.className = "rm-item";
+  const body = document.createElement("div");
+  body.className = "rm-body";
+  const title = document.createElement("strong");
+  title.textContent = item.title;
+  body.appendChild(title);
+  if (item.description) {
+    const p = document.createElement("p");
+    p.className = "small muted rm-desc";
+    p.textContent = item.description;
+    body.appendChild(p);
+  }
+  const side = document.createElement("div");
+  side.className = "rm-side";
+  const count = document.createElement("span");
+  count.className = "rm-count";
+  count.textContent = votesText(item.votes);
+  side.appendChild(count);
+  if (canVote && item.status !== "done") {
+    const b = document.createElement("button");
+    b.type = "button";
+    const paint = () => {
+      b.className = item.voted ? "btn btn-primary rm-vote" : "btn btn-ghost rm-vote";
+      b.textContent = item.voted ? "Voted" : "Vote";
+      b.setAttribute("aria-pressed", String(!!item.voted));
+      b.setAttribute("aria-label", `Vote for: ${item.title}`);
+      count.textContent = votesText(item.votes);
+    };
+    paint();
+    b.addEventListener("click", async () => {
+      $("roadmap-error").textContent = "";
+      busy(b, true);
+      const r = await api(item.voted ? "/roadmap/unvote" : "/roadmap/vote", "POST", { itemId: item.id });
+      busy(b, false);
+      if (r.status === 401) {
+        signedOut(VOTE_ERRORS.signin_required);
+        return;
+      }
+      if (!r.ok) {
+        $("roadmap-error").textContent = VOTE_ERRORS[r.data.error] || message(r.data.error);
+        return;
+      }
+      item.voted = r.data.voted;
+      item.votes = r.data.votes;
+      paint();
+      say(item.voted ? `Voted for "${item.title}".` : `Vote taken back from "${item.title}".`);
+    });
+    side.appendChild(b);
+  }
+  li.append(body, side);
+  return li;
+}
+
+/** Loads the roadmap. `signedIn`: the page thinks it's signed in (the server decides who can vote). */
+async function loadRoadmap(signedIn) {
+  const gen = ++roadmapGen;
+  const r = await api("/roadmap/items");
+  if (gen !== roadmapGen) return;
+  $("roadmap").hidden = false;
+  $("roadmap-error").textContent = "";
+  const groups = $("roadmap-groups");
+  groups.replaceChildren();
+  if (!r.ok) {
+    $("roadmap-error").textContent = r.status === 0 ? VOTE_ERRORS.network : "The roadmap isn't available right now. Try again later.";
+    return;
+  }
+  const canVote = !!r.data.canVote;
+  $("roadmap-signin").hidden = !!r.data.signedIn || signedIn;
+  $("roadmap-review").hidden = !r.data.signedIn || canVote;
+  const items = r.data.items || [];
+  for (const [status, name] of ROADMAP_GROUPS) {
+    const list = items.filter((i) => i.status === status);
+    if (!list.length) continue;
+    const wrap = document.createElement("div");
+    wrap.className = "stack";
+    const h = document.createElement("h3");
+    h.className = "rm-group";
+    h.textContent = name;
+    const ul = document.createElement("ul");
+    ul.className = "rm-list";
+    ul.append(...list.map((i) => roadmapEntry(i, canVote)));
+    wrap.append(h, ul);
+    groups.appendChild(wrap);
+  }
+  if (!items.length) {
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "Nothing on the roadmap yet.";
+    groups.appendChild(p);
+  }
+  if (focusRoadmapWhenLoaded) {
+    focusRoadmapWhenLoaded = false;
+    $("roadmap").scrollIntoView();
+    focusHeading("roadmap-title");
+  }
+}
+
 // ── Start ───────────────────────────────────────────────────
 
 async function start() {
   const [config, me] = await Promise.all([api("/auth/config"), api("/account")]);
+  // "... after your 10 free ones each day": the server's real daily free limit.
+  if (config.ok && Number.isInteger(config.data.freeDailyQuestions)) $("free-daily").textContent = String(config.data.freeDailyQuestions);
   if (me.ok) {
     showAccount(me.data, false);
+    if (ON_ROADMAP) focusRoadmapWhenLoaded = true;
     return;
   }
+  if (ON_ROADMAP) loadRoadmap(false);
   show("signin");
   if (me.status === 0) say("Can't reach Ocean Live. Check your connection and reload.");
   else if (me.status !== 401) say(message(me.data.error));

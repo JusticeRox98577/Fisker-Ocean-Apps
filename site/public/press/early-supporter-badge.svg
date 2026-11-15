@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F9DC9A"/><stop offset="0.5" stop-color="#F6C977"/><stop offset="1" stop-color="#C9933F"/>
+    </linearGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#123563"/><stop offset="1" stop-color="#071A33"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5CE1E6"/><stop offset="1" stop-color="#2A9FB0"/>
+    </linearGradient>
+    <clipPath id="disc"><circle cx="256" cy="232" r="138"/></clipPath>
+  </defs>
+  <!-- ribbon tails -->
+  <path d="M176 330 L130 476 L180 452 L206 496 L244 360 Z" fill="#2A9FB0"/>
+  <path d="M336 330 L382 476 L332 452 L306 496 L268 360 Z" fill="#2A9FB0"/>
+  <path d="M176 330 L150 412 L196 380 Z" fill="#1F7F8E"/>
+  <path d="M336 330 L362 412 L316 380 Z" fill="#1F7F8E"/>
+  <!-- scalloped rosette -->
+  <g transform="translate(256 232)">
+    <path fill="url(#ring)" d="M0,-196 L26,-170 L61,-186 L77,-153 L114,-159 L117,-122 L153,-114 L144,-78 L175,-58 L156,-26 L178,4 L152,28 L164,63 L130,77 L130,114 L93,118 L80,153 L44,144 L22,175 L-7,152 L-36,174 L-56,143 L-93,149 L-104,113 L-141,109 L-138,72 L-171,55 L-155,21 L-178,-8 L-150,-30 L-160,-66 L-125,-80 L-123,-117 L-86,-120 L-71,-155 L-36,-145 Z"/>
+  </g>
+  <circle cx="256" cy="232" r="150" fill="#071A33"/>
+  <circle cx="256" cy="232" r="142" fill="url(#face)" stroke="#F6C977" stroke-width="6"/>
+  <!-- sea and waves -->
+  <g clip-path="url(#disc)">
+    <path d="M100 262 C150 236 190 288 240 262 C290 236 330 288 380 262 C400 252 410 252 420 256 L420 400 L100 400 Z" fill="url(#sea)"/>
+    <path d="M100 300 C150 276 190 326 240 300 C290 276 330 326 380 300 C400 290 410 290 420 294 L420 400 L100 400 Z" fill="#1F7F8E"/>
+  </g>
+  <!-- star -->
+  <path fill="#F6C977" stroke="#FFF3D6" stroke-width="4" stroke-linejoin="round"
+        d="M256 112 L282 168 L343 174 L297 215 L310 275 L256 244 L202 275 L215 215 L169 174 L230 168 Z"/>
+</svg>

@@ -1,5 +1,5 @@
 {
-  // Ocean Live website: static files, plus src/worker.js for /api/* only (the mailing list proxy).
+  // Ocean Live website: static files, plus src/worker.js for /api/* (the mailing list and roadmap proxies) and /community*.
   "name": "ocean-live-site",
   "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
@@ -11,13 +11,17 @@
     "binding": "ASSETS",
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash",
-    // Only /api/* reaches the script; every other path is served from public/ without it.
-    "run_worker_first": ["/api/*"]
+    // Only /api/* and the community notes pages (filled in from the app server) reach the script;
+    // every other path is served from public/ without it.
+    "run_worker_first": ["/api/*", "/community", "/community/*", "/community.html"]
   },
   // The mailing list lives in the mail Worker (mail/). Apply its migration and deploy it before
   // pushing site changes to main (a push deploys the site).
+  // The public roadmap (/api/roadmap) comes from the app server (ask-proxy/, ocean-live-ask):
+  // deploy it with its /roadmap endpoint before pushing site changes that use it.
   "services": [
-    { "binding": "MAIL", "service": "ocean-live-mail" }
+    { "binding": "MAIL", "service": "ocean-live-mail" },
+    { "binding": "ASK", "service": "ocean-live-ask" }
   ],
   "routes": [
     { "pattern": "oceanlive.org", "custom_domain": true },

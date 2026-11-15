@@ -40,12 +40,13 @@
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
     <ul class="nav-links" id="nav-links">
-      <li><a href="/#live">Live data</a></li>
       <li><a href="/#features">Features</a></li>
-      <li><a href="/#battery">12V</a></li>
-      <li><a href="/#faults">Fault codes</a></li>
-      <li><a href="/#privacy">Privacy</a></li>
-      <li><a href="/#faq">FAQ</a></li>
+      <li><a href="/help">Help</a></li>
+      <li><a href="/codes" aria-current="page">Fault codes</a></li>
+      <li><a href="/calculators">Calculators</a></li>
+      <li><a href="/releases">Releases</a></li>
+      <li><a href="/roadmap">Roadmap</a></li>
+      <li><a href="/site-index">All pages</a></li>
       <li class="nav-menu-only"><a href="/#download">Downloads</a></li>
     </ul>
     <a class="btn btn-primary btn-small nav-cta" href="/#download">Downloads</a>
@@ -127,7 +128,7 @@
     <p>Ocean Live marks each code <strong>Active now</strong> (the fault is present now), <strong>Pending</strong>, <strong>Stored</strong> (it happened before) or <strong>Warning lamp</strong> (the module asked for a warning light).</p>
 
     <h2 id="confirmed">Codes confirmed on Ocean cars</h2>
-    <p>These codes have been seen and confirmed on real Ocean cars. Search by code (paste one, with or without a dash) or by a word.</p>
+    <p>These codes have been seen and confirmed on real Ocean cars. Search by code (paste one, with or without a dash) or by a word. Each code has its own page.</p>
     <form class="codes-search" role="search" hidden>
       <label class="codes-label" for="codes-q">Search the confirmed codes</label>
       <input class="codes-input" id="codes-q" type="search" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search" placeholder="B208896 or steering">
@@ -137,57 +138,57 @@
       <table class="codes-table">
         <thead><tr><th scope="col">Code</th><th scope="col">Meaning</th></tr></thead>
         <tbody>
-          <tr data-i="0"><td><code>U15AD87</code></td><td>Lost communication with the power steering module</td></tr>
-          <tr data-i="1"><td><code>U1613F1</code></td><td>End-to-end message check failed (a message failed its integrity check)</td></tr>
-          <tr data-i="2"><td><code>U199701</code></td><td>Lost communication with HV coolant heater H (cabin heating may not work)</td></tr>
-          <tr data-i="3"><td><code>U199702</code></td><td>Lost communication with HV coolant heater B (HV battery heater may not work)</td></tr>
-          <tr data-i="4"><td><code>U201162</code> <code>U201262</code></td><td>Communication verification failure</td></tr>
-          <tr data-i="5"><td><code>B20FE16</code></td><td>Trailer module supply voltage below threshold (trailer lamps may not light fully)</td></tr>
-          <tr data-i="6"><td><code>B208896</code></td><td>Overhead console touch controller not responding</td></tr>
-          <tr data-i="7"><td><code>B178854</code></td><td>Module not coded (configuration missing)</td></tr>
-          <tr data-i="8"><td><code>C21A531</code></td><td>Front camera: no signal on its Ethernet link (timeout)</td></tr>
-          <tr data-i="9"><td><code>C21A586</code></td><td>Front camera: invalid signal on its Ethernet link</td></tr>
-          <tr data-i="10"><td><code>U114281</code> <code>U1142F1</code></td><td>Climate control value invalid / signal outdated<span class="code-note">Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update.</span></td></tr>
-          <tr data-i="11"><td><code>U114381</code> <code>U1143F1</code></td><td>Stability control (ABS) value invalid / signal outdated<span class="code-note">Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update.</span></td></tr>
-          <tr data-i="12"><td><code>U114581</code> <code>U1145F1</code></td><td>Cockpit controller value invalid / signal outdated<span class="code-note">Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update.</span></td></tr>
+          <tr data-i="0"><td><a href="/codes/u15ad87"><code>U15AD87</code></a></td><td>Lost communication with the power steering module</td></tr>
+          <tr data-i="1"><td><a href="/codes/u1613f1"><code>U1613F1</code></a></td><td>End-to-end message check failed (a message failed its integrity check)</td></tr>
+          <tr data-i="2"><td><a href="/codes/u199701"><code>U199701</code></a></td><td>Lost communication with HV coolant heater H (cabin heating may not work)</td></tr>
+          <tr data-i="3"><td><a href="/codes/u199702"><code>U199702</code></a></td><td>Lost communication with HV coolant heater B (HV battery heater may not work)</td></tr>
+          <tr data-i="4"><td><a href="/codes/u201162"><code>U201162</code></a> <a href="/codes/u201262"><code>U201262</code></a></td><td>Communication verification failure</td></tr>
+          <tr data-i="5"><td><a href="/codes/b20fe16"><code>B20FE16</code></a></td><td>Trailer module supply voltage below threshold (trailer lamps may not light fully)</td></tr>
+          <tr data-i="6"><td><a href="/codes/b208896"><code>B208896</code></a></td><td>Overhead console touch controller not responding</td></tr>
+          <tr data-i="7"><td><a href="/codes/b178854"><code>B178854</code></a></td><td>Module not coded (configuration missing)</td></tr>
+          <tr data-i="8"><td><a href="/codes/c21a531"><code>C21A531</code></a></td><td>Front camera: no signal on its Ethernet link (timeout)</td></tr>
+          <tr data-i="9"><td><a href="/codes/c21a586"><code>C21A586</code></a></td><td>Front camera: invalid signal on its Ethernet link</td></tr>
+          <tr data-i="10"><td><a href="/codes/u114281"><code>U114281</code></a> <a href="/codes/u1142f1"><code>U1142F1</code></a></td><td>Climate control value invalid / signal outdated<span class="code-note">Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update.</span></td></tr>
+          <tr data-i="11"><td><a href="/codes/u114381"><code>U114381</code></a> <a href="/codes/u1143f1"><code>U1143F1</code></a></td><td>Stability control (ABS) value invalid / signal outdated<span class="code-note">Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update.</span></td></tr>
+          <tr data-i="12"><td><a href="/codes/u114581"><code>U114581</code></a> <a href="/codes/u1145f1"><code>U1145F1</code></a></td><td>Cockpit controller value invalid / signal outdated<span class="code-note">Common on cars running the O-Loop / ovloop 2.2.3+ software, where it is usually a side effect of the update.</span></td></tr>
         </tbody>
       </table>
     </div>
     <p>Many U-codes (lost communication, signal outdated, integrity check failed) appear after a module was asleep, the 12V dipped, or software was updated, and often clear and stay clear. Codes that come back right after clearing, or that come with a warning on the car's screen, point to a real problem.</p>
 
     <h2 id="modules">The modules Ocean Live scans</h2>
-    <p><strong>Scan all modules</strong> reads stored codes from 39 modules. Their short names, as the app shows them:</p>
+    <p><strong>Scan all modules</strong> reads stored codes from 39 modules. Their short names, as the app shows them (each has <a href="/modules">its own page</a>):</p>
     <ul class="modules-list">
-      <li><strong>BMS</strong>: HV battery</li>
-      <li><strong>BCM</strong>: body control</li>
-      <li><strong>VCU</strong>: vehicle control</li>
-      <li><strong>MCU_F / MCU_R</strong>: front / rear motor</li>
-      <li><strong>PDU</strong>: power distribution</li>
-      <li><strong>PIU</strong>: power integration unit</li>
-      <li><strong>WTC and BTC</strong>: HV coolant heaters A and B</li>
-      <li><strong>ECC</strong>: climate</li>
-      <li><strong>RAC</strong>: rear climate</li>
-      <li><strong>ESP</strong>: stability control</li>
-      <li><strong>IBOOSTER</strong>: brake booster</li>
-      <li><strong>EPS and EPS2</strong>: power steering and backup</li>
-      <li><strong>ACU</strong>: airbags</li>
-      <li><strong>PKC</strong>: keys and NFC</li>
-      <li><strong>ICC</strong>: cockpit and screens</li>
-      <li><strong>GW</strong>: gateway</li>
-      <li><strong>TBOX_EU / TBOX_US</strong>: telematics</li>
-      <li><strong>HYDRA</strong>: driver assist</li>
-      <li><strong>FCM</strong>: front camera</li>
-      <li><strong>MRR</strong>: front radar</li>
-      <li><strong>CMRR_FL/FR/RL/RR</strong>: corner radars</li>
-      <li><strong>OHC</strong>: overhead console</li>
-      <li><strong>CIM</strong>: steering column</li>
-      <li><strong>MFSS</strong>: steering wheel switches</li>
-      <li><strong>DSMC / PSM</strong>: driver / passenger seat</li>
-      <li><strong>PWC_L / PWC_R</strong>: wireless phone chargers</li>
-      <li><strong>PLGM</strong>: power liftgate</li>
-      <li><strong>TRM</strong>: trailer module</li>
-      <li><strong>AMP</strong>: audio amplifier</li>
-      <li><strong>VSP</strong>: pedestrian warning speaker</li>
+      <li><strong><a href="/modules/bms">BMS</a></strong>: HV battery</li>
+      <li><strong><a href="/modules/bcm">BCM</a></strong>: body control</li>
+      <li><strong><a href="/modules/vcu">VCU</a></strong>: vehicle control</li>
+      <li><strong><a href="/modules/mcu-f">MCU_F</a> / <a href="/modules/mcu-r">MCU_R</a></strong>: front / rear motor</li>
+      <li><strong><a href="/modules/pdu">PDU</a></strong>: power distribution</li>
+      <li><strong><a href="/modules/piu">PIU</a></strong>: power integration unit</li>
+      <li><strong><a href="/modules/wtc">WTC</a> and <a href="/modules/btc">BTC</a></strong>: HV coolant heaters A and B</li>
+      <li><strong><a href="/modules/ecc">ECC</a></strong>: climate</li>
+      <li><strong><a href="/modules/rac">RAC</a></strong>: rear climate</li>
+      <li><strong><a href="/modules/esp">ESP</a></strong>: stability control</li>
+      <li><strong><a href="/modules/ibooster">IBOOSTER</a></strong>: brake booster</li>
+      <li><strong><a href="/modules/eps">EPS</a> and <a href="/modules/eps2">EPS2</a></strong>: power steering and backup</li>
+      <li><strong><a href="/modules/acu">ACU</a></strong>: airbags</li>
+      <li><strong><a href="/modules/pkc">PKC</a></strong>: keys and NFC</li>
+      <li><strong><a href="/modules/icc">ICC</a></strong>: cockpit and screens</li>
+      <li><strong><a href="/modules/gw">GW</a></strong>: gateway</li>
+      <li><strong><a href="/modules/tbox-eu">TBOX_EU</a> / <a href="/modules/tbox-us">TBOX_US</a></strong>: telematics</li>
+      <li><strong><a href="/modules/hydra">HYDRA</a></strong>: driver assist</li>
+      <li><strong><a href="/modules/fcm">FCM</a></strong>: front camera</li>
+      <li><strong><a href="/modules/mrr">MRR</a></strong>: front radar</li>
+      <li><strong><a href="/modules/cmrr-fl">CMRR_FL</a>/<a href="/modules/cmrr-fr">FR</a>/<a href="/modules/cmrr-rl">RL</a>/<a href="/modules/cmrr-rr">RR</a></strong>: corner radars</li>
+      <li><strong><a href="/modules/ohc">OHC</a></strong>: overhead console</li>
+      <li><strong><a href="/modules/cim">CIM</a></strong>: steering column</li>
+      <li><strong><a href="/modules/mfss">MFSS</a></strong>: steering wheel switches</li>
+      <li><strong><a href="/modules/dsmc">DSMC</a> / <a href="/modules/psm">PSM</a></strong>: driver / passenger seat</li>
+      <li><strong><a href="/modules/pwc-l">PWC_L</a> / <a href="/modules/pwc-r">PWC_R</a></strong>: wireless phone chargers</li>
+      <li><strong><a href="/modules/plgm">PLGM</a></strong>: power liftgate</li>
+      <li><strong><a href="/modules/trm">TRM</a></strong>: trailer module</li>
+      <li><strong><a href="/modules/amp">AMP</a></strong>: audio amplifier</li>
+      <li><strong><a href="/modules/vsp">VSP</a></strong>: pedestrian warning speaker</li>
     </ul>
 
     <h2 id="what-to-do">What to do about a code</h2>
@@ -209,7 +210,7 @@
     <div class="callout">
       <p>Airbag (ACU), brake (ESP, IBOOSTER), steering (EPS) and high-voltage (BMS, PDU, PIU, MCU) faults should go to a qualified EV shop. An insulation (isolation) fault is a safety issue: don't open anything.</p>
     </div>
-    <p class="file-meta">This page is made from the <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/ask-proxy/knowledge/ocean-guide.md" rel="noopener">Ocean owner guide</a> that "Any questions?" answers from. More on using the app: <a href="/help">Help</a>.</p>
+    <p class="file-meta">This page is made from the <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/ask-proxy/knowledge/ocean-guide.md" rel="noopener">Ocean owner guide</a> that "Any questions?" answers from. More on using the app: <a href="/help">Help</a>. What the readings mean: <a href="/glossary">Glossary</a>. What owners have found: <a href="/community">Community notes</a>. Every page: <a href="/site-index">All pages</a>.</p>
     </div>
   </div>
 </article>
@@ -229,17 +230,22 @@
         <h2>App</h2>
         <ul>
           <li><a href="/#download">Download</a></li>
-          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">Releases</a></li>
-          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">Changelog</a></li>
+          <li><a href="/releases">Releases</a></li>
+          <li><a href="/roadmap">Roadmap</a></li>
           <li><a href="/help">Help</a></li>
           <li><a href="/codes">Fault codes</a></li>
+          <li><a href="/glossary">Glossary</a></li>
+          <li><a href="/calculators">Calculators</a></li>
           <li><a href="/news">News by email</a></li>
           <li><a href="/#faq">FAQ</a></li>
+          <li><a href="/site-index">All pages</a></li>
         </ul>
       </div>
       <div>
         <h2>Project</h2>
         <ul>
+          <li><a href="/about">About</a></li>
+          <li><a href="/press">Press kit</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">GitHub</a></li>
           <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/LICENSE" rel="noopener">License</a></li>
           <li><a href="/credits">Credits</a></li>

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ocean Live 3.4.0 · Releases</title>
+<meta name="description" content="What changed in Ocean Live 3.4.0 for the Fisker Ocean: &quot;Any questions?&quot;.">
+<link rel="canonical" href="https://oceanlive.org/releases/3-4-0">
+<meta property="og:url" content="https://oceanlive.org/releases/3-4-0">
+<meta name="theme-color" content="#0B2545">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ocean Live">
+<meta property="og:title" content="Ocean Live 3.4.0 · Releases">
+<meta property="og:description" content="What changed in Ocean Live 3.4.0 for the Fisker Ocean: &quot;Any questions?&quot;.">
+<meta property="og:image" content="https://oceanlive.org/icons/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="The Ocean Live app icon">
+<meta name="twitter:card" content="summary">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="paper" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<header class="site-header" id="top">
+  <nav class="wrap nav" aria-label="Main">
+    <a class="brand" href="/" aria-label="Ocean Live home">
+      <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+      Ocean Live
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="/#features">Features</a></li>
+      <li><a href="/help">Help</a></li>
+      <li><a href="/codes">Fault codes</a></li>
+      <li><a href="/calculators">Calculators</a></li>
+      <li><a href="/releases">Releases</a></li>
+      <li><a href="/roadmap">Roadmap</a></li>
+      <li><a href="/site-index">All pages</a></li>
+      <li class="nav-menu-only"><a href="/#download">Downloads</a></li>
+    </ul>
+    <a class="btn btn-primary btn-small nav-cta" href="/#download">Downloads</a>
+  </nav>
+</header>
+
+<main id="main">
+<section class="doc-hero">
+  <div class="wrap narrow">
+    <div class="lightbar" aria-hidden="true"></div>
+    <div class="eyebrow">Release</div>
+    <h1>Ocean Live 3.4.0</h1>
+    <p>The latest release.</p>
+  </div>
+</section>
+
+<article class="doc">
+  <div class="wrap narrow">
+    <div class="sheet">
+<nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="/releases">Releases</a></li><li aria-current="page">3.4.0</li></ol></nav>
+    <h2 id="changes">What changed</h2>
+    <ul class="release-notes">
+      <li>&quot;Any questions?&quot;: tap the <strong>?</strong> at the top to ask Claude, Anthropic's AI, about your Fisker Ocean or the app. It answers from an Ocean owner guide and a fault code table and, unless you turn it off, sees your latest readings and fault codes (never the VIN or location). Asking never talks to the car. Questions go to the Ocean Live server and Anthropic, and are logged for research and deleted after 90 days. Up to 10 questions a day. English, German, Dutch, French and Spanish</li>
+      <li>Ocean Live accounts: sign in with Google or a code sent to your email (on iPhone, also Sign in with Apple). After signing in, the app works offline. Car data stays on your phone. Rename or delete your account any time in Settings → Account</li>
+      <li>Support Ocean Live: three optional tips in Settings → Support, through Google Play or the App Store. They unlock nothing. A small banner on the Live tab can be closed and never shows in the first 3 days, while driving or charging, or on Android Auto, CarPlay, widgets or the watch. Installs from oceanlive.org or GitHub don't show it</li>
+      <li>New website: oceanlive.org, with the Android downloads</li>
+      <li>Android APKs on GitHub are now signed only with the official Ocean Live key. APKs from GitHub up to 3.3.1 used a test key that is public, so someone else could make an update that installs over them. If you installed one, uninstall it once and install the new one; after that, updates install over it as usual. Play Store installs are not affected</li>
+      <li>New SECURITY.md: how to report a security problem privately</li>
+      <li>Safer fault clearing and module restarts: before them, and again before each module, Ocean Live checks fresh readings that the car isn't moving and that almost no power is flowing (so it isn't charging and the climate is off). If the car moves or starts charging part way, it stops and says why. Restart is no longer offered for the brakes, steering, airbags, drive motors, gateway or battery management</li>
+      <li>The overnight 12V watch goes back to full reading at most once every 2 hours</li>
+      <li>iPhone: your ABRP token and key are now kept in the Keychain on this iPhone only, out of backups. Android: they're left out of backups and phone-to-phone transfers</li>
+      <li>Android Auto: only Android Auto itself can open Ocean Live's car screen</li>
+      <li>License updated to version 1.1: Washington State law, and severability</li>
+    </ul>
+
+    <h2 id="get">Get it</h2>
+    <ul>
+      <li>Android phone and Wear OS: the APKs in <a href="/#download">Downloads</a> (also on <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/releases" rel="noopener">GitHub Releases</a>).</li>
+      <li>Google Play: the open test. <a href="https://groups.google.com/g/Ocean-Live_Testing" rel="noopener">Join the testers group</a>, then <a href="https://play.google.com/apps/testing/com.justicemw.oceanlive" rel="noopener">join the test on Google Play</a>.</li>
+      <li>iPhone and Apple Watch: <a href="https://testflight.apple.com/join/5CEUXxa2" rel="noopener">the TestFlight beta</a>.</li>
+    </ul>
+
+    <h2 id="more">Other versions</h2>
+    <ul class="pager">
+      
+      <li><a href="/releases">All releases</a></li>
+      <li><a href="/releases/3-3-1" rel="prev">3.3.1 (older) →</a></li>
+    </ul>
+    <p class="file-meta">Made from the <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/CHANGELOG.md" rel="noopener">changelog</a>.</p>
+    </div>
+  </div>
+</article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/">
+          <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+          Ocean Live
+        </a>
+        <p>Battery, 12V, trips and fault codes for the Fisker Ocean, read from the car through a Bluetooth OBD adapter.</p>
+      </div>
+      <div>
+        <h2>App</h2>
+        <ul>
+          <li><a href="/#download">Download</a></li>
+          <li><a href="/releases">Releases</a></li>
+          <li><a href="/roadmap">Roadmap</a></li>
+          <li><a href="/help">Help</a></li>
+          <li><a href="/codes">Fault codes</a></li>
+          <li><a href="/glossary">Glossary</a></li>
+          <li><a href="/calculators">Calculators</a></li>
+          <li><a href="/news">News by email</a></li>
+          <li><a href="/#faq">FAQ</a></li>
+          <li><a href="/site-index">All pages</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Project</h2>
+        <ul>
+          <li><a href="/about">About</a></li>
+          <li><a href="/press">Press kit</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps" rel="noopener">GitHub</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/blob/main/LICENSE" rel="noopener">License</a></li>
+          <li><a href="/credits">Credits</a></li>
+          <li><a href="https://status.oceanlive.org/" rel="noopener">Service status</a></li>
+          <li><a href="mailto:justice@oceanlive.org">Contact</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">Report a bug</a></li>
+          <li><a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/security/advisories/new" rel="noopener">Report a vulnerability</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Privacy</h2>
+        <ul>
+          <li><a href="/privacy">Privacy policy</a></li>
+          <li><a href="https://account.oceanlive.org/" rel="noopener">Your account</a></li>
+          <li><a href="/delete-account">Delete your account</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="disclaimer">
+      <p>Ocean Live is an independent, owner-made app. It is not affiliated with or endorsed by Fisker Inc. "Fisker" and "Fisker Ocean" are trademarks of their respective owners and are used only to describe the vehicle the app works with. Other names are trademarks of their owners.</p>
+      <p>3D model: <a href="https://sketchfab.com/3d-models/fisker-ocean-low-poly-f506bfe876864c04b68bdfc59070739a" rel="noopener">"Fisker Ocean (low-poly)"</a> by <a href="https://sketchfab.com/LagzDesign" rel="noopener">LagzDesign</a>, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>, changed: drawn as lines, compressed, doors separated. <a href="/credits">All credits</a>.</p>
+      <p>Use at your own risk. Values shown by the app are not a dealer diagnosis. © 2026 Ocean Live.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

@@ -613,6 +613,7 @@
     <string name="ask_error_signin">Log opnieuw in om vragen te stellen.</string>
     <string name="balance_label">Tegoed: %1$s</string>
     <string name="balance_note">Betaalt extra AI-vragen en toekomstige uitbreidingen.</string>
+    <string name="balance_auto">Wordt automatisch gebruikt voor extra antwoorden in Vragen? na je 10 gratis per dag.</string>
     <string name="badge_early_supporter">Vroege supporter</string>
     <string name="badge_early_supporter_note">Bedankt dat je Ocean Live al vóór de lancering steunde.</string>
     <string name="reward_added">Beloning voor voorregistratie toegevoegd: %1$s en de badge Vroege supporter. Bedankt!</string>

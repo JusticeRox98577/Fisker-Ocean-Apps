@@ -1,7 +1,8 @@
 # Ocean Live privacy policy
 
 Last updated: 15 November 2026 (added: mailing list, tester invitations, account website,
-balance and pre-registration rewards, reporting an answer, the admin page)
+balance and pre-registration rewards, reporting an answer, the admin page, sharing what you
+know, roadmap votes)
 
 Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other
 Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps,
@@ -30,6 +31,10 @@ and the Ocean Live mailing list.
   developer keeps each question, its answer, the readings sent with it and a random install
   ID for 90 days, then deletes them. If you report an answer, the report is kept with that
   question and deleted with it.
+* If you share a fault code meaning, a fix, a car fact or feedback about the app in "Any
+  questions?", it is stored for an admin to review. Only approved notes are used: in answers
+  for everyone and on oceanlive.org/community, without your name or anything linking them to
+  you. See [Sharing what you know](#sharing-what-you-know).
 
 ## What the app reads and stores
 
@@ -108,6 +113,52 @@ when and the admin's email address. A report is deleted together with its questi
 days, when you delete your account, or when you ask (see above). To limit abuse, the server
 counts reports per account or install for a day. Don't put personal details in the note.
 
+### Sharing what you know
+
+In "Any questions?" you can tell Claude something you know about the Ocean (what a fault code
+meant on your car, a fix or tip that worked, or a fact about the car) or give feedback about
+the app. When you clearly offer something like that, Claude can pass it on to Ocean Live for
+review, and says so in the chat. It sends only what you said, restated briefly, and is told to
+leave out names, email addresses, VINs and other personal details, but please don't include
+them.
+
+What the server stores when something is sent, in the same database as the research log:
+
+* the kind (fault code, fix or tip, car fact, or app feedback), a one-line summary, the details
+  (up to 2,000 characters) and, for a fault code, the code;
+* the date, your account ID if you are signed in (otherwise the install ID), and a link to the
+  logged question it came from;
+* a counter of how many things your account or install sent that day (at most 5 a day), deleted
+  after about a day.
+
+Nothing is stored if the question ends without an answer. The store review account can't send
+anything.
+
+The developer and the admins they appoint review what is sent on the admin page, which shows
+the summary, details and code, and the question it came from while that question is still in
+the research log, but not your account ID, install ID or email address. They can edit it,
+approve it or turn it down. App feedback goes to a feedback list for the developer, may be
+turned into an item on the public roadmap (in the admin's own words), and is never used in
+answers. Nothing is sent to anyone else.
+
+When an admin approves something, its links to your account or install and to your question are
+removed straight away, and it becomes a note (a title and text, which the admin may have
+edited) with no name or identifier. Approved notes are given to Claude with every question,
+from everyone, marked as notes from owners that may be incomplete, and are shown publicly at
+oceanlive.org/community. An admin can retire a note at any time, which takes it out of answers
+and off the website. Approved notes are kept until they are retired, also after you delete your
+account, because nothing links them to you any more; the record of the approval keeps the
+summary and details that were sent, without those links, and the email address of the admin who
+approved it.
+
+Items not reviewed yet are kept until an admin reviews them. Items turned down, and feedback
+marked as dealt with, are deleted 90 days after that. Deleting your account deletes, straight
+away, everything you sent that has not been approved and all your app feedback. To have what
+you sent deleted without deleting an account, email justice@oceanlive.org, as for the research
+log above. The email address of the admin who reviewed an item is kept with it and in the log
+of admin actions. The legal basis in the EU and UK is the developer's legitimate interest in
+improving the answers and the app, with the information you chose to share.
+
 Anthropic processes the question to produce the answer under its commercial terms, which do
 not allow it to train models on this data by default, and keeps it only for a limited time;
 see https://www.anthropic.com/legal/privacy. On your phone, the chat lives only in the app's
@@ -165,9 +216,11 @@ Who processes it:
 The account and its sign-in methods are kept until you delete the account. To delete it, open
 Ocean Live and go to Settings, Account, Delete account. This deletes, straight away, the
 account, its sign-in methods, all its sessions (every device is signed out), the logged
-questions linked to it and your reports about them, any personal question limit set for it, and its balance, ledger and
-badges (unused credit is lost; only the hashed store reference of a claimed reward stays, see
-Balance and rewards). Car data on your phone is
+questions linked to it and your reports about them, any personal question limit set for it,
+what you shared in "Any questions?" that has not been approved, your app feedback, your roadmap
+votes (approved notes stay, with nothing linking them to you; see [Sharing what you
+know](#sharing-what-you-know)), and its balance, ledger and badges (unused credit is lost; only
+the hashed store reference of a claimed reward stays, see Balance and rewards). Car data on your phone is
 not affected. An email-code entry for your address (see Email codes) is removed too. The
 short-lived counters above expire on their own within about a day. You can also delete it on
 the account website (below). See https://oceanlive.org/delete-account.
@@ -190,6 +243,13 @@ account.oceanlive.org. A session there lasts 30 days from its last use; signing 
 and removes the cookie. The account website uses no analytics or trackers. If Sign in with
 Google is offered there, the page loads Google's sign-in button from Google, so Google sees
 your IP address when you open it.
+
+The account website also has the roadmap (account.oceanlive.org/roadmap), where you can vote
+for items on the public Ocean Live roadmap, also shown at oceanlive.org/roadmap. For each vote
+the server stores the item, your account ID and the date. Only the number of votes per item is
+shown, to everyone; the admin page shows the counts, not who voted. You can take a vote back at
+any time. Votes are deleted with your account, or when the item is deleted. To limit abuse, the
+server counts vote changes per account for a day.
 
 oceanlive.org itself still sets no cookies. (The admin page, admin.oceanlive.org, sets one
 sign-in cookie for admins; see [The admin page](#the-admin-page).)
@@ -267,6 +327,11 @@ For admins only, the server stores: their Google email address and who added the
 for each sign-in, a hash of a random session token, kept for 12 hours; and the log of their
 actions. Signing in there sets one strictly necessary cookie, sent only to admin.oceanlive.org,
 that keeps the admin signed in. The page loads Google's sign-in button from Google. Removing an
+Admins also review what owners share in "Any questions?" and the app feedback (see [Sharing
+what you know](#sharing-what-you-know)), and write the public roadmap, where they see vote
+counts but not who voted. The admin's email address is kept with each review, and in the log of
+admin actions.
+
 admin deletes their sessions straight away. The legal basis in the EU and UK is the developer's
 legitimate interest in running the service and keeping a record of who changed what.
 

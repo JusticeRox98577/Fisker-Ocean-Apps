@@ -225,7 +225,7 @@ describe("web sign-in with an email code", () => {
   it("does not offer Apple and only accepts the web Google client", async () => {
     const s = server({ GOOGLE_WEB_CLIENT_ID: "web-id", GOOGLE_IOS_CLIENT_ID: "ios-id" });
     const config = (await (await s.call(`${WEB}/auth/config`)).json()) as Record<string, unknown>;
-    expect(config).toEqual({ apple: false, google: true, email: true, googleWebClientId: "web-id" });
+    expect(config).toEqual({ apple: false, google: true, email: true, googleWebClientId: "web-id", freeDailyQuestions: 10 });
     const apple = await s.call(`${WEB}/auth/apple`, post({ identityToken: "x" }, { Origin: WEB }));
     expect(apple.status).toBe(503);
   });

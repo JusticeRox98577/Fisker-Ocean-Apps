@@ -1,17 +1,24 @@
 # Ocean Live app server
 
-A small Cloudflare Worker that the Ocean Live apps talk to. It does four things:
+A small Cloudflare Worker that the Ocean Live apps talk to. It does five things:
 
 * **"Any questions?"**: the apps send a question here and the Worker asks Claude. It holds the
   Anthropic API key, so the apps never see it, and keeps use within fair limits.
 * **Accounts**: sign-in with Apple (iPhone), Google or a 6-digit email code. There are no
   passwords.
 * **The web account page** at [account.oceanlive.org](https://account.oceanlive.org), where an
-  owner can see, rename, sign out of or delete their account without the app.
+  owner can see, rename, sign out of or delete their account without the app, and vote on the
+  roadmap.
+* **The roadmap**: what's planned, in progress and done, with a vote count per item. Anyone can
+  read it (it's shown on [oceanlive.org/roadmap](https://oceanlive.org/roadmap)); owners with an
+  account vote on the account page, once per item. Only counts are public, never who voted.
 * **An admin page** at `admin.oceanlive.org` for the people who run Ocean Live: Sign in with
   Google, admins only. It shows usage (questions, AI cost, accounts, credit) and the logged
-  questions and reports without who asked, looks an account up and changes its balance or badge;
-  every change is recorded with the admin who made it.
+  questions and reports without who asked, looks an account up and changes its balance or badge,
+  and reviews what owners shared in the chat (Knowledge) and their app feedback (Feedback),
+  which can become a roadmap item. Its Home tab has every link the team uses, the live status and
+  what needs a look; the Roadmap tab adds, edits, orders and deletes roadmap items. Every change is
+  recorded with the admin who made it.
 
 It answers on `api.oceanlive.org`.
 
@@ -26,6 +33,11 @@ with its answer, the readings sent with it and the install ID (and the account, 
 Entries are deleted automatically after 90 days. IP addresses are never logged; the daily counters
 only keep salted hashes of them. [PRIVACY.md](../PRIVACY.md) has the details.
 
+Owners can also share what they know in the chat: what a fault code meant, a fix that worked, a
+fact about the car, or feedback about the app. Claude passes it on for review; nothing is used in
+answers until an admin approves it, usually after editing it, and approved notes are kept without
+anything that says who sent them. App feedback never goes into answers.
+
 ## Accounts
 
 The Worker checks each sign-in itself: Apple and Google identity tokens are verified against the
@@ -37,7 +49,8 @@ The apps keep the token and send it as `Authorization: Bearer <token>`. An email
 Apple says is verified links to an existing account with the same address.
 
 Deleting an account removes the account, its sign-in methods, every session (so all devices are
-signed out), its logged questions and their reports, its balance, ledger and badges, and any personal question limit.
+signed out), its logged questions and their reports, its balance, ledger and badges, what it shared in the chat that
+wasn't approved, its app feedback, its roadmap votes, and any personal question limit.
 Only the hashed reference of a store reward it claimed is kept, so that purchase can't be claimed
 again. Car data is never on the
 server.
@@ -75,12 +88,14 @@ Those files are only served on that host.
   ends up in a new, empty account by mistake.
 * **See** the account's email, name, created date, linked sign-in methods, balance and badges. **Rename** it,
   **sign out** of this browser, or **delete** the account (after typing a confirmation).
+* **Vote** on the roadmap (also at `account.oceanlive.org/roadmap`): one vote per item, which can be
+  taken back. Signed out, the list is shown without voting.
 
 The page never sees the session token. After sign-in the Worker sets one cookie,
 `__Host-olaccount`: `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/`, no `Domain`, so it is
 only ever sent back to `account.oceanlive.org`. It lasts 30 days from last use: the Worker sends
 it again whenever the page loads or renames the account. Every request that changes
-something (sign-in, rename, sign-out, delete) must carry the page's own `Origin`, so another site
+something (sign-in, rename, sign-out, delete, a vote) must carry the page's own `Origin`, so another site
 can't act with it. The page has a strict Content Security Policy: same-origin only, plus exactly
 what Google's sign-in button needs when Google is on. Bearer tokens are not accepted on this host,
 and the cookie is not accepted on the API host.
@@ -98,6 +113,8 @@ and the cookie is not accepted on the API host.
 | `GET`, `PATCH`, `DELETE /account` | Show, rename or delete the signed-in account |
 | `POST /auth/signout` | End this session |
 | `POST /rewards/play`, `POST /rewards/apple` | Claim the pre-registration / pre-order reward (apps) |
+| `GET /roadmap` | The public roadmap: `{items: [{id, title, description, status, votes, updated}]}`, no auth, cacheable for a minute |
+| `GET /roadmap/items`, `POST /roadmap/vote`, `POST /roadmap/unvote` | The roadmap with this account's votes, and voting `{itemId}` (account page only) |
 
 ## Code
 
@@ -105,6 +122,9 @@ and the cookie is not accepted on the API host.
 * [`src/auth.ts`](src/auth.ts): sign-in, sessions (bearer and cookie) and the account endpoints.
 * [`src/email.ts`](src/email.ts): the sign-in code email.
 * [`src/reports.ts`](src/reports.ts): reporting an answer.
+* [`src/knowledge.ts`](src/knowledge.ts): what owners share in the chat, its review, and the approved notes in answers.
+* [`src/roadmap.ts`](src/roadmap.ts): the public roadmap, votes, and the admin page's Roadmap tab.
+* [`src/admin.ts`](src/admin.ts), [`admin/`](admin/): the admin page.
 * [`src/balance.ts`](src/balance.ts), [`src/rewards.ts`](src/rewards.ts): the balance, ledger, badges and reward endpoints.
 * [`src/play.ts`](src/play.ts), [`src/apple.ts`](src/apple.ts), [`src/x509.ts`](src/x509.ts): checking Google Play and App Store rewards.
 * [`account/`](account/): the web account page.

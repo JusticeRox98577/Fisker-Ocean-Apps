@@ -143,3 +143,35 @@ caption { text-align: left; font-weight: 600; padding-bottom: 4px; }
 .pill.paid { border-color: var(--accent); color: var(--accent); }
 .pill.reason { border-color: var(--red); color: var(--red); }
 .links { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+
+/* Knowledge and Feedback */
+textarea, select {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; min-height: 44px; width: 100%;
+}
+textarea { resize: vertical; min-height: 120px; }
+.kform { display: grid; gap: 6px; }
+.pill.retired { border-color: var(--muted); color: var(--muted); }
+
+/* Persistent nav: the tabs stay at the top while a long tab scrolls. */
+.tabs { position: sticky; top: 0; z-index: 5; background: var(--bg); padding-top: 4px; }
+
+/* Home */
+.sub-title { font-size: 1.05rem; }
+.cards li .btn { justify-self: start; margin-top: 6px; }
+.link-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 24px; }
+.link-group { display: grid; gap: 6px; align-content: start; }
+.link-group .links li { overflow-wrap: anywhere; }
+.links a { display: inline-block; min-height: 28px; }
+.live { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 1.1rem; }
+.services { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.svc { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); flex: none; }
+.up .dot { background: #1e8e3e; }
+.partial .dot { background: #c77700; }
+.down .dot { background: var(--red); }
+.strong { font-weight: 600; }
+@media (prefers-color-scheme: dark) {
+  .up .dot { background: #5fd68a; }
+  .partial .dot { background: #ffc24d; }
+}
