@@ -50,8 +50,6 @@
     // Sender and reply address. news@ needs no mailbox: replies go to LIST_REPLY_TO.
     "LIST_FROM": "Ocean Live <news@oceanlive.org>",
     "LIST_REPLY_TO": "justice@oceanlive.org",
-    // Postal address in the footer of every news email (US CAN-SPAM asks for one). Empty: no address line.
-    "LIST_POSTAL_ADDRESS": "",
     // Host for the one-click unsubscribe URL in the List-Unsubscribe header. Empty: LIST_SITE. Mail providers
     // POST to it from their servers, so it must not be behind a bot challenge (README: "One-click unsubscribe").
     "LIST_UNSUB_BASE": "",
@@ -70,4 +68,6 @@
   //   MAIL_PIN        the PIN that signs in to every mailbox (use 8+ digits)
   //   RESEND_API_KEY  a Resend API key with sending access for oceanlive.org
   //   LIST_IP_SALT    optional: a random string that salts the hashed sign-up counter (else the API key does)
+  //   LIST_POSTAL_ADDRESS  optional: postal address in the footer of every news email (US CAN-SPAM asks
+  //                        for one). A secret so it isn't in the public repo. Not set: no address line.
 }

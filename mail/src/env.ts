@@ -13,7 +13,8 @@ export interface Env {
   LIST_SITE: string;
   LIST_FROM: string;
   LIST_REPLY_TO: string;
-  LIST_POSTAL_ADDRESS: string;
+  /** Secret, optional: postal address for the news email footer. */
+  LIST_POSTAL_ADDRESS?: string;
   /** Optional host for the RFC 8058 one-click unsubscribe URL (default: LIST_SITE). */
   LIST_UNSUB_BASE?: string;
   /** Mailing list limits. */
