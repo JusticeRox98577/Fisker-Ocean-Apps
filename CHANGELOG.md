@@ -10,6 +10,14 @@ Each `## x.y.z` section is used as the release notes for that version.
   location). Asking never talks to the car. Questions go to the Ocean Live server and
   Anthropic, and are logged for research and deleted after 90 days. Up to 10 questions a
   day. English, German, Dutch, French and Spanish
+* Ocean Live accounts: sign in with Google or a code sent to your email (on iPhone, also
+  Sign in with Apple). After signing in, the app works offline. Car data stays on your phone.
+  Rename or delete your account any time in Settings → Account
+* Support Ocean Live: three optional tips in Settings → Support, through Google Play or the
+  App Store. They unlock nothing. A small banner on the Live tab can be closed and never shows
+  in the first 3 days, while driving or charging, or on Android Auto, CarPlay, widgets or the
+  watch. Installs from oceanlive.org or GitHub don't show it
+* New website: oceanlive.org, with the Android downloads
 * Android APKs on GitHub are now signed only with the official Ocean Live key. APKs from
   GitHub up to 3.3.1 used a test key that is public, so someone else could make an update
   that installs over them. If you installed one, uninstall it once and install the new one;
