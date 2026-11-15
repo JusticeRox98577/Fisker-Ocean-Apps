@@ -8,20 +8,24 @@
  *
  * Research log: every answered question is saved to D1 (table `questions`, see migrations/) with
  * the conversation, the answer, the car readings sent with it, the install ID, the phone's
- * language and the cost. A daily cron deletes entries older than LOG_RETENTION_DAYS (90).
+ * language and the cost. Answers carry the row's ID (questionId) so the app can report one
+ * (POST /ask/report, see reports.ts); reports are deleted with their question. A daily cron deletes entries older than LOG_RETENTION_DAYS (90).
  * Owners are told in the app and in PRIVACY.md. IP addresses are never logged.
  *
  * Hosts: api.oceanlive.org and the workers.dev address (older app builds) serve the app API.
  * account.oceanlive.org serves the web account page (the files in account/) and the account
- * endpoints with a cookie session; nothing else. GET /health answers on every host.
+ * endpoints with a cookie session; nothing else. admin.oceanlive.org serves the admin page and
+ * /admin/* (Google sign-in only, see admin.ts); /admin/* is 404 everywhere else. GET /health answers on every host.
  */
 import Anthropic from "@anthropic-ai/sdk";
 import guide from "../knowledge/ocean-guide.md";
-import { handleAuth, sessionAccount, WEB_HOST, type Account } from "./auth";
+import { ADMIN_HOST, adminSite, type AdminEnv } from "./admin";
+import { handleAuth, isReviewAccount, sessionAccount, WEB_HOST, type Account } from "./auth";
 import { balanceOf, centsFor, holdQuestion, releaseHold, settleQuestion } from "./balance";
+import { handleReport, type ReportsEnv } from "./reports";
 import { handleRewards, type RewardsEnv } from "./rewards";
 
-export interface Env extends RewardsEnv {
+export interface Env extends RewardsEnv, ReportsEnv, AdminEnv {
   ANTHROPIC_API_KEY: string;
   /** Random string used to hash IP addresses for the per-network limit. */
   IP_SALT?: string;
@@ -37,7 +41,7 @@ export interface Env extends RewardsEnv {
    * answered and counted per install. Set to "false" once the account update is out.
    */
   ALLOW_ANONYMOUS?: string;
-  /** The web account page's files (account/), served only on account.oceanlive.org. */
+  /** The web account page's files (account/), served only on account.oceanlive.org. The admin page's files are bundled (admin.ts). */
   ASSETS?: Fetcher;
   /** Paid questions (from the account balance) per account per day, after the free ones. Default 50. */
   PAID_DAILY_LIMIT?: string;
@@ -112,11 +116,13 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/health") return health(request);
+    if (url.hostname === ADMIN_HOST) return withWebHeaders(await adminSite(request, env, url), env);
     if (url.hostname === WEB_HOST) return withWebHeaders(await accountSite(request, env, url.pathname), env);
     const auth = await handleAuth(request, env, url.pathname);
     if (auth) return auth;
     const reward = await handleRewards(request, env, url.pathname);
     if (reward) return reward;
+    if (url.pathname === "/ask/report") return handleReport(request, env);
     if (url.pathname !== "/ask") return json({ error: "not_found" }, 404);
     if (request.method !== "POST") return json({ error: "method" }, 405);
 
@@ -159,12 +165,14 @@ export default {
 
     // Signed-in accounts can pay from their balance once the free questions of the day are used up.
     // Anonymous installs never use a balance; a hand-set limit of 0 blocks paid questions too.
-    let balance = account && env.LOG_DB ? await balanceOf(env.LOG_DB, account.id) : 0;
+    // The store reviewers' account never pays (it never has a balance).
+    const canPay = !!account && !!env.LOG_DB && !(await isReviewAccount(env.LOG_DB, env, account));
+    let balance = canPay ? await balanceOf(env.LOG_DB!, account!.id) : 0;
     const limited = (reason: string) => json({ error: "rate_limited", reason, balanceCents: balance }, 429);
     const minCents = Math.max(1, intVar(env.PAID_MIN_BALANCE_CENTS, 3));
     const paid = deviceCount >= deviceLimit;
     if (paid) {
-      if (!account || !env.LOG_DB || (hasCustom && custom === 0)) return limited("free_used");
+      if (!canPay || (hasCustom && custom === 0)) return limited("free_used");
       if (balance < minCents) return limited(balance > 0 ? "low_balance" : "free_used");
     }
     if (ipCount >= ipLimit) return limited("network");
@@ -193,11 +201,20 @@ export default {
     try {
       const { answer, micros } = await ask(client, env, body);
       costMicros = micros;
-      if (!paid || !answer) {
+      if (!answer) {
         ctx.waitUntil(log(env, request, body, answer, micros, account));
         // A declined paid question costs the owner nothing (the hold is given back in finally).
-        if (!answer) return json({ error: "no_answer" }, 422);
-        return json({ answer, remainingToday: Math.max(0, deviceLimit - deviceCount - 1), ...(account ? { balanceCents: balance } : {}) });
+        return json({ error: "no_answer" }, 422);
+      }
+      if (!paid) {
+        // The log row's ID lets the app report this answer (POST /ask/report). Missing when logging failed.
+        const id = await log(env, request, body, answer, micros, account);
+        return json({
+          answer,
+          remainingToday: Math.max(0, deviceLimit - deviceCount - 1),
+          ...(id !== null ? { questionId: String(id) } : {}),
+          ...(account ? { balanceCents: balance } : {}),
+        });
       }
       // Paid: the log row's ID makes the charge happen once. Rounded up to the next cent, at least 1, never
       // more than the balance (the balance can't go below 0).
@@ -213,7 +230,7 @@ export default {
         balanceCents = await balanceOf(env.LOG_DB!, account!.id);
       }
       holdOpen = false;
-      return json({ answer, remainingToday: 0, paid: true, chargedCents, balanceCents });
+      return json({ answer, remainingToday: 0, paid: true, chargedCents, balanceCents, ...(id !== null ? { questionId: String(id) } : {}) });
     } catch (e) {
       if (e instanceof Anthropic.RateLimitError) return json({ error: "busy" }, 503);
       if (e instanceof Anthropic.APIError) return json({ error: "upstream", status: e.status ?? 0 }, 502);
@@ -229,14 +246,22 @@ export default {
     }
   },
 
-  /** Daily: deletes research log entries past the retention period and sign-in codes that have expired. */
+  /** Daily: deletes research log entries past the retention period, and expired sign-in codes and admin sessions. */
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
     if (!env.LOG_DB) return;
     const days = intVar(env.LOG_RETENTION_DAYS, 90);
     const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
-    await env.LOG_DB.prepare("DELETE FROM questions WHERE ts < ?").bind(cutoff).run();
+    // Reports go with their question.
+    await env.LOG_DB.batch([
+      env.LOG_DB.prepare("DELETE FROM reports WHERE question_id IN (SELECT id FROM questions WHERE ts < ?)").bind(cutoff),
+      env.LOG_DB.prepare("DELETE FROM questions WHERE ts < ?").bind(cutoff),
+      // Any report whose question is gone some other way, and anything older than the log itself.
+      env.LOG_DB.prepare("DELETE FROM reports WHERE created < ? OR question_id NOT IN (SELECT id FROM questions)").bind(cutoff),
+    ]);
     // Expiry is an ISO timestamp, so string order is time order. Run daily, an expired code is gone within a day.
-    await env.LOG_DB.prepare("DELETE FROM email_codes WHERE expires < ?").bind(new Date().toISOString()).run();
+    const now = new Date().toISOString();
+    await env.LOG_DB.prepare("DELETE FROM email_codes WHERE expires < ?").bind(now).run();
+    await env.LOG_DB.prepare("DELETE FROM admin_sessions WHERE expires < ?").bind(now).run();
   },
 } satisfies ExportedHandler<Env>;
 
@@ -248,6 +273,8 @@ function health(request: Request): Response {
 
 /** account.oceanlive.org: the account endpoints (cookie session) and the page's static files. */
 async function accountSite(request: Request, env: Env, path: string): Promise<Response> {
+  // The admin page lives on admin.oceanlive.org only.
+  if (path === "/admin" || path.startsWith("/admin/")) return json({ error: "not_found" }, 404);
   const auth = await handleAuth(request, env, path, true);
   if (auth) return auth;
   if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "method" }, 405);
@@ -256,7 +283,7 @@ async function accountSite(request: Request, env: Env, path: string): Promise<Re
 }
 
 /**
- * Locks the account page down: same-origin only, except what Google's sign-in button needs when a web
+ * Locks the account and admin pages down: same-origin only, except what Google's sign-in button needs when a web
  * client ID is set (https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
  */
 function withWebHeaders(res: Response, env: Env): Response {

@@ -53,11 +53,11 @@ const post = (body: unknown, headers: Record<string, string> = {}) => ({
 const balance = async (id: string) => (await db().prepare("SELECT cents FROM balances WHERE account_id = ?").bind(id).first<{ cents: number }>())?.cents ?? 0;
 const count = async (sql: string, ...args: unknown[]) => (await db().prepare(`SELECT COUNT(*) AS n FROM ${sql}`).bind(...args).first<{ n: number }>())!.n;
 
-describe("migration 0003", () => {
+describe("migrations 0003 and 0004", () => {
   it("creates the balance tables with their rules", async () => {
     const tables = await db().prepare("SELECT name FROM sqlite_master WHERE type IN ('table','index')").all<{ name: string }>();
     const names = tables.results.map((r) => r.name);
-    for (const t of ["balances", "ledger", "badges", "claimed_rewards", "ledger_one_reward"]) expect(names).toContain(t);
+    for (const t of ["balances", "ledger", "badges", "reward_claims", "ledger_one_reward"]) expect(names).toContain(t);
     const a = crypto.randomUUID();
     await expect(db().prepare("INSERT INTO balances (account_id, cents) VALUES (?, -1)").bind(a).run()).rejects.toThrow();
     await expect(db().prepare("INSERT INTO ledger (account_id, delta_cents, kind, ref, created) VALUES (?, 1, 'gift', NULL, 'x')").bind(a).run()).rejects.toThrow();
@@ -454,7 +454,7 @@ describe("/ask paid from the balance", () => {
 
     const res = await call(`${API}/ask`, question(a.auth));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ answer: "Check the 12 V battery.", remainingToday: 0, paid: true, chargedCents: 3, balanceCents: 497 });
+    expect(await res.json()).toEqual({ answer: "Check the 12 V battery.", remainingToday: 0, paid: true, chargedCents: 3, balanceCents: 497, questionId: expect.stringMatching(/^\d+$/) });
     expect(await balance(a.id)).toBe(497);
     const row = await db().prepare("SELECT delta_cents, ref FROM ledger WHERE account_id = ? AND kind = 'question'").bind(a.id).first<{ delta_cents: number; ref: string }>();
     expect(row!.delta_cents).toBe(-3);
@@ -568,7 +568,7 @@ describe("account deletion", () => {
     await call(`${API}/rewards/play`, post(claim(token), a.auth));
     expect((await call(`${API}/account`, { method: "DELETE", headers: a.auth })).status).toBe(200);
     for (const t of ["balances", "ledger", "badges"]) expect(await count(`${t} WHERE account_id = ?`, a.id), t).toBe(0);
-    expect(await count("claimed_rewards WHERE ref = ?", `play:${await sha256Hex(token)}`)).toBe(1);
+    expect(await count("reward_claims WHERE ref = ?", `play:${await sha256Hex(token)}`)).toBe(1);
     const b = await account();
     const res = await call(`${API}/rewards/play`, post(claim(token), b.auth));
     expect(res.status).toBe(409);

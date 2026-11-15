@@ -1,6 +1,6 @@
 # Ocean Live app server
 
-A small Cloudflare Worker that the Ocean Live apps talk to. It does three things:
+A small Cloudflare Worker that the Ocean Live apps talk to. It does four things:
 
 * **"Any questions?"**: the apps send a question here and the Worker asks Claude. It holds the
   Anthropic API key, so the apps never see it, and keeps use within fair limits.
@@ -8,6 +8,9 @@ A small Cloudflare Worker that the Ocean Live apps talk to. It does three things
   passwords.
 * **The web account page** at [account.oceanlive.org](https://account.oceanlive.org), where an
   owner can see, rename, sign out of or delete their account without the app.
+* **An admin page** at `admin.oceanlive.org` for the people who run Ocean Live: Sign in with
+  Google, admins only. It looks an account up and changes its balance or badge; every change is
+  recorded with the admin who made it.
 
 It answers on `api.oceanlive.org`.
 
@@ -33,10 +36,17 @@ The apps keep the token and send it as `Authorization: Bearer <token>`. An email
 Apple says is verified links to an existing account with the same address.
 
 Deleting an account removes the account, its sign-in methods, every session (so all devices are
-signed out), its logged questions, its balance, ledger and badges, and any personal question limit.
+signed out), its logged questions and their reports, its balance, ledger and badges, and any personal question limit.
 Only the hashed reference of a store reward it claimed is kept, so that purchase can't be claimed
 again. Car data is never on the
 server.
+
+## Reporting an answer
+
+Each answer from `/ask` carries the logged question's ID (`questionId`). The apps let the owner
+report an answer as offensive, harmful, wrong or other, with an optional note, through
+`POST /ask/report`. Only whoever asked the question can report it (the same account, or the same
+install for apps without an account). A report is kept with its question and deleted with it.
 
 ## Balance and rewards
 
@@ -79,6 +89,7 @@ and the cookie is not accepted on the API host.
 | Method and path | What it does |
 | --- | --- |
 | `POST /ask` | Ask a question (apps) |
+| `POST /ask/report` | Report an answer: `{questionId, reason, note?}` (apps) |
 | `GET /health` | `{"ok":true,"service":"api","time":...}`, no auth, never cached. Used by the status page |
 | `GET /auth/config` | Which sign-in methods are set up |
 | `POST /auth/email/start`, `POST /auth/email/verify` | Email a 6-digit code, then sign in with it |
@@ -92,6 +103,7 @@ and the cookie is not accepted on the API host.
 * [`src/index.ts`](src/index.ts): routing by host, `/ask`, `/health`, the daily cleanup.
 * [`src/auth.ts`](src/auth.ts): sign-in, sessions (bearer and cookie) and the account endpoints.
 * [`src/email.ts`](src/email.ts): the sign-in code email.
+* [`src/reports.ts`](src/reports.ts): reporting an answer.
 * [`src/balance.ts`](src/balance.ts), [`src/rewards.ts`](src/rewards.ts): the balance, ledger, badges and reward endpoints.
 * [`src/play.ts`](src/play.ts), [`src/apple.ts`](src/apple.ts), [`src/x509.ts`](src/x509.ts): checking Google Play and App Store rewards.
 * [`account/`](account/): the web account page.

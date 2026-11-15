@@ -26,6 +26,14 @@ Each `## x.y.z` section is used as the release notes for that version.
   Store, signing in adds US$5 of credit and an Early supporter badge to your account, once
   per store account and once per Ocean Live account. Terms: oceanlive.org/preregistration-terms.
   The privacy policy says what's stored for the balance and how a reward is checked
+* Report an answer: every answer in "Any questions?" has a Report button. Pick a reason
+  (offensive, harmful, wrong or other), add a note if you like, and it goes to the developer
+  with that question. A report is deleted with its question
+* Privacy policy: says how answer reports are kept, how the developer corrects a balance
+  (every correction notes who made it and why), and that a claimed reward's hashed store
+  reference stays after an account is deleted, so the same reward can't be claimed twice.
+  It no longer says the install ID is shown under "Show what's sent": to have questions
+  deleted, email with your account ID from Settings → Account
 
 ## 3.4.0
 

@@ -8,6 +8,9 @@ struct AskTurn: Identifiable, Equatable {
     /// For an answer paid from the account balance: what it cost and what is left, in US cents.
     var chargedCents: Int? = nil
     var balanceCents: Int? = nil
+    /// The proxy's id for the logged question this answers, so the answer can be reported. Nil for the
+    /// owner's own messages and for answers from a server that doesn't send one.
+    var questionId: String? = nil
 }
 
 /// An answer from the proxy. `paid` means the free questions for today were used up and the answer was
@@ -18,6 +21,8 @@ struct AskAnswer: Equatable {
     var chargedCents: Int?
     var balanceCents: Int?
     var remainingToday: Int?
+    /// The logged question's id (see `AskReport.questionId`).
+    var questionId: String? = nil
 }
 
 /// What "Any questions?" says about free questions and the balance, from the last answer.
@@ -55,6 +60,8 @@ final class Ask: ObservableObject {
     @Published private(set) var freeLeft: Int?
     @Published private(set) var paidLast = false
     @Published private(set) var day: String?
+    /// Question ids of answers reported in this session, so each shows "Reported" instead of the action.
+    @Published private(set) var reported: Set<String> = []
 
     private static let maxTurns = 12
 
@@ -85,7 +92,8 @@ final class Ask: ObservableObject {
         case .success(let answer):
             turns.append(AskTurn(fromOwner: false, text: answer.text,
                                  chargedCents: answer.paid ? answer.chargedCents : nil,
-                                 balanceCents: answer.paid ? answer.balanceCents : nil))
+                                 balanceCents: answer.paid ? answer.balanceCents : nil,
+                                 questionId: answer.questionId))
             freeLeft = answer.remainingToday
             paidLast = answer.paid
             day = Self.utcDay(Date())
@@ -100,6 +108,10 @@ final class Ask: ObservableObject {
             retry = q
         }
         waiting = false
+    }
+
+    func markReported(_ questionId: String) {
+        reported.insert(questionId)
     }
 
     nonisolated static func requestBody(device: String, turns: [AskTurn], car: String?) -> [String: Any] {
@@ -187,7 +199,8 @@ final class Ask: ObservableObject {
         if (200..<300).contains(status), !answer.isEmpty {
             return .success(AskAnswer(text: answer, paid: json?["paid"] as? Bool ?? false,
                                       chargedCents: Money.cents(json?["chargedCents"]), balanceCents: balance,
-                                      remainingToday: Money.cents(json?["remainingToday"]).map { max(0, $0) }))
+                                      remainingToday: Money.cents(json?["remainingToday"]).map { max(0, $0) },
+                                      questionId: AskReport.questionId(json?["questionId"])))
         }
         let error = json?["error"] as? String
         let reason = json?["reason"] as? String

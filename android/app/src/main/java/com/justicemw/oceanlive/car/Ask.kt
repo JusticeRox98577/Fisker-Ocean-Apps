@@ -22,9 +22,25 @@ import java.util.UUID
 
 /**
  * One message in the "Any questions?" chat. An answer paid from the balance has [paidCents]
- * (what it cost) and [balanceCents] (what's left after it).
+ * (what it cost) and [balanceCents] (what's left after it). [questionId] is the server's id for an
+ * answer (opaque), used to report it; [reported] is true once a report for it was sent.
  */
-data class AskTurn(val fromOwner: Boolean, val text: String, val paidCents: Int? = null, val balanceCents: Int? = null)
+data class AskTurn(
+    val fromOwner: Boolean,
+    val text: String,
+    val paidCents: Int? = null,
+    val balanceCents: Int? = null,
+    val questionId: String? = null,
+    val reported: Boolean = false,
+)
+
+/** Why an AI answer is reported; [wire] is what POST /ask/report expects. */
+enum class ReportReason(val wire: String, @StringRes val label: Int) {
+    Offensive("offensive", R.string.ask_report_offensive),
+    Harmful("harmful", R.string.ask_report_harmful),
+    Wrong("wrong", R.string.ask_report_wrong),
+    Other("other", R.string.ask_report_other),
+}
 
 data class AskChat(
     val turns: List<AskTurn> = emptyList(),
@@ -75,7 +91,7 @@ object Ask {
         _chat.update {
             when (result) {
                 is Reply.Answer -> it.copy(
-                    turns = it.turns + AskTurn(false, result.text, result.chargedCents.takeIf { result.paid }, result.balanceCents.takeIf { result.paid }),
+                    turns = it.turns + AskTurn(false, result.text, result.chargedCents.takeIf { result.paid }, result.balanceCents.takeIf { result.paid }, result.questionId),
                     waiting = false,
                     freeLeft = result.freeLeft,
                     paidLast = result.paid,
@@ -102,6 +118,7 @@ object Ask {
             val chargedCents: Int? = null,
             val balanceCents: Int? = null,
             val freeLeft: Int? = null,
+            val questionId: String? = null,
         ) : Reply
 
         data class Failed(@StringRes val message: Int, val balanceCents: Int? = null) : Reply
@@ -117,12 +134,97 @@ object Ask {
                 chargedCents = json?.takeIf { it.has("chargedCents") }?.optInt("chargedCents"),
                 balanceCents = Balance.centsIn(json),
                 freeLeft = json?.takeIf { it.has("remainingToday") }?.optInt("remainingToday"),
+                questionId = questionIdIn(json),
             )
         }
         val error = json?.optString("error")
         val balance = Balance.centsIn(json)
         val message = if (error == "rate_limited" || (code == 429 && error.isNullOrEmpty())) Balance.limitMessage(json?.optString("reason")?.takeIf { it.isNotEmpty() }, balance) else errorMessage(code, error)
         return Reply.Failed(message, balance)
+    }
+
+    /**
+     * The answer's question id in a proxy reply, as an opaque string: the server may send a string
+     * or a number (sent back as written, without a decimal point). Null when there is none.
+     */
+    fun questionIdIn(json: JSONObject?): String? {
+        if (json == null || !json.has("questionId") || json.isNull("questionId")) return null
+        val id = when (val v = json.opt("questionId")) {
+            is String -> v.trim()
+            is Int, is Long -> v.toString()
+            is Number -> v.toDouble().let { d -> if (d == Math.floor(d) && !d.isInfinite()) java.math.BigDecimal(d).toPlainString() else v.toString() }
+            else -> ""
+        }
+        return id.takeIf { it.isNotEmpty() && it.length <= 200 }
+    }
+
+    /** POST /ask/report: next to /ask on the same server. */
+    fun reportUrl(askUrl: String): String = askUrl.trim().removeSuffix("/") + "/report"
+
+    /** The body of POST /ask/report. The note is optional and at most [MAX_NOTE] characters. */
+    fun reportBody(device: String, questionId: String, reason: ReportReason, note: String?): JSONObject = JSONObject().apply {
+        put("device", device)
+        put("questionId", questionId)
+        put("reason", reason.wire)
+        note?.trim()?.take(MAX_NOTE)?.takeIf { it.isNotEmpty() }?.let { put("note", it) }
+    }
+
+    const val MAX_NOTE = 500
+
+    /** The answer to a report. */
+    sealed interface ReportResult {
+        data object Sent : ReportResult
+        data class Failed(@StringRes val message: Int) : ReportResult
+    }
+
+    /** The proxy's reply to POST /ask/report. */
+    fun reportResult(code: Int, json: JSONObject?): ReportResult {
+        if (code in 200..299 && json?.optBoolean("ok") == true) return ReportResult.Sent
+        return ReportResult.Failed(
+            when {
+                json?.optString("error") == "not_found" || code == 404 -> R.string.ask_report_error_gone
+                json?.optString("error") == "rate_limited" || code == 429 -> R.string.ask_report_error_limit
+                code == 401 -> R.string.ask_error_signin
+                else -> R.string.ask_report_error
+            },
+        )
+    }
+
+    /**
+     * Reports an AI answer as offensive, harmful, wrong or something else. Sent with the same
+     * identity as the question (account and install id), so only the asker can report it.
+     */
+    suspend fun report(context: Context, questionId: String, reason: ReportReason, note: String?): ReportResult {
+        val result = withContext(Dispatchers.IO) {
+            var conn: HttpURLConnection? = null
+            try {
+                conn = (URL(reportUrl(url)).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    connectTimeout = 10_000
+                    readTimeout = 20_000
+                    doOutput = true
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    setRequestProperty("Accept-Language", Locale.getDefault().toLanguageTag())
+                    Accounts.token?.let { setRequestProperty("Authorization", "Bearer $it") }
+                }
+                val body = reportBody(installId(context), questionId, reason, note)
+                conn.outputStream.use { it.write(body.toString().toByteArray()) }
+                val code = conn.responseCode
+                val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
+                if (code == 401) Accounts.sessionEnded(context)
+                reportResult(code, runCatching { JSONObject(text) }.getOrNull())
+            } catch (_: UnknownHostException) {
+                ReportResult.Failed(R.string.ask_error_offline)
+            } catch (_: Exception) {
+                ReportResult.Failed(R.string.ask_report_error)
+            } finally {
+                conn?.disconnect()
+            }
+        }
+        if (result is ReportResult.Sent) {
+            _chat.update { c -> c.copy(turns = c.turns.map { t -> if (!t.fromOwner && t.questionId == questionId) t.copy(reported = true) else t }) }
+        }
+        return result
     }
 
     /** The UTC date of [millis], like the proxy's daily count (yyyy-MM-dd). */

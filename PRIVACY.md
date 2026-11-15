@@ -1,7 +1,7 @@
 # Ocean Live privacy policy
 
 Last updated: 15 November 2026 (added: mailing list, tester invitations, account website,
-balance and pre-registration rewards)
+balance and pre-registration rewards, reporting an answer, the admin page)
 
 Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other
 Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps,
@@ -19,8 +19,8 @@ and the Ocean Live mailing list.
   [Balance and rewards](#balance-and-rewards).
 * What the app reads from your car stays on your phone, except what you choose to send below.
 * Data leaves your phone only when you sign in or manage your account (opening the account
-  settings checks it with the server), when you ask a question in "Any questions?", when the
-  app claims a pre-registration or pre-order reward for your account, or if you turn on live
+  settings checks it with the server), when you ask a question in "Any questions?" or report
+  an answer, when the app claims a pre-registration or pre-order reward for your account, or if you turn on live
   data to A Better Route Planner (ABRP) yourself.
 * The mailing list on oceanlive.org is separate from the app and only for people who sign up
   and confirm. It keeps your email address and language until you unsubscribe. Testers may be
@@ -28,7 +28,8 @@ and the Ocean Live mailing list.
 * Questions (and, unless you turn it off, your car's latest readings) are answered by Claude,
   an AI made by Anthropic, through a small server the developer runs. For research, the
   developer keeps each question, its answer, the readings sent with it and a random install
-  ID for 90 days, then deletes them.
+  ID for 90 days, then deletes them. If you report an answer, the report is kept with that
+  question and deleted with it.
 
 ## What the app reads and stores
 
@@ -77,10 +78,12 @@ a database at Cloudflare that only the developer can read, and are deleted autom
 after 90 days. Your IP address, VIN and location are never logged. The log is never sold,
 shared or published, and is not used for advertising.
 
-The chat screen shows your install ID under "Show what's sent". To have your logged questions
-deleted, or to ask what is held, email justice@oceanlive.org with that ID; they are deleted within
-30 days. You can also open an issue on GitHub, but issues are public: anyone can see what you
-post there, including the ID. If you don't want your questions
+To have your logged questions deleted, or to ask what is held, email justice@oceanlive.org;
+they are deleted within 30 days. If you are signed in, include your account ID, shown in
+Settings, Account (deleting your account also deletes them, straight away). The app doesn't
+show the install ID, so for questions asked without signing in, say roughly when you asked
+and what about, so they can be found. You can also open an issue on GitHub, but issues are
+public: anyone can see what you post there. If you don't want your questions
 logged, don't use "Any questions?". The legal basis in the EU and UK is the developer's
 legitimate interest in improving the feature you chose to use.
 
@@ -88,6 +91,18 @@ Apart from the log, the question server keeps counters: questions per account (o
 install ID before you sign in) and per network per day (the IP address is turned into a salted hash and never stored as is),
 deleted after about a day, and the month's total spend. Cloudflare and Anthropic see your IP
 address as part of the connection.
+
+### Reporting an answer
+
+Each answer in the chat has a **Report** button (**Report answer** on iPhone), for an answer that is offensive, harmful or
+wrong. A report sends the server the ID of that logged question, the reason you pick, an
+optional note you write (up to 500 characters) and, as with a question, your session or the
+install ID, so the server can check the question is yours. The server stores the report with
+the question: the reason, the note, your account ID or install ID and the date. The developer
+reads reports to fix the answer and improve the knowledge Claude answers from; they are not
+sent to Anthropic or anyone else. A report is deleted together with its question: after 90
+days, when you delete your account, or when you ask (see above). To limit abuse, the server
+counts reports per account or install for a day. Don't put personal details in the note.
 
 Anthropic processes the question to produce the answer under its commercial terms, which do
 not allow it to train models on this data by default, and keeps it only for a limited time;
@@ -121,7 +136,7 @@ research log, which only the developer can read:
   session simply expires).
 * **Your questions:** questions you ask while signed in are linked to your account, and when
   you sign in, the questions this install asked before are linked to it too. They are still
-  deleted after 90 days (see Research log).
+  deleted after 90 days (see Research log), together with any report you made about them.
 * **Email codes:** when you ask for a code, the server keeps your email address with a hash of
   the code. The code works for 10 minutes and allows 5 tries. The entry is kept until you
   use the code or, if unused, removed within a day after it expires; deleting your account
@@ -145,7 +160,7 @@ Who processes it:
 The account and its sign-in methods are kept until you delete the account. To delete it, open
 Ocean Live and go to Settings, Account, Delete account. This deletes, straight away, the
 account, its sign-in methods, all its sessions (every device is signed out), the logged
-questions linked to it, any personal question limit set for it, and its balance, ledger and
+questions linked to it and your reports about them, any personal question limit set for it, and its balance, ledger and
 badges (unused credit is lost; only the hashed store reference of a claimed reward stays, see
 Balance and rewards). Car data on your phone is
 not affected. An email-code entry for your address (see Email codes) is removed too. The
@@ -171,7 +186,8 @@ and removes the cookie. The account website uses no analytics or trackers. If Si
 Google is offered there, the page loads Google's sign-in button from Google, so Google sees
 your IP address when you open it.
 
-oceanlive.org itself still sets no cookies.
+oceanlive.org itself still sets no cookies. (The admin page, admin.oceanlive.org, sets one
+sign-in cookie for admins; see [The admin page](#the-admin-page).)
 
 ### Balance and rewards
 
@@ -186,7 +202,9 @@ What the server stores for this, in the same database as the account:
 
 * **Balance:** the amount, in cents, and when it last changed.
 * **Ledger:** one line per credit or spend, with the amount, the kind (reward, question, add-on
-  or a correction by the developer), a reference and the date. For a question the reference is
+  or a correction made on the admin page), a reference and the date. A correction also has a
+  note saying why, with the email address of the admin who made it (see
+  [The admin page](#the-admin-page)). For a question the reference is
   the question's ID; the ledger line holds only the amount, not the question, and stays after
   the question itself is deleted at 90 days. For a reward the reference identifies the store
   purchase so it can't be claimed twice: for Google Play a SHA-256 hash of the purchase token,
@@ -209,11 +227,32 @@ How a reward is checked:
 
 The balance, ledger and badges are kept until you delete the account, and deleting it deletes
 them straight away. Only one thing stays after the account is deleted: the hashed store reference
-of a reward it claimed, with its date, in a separate list with no account ID and nothing else,
-kept with no end date so the same store purchase can never be rewarded twice. The legal basis for
+of a reward it claimed (the SHA-256 hash of the Google Play purchase token, or of the App
+Store app transaction ID), with the date it was claimed, in a separate list with no account
+ID, email address or anything else. It is kept with no end date, only so the same store
+purchase can't be rewarded again to a new account, and is used for nothing else. The legal basis for
 that is legitimate interest (preventing the same reward from being paid out twice). Credit has no cash value and can't be moved to another account. The legal
 basis in the EU and UK is performance of a contract (keeping your credit and badge and letting
 you spend it).
+
+### The admin page
+
+The developer, and people the developer appoints as admins, look after balances on a separate
+page, admin.oceanlive.org. Only admins can sign in there, with Google only, and app accounts
+can't (signing in to the app never makes anyone an admin). An admin can look up an account by
+its exact email address or its account ID, see its account ID, email address, display name,
+sign-in methods (Google, Apple or email code), creation date, balance, badges and recent ledger
+lines, add or remove credit (a balance can't go below zero) and give or
+remove a badge. Every change records the admin's email address: in the ledger note for a credit
+change, and in a log of admin actions (the admin, what was done, the account ID and the date).
+Corrections and their log entries are deleted with your account, like the rest of the ledger.
+
+For admins only, the server stores: their Google email address and who added them and when;
+for each sign-in, a hash of a random session token, kept for 12 hours; and the log of their
+actions. Signing in there sets one strictly necessary cookie, sent only to admin.oceanlive.org,
+that keeps the admin signed in. The page loads Google's sign-in button from Google. Removing an
+admin deletes their sessions straight away. The legal basis in the EU and UK is the developer's
+legitimate interest in running the service and keeping a record of who changed what.
 
 ## A Better Route Planner (optional)
 

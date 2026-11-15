@@ -242,6 +242,7 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                     onClear = { Ask.clear() },
                     onBack = { showAsk = false },
                     balanceCents = accountState.account?.balanceCents,
+                    onReport = { id, reason, note -> Ask.report(context, id, reason, note) },
                 )
             }
             return@BoxWithConstraints

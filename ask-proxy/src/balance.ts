@@ -47,7 +47,7 @@ export async function creditReward(db: D1Database, accountId: string, ref: strin
     try {
       if (hasReward) {
         await db.batch([
-          db.prepare("INSERT INTO claimed_rewards (ref, created) VALUES (?, ?)").bind(ref, now),
+          db.prepare("INSERT INTO reward_claims (ref, claimed) VALUES (?, ?)").bind(ref, now),
           db.prepare("INSERT INTO ledger (account_id, delta_cents, kind, ref, note, created) VALUES (?, 0, 'adjust', ?, ?, ?)")
             .bind(accountId, ref, `${note}; account already had its reward`, now),
           db.prepare("INSERT OR IGNORE INTO badges (account_id, badge, created) VALUES (?, ?, ?)").bind(accountId, EARLY_SUPPORTER, now),
@@ -56,7 +56,7 @@ export async function creditReward(db: D1Database, accountId: string, ref: strin
       }
       // One batch is one transaction: the claim, the ledger row, the balance and the badge all happen, or none.
       await db.batch([
-        db.prepare("INSERT INTO claimed_rewards (ref, created) VALUES (?, ?)").bind(ref, now),
+        db.prepare("INSERT INTO reward_claims (ref, claimed) VALUES (?, ?)").bind(ref, now),
         db.prepare("INSERT INTO ledger (account_id, delta_cents, kind, ref, note, created) VALUES (?, ?, 'reward', ?, ?, ?)")
           .bind(accountId, REWARD_CENTS, ref, note, now),
         db.prepare(
@@ -78,7 +78,7 @@ async function existingClaim(db: D1Database, accountId: string, ref: string): Pr
   const row = await db.prepare("SELECT account_id FROM ledger WHERE ref = ?").bind(ref).first<{ account_id: string }>();
   if (row) return row.account_id === accountId ? "already_claimed" : "other_account";
   // Claimed by an account that was deleted since.
-  const gone = await db.prepare("SELECT 1 AS x FROM claimed_rewards WHERE ref = ?").bind(ref).first();
+  const gone = await db.prepare("SELECT 1 AS x FROM reward_claims WHERE ref = ?").bind(ref).first();
   return gone ? "other_account" : null;
 }
 

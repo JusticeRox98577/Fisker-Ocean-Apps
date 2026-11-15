@@ -13,7 +13,8 @@
     <!-- Location: needed for Bluetooth scanning on Android 11 and older, and for the optional ABRP position. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Internet is only used to send data to ABRP, and only when you enter an ABRP token. -->
+    <!-- Internet: the Ocean Live account and balance, Any questions? (questions, the readings the owner
+         chooses to include, and answer reports), and ABRP live data only when an ABRP token is entered. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />

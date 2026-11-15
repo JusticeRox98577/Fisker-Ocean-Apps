@@ -30,6 +30,15 @@ export interface AuthEnv {
   EMAIL_FROM?: string;
   /** Tests only: replaces fetch() for calls to Resend. */
   RESEND_FETCH?: typeof fetch;
+  /**
+   * Store review sign-in. With both set, a code requested for exactly REVIEW_EMAIL isn't emailed: the
+   * pending code is REVIEW_CODE (a secret, 6 digits), so app reviewers can sign in. Either unset: that
+   * address is like any other. The account of REVIEW_EMAIL never gets rewards or a balance.
+   */
+  REVIEW_EMAIL?: string;
+  REVIEW_CODE?: string;
+  /** Tests only: replaces fetch() for Apple's and Google's signing keys (nothing is cached then). */
+  JWKS_FETCH?: typeof fetch;
 }
 
 export interface Account {
@@ -45,6 +54,8 @@ const SESSION_DAYS = 365;
 const WEB_SESSION_DAYS = 30;
 const CODE_MINUTES = 10;
 const CODE_ATTEMPTS = 5;
+/** Wrong guesses at the review address, over all its code requests, before REVIEW_CODE stops working. */
+export const REVIEW_FAILS = 20;
 const MAX_NAME = 60;
 
 /** The web account page. Its session cookie is only read on this host. */
@@ -107,7 +118,7 @@ export async function handleAuth(request: Request, env: AuthEnv, path: string, w
         if (web) return json({ error: "method_unavailable" }, 503);
         const aud = list(env.APPLE_AUDIENCES);
         if (aud.length === 0) return json({ error: "method_unavailable" }, 503);
-        const claims = await verifyJwt(String(body.identityToken ?? ""), APPLE_KEYS, ["https://appleid.apple.com"], aud);
+        const claims = await verifyJwt(String(body.identityToken ?? ""), APPLE_KEYS, ["https://appleid.apple.com"], aud, env.JWKS_FETCH);
         if (!claims || !(await nonceMatches(claims, body.nonce))) return json({ error: "invalid_token" }, 401);
         const verified = claims.email_verified === true || claims.email_verified === "true";
         return done(await signIn(env, "apple", String(claims.sub), verified ? str(claims.email) : null, cleanName(body.name), device, days, create));
@@ -116,7 +127,7 @@ export async function handleAuth(request: Request, env: AuthEnv, path: string, w
         // The web page signs in with the web client ID only.
         const aud = web ? list(env.GOOGLE_WEB_CLIENT_ID) : googleAudiences(env);
         if (aud.length === 0) return json({ error: "method_unavailable" }, 503);
-        const claims = await verifyJwt(String(body.idToken ?? ""), GOOGLE_KEYS, ["https://accounts.google.com", "accounts.google.com"], aud);
+        const claims = await verifyJwt(String(body.idToken ?? ""), GOOGLE_KEYS, GOOGLE_ISSUERS, aud, env.JWKS_FETCH);
         if (!claims || !(await nonceMatches(claims, body.nonce))) return json({ error: "invalid_token" }, 401);
         const verified = claims.email_verified === true || claims.email_verified === "true";
         return done(await signIn(env, "google", String(claims.sub), verified ? str(claims.email) : null, cleanName(claims.name), device, days, create));
@@ -145,7 +156,7 @@ export async function handleAuth(request: Request, env: AuthEnv, path: string, w
  * either as sent (Google) or as its SHA-256 hex (Apple's usual pattern, where the app passes
  * sha256(nonce) to Apple). Without one (older app builds) there is nothing to compare.
  */
-async function nonceMatches(claims: Record<string, unknown>, sent: unknown): Promise<boolean> {
+export async function nonceMatches(claims: Record<string, unknown>, sent: unknown): Promise<boolean> {
   if (sent === undefined || sent === null || sent === "") return true;
   if (typeof sent !== "string" || sent.length > 200) return false;
   const inToken = claims.nonce;
@@ -249,8 +260,8 @@ async function accountInfo(db: D1Database, a: Account) {
 }
 
 /**
- * Removes the account, its sign-ins, sessions, pending email codes, logged questions, balance, ledger, badges
- * and any hand-set question limit. Only the hashed references of store rewards it claimed stay (claimed_rewards),
+ * Removes the account, its sign-ins, sessions, pending email codes, logged questions and their reports, balance, ledger, badges
+ * and any hand-set question limit. Only the hashed references of store rewards it claimed stay (reward_claims),
  * so the same store purchase can't be claimed again.
  */
 async function deleteAccount(env: AuthEnv, id: string) {
@@ -263,10 +274,14 @@ async function deleteAccount(env: AuthEnv, id: string) {
         "SELECT lower(email) FROM accounts WHERE id = ? AND email IS NOT NULL " +
         "UNION SELECT lower(subject) FROM identities WHERE account_id = ? AND provider = 'email')",
     ).bind(id, id),
+    // Reports go with their question, and the account's own reports on other questions with it.
+    db.prepare("DELETE FROM reports WHERE account_id = ? OR question_id IN (SELECT id FROM questions WHERE account_id = ?)").bind(id, id),
     db.prepare("DELETE FROM questions WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM ledger WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM balances WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM badges WHERE account_id = ?").bind(id),
+    // What admins did to this account (balance and badge changes) goes with it.
+    db.prepare("DELETE FROM admin_log WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM sessions WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM identities WHERE account_id = ?").bind(id),
     db.prepare("DELETE FROM accounts WHERE id = ?").bind(id),
@@ -276,7 +291,7 @@ async function deleteAccount(env: AuthEnv, id: string) {
 
 // ── Email codes ─────────────────────────────────────────────────
 
-const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
+export const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
 
 async function emailStart(request: Request, env: AuthEnv, raw: unknown): Promise<Response> {
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) return json({ error: "method_unavailable" }, 503);
@@ -290,11 +305,15 @@ async function emailStart(request: Request, env: AuthEnv, raw: unknown): Promise
   if (counts[0] >= 5 || counts[1] >= 20) return json({ error: "rate_limited" }, 429);
   await Promise.all(keys.map((k, i) => env.ASK_KV.put(k, String(counts[i] + 1), { expirationTtl: 3600 })));
 
+  // The store reviewers' address: the fixed review code instead of an email (same expiry and tries,
+  // plus a lock after REVIEW_FAILS wrong guesses in all, in emailVerify).
+  const review = reviewCode(env, email);
   const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
-  const code = String(n).padStart(6, "0");
+  const code = review ?? String(n).padStart(6, "0");
   const expires = new Date(Date.now() + CODE_MINUTES * 60_000).toISOString();
   await env.LOG_DB!.prepare("INSERT OR REPLACE INTO email_codes (email, code_hash, expires, attempts) VALUES (?, ?, ?, 0)")
     .bind(email, await codeHash(env, email, code), expires).run();
+  if (review) return json({ ok: true });
 
   const mail = signInEmail(emailLang(request.headers.get("Accept-Language") ?? ""), code, CODE_MINUTES);
   const res = await (env.RESEND_FETCH ?? fetch)("https://api.resend.com/emails", {
@@ -313,12 +332,46 @@ async function emailVerify(env: AuthEnv, rawEmail: unknown, rawCode: unknown, de
   const row = await db.prepare("SELECT code_hash, expires, attempts FROM email_codes WHERE email = ?").bind(email)
     .first<{ code_hash: string; expires: string; attempts: number }>();
   if (!row || Date.parse(row.expires) < Date.now() || row.attempts >= CODE_ATTEMPTS) return json({ error: "code_expired" }, 401);
+  // The review code never changes, so wrong guesses at it add up across starts: after REVIEW_FAILS
+  // the review code stops working until the owner sets a new REVIEW_CODE (the counter is per code).
+  const review = reviewCode(env, email);
+  const failKey = review ? `rvf:${await codeHash(env, email, review)}` : null;
+  const fails = failKey ? parseInt((await env.ASK_KV.get(failKey)) ?? "0", 10) || 0 : 0;
+  if (failKey && fails >= REVIEW_FAILS) return json({ error: "code_expired" }, 401);
   if (code.length !== 6 || (await codeHash(env, email, code)) !== row.code_hash) {
     await db.prepare("UPDATE email_codes SET attempts = attempts + 1 WHERE email = ?").bind(email).run();
+    if (failKey) await env.ASK_KV.put(failKey, String(fails + 1), { expirationTtl: 180 * 86_400 });
     return json({ error: "wrong_code" }, 401);
   }
   await db.prepare("DELETE FROM email_codes WHERE email = ?").bind(email).run();
   return await signIn(env, "email", email, email, null, device, days, create);
+}
+
+/** The review address (lower case), or null when REVIEW_EMAIL isn't set. */
+export function reviewEmail(env: AuthEnv): string | null {
+  const e = env.REVIEW_EMAIL?.trim().toLowerCase();
+  return e && EMAIL.test(e) ? e : null;
+}
+
+/** REVIEW_CODE when `email` is the review address and both are set (the code must be 6 digits), else null. */
+function reviewCode(env: AuthEnv, email: string): string | null {
+  const code = env.REVIEW_CODE?.trim() ?? "";
+  return reviewEmail(env) === email && /^\d{6}$/.test(code) ? code : null;
+}
+
+/**
+ * Is this the store reviewers' account (REVIEW_EMAIL is its email or one of its email sign-ins)? Such an
+ * account never claims rewards, never has a balance and never gains any other rights.
+ */
+export async function isReviewAccount(db: D1Database, env: AuthEnv, account: Account): Promise<boolean> {
+  const review = reviewEmail(env);
+  if (!review) return false;
+  if (account.email?.toLowerCase() === review) return true;
+  const row = await db
+    .prepare("SELECT 1 AS x FROM identities WHERE account_id = ? AND provider = 'email' AND lower(subject) = ?")
+    .bind(account.id, review)
+    .first();
+  return !!row;
 }
 
 function codeHash(env: AuthEnv, email: string, code: string) {
@@ -328,10 +381,18 @@ function codeHash(env: AuthEnv, email: string, code: string) {
 // ── Identity token verification (RS256 JWTs) ────────────────────
 
 const APPLE_KEYS = "https://appleid.apple.com/auth/keys";
-const GOOGLE_KEYS = "https://www.googleapis.com/oauth2/v3/certs";
+export const GOOGLE_KEYS = "https://www.googleapis.com/oauth2/v3/certs";
+export const GOOGLE_ISSUERS = ["https://accounts.google.com", "accounts.google.com"];
 const keyCache = new Map<string, { at: number; keys: JsonWebKey[] }>();
 
-async function jwks(url: string, refresh = false): Promise<JsonWebKey[]> {
+async function jwks(url: string, refresh = false, fetcher?: typeof fetch): Promise<JsonWebKey[]> {
+  if (fetcher) {
+    // Tests: their own keys, never cached.
+    const res = await fetcher(url);
+    const keys = ((await res.json()) as { keys: JsonWebKey[] }).keys;
+    if (!Array.isArray(keys)) throw new Error("jwks");
+    return keys;
+  }
   const hit = keyCache.get(url);
   if (hit && !refresh && Date.now() - hit.at < 3_600_000) return hit.keys;
   let keys: JsonWebKey[];
@@ -350,7 +411,13 @@ async function jwks(url: string, refresh = false): Promise<JsonWebKey[]> {
 }
 
 /** Verifies signature, issuer, audience and expiry. Returns the claims, or null. */
-export async function verifyJwt(token: string, keysUrl: string, issuers: string[], audiences: string[]): Promise<Record<string, unknown> | null> {
+export async function verifyJwt(
+  token: string,
+  keysUrl: string,
+  issuers: string[],
+  audiences: string[],
+  fetcher?: typeof fetch,
+): Promise<Record<string, unknown> | null> {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
   let header: { alg?: string; kid?: string };
@@ -362,8 +429,8 @@ export async function verifyJwt(token: string, keysUrl: string, issuers: string[
     return null;
   }
   if (header.alg !== "RS256" || !header.kid) return null;
-  let jwk = (await jwks(keysUrl)).find((k) => (k as { kid?: string }).kid === header.kid);
-  if (!jwk) jwk = (await jwks(keysUrl, true)).find((k) => (k as { kid?: string }).kid === header.kid);
+  let jwk = (await jwks(keysUrl, false, fetcher)).find((k) => (k as { kid?: string }).kid === header.kid);
+  if (!jwk) jwk = (await jwks(keysUrl, true, fetcher)).find((k) => (k as { kid?: string }).kid === header.kid);
   if (!jwk) return null;
   const key = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
   const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, unbase64url(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`));

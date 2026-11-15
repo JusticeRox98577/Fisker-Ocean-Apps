@@ -1799,6 +1799,34 @@
         }
       }
     },
+    "Add a note (optional)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notiz hinzufügen (optional)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir una nota (opcional)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter une remarque (facultatif)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opmerking toevoegen (optioneel)"
+          }
+        }
+      }
+    },
     "Added %@ kWh.": {
       "localizations": {
         "de": {
@@ -4543,6 +4571,34 @@
         }
       }
     },
+    "Couldn't send the report. Try again in a moment.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Meldung konnte nicht gesendet werden. Versuch es gleich noch einmal."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo enviar el reporte. Inténtalo de nuevo en un momento."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d'envoyer le signalement. Réessayez dans un instant."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De melding kon niet worden verstuurd. Probeer het zo opnieuw."
+          }
+        }
+      }
+    },
     "Couldn't sign in. Try again.": {
       "localizations": {
         "de": {
@@ -5907,6 +5963,34 @@
         }
       }
     },
+    "Harmful or dangerous": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schädlich oder gefährlich"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perjudicial o peligrosa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuisible ou dangereuse"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schadelijk of gevaarlijk"
+          }
+        }
+      }
+    },
     "Hide": {
       "localizations": {
         "de": {
@@ -6925,30 +7009,30 @@
         }
       }
     },
-    "Leave both empty to keep everything on your phone. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from signing in to your Ocean Live account, questions you ask in Any questions? and tips, which go through the App Store, this is the only thing Ocean Live sends over the internet.": {
+    "Leave both empty to send nothing to ABRP. In ABRP open your car, choose Live data, then Generic to get the token. The API key is a free telemetry key from abetterrouteplanner.com/resources/api. Apart from ABRP, Ocean Live only uses the internet for your account and balance, Any questions? (questions and reports about answers) and tips, which go through the App Store.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lass beides leer, damit alles auf deinem Handy bleibt. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von der Anmeldung bei deinem Ocean-Live-Konto, Fragen, die du unter Fragen? stellst, und Trinkgeldern, die über den App Store laufen, ist das das Einzige, was Ocean Live über das Internet sendet."
+            "value": "Lass beides leer, um nichts an ABRP zu senden. Öffne in ABRP dein Auto, wähle Live data und dann Generic, um das Token zu bekommen. Der API-Schlüssel ist ein kostenloser Telemetrie-Schlüssel von abetterrouteplanner.com/resources/api. Abgesehen von ABRP nutzt Ocean Live das Internet nur für dein Konto und Guthaben, Fragen? (Fragen und Meldungen zu Antworten) und Trinkgelder, die über den App Store laufen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deja ambos vacíos para que todo se quede en tu móvil. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de iniciar sesión en tu cuenta de Ocean Live, las preguntas que hagas en ¿Preguntas? y las propinas, que pasan por el App Store, es lo único que Ocean Live envía por internet."
+            "value": "Deja ambos vacíos para no enviar nada a ABRP. En ABRP abre tu coche, elige Live data y luego Generic para obtener el token. La clave API es una clave de telemetría gratuita de abetterrouteplanner.com/resources/api. Aparte de ABRP, Ocean Live solo usa internet para tu cuenta y tu saldo, ¿Preguntas? (preguntas y reportes de respuestas) y las propinas, que pasan por el App Store."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laissez les deux champs vides pour que tout reste sur votre téléphone. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. À part la connexion à votre compte Ocean Live, les questions posées dans Des questions ? et les pourboires, qui passent par l'App Store, c'est la seule chose qu'Ocean Live envoie sur Internet."
+            "value": "Laissez les deux champs vides pour ne rien envoyer à ABRP. Dans ABRP, ouvrez votre voiture, choisissez Live data, puis Generic pour obtenir le jeton. La clé API est une clé de télémétrie gratuite sur abetterrouteplanner.com/resources/api. En dehors d'ABRP, Ocean Live n'utilise Internet que pour votre compte et votre solde, Des questions ? (questions et signalements de réponses) et les pourboires, qui passent par l'App Store."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laat beide leeg om alles op je telefoon te houden. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve het inloggen op je Ocean Live-account, vragen die je stelt bij Vragen? en fooien, die via de App Store gaan, is dit het enige dat Ocean Live via internet verstuurt."
+            "value": "Laat beide leeg om niets naar ABRP te sturen. Open in ABRP je auto, kies Live data en dan Generic om de token te krijgen. De API-sleutel is een gratis telemetriesleutel van abetterrouteplanner.com/resources/api. Behalve voor ABRP gebruikt Ocean Live internet alleen voor je account en tegoed, Vragen? (vragen en meldingen over antwoorden) en fooien, die via de App Store gaan."
           }
         }
       }
@@ -8633,6 +8717,34 @@
         }
       }
     },
+    "Offensive": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beleidigend"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofensiva"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offensante"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beledigend"
+          }
+        }
+      }
+    },
     "Offline": {
       "localizations": {
         "de": {
@@ -9977,6 +10089,90 @@
         }
       }
     },
+    "Report answer": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antwort melden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reportar respuesta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signaler la réponse"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antwoord melden"
+          }
+        }
+      }
+    },
+    "Report this answer": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Antwort melden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reportar esta respuesta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signaler cette réponse"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit antwoord melden"
+          }
+        }
+      }
+    },
+    "Reported": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemeldet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reportada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signalée"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemeld"
+          }
+        }
+      }
+    },
     "Restart": {
       "localizations": {
         "de": {
@@ -10957,6 +11153,34 @@
         }
       }
     },
+    "Sign in again to report answers.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich wieder an, um Antworten zu melden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a iniciar sesión para reportar respuestas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnectez-vous pour signaler des réponses."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log opnieuw in om antwoorden te melden."
+          }
+        }
+      }
+    },
     "Sign in to continue": {
       "localizations": {
         "de": {
@@ -11261,6 +11485,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sommige lijsten zijn mogelijk onvolledig (%@). Opnieuw scannen vult ze meestal aan."
+          }
+        }
+      }
+    },
+    "Something else": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etwas anderes"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otra cosa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autre chose"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iets anders"
           }
         }
       }
@@ -11821,6 +12073,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bedankt dat je Ocean Live vanaf het begin steunt."
+          }
+        }
+      }
+    },
+    "Thanks. We'll look at it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danke. Wir sehen es uns an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gracias. Lo revisaremos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merci. Nous allons l'examiner."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bedankt. We bekijken het."
           }
         }
       }
@@ -12409,6 +12689,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Denkt na…"
+          }
+        }
+      }
+    },
+    "This answer can't be reported any more.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Antwort kann nicht mehr gemeldet werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta respuesta ya no se puede reportar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette réponse ne peut plus être signalée."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit antwoord kan niet meer worden gemeld."
           }
         }
       }
@@ -13879,6 +14187,34 @@
         }
       }
     },
+    "What's wrong with this answer?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was stimmt mit dieser Antwort nicht?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué falla en esta respuesta?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qu'est-ce qui ne va pas dans cette réponse ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wat is er mis met dit antwoord?"
+          }
+        }
+      }
+    },
     "Which fault codes should worry me?": {
       "localizations": {
         "de": {
@@ -13991,6 +14327,34 @@
         }
       }
     },
+    "Wrong or misleading": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falsch oder irreführend"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incorrecta o engañosa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fausse ou trompeuse"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onjuist of misleidend"
+          }
+        }
+      }
+    },
     "You'll need to sign in again to use Ocean Live. Your car data on this phone stays.": {
       "localizations": {
         "de": {
@@ -14015,6 +14379,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Je moet opnieuw inloggen om Ocean Live te gebruiken. Je autogegevens op deze telefoon blijven bewaard."
+          }
+        }
+      }
+    },
+    "You've sent a lot of reports today. Try again tomorrow.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du hast heute viele Meldungen gesendet. Versuch es morgen noch einmal."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoy has enviado muchos reportes. Inténtalo de nuevo mañana."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous avez envoyé beaucoup de signalements aujourd'hui. Réessayez demain."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je hebt vandaag veel meldingen verstuurd. Probeer het morgen opnieuw."
           }
         }
       }
@@ -14127,6 +14519,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Je laatste waarden en foutcodes gaan mee met elke vraag, nooit je VIN of locatie. Vragen maakt de auto nooit wakker."
+          }
+        }
+      }
+    },
+    "Your report is kept with this question and answer and deleted with them.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Meldung wird mit dieser Frage und Antwort gespeichert und mit ihnen gelöscht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu reporte se guarda con esta pregunta y respuesta y se borra con ellas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre signalement est conservé avec cette question et cette réponse, et supprimé avec elles."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je melding wordt bewaard bij deze vraag en dit antwoord en samen ermee verwijderd."
           }
         }
       }

@@ -84,10 +84,10 @@
           <tr><td>Your account: account ID, email address, display name, created and last-used dates</td><td>Deleted from the Ocean Live server</td></tr>
           <tr><td>Linked sign-in methods (Google, Apple, email) and the provider's ID for you</td><td>Deleted</td></tr>
           <tr><td>Sign-in sessions on all your devices</td><td>Deleted, so every device is signed out</td></tr>
-          <tr><td>Logged "Any questions?" questions linked to the account, with their answers and the readings sent with them (this includes questions the phone asked before you signed in, which are linked at sign-in)</td><td>Deleted</td></tr>
+          <tr><td>Logged "Any questions?" questions linked to the account, with their answers and the readings sent with them (this includes questions the phone asked before you signed in, which are linked at sign-in), and any reports you made about answers</td><td>Deleted</td></tr>
           <tr><td>Any personal daily question limit set for your account</td><td>Deleted</td></tr>
-          <tr><td>Your balance of Ocean Live credit, its ledger of credits and spends, and badges such as Early supporter</td><td>Deleted. Unused credit is lost and can't be paid out</td></tr>
-          <tr><td>The SHA-256 hash of the store purchase reference (Google Play purchase token or App Store app transaction ID) of a reward the account claimed, with its date</td><td>Kept, with no account ID or anything else, so the same store purchase can't be rewarded twice</td></tr>
+          <tr><td>Your balance of Ocean Live credit, its ledger of credits and spends (including corrections made on the admin page, their notes and the admin log entries about them), and badges such as Early supporter</td><td>Deleted. Unused credit is lost and can't be paid out</td></tr>
+          <tr><td>The SHA-256 hash of the store purchase reference (Google Play purchase token or App Store app transaction ID) of a reward the account claimed, with the date it was claimed</td><td>Kept, with no account ID, email address or anything else, only so the same store purchase can't be rewarded again to a new account</td></tr>
           <tr><td>Short-lived counters (questions per day, email code requests per hour), stored only as hashes or IDs</td><td>Not deleted by this; they expire on their own within about a day</td></tr>
           <tr><td>A sign-in code entry (your email address and a hash of a code you asked for but didn't use)</td><td>Deleted. Unused entries are also removed automatically within a day after the code expires</td></tr>
           <tr><td>Car data on your phone (drives, charges, 12V and fault history, settings)</td><td>Not affected. It was never on the server. Clear it in the app or delete the app to remove it.</td></tr>
@@ -101,12 +101,12 @@
     <p>If you can't sign in at all, ask the developer:</p>
     <ul>
       <li>Email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> from the address on your account, asking for your account to be deleted. Or open an issue at <a href="https://github.com/JusticeRox98577/Fisker-Ocean-Apps/issues/new/choose" rel="noopener">github.com/JusticeRox98577/Fisker-Ocean-Apps/issues</a> (issues are public).</li>
-      <li>Issues are public: anyone can see what you post there. You can include your <strong>account ID</strong> (shown under Settings, Account) or your <strong>install ID</strong> (shown in the chat under "Show what's sent") to speed things up, or leave them out and ask for a private way to send them.</li>
+      <li>Issues are public: anyone can see what you post there. You can include your <strong>account ID</strong> (shown under <span class="path"><span>Settings</span><i>→</i><span>Account</span></span> in the app) to speed things up, or leave it out and ask for a private way to send it.</li>
       <li><strong>Don't post your email address in a public issue.</strong> If it's needed to find your account, the developer will arrange a private way to send it.</li>
     </ul>
 
     <h2 id="questions-only">Only delete my logged questions</h2>
-    <p>To have your logged questions deleted without deleting an account, or to ask what is held, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> with your install ID from "Show what's sent" (or open an issue on GitHub; issues are public). They are deleted within 30 days. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
+    <p>To have your logged questions (and any reports about them) deleted without deleting an account, or to ask what is held, email <a href="mailto:justice@oceanlive.org">justice@oceanlive.org</a> (or open an issue on GitHub; issues are public). They are deleted within 30 days. If you're signed in, include your account ID from <span class="path"><span>Settings</span><i>→</i><span>Account</span></span>. The app doesn't show the install ID, so for questions asked without signing in, say roughly when you asked and what about. Full details are in the <a href="/privacy#research-log">privacy policy</a>.</p>
     </div>
   </div>
 </article>

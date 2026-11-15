@@ -8,6 +8,8 @@ struct AskView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var input = ""
     @State private var showSent = false
+    /// The answer being reported, shown in the report sheet.
+    @State private var reporting: AskTurn?
     @FocusState private var focused: Bool
 
     private let examples: [String] = [
@@ -44,10 +46,18 @@ struct AskView: View {
                         ForEach(ask.turns) { turn in
                             VStack(alignment: .leading, spacing: 4) {
                                 Bubble(text: turn.text, mine: turn.fromOwner)
-                                if let charged = turn.chargedCents {
-                                    Text(Ask.paidNote(charged: charged, left: turn.balanceCents))
-                                        .font(.system(size: 12)).foregroundStyle(Theme.dim)
-                                        .padding(.horizontal, 4)
+                                if turn.chargedCents != nil || (!turn.fromOwner && turn.questionId != nil) {
+                                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                                        if let charged = turn.chargedCents {
+                                            Text(Ask.paidNote(charged: charged, left: turn.balanceCents))
+                                                .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                                        }
+                                        Spacer(minLength: 0)
+                                        if !turn.fromOwner, let qid = turn.questionId {
+                                            reportAction(turn, questionId: qid)
+                                        }
+                                    }
+                                    .padding(.horizontal, 4)
                                 }
                             }
                             .id(turn.id)
@@ -111,6 +121,29 @@ struct AskView: View {
         .background(Theme.background.ignoresSafeArea())
         // A failed question goes back into the field so it can be sent again.
         .onChange(of: ask.retry) { _, q in if let q, input.isEmpty { input = q } }
+        .sheet(item: $reporting) { turn in
+            ReportSheet(questionId: turn.questionId ?? "", answer: turn.text)
+        }
+    }
+
+    /// "Report answer" under an AI answer, or "Reported" once a report for it was sent in this session.
+    @ViewBuilder
+    private func reportAction(_ turn: AskTurn, questionId: String) -> some View {
+        if ask.reported.contains(questionId) {
+            Label("Reported", systemImage: "flag.fill")
+                .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                .labelStyle(.titleAndIcon)
+        } else {
+            Button { reporting = turn } label: {
+                Label("Report answer", systemImage: "flag")
+                    .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                    .labelStyle(.titleAndIcon)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            // The spoken name is the visible "Report answer" (label in name); "Report" also works with Voice Control.
+            .accessibilityInputLabels([Text("Report answer"), Text("Report")])
+        }
     }
 
     private var intro: some View {
@@ -191,6 +224,144 @@ private struct Bubble: View {
                     }
                 }
             if !mine { Spacer(minLength: 0) }
+        }
+    }
+}
+
+/// "Report this answer": a reason (offensive, harmful, wrong or something else) and an optional note,
+/// sent to the Ocean Live server, which keeps the report with the logged question. Never talks to the car.
+private struct ReportSheet: View {
+    let questionId: String
+    let answer: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var reason: ReportReason?
+    @State private var note = ""
+    @State private var sending = false
+    @State private var error: String?
+    @State private var sent = false
+    @FocusState private var noteFocused: Bool
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Spacer()
+                    Button { dismiss() } label: {
+                        Text(sent ? LocalizedStringKey("Done") : LocalizedStringKey("Cancel"))
+                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.aqua)
+                    }
+                    .disabled(sending)
+                }
+                .padding(.top, 10)
+                if sent { thanks } else { form }
+            }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 24)
+            .readableColumn()
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .scrollIndicators(.hidden)
+        .background(Theme.background.ignoresSafeArea())
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Theme.bg)
+        .interactiveDismissDisabled(sending)
+    }
+
+    private var form: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Report this answer").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
+            Text(answer)
+                .font(.system(size: 13)).foregroundStyle(Theme.dim)
+                .lineLimit(4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            Text("What's wrong with this answer?").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                .padding(.top, 4)
+            CardBox {
+                ForEach(ReportReason.allCases) { r in
+                    Button { reason = r } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: reason == r ? "largecircle.fill.circle" : "circle")
+                                .font(.system(size: 18)).foregroundStyle(reason == r ? Theme.aqua : Theme.dim)
+                            Text(verbatim: r.label).font(.system(size: 15)).foregroundStyle(.white)
+                            Spacer(minLength: 0)
+                        }
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .disabled(sending)
+                    .accessibilityAddTraits(reason == r ? .isSelected : [])
+                }
+            }
+            TextField(String(localized: "Add a note (optional)"), text: $note, axis: .vertical)
+                .lineLimit(2...5)
+                .focused($noteFocused)
+                .foregroundStyle(.white)
+                .padding(12)
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(noteFocused ? Theme.aqua : Theme.edge, lineWidth: 1))
+                .disabled(sending)
+                .onChange(of: note) { _, v in if v.utf16.count > AskReport.maxNote { note = AskReport.cut(v, utf16: AskReport.maxNote) } }
+            if let error {
+                Text(error).font(.system(size: 13)).foregroundStyle(Theme.bad)
+            }
+            let canSend = reason != nil && !sending
+            Button { send() } label: {
+                ZStack {
+                    if sending {
+                        ProgressView().tint(Theme.ink)
+                    } else {
+                        Text("Send").font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(canSend ? Theme.ink : Theme.dim)
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .background {
+                    if canSend || sending {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.ocean)
+                    } else {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.card)
+                    }
+                }
+            }
+            .disabled(!canSend)
+            .accessibilityLabel(Text("Send"))
+            Text("Your report is kept with this question and answer and deleted with them.")
+                .font(.system(size: 11)).foregroundStyle(Theme.dim)
+        }
+    }
+
+    private var thanks: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: "checkmark.circle")
+                .font(.system(size: 34)).foregroundStyle(Theme.aqua)
+                .accessibilityHidden(true)
+            Text("Thanks. We'll look at it.").font(.system(size: 20, weight: .semibold)).foregroundStyle(.white)
+        }
+        .padding(.top, 20)
+    }
+
+    private func send() {
+        guard let reason, !sending else { return }
+        noteFocused = false
+        sending = true
+        error = nil
+        let token = Accounts.shared.token
+        let note = self.note
+        let id = questionId
+        Task {
+            let reply = await AskReport.send(questionId: id, reason: reason, note: note, token: token)
+            sending = false
+            switch reply {
+            case .sent:
+                Ask.shared.markReported(id)
+                withAnimation { sent = true }
+            case .failed(let text, let signedOut):
+                error = text
+                // The server no longer knows this session: back to the sign-in screen.
+                if signedOut { Accounts.shared.unauthorized(token: token) }
+            }
         }
     }
 }

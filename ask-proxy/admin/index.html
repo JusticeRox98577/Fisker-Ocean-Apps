@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin · Ocean Live</title>
+  <link rel="stylesheet" href="/admin.css">
+  <script type="module" src="/admin.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <span class="brand">Ocean Live admin</span>
+    <span id="who" class="who small" hidden>
+      <span id="who-email"></span><span id="who-role" class="tag"></span>
+      <button id="signout" class="btn btn-ghost" type="button">Sign out</button>
+    </span>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <section id="loading" class="card" aria-busy="true">
+      <p class="muted">Loading…</p>
+    </section>
+
+    <!-- Signed out -->
+    <section id="signin" class="card stack" aria-labelledby="signin-title" hidden>
+      <h1 id="signin-title" tabindex="-1">Sign in</h1>
+      <p class="muted">Admins only. Sign in with the Google account you were added with.</p>
+      <div id="google-button" class="google-button"></div>
+      <p id="signin-error" class="field-error" role="alert"></p>
+      <p class="small muted">Signing in sets one cookie on this site, for 12 hours. It is only used for signing in.</p>
+    </section>
+
+    <!-- Signed in -->
+    <div id="app" class="stack-lg" hidden>
+      <section class="card stack" aria-labelledby="find-title">
+        <h1 id="find-title" tabindex="-1">Find an account</h1>
+        <form id="find-form" class="row-form" novalidate>
+          <label for="find">Email address or account ID</label>
+          <div class="row">
+            <input id="find" name="find" type="text" autocomplete="off" spellcheck="false" autocapitalize="off" required>
+            <button class="btn btn-primary" type="submit">Find</button>
+          </div>
+          <p id="find-error" class="field-error" role="alert"></p>
+        </form>
+        <ul id="results" class="results" hidden></ul>
+      </section>
+
+      <section id="account" class="card stack" aria-labelledby="acc-title" hidden>
+        <h2 id="acc-title" tabindex="-1">Account</h2>
+        <p id="acc-review" class="warn small" hidden>This is the store review account. It can't have a balance or badges.</p>
+        <dl class="facts">
+          <div><dt>Email</dt><dd id="acc-email"></dd></div>
+          <div><dt>Name</dt><dd id="acc-name"></dd></div>
+          <div><dt>Account ID</dt><dd id="acc-id" class="mono"></dd></div>
+          <div><dt>Created</dt><dd id="acc-created"></dd></div>
+          <div><dt>Sign-in methods</dt><dd id="acc-providers"></dd></div>
+          <div><dt>Balance</dt><dd id="acc-balance" class="big"></dd></div>
+          <div><dt>Badges</dt><dd id="acc-badges"></dd></div>
+        </dl>
+
+        <form id="balance-form" class="stack" novalidate>
+          <h3>Change the balance</h3>
+          <fieldset class="choice">
+            <legend>Change</legend>
+            <label><input type="radio" name="dir" value="add" checked> Add credit</label>
+            <label><input type="radio" name="dir" value="remove"> Remove credit</label>
+          </fieldset>
+          <label for="amount">Amount in US dollars</label>
+          <input id="amount" name="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="5.00" required>
+          <label for="note">Note (required, 3 to 200 characters)</label>
+          <input id="note" name="note" type="text" maxlength="200" autocomplete="off" required>
+          <p class="small muted">The note and your email are kept in the account's ledger.</p>
+          <p id="balance-error" class="field-error" role="alert"></p>
+          <button class="btn btn-primary" type="submit">Change balance…</button>
+        </form>
+
+        <div class="stack">
+          <h3>Early supporter badge</h3>
+          <p id="badge-state" class="small"></p>
+          <p id="badge-error" class="field-error" role="alert"></p>
+          <button id="badge-toggle" class="btn btn-ghost" type="button"></button>
+        </div>
+
+        <div class="stack">
+          <h3>Ledger</h3>
+          <p class="small muted">The last 50 entries, newest first.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th scope="col">Date (UTC)</th><th scope="col">Change</th><th scope="col">Kind</th><th scope="col">Note</th></tr></thead>
+              <tbody id="ledger"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Owners only -->
+      <section id="admins" class="card stack" aria-labelledby="admins-title" hidden>
+        <h2 id="admins-title">Admins</h2>
+        <p class="small muted">Admins can change balances and badges. Only owners can add or remove admins. Owners are set on the server and can't be removed here.</p>
+        <ul id="admin-list" class="admin-list"></ul>
+        <form id="admin-form" class="row-form" novalidate>
+          <label for="admin-email">Add an admin by Google email address</label>
+          <div class="row">
+            <input id="admin-email" name="email" type="email" autocomplete="off" spellcheck="false" autocapitalize="off" required>
+            <button class="btn btn-ghost" type="submit">Add…</button>
+          </div>
+          <p id="admin-error" class="field-error" role="alert"></p>
+        </form>
+      </section>
+
+      <section id="activity" class="card stack" aria-labelledby="activity-title" hidden>
+        <h2 id="activity-title">Recent admin activity</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Date (UTC)</th><th scope="col">Admin</th><th scope="col">Action</th><th scope="col">Details</th></tr></thead>
+            <tbody id="log"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+    <form method="dialog" class="stack">
+      <h2 id="confirm-title">Are you sure?</h2>
+      <p id="confirm-text"></p>
+      <div class="row end">
+        <button class="btn btn-ghost" value="cancel" type="submit">Cancel</button>
+        <button id="confirm-go" class="btn btn-primary" value="ok" type="submit">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

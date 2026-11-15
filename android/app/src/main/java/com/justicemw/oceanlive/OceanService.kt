@@ -12,6 +12,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
@@ -38,6 +39,9 @@ import kotlin.math.roundToInt
 class OceanService : Service() {
     private val scope = MainScope()
     private var locationListener: LocationListener? = null
+
+    /** True when Android only allowed the service without the location type: no phone location then. */
+    private var locationRefused = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -78,17 +82,21 @@ class OceanService : Service() {
     }
 
     private fun startInForeground(state: CarState) {
-        var type = 0
-        if (Build.VERSION.SDK_INT >= 29) {
-            type = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-            if (hasLocationPermission() && Car.settings.value.abrpLocation) type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+        val attempts = ForegroundTypes.attempts(Build.VERSION.SDK_INT, hasLocationPermission() && Car.settings.value.abrpLocation)
+        for ((i, type) in attempts.withIndex()) {
+            try {
+                ServiceCompat.startForeground(this, ID, build(notificationText(state)), type)
+                locationRefused = ForegroundTypes.locationRefused(attempts, type)
+                if (i > 0) Log.i(TAG, "Started without the location type; phone location isn't sent to ABRP from the background")
+                return
+            } catch (e: Exception) {
+                // Android 14+ can refuse the location type when started from the background
+                // (ForegroundServiceStartNotAllowedException / SecurityException): try the next, smaller type.
+                Log.w(TAG, "startForeground refused for type $type", e)
+            }
         }
-        try {
-            ServiceCompat.startForeground(this, ID, build(notificationText(state)), type)
-        } catch (_: Exception) {
-            // Android refused (e.g. started from the background on 12+). Without it the app still works while open.
-            stopSelf()
-        }
+        // Android refused every type (e.g. started from the background on 12+). Without it the app still works while open.
+        stopSelf()
     }
 
     private fun build(text: Pair<String, String>) = NotificationCompat.Builder(this, Alerts.CHANNEL_SERVICE)
@@ -131,7 +139,7 @@ class OceanService : Service() {
 
     @SuppressLint("MissingPermission")
     private fun startLocation() {
-        if (locationListener != null || !hasLocationPermission()) return
+        if (locationListener != null || locationRefused || !hasLocationPermission()) return
         val lm = getSystemService(LocationManager::class.java) ?: return
         val listener = LocationListener { Car.location = it }
         locationListener = listener
@@ -158,6 +166,7 @@ class OceanService : Service() {
 
     companion object {
         private const val ID = 100
+        private const val TAG = "OceanService"
 
         fun start(context: Context) {
             try {
@@ -170,6 +179,27 @@ class OceanService : Service() {
             context.stopService(Intent(context, OceanService::class.java))
         }
     }
+}
+
+/**
+ * Which foreground-service types to try, in order. The connected-device type keeps the Bluetooth
+ * link alive; the location type is added only when the owner sends phone location to ABRP. When
+ * Android refuses the location type (Android 14+ started from the background), the service falls
+ * back to connected-device only and keeps running without phone location.
+ */
+internal object ForegroundTypes {
+    const val CONNECTED_DEVICE = 0x10 // ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+    const val LOCATION = 0x08 // ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+
+    fun attempts(sdk: Int, wantLocation: Boolean): List<Int> = when {
+        sdk < 29 -> listOf(0)
+        wantLocation -> listOf(CONNECTED_DEVICE or LOCATION, CONNECTED_DEVICE)
+        else -> listOf(CONNECTED_DEVICE)
+    }
+
+    /** True when the location type was wanted ([attempts] tried it first) but the service runs without it. */
+    fun locationRefused(attempts: List<Int>, started: Int): Boolean =
+        attempts.first() and LOCATION != 0 && started and LOCATION == 0
 }
 
 /** The notification's Disconnect button. */

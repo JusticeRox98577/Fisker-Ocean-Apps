@@ -9,7 +9,7 @@
  */
 
 import { verifyAppTransaction } from "./apple";
-import { sessionAccount, sha256Hex, type AuthEnv } from "./auth";
+import { isReviewAccount, sessionAccount, sha256Hex, type AuthEnv } from "./auth";
 import { badgesOf, balanceOf, creditReward } from "./balance";
 import { acknowledge, getPurchase, serviceAccount, StoreUnavailable, type PlayEnv } from "./play";
 
@@ -37,6 +37,8 @@ export async function handleRewards(request: Request, env: RewardsEnv, path: str
   const db = env.LOG_DB;
   const account = await sessionAccount(request, env);
   if (!account) return json({ error: "signin_required" }, 401);
+  // The store reviewers' account (REVIEW_EMAIL) never gets a reward or a balance.
+  if (await isReviewAccount(db, env, account)) return json({ error: "review_account" }, 403);
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -97,6 +99,10 @@ export async function handleRewards(request: Request, env: RewardsEnv, path: str
   const owner = await db.prepare("SELECT account_id FROM ledger WHERE ref = ?").bind(ref).first<{ account_id: string }>();
   if (owner?.account_id === account.id) return done(true);
   if (owner) return json({ error: "already_claimed_other_account" }, 409);
+  // Claimed by an account that has been deleted since: the store purchase stays used.
+  if (await db.prepare("SELECT 1 AS x FROM reward_claims WHERE ref = ?").bind(ref).first()) {
+    return json({ error: "already_claimed_other_account" }, 409);
+  }
   if (claimClosed(env.REWARD_CLAIM_UNTIL)) return json({ error: "claim_closed" }, 410);
 
   try {

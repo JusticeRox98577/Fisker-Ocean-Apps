@@ -6,22 +6,26 @@ compatibility_flags = ["nodejs_compat"]
 # Older app builds use the workers.dev address, so it stays on.
 workers_dev = true
 # api.oceanlive.org: the app API. account.oceanlive.org: the web account page.
+# admin.oceanlive.org: the admin page (Google sign-in only, admins only).
 routes = [
   { pattern = "api.oceanlive.org", custom_domain = true },
   { pattern = "account.oceanlive.org", custom_domain = true },
+  { pattern = "admin.oceanlive.org", custom_domain = true },
 ]
 
 # The web account page. The Worker runs first on every request and only serves these files
 # when the host is account.oceanlive.org; on other hosts the same paths are 404.
+# The admin page (admin/) is not in here: its files are bundled into the Worker (rule below) and
+# only served on admin.oceanlive.org.
 [assets]
 directory = "./account"
 binding = "ASSETS"
 run_worker_first = true
 
-# The knowledge guide is bundled into the Worker as text.
+# The knowledge guide and the admin page's files ("...?raw" imports) are bundled into the Worker as text.
 [[rules]]
 type = "Text"
-globs = ["**/*.md"]
+globs = ["**/*.md", "**/*?raw"]
 fallthrough = false
 
 # Counters (per device, per network, monthly spend) and the fault code table.
@@ -76,9 +80,18 @@ PLAY_ALLOW_TEST = "false"
 APPLE_ALLOW_SANDBOX = "false"
 # The iPhone app's Apple ID (the number in App Store Connect). When set, App Store rewards must match it.
 APPLE_APP_ID = ""
+# "Report this answer": new reports per account (or install) per day.
+REPORT_DAILY_LIMIT = "20"
+# Store review sign-in: with this address AND the secret REVIEW_CODE set, a code requested for this
+# address is not emailed; REVIEW_CODE is the code. Empty: off. This account never gets rewards or a balance.
+REVIEW_EMAIL = ""
+# Admin page (admin.oceanlive.org): balance, badge and admin changes per admin per day.
+ADMIN_WRITE_LIMIT = "100"
 
 # Secrets, set with `npx wrangler secret put <NAME>`, never written here:
 #   ANTHROPIC_API_KEY  your Anthropic API key
 #   IP_SALT            any long random string, used to hash IP addresses and email codes
 #   RESEND_API_KEY     your Resend API key, for email sign-in codes
 #   GOOGLE_PLAY_SERVICE_ACCOUNT  the Google Cloud service account's JSON key, to check Play rewards
+#   REVIEW_CODE        6 digits: the sign-in code for REVIEW_EMAIL (store review)
+#   ADMIN_EMAILS       the owners' Google addresses, comma-separated (admin.oceanlive.org)

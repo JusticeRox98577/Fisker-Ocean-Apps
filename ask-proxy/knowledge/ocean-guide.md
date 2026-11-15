@@ -186,9 +186,12 @@ Android Auto and CarPlay.
 
 * Sends the question, and unless **Include my car's readings** is off, the latest readings and
   fault codes the app already has; never the VIN or location, and it never wakes the car.
-  **Show what's sent** shows the exact text and the install ID. 10 free questions a day per phone; if the monthly budget runs out, questions pause for everyone until the next month.
-  Questions are kept for 90 days for research; to have them deleted, the owner sends their
-  install ID through the GitHub issues page.
+  **Show what's sent** shows the exact text that is sent. 10 free questions a day per phone; if the monthly budget runs out, questions pause for everyone until the next month.
+  Questions are kept for 90 days for research; to have them deleted, the owner emails
+  justice@oceanlive.org: if signed in, with the account ID from Settings, Account (deleting the
+  account also deletes them); if not, saying roughly when they asked and what about.
+* Each answer has a **Report** button (**Report answer** on iPhone) for an answer that is
+  offensive, harmful or wrong: pick a reason, optionally add a note, and it goes to the developer.
 
 ### Help and privacy
 

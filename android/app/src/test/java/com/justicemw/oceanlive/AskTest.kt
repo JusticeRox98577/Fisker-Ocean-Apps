@@ -5,6 +5,7 @@ import com.justicemw.oceanlive.car.AskTurn
 import com.justicemw.oceanlive.car.CarState
 import com.justicemw.oceanlive.car.FaultScan
 import com.justicemw.oceanlive.car.Mode
+import com.justicemw.oceanlive.car.ReportReason
 import com.justicemw.oceanlive.car.Settings
 import com.justicemw.oceanlive.car.Snapshot
 import com.justicemw.oceanlive.car.Status
@@ -12,7 +13,9 @@ import com.justicemw.oceanlive.obd.Dtc
 import com.justicemw.oceanlive.obd.Ecus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.json.JSONObject
 import org.junit.Test
 
 class AskTest {
@@ -63,5 +66,43 @@ class AskTest {
         assertEquals(R.string.ask_error_no_answer, Ask.errorMessage(422, "no_answer"))
         assertEquals(R.string.ask_error_server, Ask.errorMessage(502, "upstream"))
         assertEquals(R.string.ask_error_server, Ask.errorMessage(500, null))
+    }
+
+    @Test fun answersKeepTheirQuestionIdAsText() {
+        val numeric = Ask.reply(200, JSONObject("""{"answer":"Hi","questionId":12345}"""))
+        assertEquals("12345", (numeric as Ask.Reply.Answer).questionId)
+        val text = Ask.reply(200, JSONObject("""{"answer":"Hi","questionId":"q_9f3a"}"""))
+        assertEquals("q_9f3a", (text as Ask.Reply.Answer).questionId)
+        assertEquals("9007199254740993", Ask.questionIdIn(JSONObject("""{"questionId":9007199254740993}""")))
+        assertNull((Ask.reply(200, JSONObject("""{"answer":"Hi"}""")) as Ask.Reply.Answer).questionId)
+        assertNull(Ask.questionIdIn(JSONObject("""{"questionId":null}""")))
+        assertNull(Ask.questionIdIn(JSONObject("""{"questionId":""}""")))
+        assertNull(Ask.questionIdIn(null))
+    }
+
+    @Test fun reportRequestMatchesTheProxy() {
+        assertEquals("https://api.example.org/ask/report", Ask.reportUrl("https://api.example.org/ask"))
+        assertEquals("https://api.example.org/ask/report", Ask.reportUrl("https://api.example.org/ask/"))
+        val body = Ask.reportBody("abc-12345", "42", ReportReason.Offensive, "  rude  ")
+        assertEquals("abc-12345", body.getString("device"))
+        assertEquals("42", body.getString("questionId"))
+        assertEquals("offensive", body.getString("reason"))
+        assertEquals("rude", body.getString("note"))
+        assertFalse(Ask.reportBody("d", "42", ReportReason.Other, "   ").has("note"))
+        assertFalse(Ask.reportBody("d", "42", ReportReason.Other, null).has("note"))
+        assertEquals(Ask.MAX_NOTE, Ask.reportBody("d", "42", ReportReason.Wrong, "x".repeat(900)).getString("note").length)
+        assertEquals(listOf("offensive", "harmful", "wrong", "other"), ReportReason.entries.map { it.wire })
+    }
+
+    @Test fun reportRepliesBecomeMessages() {
+        assertEquals(Ask.ReportResult.Sent, Ask.reportResult(200, JSONObject("""{"ok":true}""")))
+        assertEquals(Ask.ReportResult.Failed(R.string.ask_report_error_gone), Ask.reportResult(404, JSONObject("""{"error":"not_found"}""")))
+        assertEquals(Ask.ReportResult.Failed(R.string.ask_report_error_limit), Ask.reportResult(429, JSONObject("""{"error":"rate_limited"}""")))
+        assertEquals(Ask.ReportResult.Failed(R.string.ask_report_error), Ask.reportResult(400, JSONObject("""{"error":"bad_request"}""")))
+        assertEquals(Ask.ReportResult.Failed(R.string.ask_error_signin), Ask.reportResult(401, null))
+        assertEquals(Ask.ReportResult.Failed(R.string.ask_report_error), Ask.reportResult(500, null))
+        assertEquals(Ask.ReportResult.Failed(R.string.ask_report_error), Ask.reportResult(200, JSONObject("{}")))
+        assertEquals("Thanks. We'll look at it.", EnStrings.get(R.string.ask_report_thanks))
+        assertEquals("Report this answer", EnStrings.get(R.string.ask_report_label))
     }
 }
