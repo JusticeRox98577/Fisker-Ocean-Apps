@@ -322,6 +322,8 @@ struct Page<Content: View>: View {
             .readableColumn()
         }
         .scrollIndicators(.hidden)
+        // Number pads have no return key: dragging the page puts the keyboard away.
+        .scrollDismissesKeyboard(.interactively)
         .background(Theme.background.ignoresSafeArea())
     }
 }

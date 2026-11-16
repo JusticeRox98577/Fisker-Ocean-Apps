@@ -218,13 +218,31 @@ private struct Field: View {
     @Binding var text: String
     var keyboard: UIKeyboardType = .default
     var secret = false
+    @FocusState private var focused: Bool
+
+    /// Decimal and number pads have no return key, so these fields get their own Done button.
+    private var needsDone: Bool {
+        keyboard == .decimalPad || keyboard == .numberPad || keyboard == .phonePad
+    }
 
     var body: some View {
-        Group {
-            if secret {
-                SecureField(label, text: $text)
-            } else {
-                TextField(label, text: $text).keyboardType(keyboard)
+        HStack(spacing: 8) {
+            Group {
+                if secret {
+                    SecureField(label, text: $text)
+                } else {
+                    TextField(label, text: $text).keyboardType(keyboard)
+                }
+            }
+            .focused($focused)
+            .submitLabel(.done)
+            .onSubmit { focused = false }
+            if needsDone && focused {
+                Button(String(localized: "Done")) { focused = false }
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.aqua)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .accessibilityLabel(Text("Done"))
             }
         }
         .textInputAutocapitalization(.never)
