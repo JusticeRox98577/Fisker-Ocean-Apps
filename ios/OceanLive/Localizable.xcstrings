@@ -2667,6 +2667,34 @@
         }
       }
     },
+    "Can't reach the adapter. It may be asleep or connected to another app. Close other OBD apps, press the adapter's button or replug it, then tap Connect.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Adapter ist nicht erreichbar. Vielleicht schläft er oder ist mit einer anderen App verbunden. Schließ andere OBD-Apps, drück die Taste am Adapter oder steck ihn neu ein und tippe dann auf Verbinden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede contactar con el adaptador. Puede que esté dormido o conectado a otra app. Cierra otras apps OBD, pulsa el botón del adaptador o desenchúfalo y vuelve a enchufarlo, y luego toca Conectar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de joindre l’adaptateur. Il est peut-être en veille ou connecté à une autre app. Fermez les autres apps OBD, appuyez sur le bouton de l’adaptateur ou rebranchez-le, puis touchez Connecter."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De adapter is niet bereikbaar. Misschien slaapt hij of is hij verbonden met een andere app. Sluit andere OBD-apps, druk op de knop van de adapter of steek hem opnieuw in en tik dan op Verbinden."
+          }
+        }
+      }
+    },
     "Cancel": {
       "localizations": {
         "de": {
@@ -5663,6 +5691,34 @@
         }
       }
     },
+    "Found %@ nearby at a new Bluetooth address. Use it only if it's the adapter in your car.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in der Nähe mit einer neuen Bluetooth-Adresse gefunden. Nutze ihn nur, wenn es der Adapter in deinem Auto ist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se encontró %@ cerca con una nueva dirección Bluetooth. Úsalo solo si es el adaptador de tu coche."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ trouvé à proximité avec une nouvelle adresse Bluetooth. Utilisez-le seulement si c’est l’adaptateur de votre voiture."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in de buurt gevonden op een nieuw Bluetooth-adres. Gebruik hem alleen als het de adapter in je auto is."
+          }
+        }
+      }
+    },
     "From %lld charging sessions.": {
       "localizations": {
         "de": {
@@ -6211,6 +6267,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hoe het wordt opgelost"
+          }
+        }
+      }
+    },
+    "If it's asleep, press its button or replug it, and close other apps that use it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn er schläft, drück seine Taste oder steck ihn neu ein und schließ andere Apps, die ihn nutzen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si está dormido, pulsa su botón o desenchúfalo y vuelve a enchufarlo, y cierra otras apps que lo usen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S’il est en veille, appuyez sur son bouton ou rebranchez-le, et fermez les autres apps qui l’utilisent."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als hij slaapt, druk dan op de knop of steek hem opnieuw in, en sluit andere apps die hem gebruiken."
           }
         }
       }
@@ -8209,6 +8293,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nog niet gemeten"
+          }
+        }
+      }
+    },
+    "Not now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jetzt nicht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas maintenant"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet nu"
           }
         }
       }
@@ -12245,6 +12357,34 @@
         }
       }
     },
+    "The adapter connected but didn't answer. Unplug it for a few seconds, plug it back in, then tap Connect.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Adapter hat sich verbunden, aber nicht geantwortet. Zieh ihn für ein paar Sekunden ab, steck ihn wieder ein und tippe dann auf Verbinden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El adaptador se conectó pero no respondió. Desenchúfalo unos segundos, vuelve a enchufarlo y luego toca Conectar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’adaptateur s’est connecté mais n’a pas répondu. Débranchez-le quelques secondes, rebranchez-le, puis touchez Connecter."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De adapter maakte verbinding maar reageerde niet. Haal hem een paar seconden los, steek hem er weer in en tik dan op Verbinden."
+          }
+        }
+      }
+    },
     "The adapter didn't respond.": {
       "localizations": {
         "de": {
@@ -13707,6 +13847,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ander e-mailadres gebruiken"
+          }
+        }
+      }
+    },
+    "Use it": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usarlo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’utiliser"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruiken"
           }
         }
       }
@@ -15499,6 +15667,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "het verzoek was ongeldig"
+          }
+        }
+      }
+    },
+    "vLinker adapters need firmware 2.2.82 or newer to wake up on their own in an electric car.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vLinker-Adapter brauchen Firmware 2.2.82 oder neuer, um in einem Elektroauto von selbst aufzuwachen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los adaptadores vLinker necesitan el firmware 2.2.82 o posterior para despertarse solos en un coche eléctrico."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les adaptateurs vLinker ont besoin du firmware 2.2.82 ou plus récent pour se réveiller d’eux-mêmes dans une voiture électrique."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vLinker-adapters hebben firmware 2.2.82 of nieuwer nodig om vanzelf wakker te worden in een elektrische auto."
           }
         }
       }

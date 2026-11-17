@@ -94,6 +94,9 @@
     <string name="connecting_hint">Adapter instellen en de modules van de auto wekken</string>
     <string name="scan_looking">Zoeken naar adapters…</string>
     <string name="scan_hint">Zorg dat de adapter erin zit en de auto aan staat.</string>
+    <string name="scan_hint_asleep">Slaapt hij, druk dan op de knop of steek hem opnieuw in, en sluit andere apps die hem gebruiken.</string>
+    <string name="scan_failed">Kon niet naar adapters zoeken (fout %1$d). Zet Bluetooth uit en weer aan en probeer het opnieuw.</string>
+    <string name="scan_location_off">Zet Locatie aan om naar adapters te zoeken. Android 11 en ouder hebben dat nodig om via Bluetooth te zoeken.</string>
     <string name="battery_health">Accugezondheid</string>
     <string name="battery_measured_capacity">Gemeten capaciteit</string>
     <string name="battery_usable_now">Nu bruikbaar</string>
@@ -246,6 +249,12 @@
     <string name="msg_adapter_disconnected">Adapter losgekoppeld.</string>
     <string name="msg_car_woke">De auto is wakker geworden. Hij wordt weer uitgelezen.</string>
     <string name="msg_could_not_connect">Kon geen verbinding maken.</string>
+    <string name="connect_unreachable">Kan de adapter niet bereiken. Hij slaapt misschien of is verbonden met een andere app. Sluit andere OBD-apps, druk op de knop van de adapter of steek hem opnieuw in en tik dan op Verbinden.</string>
+    <string name="connect_no_answer">De adapter is verbonden maar gaf geen antwoord. Haal hem een paar seconden los, steek hem weer in en tik dan op Verbinden.</string>
+    <string name="connect_vlinker_firmware">vLinker-adapters hebben firmware 2.2.82 of nieuwer nodig om in een elektrische auto vanzelf wakker te worden.</string>
+    <string name="moved_adapter_found">%1$s in de buurt gevonden op een nieuw Bluetooth-adres. Gebruik hem alleen als het de adapter in je auto is.</string>
+    <string name="moved_adapter_use">Gebruiken</string>
+    <string name="not_now">Niet nu</string>
     <string name="msg_watch_unreachable">Kan de adapter niet bereiken. Opnieuw proberen elke %1$d min.</string>
     <string name="msg_scan_stopped">Scan gestopt.</string>
     <string name="sleep_asleep">De auto slaapt. Ocean Live is gestopt met uitlezen zodat hij kan slapen.</string>

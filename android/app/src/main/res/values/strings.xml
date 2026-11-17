@@ -96,6 +96,9 @@
     <string name="connecting_hint">Setting up the adapter and waking the car\'s modules</string>
     <string name="scan_looking">Looking for adapters…</string>
     <string name="scan_hint">Make sure the adapter is plugged in and the car is on.</string>
+    <string name="scan_hint_asleep">If it\'s asleep, press its button or replug it, and close other apps that use it.</string>
+    <string name="scan_failed">Couldn\'t search for adapters (error %1$d). Turn Bluetooth off and on, then try again.</string>
+    <string name="scan_location_off">Turn on Location to search for adapters. Android 11 and older need it for Bluetooth searches.</string>
     <string name="battery_health">Battery health</string>
     <string name="battery_measured_capacity">Measured capacity</string>
     <string name="battery_usable_now">Usable now</string>
@@ -251,6 +254,12 @@
     <string name="msg_adapter_disconnected">Adapter disconnected.</string>
     <string name="msg_car_woke">The car woke up. Reading it again.</string>
     <string name="msg_could_not_connect">Could not connect.</string>
+    <string name="connect_unreachable">Can\'t reach the adapter. It may be asleep or connected to another app. Close other OBD apps, press the adapter\'s button or replug it, then tap Connect.</string>
+    <string name="connect_no_answer">The adapter connected but didn\'t answer. Unplug it for a few seconds, plug it back in, then tap Connect.</string>
+    <string name="connect_vlinker_firmware">vLinker adapters need firmware 2.2.82 or newer to wake up on their own in an electric car.</string>
+    <string name="moved_adapter_found">Found %1$s nearby at a new Bluetooth address. Use it only if it\'s the adapter in your car.</string>
+    <string name="moved_adapter_use">Use it</string>
+    <string name="not_now">Not now</string>
     <string name="msg_watch_unreachable">Can\'t reach the adapter. Trying again every %1$d min.</string>
     <string name="msg_scan_stopped">Scan stopped.</string>
     <string name="sleep_asleep">The car is asleep. Ocean Live stopped reading so it can sleep.</string>

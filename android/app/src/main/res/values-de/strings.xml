@@ -94,6 +94,9 @@
     <string name="connecting_hint">Adapter wird eingerichtet und die Steuergeräte des Autos werden geweckt</string>
     <string name="scan_looking">Suche nach Adaptern…</string>
     <string name="scan_hint">Achte darauf, dass der Adapter steckt und das Auto an ist.</string>
+    <string name="scan_hint_asleep">Wenn er schläft, drück seine Taste oder steck ihn neu ein und schließ andere Apps, die ihn nutzen.</string>
+    <string name="scan_failed">Suche nach Adaptern nicht möglich (Fehler %1$d). Schalte Bluetooth aus und wieder ein und versuch es dann noch einmal.</string>
+    <string name="scan_location_off">Schalte den Standort ein, um nach Adaptern zu suchen. Android 11 und älter braucht ihn für die Bluetooth-Suche.</string>
     <string name="battery_health">Batteriezustand</string>
     <string name="battery_measured_capacity">Gemessene Kapazität</string>
     <string name="battery_usable_now">Jetzt nutzbar</string>
@@ -246,6 +249,12 @@
     <string name="msg_adapter_disconnected">Adapter getrennt.</string>
     <string name="msg_car_woke">Das Auto ist aufgewacht. Es wird wieder gelesen.</string>
     <string name="msg_could_not_connect">Verbindung fehlgeschlagen.</string>
+    <string name="connect_unreachable">Adapter nicht erreichbar. Er schläft vielleicht oder ist mit einer anderen App verbunden. Schließ andere OBD-Apps, drück die Taste am Adapter oder steck ihn neu ein und tippe dann auf Verbinden.</string>
+    <string name="connect_no_answer">Der Adapter ist verbunden, hat aber nicht geantwortet. Zieh ihn für ein paar Sekunden ab, steck ihn wieder ein und tippe dann auf Verbinden.</string>
+    <string name="connect_vlinker_firmware">vLinker-Adapter brauchen Firmware 2.2.82 oder neuer, um in einem Elektroauto von selbst aufzuwachen.</string>
+    <string name="moved_adapter_found">%1$s in der Nähe unter einer neuen Bluetooth-Adresse gefunden. Nutze ihn nur, wenn es der Adapter in deinem Auto ist.</string>
+    <string name="moved_adapter_use">Verwenden</string>
+    <string name="not_now">Nicht jetzt</string>
     <string name="msg_watch_unreachable">Adapter nicht erreichbar. Neuer Versuch alle %1$d min.</string>
     <string name="msg_scan_stopped">Scan abgebrochen.</string>
     <string name="sleep_asleep">Das Auto schläft. Ocean Live liest nicht mehr, damit es schlafen kann.</string>

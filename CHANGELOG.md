@@ -48,6 +48,16 @@ Each `## x.y.z` section is used as the release notes for that version.
   reference stays after an account is deleted, so the same reward can't be claimed twice.
   It no longer says the install ID is shown under "Show what's sent": to have questions
   deleted, email with your account ID from Settings → Account
+* Adapter that has to be replugged: when the adapter can't be reached, the app now says why
+  (asleep or held by another app) and what to do, instead of a timeout. vLinker owners are
+  told that firmware 2.2.82 or newer lets it wake up on its own in an electric car. If an
+  adapter with the same name shows up at a new Bluetooth address (a vLinker MC+ gets a new one
+  each time it's plugged in), the app offers to use it; it never switches by itself. The app
+  only looks once, for up to 8 seconds, so it can't keep the car awake
+* Connecting: an adapter that misses its first reset gets one more try. With "Keep the adapter
+  connected", a link to an adapter that stopped answering is closed after 3 checks in a row and
+  opened again at the next check. On Android, Find adapter says when the phone's Bluetooth
+  search fails, and asks for Location on Android 11 and older, which need it for the search
 
 ## 3.4.0
 

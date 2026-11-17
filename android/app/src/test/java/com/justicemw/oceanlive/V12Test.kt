@@ -304,6 +304,16 @@ class V12Test {
         assertTrue(EnStrings.get(R.string.settings_watch_quick_note).startsWith("Every 30 minutes (or your choice)"))
     }
 
+    @Test fun keptOpenLinkClosedAfterThreeSilentChecksInARow() {
+        assertFalse(V12Watch.closeSilentLink(0))
+        assertFalse(V12Watch.closeSilentLink(1))
+        assertFalse(V12Watch.closeSilentLink(2))
+        assertTrue(V12Watch.closeSilentLink(3))
+        // Closing counts as the last link try: the next one waits the normal gap, never less.
+        assertEquals(V12Watch.RECONNECT_MS, V12Watch.nextDelay(5, connected = false, confirmingWake = false))
+        assertEquals(30 * min, V12Watch.nextDelay(30, connected = false, confirmingWake = false))
+    }
+
     @Test fun minutesUntilTheNextCheck() {
         assertEquals(30, V12Watch.minutesUntil(t0 + 30 * min, t0))
         assertEquals(1, V12Watch.minutesUntil(t0 + 10 * sec, t0))

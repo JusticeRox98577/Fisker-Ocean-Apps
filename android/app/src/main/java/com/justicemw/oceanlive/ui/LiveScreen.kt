@@ -70,9 +70,14 @@ fun LiveScreen(
     onConnectSaved: () -> Unit,
     onDisconnect: () -> Unit,
     onOpen12v: () -> Unit,
+    onUseMovedAdapter: () -> Unit,
+    onDismissMovedAdapter: () -> Unit,
 ) {
     if (LocalLandscape.current) {
-        LiveLandscape(state, settings, history, parked, found, bluetoothOn, onScan, onCancelScan, onConnect, onConnectSaved, onDisconnect, onOpen12v)
+        LiveLandscape(
+            state, settings, history, parked, found, bluetoothOn, onScan, onCancelScan, onConnect, onConnectSaved, onDisconnect, onOpen12v,
+            onUseMovedAdapter, onDismissMovedAdapter,
+        )
         return
     }
     val snap = state.snapshot
@@ -82,7 +87,7 @@ fun LiveScreen(
         Status.Scanning -> { ScanList(found, onConnect, onCancelScan); return }
         Status.Connecting -> { Connecting(state.adapterName); return }
         Status.Idle, Status.Error -> if (!showDash || state.status == Status.Error || state.resting) {
-            StartCard(state, settings, bluetoothOn, onScan, onConnectSaved)
+            StartCard(state, settings, bluetoothOn, onScan, onConnectSaved, onUseMovedAdapter, onDismissMovedAdapter)
             if (!showDash) return
         }
         else -> Unit
@@ -232,6 +237,8 @@ private fun LiveLandscape(
     onConnectSaved: () -> Unit,
     onDisconnect: () -> Unit,
     onOpen12v: () -> Unit,
+    onUseMovedAdapter: () -> Unit,
+    onDismissMovedAdapter: () -> Unit,
 ) {
     val snap = state.snapshot
     val showDash = state.status == Status.Live || state.status == Status.Reconnecting || snap.soc != null
@@ -261,7 +268,7 @@ private fun LiveLandscape(
                         else -> {
                             val idle = state.status == Status.Idle || state.status == Status.Error
                             if (idle && (!showDash || state.status == Status.Error || state.resting)) {
-                                StartCard(state, settings, bluetoothOn, onScan, onConnectSaved, buttonsFirst = true)
+                                StartCard(state, settings, bluetoothOn, onScan, onConnectSaved, onUseMovedAdapter, onDismissMovedAdapter, buttonsFirst = true)
                                 Spacer(Modifier.height(10.dp))
                             }
                             // Same rule as portrait: the dash shows unless idle with nothing known yet,
@@ -378,6 +385,7 @@ private fun ParkedCard(d: ParkedDrain, settings: Settings, compact: Boolean = fa
 @Composable
 private fun StartCard(
     state: CarState, settings: Settings, bluetoothOn: Boolean, onScan: () -> Unit, onConnectSaved: () -> Unit,
+    onUseMovedAdapter: () -> Unit, onDismissMovedAdapter: () -> Unit,
     buttonsFirst: Boolean = false,
 ) {
     if (!buttonsFirst) Spacer(Modifier.height(24.dp))
@@ -401,6 +409,16 @@ private fun StartCard(
             Spacer(Modifier.height(10.dp))
             // Stopping so the car can sleep is normal, not an error.
             Text(it, color = if (state.resting) Dim else Bad)
+        }
+        state.movedAdapter?.let { moved ->
+            // Only offered: it could be another Ocean's adapter with the same name.
+            Spacer(Modifier.height(12.dp))
+            Text(stringResource(R.string.moved_adapter_found, moved.name.trim()), color = Color.White)
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                GhostButton(stringResource(R.string.moved_adapter_use), onUseMovedAdapter, Modifier.weight(1f))
+                GhostButton(stringResource(R.string.not_now), onDismissMovedAdapter, Modifier.weight(1f), color = Dim)
+            }
         }
         if (!buttonsFirst) {
             Spacer(Modifier.height(18.dp))
@@ -439,7 +457,11 @@ private fun ScanList(found: List<FoundAdapter>, onConnect: (FoundAdapter) -> Uni
         TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel), color = Aqua) }
     }
     Spacer(Modifier.height(10.dp))
-    if (found.isEmpty()) Text(stringResource(R.string.scan_hint), color = Dim, fontSize = 13.sp)
+    if (found.isEmpty()) {
+        Text(stringResource(R.string.scan_hint), color = Dim, fontSize = 13.sp)
+        Spacer(Modifier.height(4.dp))
+        Text(stringResource(R.string.scan_hint_asleep), color = Dim, fontSize = 13.sp)
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         found.forEach { adapter ->
             Row(

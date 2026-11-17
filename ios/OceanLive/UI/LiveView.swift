@@ -174,6 +174,16 @@ private struct StartCard: View {
             if let m = car.state.message {
                 Text(m).foregroundStyle(Theme.bad).padding(.top, 10)
             }
+            if let moved = car.state.movedAdapter {
+                // Only offered: another Ocean's adapter with the same name may be parked next to you.
+                Text("Found \(moved.name) nearby at a new Bluetooth address. Use it only if it's the adapter in your car.")
+                    .foregroundStyle(.white).padding(.top, 10)
+                HStack(spacing: 10) {
+                    SmallButton(title: String(localized: "Use it"), filled: true) { car.useMovedAdapter() }
+                    SmallButton(title: String(localized: "Not now"), color: Theme.dim) { car.dismissMovedAdapter() }
+                }
+                .padding(.top, 10)
+            }
             VStack(spacing: 10) {
                 if car.settings.adapterId != nil {
                     GradientButton(title: String(localized: "Connect to \(car.settings.adapterName ?? String(localized: "adapter"))")) { car.connectSaved() }
@@ -231,6 +241,8 @@ private struct ScanList: View {
         if car.found.isEmpty {
             Text("Make sure the adapter is plugged in and the car is on.")
                 .font(.system(size: 13)).foregroundStyle(Theme.dim).padding(.top, 10)
+            Text("If it's asleep, press its button or replug it, and close other apps that use it.")
+                .font(.system(size: 13)).foregroundStyle(Theme.dim).padding(.top, 4)
         }
         VStack(spacing: 8) {
             ForEach(car.found) { adapter in

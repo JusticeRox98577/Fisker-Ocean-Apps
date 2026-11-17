@@ -34,6 +34,8 @@ final class ElmTransport: NSObject {
     private var notifyChar: CBCharacteristic?
     private var writeType: CBCharacteristicWriteType = .withResponse
     private var pendingServices = 0
+    /// Reading a service's characteristics failed during setup: a link problem, not a sign of the wrong device.
+    private var characteristicsFailed = false
 
     private var poweredOnWaiters: [CheckedContinuation<Void, Error>] = []
     private var connectWaiter: CheckedContinuation<Void, Error>?
@@ -55,6 +57,8 @@ final class ElmTransport: NSObject {
     var connected: Bool { writeChar != nil }
     /// The adapter the link is open to, if any.
     var connectedId: UUID? { connected ? peripheral?.identifier : nil }
+    /// Bluetooth is on and Ocean Live may use it.
+    var poweredOn: Bool { central.state == .poweredOn }
 
     private func waitForPoweredOn() async throws {
         switch central.state {
@@ -116,8 +120,23 @@ final class ElmTransport: NSObject {
 
     func initialize(_ commands: [String] = Elm.initCommands) async throws {
         for command in commands {
-            _ = try await send(command, timeout: command == "ATZ" ? 6 : 4)
-            if command == "ATZ" { try await Task.sleep(nanoseconds: 300_000_000) }
+            guard command == "ATZ" else {
+                _ = try await send(command, timeout: 4)
+                continue
+            }
+            var retried = false
+            do {
+                _ = try await send(command, timeout: 6)
+            } catch ElmError.timeout {
+                // An adapter just woken up can miss the first reset: one more try, and nothing else is tried again.
+                // A late answer to the first reset that comes in this pause, with nothing waiting, is dropped.
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                _ = try await send(command, timeout: 6)
+                retried = true
+            }
+            // After a second reset, let it finish first: a late answer from either one must not be taken as the
+            // answer to the next command, or echo could stay on.
+            try await Task.sleep(nanoseconds: retried ? 1_500_000_000 : 300_000_000)
         }
     }
 
@@ -211,17 +230,24 @@ final class ElmTransport: NSObject {
 
     fileprivate func handleServices(_ p: CBPeripheral, error: Error?) {
         guard p == peripheral else { return }
+        if error != nil {
+            // The link failed while it was being set up: the same as never reaching the adapter.
+            failConnect(ElmError.disconnected)
+            return
+        }
         let services = (p.services ?? []).filter { !Self.standardServices.contains($0.uuid.uuidString.uppercased()) }
-        if error != nil || services.isEmpty {
+        if services.isEmpty {
             failConnect(ElmError.notAdapter)
             return
         }
         pendingServices = services.count
+        characteristicsFailed = false
         for s in services { p.discoverCharacteristics(nil, for: s) }
     }
 
-    fileprivate func handleCharacteristics(_ p: CBPeripheral) {
+    fileprivate func handleCharacteristics(_ p: CBPeripheral, error: Error?) {
         guard p == peripheral, connectWaiter != nil else { return }
+        if error != nil { characteristicsFailed = true }
         pendingServices -= 1
         guard pendingServices <= 0 else { return }
 
@@ -238,7 +264,9 @@ final class ElmTransport: NSObject {
                 return
             }
         }
-        failConnect(ElmError.notAdapter)
+        // No usable pair. If a service couldn't be read, the link failed while it was being set up: the same as
+        // never reaching the adapter.
+        failConnect(characteristicsFailed ? ElmError.disconnected : ElmError.notAdapter)
     }
 
     private var pendingWrite: CBCharacteristic?
@@ -246,7 +274,8 @@ final class ElmTransport: NSObject {
     fileprivate func handleNotifyState(_ p: CBPeripheral, characteristic: CBCharacteristic, error: Error?) {
         guard p == peripheral, characteristic == notifyChar else { return }
         if error != nil || !characteristic.isNotifying {
-            failConnect(ElmError.notAdapter)
+            // It has the adapter's characteristics but the link didn't take the subscription: a link problem.
+            failConnect(ElmError.disconnected)
             return
         }
         writeChar = pendingWrite
@@ -291,7 +320,7 @@ extension ElmTransport: CBPeripheralDelegate {
     }
 
     nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        MainActor.assumeIsolated { self.handleCharacteristics(peripheral) }
+        MainActor.assumeIsolated { self.handleCharacteristics(peripheral, error: error) }
     }
 
     nonisolated func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {

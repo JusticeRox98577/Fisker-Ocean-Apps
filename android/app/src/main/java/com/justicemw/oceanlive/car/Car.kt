@@ -9,8 +9,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.location.LocationManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.location.LocationManagerCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -30,6 +33,7 @@ import com.justicemw.oceanlive.obd.ElmTransport
 import com.justicemw.oceanlive.obd.FoundAdapter
 import com.justicemw.oceanlive.obd.Ident
 import com.justicemw.oceanlive.obd.ModuleVersion
+import com.justicemw.oceanlive.obd.NotObdAdapter
 import com.justicemw.oceanlive.obd.Pids
 import com.justicemw.oceanlive.obd.Uds
 import com.justicemw.oceanlive.obd.UdsResult
@@ -78,6 +82,12 @@ data class CarState(
      * less than 2 hours ago), so the user knows to connect by hand. Cleared once it sleeps again.
      */
     val watchAwake: Boolean = false,
+    /**
+     * After the saved adapter couldn't be reached: an adapter with the same name seen nearby at a
+     * new Bluetooth address (a vLinker MC+ gets a new one each time it is plugged in). Only offered;
+     * the app never switches to it by itself, as it could be another Ocean's adapter.
+     */
+    val movedAdapter: FoundAdapter? = null,
 ) {
     val connected: Boolean get() = status == Status.Live
 
@@ -313,13 +323,31 @@ object Car {
             OceanService.stop(app)
         }
         _found.value = emptyList()
-        _state.update { it.copy(status = Status.Scanning, message = null, resting = false) }
-        transport.startScan { adapter ->
-            scope.launch {
-                val list = _found.value.filterNot { it.address == adapter.address } + adapter
-                _found.value = list.sortedWith(compareByDescending<FoundAdapter> { looksLikeObd(it.name) }.thenByDescending { it.rssi })
-            }
+        if (Build.VERSION.SDK_INT <= 30 && !locationOn()) {
+            // Android 11 and older find nothing over Bluetooth with Location off, so the list would stay empty.
+            // The user chose to search: coming back from Settings mustn't auto-connect to the saved adapter.
+            userStopped = true
+            _state.update { it.copy(status = Status.Error, message = app.getString(R.string.scan_location_off), resting = false, movedAdapter = null) }
+            return
         }
+        _state.update { it.copy(status = Status.Scanning, message = null, resting = false, movedAdapter = null) }
+        transport.startScan(
+            onFound = { adapter ->
+                scope.launch {
+                    val list = _found.value.filterNot { it.address == adapter.address } + adapter
+                    _found.value = list.sortedWith(compareByDescending<FoundAdapter> { looksLikeObd(it.name) }.thenByDescending { it.rssi })
+                }
+            },
+            onFailed = { code ->
+                scope.launch {
+                    if (_state.value.status == Status.Scanning) {
+                        // As with Location off: the next app open shouldn't connect instead of searching.
+                        userStopped = true
+                        _state.update { it.copy(status = Status.Error, message = app.getString(R.string.scan_failed, code)) }
+                    }
+                }
+            },
+        )
     }
 
     fun cancelScan() {
@@ -327,7 +355,32 @@ object Car {
         _state.update { it.copy(status = Status.Idle) }
     }
 
-    fun connect(address: String, name: String) {
+    /** Connects to an adapter the user picked from the list. */
+    fun connect(address: String, name: String) = startSession(address, name, saved = false)
+
+    /**
+     * Connects to the saved adapter: on a tap, or when the app or Android Auto opens with
+     * auto-connect on. If it can't be reached, looks once for it at a new Bluetooth address.
+     */
+    fun connectSaved() {
+        val s = _settings.value
+        if (s.adapterAddress != null) startSession(s.adapterAddress, s.adapterName ?: app.getString(R.string.adapter_name_fallback), saved = true)
+    }
+
+    /** "Use it": the saved adapter turned up at a new address. Saves the new address, as picking it from the list does. */
+    fun useMovedAdapter() {
+        val moved = _state.value.movedAdapter ?: return
+        connect(moved.address, _settings.value.adapterName ?: moved.name)
+    }
+
+    /** "Not now": the new-address prompt goes away until the next failed connect to the saved adapter. */
+    fun dismissMovedAdapter() {
+        if (_state.value.movedAdapter == null) return
+        if (_state.value.status == Status.Error) stopJob()
+        _state.update { it.copy(movedAdapter = null) }
+    }
+
+    private fun startSession(address: String, name: String, saved: Boolean) {
         stopJob()
         wantConnected = true
         userStopped = false
@@ -337,14 +390,9 @@ object Car {
         // Watch mode may still hold the adapter; a different adapter needs a fresh link.
         if (address != _settings.value.adapterAddress) transport.disconnect()
         updateSettings { it.copy(adapterAddress = address, adapterName = name) }
-        _state.update { it.copy(status = Status.Connecting, message = null, resting = false, adapterName = name) }
+        _state.update { it.copy(status = Status.Connecting, message = null, resting = false, adapterName = name, movedAdapter = null) }
         OceanService.start(app)
-        job = scope.launch { runSession(address, firstAttempt = true) }
-    }
-
-    fun connectSaved() {
-        val s = _settings.value
-        if (s.adapterAddress != null) connect(s.adapterAddress, s.adapterName ?: app.getString(R.string.adapter_name_fallback))
+        job = scope.launch { runSession(address, firstAttempt = true, savedAdapter = saved) }
     }
 
     fun disconnect() {
@@ -353,7 +401,7 @@ object Car {
         stopJob()
         transport.disconnect()
         endSessions()
-        _state.update { it.copy(status = Status.Idle, message = null, resting = false, abrpStatus = null, watchedAt = null, watchUnreachable = false, nextCheckAt = null, watchAwake = false) }
+        _state.update { it.copy(status = Status.Idle, message = null, resting = false, abrpStatus = null, watchedAt = null, watchUnreachable = false, nextCheckAt = null, watchAwake = false, movedAdapter = null) }
         OceanService.stop(app)
         refreshWidget(force = true)
     }
@@ -370,12 +418,19 @@ object Car {
         transport.stopScan()
     }
 
-    private suspend fun runSession(address: String, firstAttempt: Boolean) {
+    private suspend fun runSession(address: String, firstAttempt: Boolean, savedAdapter: Boolean) {
         var first = firstAttempt
         while (wantConnected) {
+            // The Bluetooth link was ready; a failure after this is the adapter not answering.
+            var linkUp = false
             try {
                 // Still connected after watch mode, when the car woke up by itself.
-                if (!transport.connected) transport.connect(address)
+                if (!transport.connected) {
+                    // With Bluetooth off a first try would only time out. Reconnects keep waiting for it.
+                    if (first && !transport.bluetoothOn) error(app.getString(R.string.elm_no_bluetooth))
+                    transport.connect(address)
+                }
+                linkUp = true
                 bus.withLock {
                     transport.initialize()
                     selectedEcu = null
@@ -418,10 +473,14 @@ object Car {
                     return
                 }
                 if (first) {
-                    // A first attempt that fails is usually the wrong adapter or the car being off.
+                    // A first attempt that fails is usually the adapter asleep or held by another app,
+                    // the wrong adapter, or the car being off. Never retried by itself.
                     wantConnected = false
-                    _state.update { it.copy(status = Status.Error, message = e.message ?: app.getString(R.string.msg_could_not_connect)) }
+                    val failure = AdapterHelp.failure(linkUp, notObd = e is NotObdAdapter, bluetoothOn = transport.bluetoothOn)
+                    val text = failure?.let { AdapterHelp.message(it, _settings.value.adapterName, app.strings()) }
+                    _state.update { it.copy(status = Status.Error, message = text ?: e.message ?: app.getString(R.string.msg_could_not_connect)) }
                     OceanService.stop(app)
+                    if (failure == ConnectFailure.Unreachable && savedAdapter) lookForMovedAdapter(address)
                     return
                 }
                 // The adapter dropped while the car was answering: a few short tries, then give up.
@@ -439,6 +498,37 @@ object Car {
             }
         }
     }
+
+    /**
+     * The saved adapter couldn't be reached. A vLinker MC+ gets a new Bluetooth address each time
+     * it is plugged in, so look once, for at most [AdapterHelp.MOVED_SEARCH_MS], for an adapter
+     * with the same name nearby. A search only listens: nothing connects and nothing reaches the
+     * car. A match is only offered, as another Ocean's adapter with the same name can be close by.
+     */
+    private suspend fun lookForMovedAdapter(savedAddress: String) {
+        val savedName = _settings.value.adapterName
+        val fallback = app.getString(R.string.adapter_name_fallback)
+        // Skipped quietly when there's nothing to match or a search can't run.
+        if (!AdapterHelp.canLookForMoved(savedName, fallback) || !transport.bluetoothOn || !canScan()) return
+        val names = listOfNotNull(savedName, savedName?.trim()).toSet()
+        val seen = transport.scanOnce(AdapterHelp.MOVED_SEARCH_MS, names) {
+            // Seen at the saved address: it's awake where it was, so there's nothing to offer.
+            it.address.equals(savedAddress, ignoreCase = true) || AdapterHelp.isMoved(savedName, savedAddress, fallback, it.name, it.address)
+        }
+        if (seen != null && !seen.address.equals(savedAddress, ignoreCase = true)) {
+            _state.update { it.copy(movedAdapter = seen) }
+        }
+    }
+
+    /** Whether a Bluetooth search can run: its permission, and on Android 11 and older Location turned on. */
+    private fun canScan(): Boolean {
+        val permission = if (Build.VERSION.SDK_INT >= 31) Manifest.permission.BLUETOOTH_SCAN else Manifest.permission.ACCESS_FINE_LOCATION
+        if (ContextCompat.checkSelfPermission(app, permission) != PackageManager.PERMISSION_GRANTED) return false
+        return Build.VERSION.SDK_INT >= 31 || locationOn()
+    }
+
+    private fun locationOn(): Boolean =
+        app.getSystemService(LocationManager::class.java)?.let { LocationManagerCompat.isLocationEnabled(it) } == true
 
     /** Stops reading and lets go of the adapter so the car can sleep. Reconnects only when the user asks. */
     private fun rest(reason: String) {
@@ -605,10 +695,13 @@ object Car {
         refreshWidget(force = true)
         var lastLinkTry = 0L
         var quickMisses = 0
+        // Kept-open checks in a row without a 12V answer over a link that stayed open.
+        var silentChecks = 0
         while (wantConnected && _settings.value.watch12v) {
             val every = _settings.value.watchEveryMin
             if (V12Watch.method(_settings.value.watchKeepConnected) == V12Method.Quick) {
                 lastLinkTry = 0L
+                silentChecks = 0
                 _state.update { it.copy(nextCheckAt = null) }
                 val (reached, volts) = quickCheck(address)
                 lastWatchRead = System.currentTimeMillis()
@@ -645,6 +738,7 @@ object Car {
                         transport.initializeForWatch()
                         selectedEcu = null
                     }
+                    silentChecks = 0
                     _state.update { it.copy(message = null) }
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) throw e
@@ -664,6 +758,15 @@ object Car {
             if (volts != null) onWatchReading(volts, V12Method.KeptOpen)
             if (wakeDetector.add(volts) && wakeResume()) return true
             if (!transport.connected) continue
+            silentChecks = if (volts == null) silentChecks + 1 else 0
+            if (V12Watch.closeSilentLink(silentChecks)) {
+                // The link is still open but the adapter stopped answering, so holding it does no good.
+                // Let go and count this as the last link try: the next one waits the normal gap.
+                silentChecks = 0
+                transport.disconnect()
+                lastLinkTry = System.currentTimeMillis()
+                continue
+            }
             watchWait(V12Watch.nextDelay(every, connected = true, confirmingWake = wakeDetector.confirming), needLink = false)
         }
         return false

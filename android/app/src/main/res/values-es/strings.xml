@@ -94,6 +94,9 @@
     <string name="connecting_hint">Configurando el adaptador y despertando los módulos del coche</string>
     <string name="scan_looking">Buscando adaptadores…</string>
     <string name="scan_hint">Asegúrate de que el adaptador está conectado y el coche encendido.</string>
+    <string name="scan_hint_asleep">Si está dormido, pulsa su botón o vuelve a enchufarlo, y cierra otras apps que lo usen.</string>
+    <string name="scan_failed">No se pudo buscar adaptadores (error %1$d). Desactiva y vuelve a activar el Bluetooth e inténtalo de nuevo.</string>
+    <string name="scan_location_off">Activa la ubicación para buscar adaptadores. Android 11 y anteriores la necesitan para buscar por Bluetooth.</string>
     <string name="battery_health">Salud de la batería</string>
     <string name="battery_measured_capacity">Capacidad medida</string>
     <string name="battery_usable_now">Útil ahora</string>
@@ -246,6 +249,12 @@
     <string name="msg_adapter_disconnected">Adaptador desconectado.</string>
     <string name="msg_car_woke">El coche se ha despertado. Leyéndolo de nuevo.</string>
     <string name="msg_could_not_connect">No se pudo conectar.</string>
+    <string name="connect_unreachable">No se puede contactar con el adaptador. Puede que esté dormido o conectado a otra app. Cierra otras apps OBD, pulsa el botón del adaptador o vuelve a enchufarlo y toca Conectar.</string>
+    <string name="connect_no_answer">El adaptador se conectó pero no respondió. Desenchúfalo unos segundos, vuelve a enchufarlo y toca Conectar.</string>
+    <string name="connect_vlinker_firmware">Los adaptadores vLinker necesitan el firmware 2.2.82 o posterior para despertarse solos en un coche eléctrico.</string>
+    <string name="moved_adapter_found">Se encontró %1$s cerca con una nueva dirección Bluetooth. Úsalo solo si es el adaptador de tu coche.</string>
+    <string name="moved_adapter_use">Usarlo</string>
+    <string name="not_now">Ahora no</string>
     <string name="msg_watch_unreachable">No se puede contactar con el adaptador. Se reintenta cada %1$d min.</string>
     <string name="msg_scan_stopped">Escaneo detenido.</string>
     <string name="sleep_asleep">El coche está dormido. Ocean Live ha dejado de leer para que pueda dormir.</string>

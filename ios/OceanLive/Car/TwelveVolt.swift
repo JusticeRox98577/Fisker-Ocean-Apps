@@ -313,6 +313,8 @@ struct V12Watch {
     /// A quick check that can't reach the adapter this many times in a row: it has probably turned its own
     /// Bluetooth off while sleeping. The app keeps trying at the chosen interval and says so.
     static let unreachableAfter = 2
+    /// With the link kept open, checks in a row with no 12V answer before the app lets go of the link.
+    static let keptOpenMissesToClose = 3
     /// The whole quick check (connect, read, disconnect) gives up after this long.
     static let quickCheckTimeoutMs: Int64 = 15_000
     /// Two readings in a row at or above this: the car woke up by itself.
@@ -343,6 +345,8 @@ struct V12Watch {
     private(set) var missedInRow: Int
     /// Quick checks this night (this stretch of watching) that couldn't reach the adapter.
     private(set) var missedTotal: Int
+    /// Checks in a row over the kept link that got no 12V answer.
+    private(set) var keptOpenMisses = 0
 
     init(startedAt: Int64, carStoppedAnswering: Bool, missedInRow: Int = 0, missedTotal: Int = 0) {
         self.startedAt = startedAt
@@ -423,6 +427,23 @@ struct V12Watch {
         lastReconnect = now
         return true
     }
+
+    /// A check over the kept link got no 12V answer with the link still open. Returns whether to close the link:
+    /// after `keptOpenMissesToClose` in a row. Closing counts as the last link try, so the next one waits the usual
+    /// interval, with no extra checks in between.
+    mutating func keptOpenMissed(now: Int64) -> Bool {
+        keptOpenMisses += 1
+        guard keptOpenMisses >= Self.keptOpenMissesToClose else { return false }
+        keptOpenMisses = 0
+        lastReconnect = now
+        return true
+    }
+
+    /// A check over the kept link got a 12V answer.
+    mutating func keptOpenAnswered() { keptOpenMisses = 0 }
+
+    /// The kept link was opened again: misses on an earlier link don't count toward closing this one.
+    mutating func keptOpenLinkOpened() { keptOpenMisses = 0 }
 }
 
 /// Low-12V notification while the car sleeps: once under 12.2 V, again under 11.8 V,

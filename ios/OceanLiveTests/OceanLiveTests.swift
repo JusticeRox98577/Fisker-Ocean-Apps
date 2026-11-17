@@ -794,6 +794,66 @@ final class SleepPolicyTests: XCTestCase {
     }
 }
 
+/// A first connection that fails, and the saved adapter found again at a new Bluetooth identifier.
+final class AdapterReachTests: XCTestCase {
+    func testLinkNeverUpIsUnreachable() {
+        XCTAssertEqual(FirstConnect.failure(ElmError.timeout, linkUp: false), .unreachable)
+        XCTAssertEqual(FirstConnect.failure(ElmError.notFound, linkUp: false), .unreachable)
+        XCTAssertEqual(FirstConnect.failure(ElmError.disconnected, linkUp: false), .unreachable)
+    }
+
+    func testNoAnswerOnceTheLinkIsUp() {
+        XCTAssertEqual(FirstConnect.failure(ElmError.timeout, linkUp: true), .noAnswer)
+        XCTAssertEqual(FirstConnect.failure(ElmError.disconnected, linkUp: true), .noAnswer)
+    }
+
+    func testBluetoothOffAndNotAnAdapterKeepTheirMessages() {
+        XCTAssertEqual(FirstConnect.failure(ElmError.bluetoothOff, linkUp: false), .other)
+        XCTAssertEqual(FirstConnect.failure(ElmError.bluetoothOff, linkUp: true), .other)
+        XCTAssertEqual(FirstConnect.failure(ElmError.notAdapter, linkUp: false), .other)
+        XCTAssertEqual(FirstConnect.message(.other, error: ElmError.notAdapter, adapterName: "vLinker FD"),
+                       ElmError.notAdapter.localizedDescription)
+    }
+
+    func testMessagesAndTheVLinkerNote() {
+        XCTAssertTrue(FirstConnect.unreachableMessage.hasPrefix("Can't reach the adapter."))
+        XCTAssertTrue(FirstConnect.noAnswerMessage.hasPrefix("The adapter connected but didn't answer."))
+        XCTAssertEqual(FirstConnect.message(.unreachable, error: ElmError.timeout, adapterName: "OBDLink CX"),
+                       FirstConnect.unreachableMessage)
+        XCTAssertEqual(FirstConnect.message(.noAnswer, error: ElmError.timeout, adapterName: nil), FirstConnect.noAnswerMessage)
+        XCTAssertEqual(FirstConnect.message(.unreachable, error: ElmError.timeout, adapterName: "vLinker MC-IOS"),
+                       FirstConnect.unreachableMessage + "\n" + FirstConnect.vLinkerNote)
+        XCTAssertEqual(FirstConnect.message(.noAnswer, error: ElmError.timeout, adapterName: "VLINKER FD"),
+                       FirstConnect.noAnswerMessage + "\n" + FirstConnect.vLinkerNote, "any case")
+    }
+
+    func testSameNameAtANewIdentifierMatches() {
+        let saved = UUID(), other = UUID()
+        XCTAssertTrue(MovedAdapter.matches(name: "vLinker MC-IOS", id: other, savedName: "vLinker MC-IOS", savedId: saved))
+        XCTAssertTrue(MovedAdapter.matches(name: " vLinker MC-IOS ", id: other, savedName: "vLinker MC-IOS\n", savedId: saved), "trimmed")
+    }
+
+    func testOnlyAnExactNameAtAnotherIdentifierMatches() {
+        let saved = UUID(), other = UUID()
+        XCTAssertFalse(MovedAdapter.matches(name: "VLINKER MC-IOS", id: other, savedName: "vLinker MC-IOS", savedId: saved), "case-sensitive")
+        XCTAssertFalse(MovedAdapter.matches(name: "vLinker MC-IOS 2", id: other, savedName: "vLinker MC-IOS", savedId: saved))
+        XCTAssertFalse(MovedAdapter.matches(name: "vLinker MC-IOS", id: saved, savedName: "vLinker MC-IOS", savedId: saved),
+                       "the saved identifier itself is not a new one")
+    }
+
+    func testNoMatchWithoutAUsefulSavedName() {
+        let saved = UUID(), other = UUID()
+        XCTAssertFalse(MovedAdapter.matches(name: "OBDII", id: other, savedName: nil, savedId: saved))
+        XCTAssertFalse(MovedAdapter.matches(name: "", id: other, savedName: "  ", savedId: saved))
+        XCTAssertFalse(MovedAdapter.matches(name: "Adapter", id: other, savedName: "Adapter", savedId: saved))
+        let fallback = String(localized: "Adapter")
+        XCTAssertFalse(MovedAdapter.matches(name: fallback, id: other, savedName: fallback, savedId: saved))
+        XCTAssertFalse(MovedAdapter.canLookFor(nil))
+        XCTAssertTrue(MovedAdapter.canLookFor("OBDLink CX"))
+        XCTAssertEqual(MovedAdapter.scanSeconds, 8)
+    }
+}
+
 /// The 12V log: thinning, the 90-day cap, resting readings, watch mode and the low-12V warning.
 final class TwelveVoltTests: XCTestCase {
     private let t0: Int64 = 1_700_000_000_000
@@ -1002,6 +1062,34 @@ final class TwelveVoltTests: XCTestCase {
         XCTAssertTrue(w.mayReconnect(now: t0, intervalMinutes: 10))
         XCTAssertFalse(w.mayReconnect(now: t0 + 9 * minute, intervalMinutes: 10))
         XCTAssertTrue(w.mayReconnect(now: t0 + 10 * minute, intervalMinutes: 10))
+    }
+
+    /// A kept link to an adapter that stopped answering isn't held forever, and closing it brings no extra tries.
+    func testKeptLinkClosedAfterThreeChecksWithoutAnswer() {
+        var w = V12Watch(startedAt: t0, carStoppedAnswering: true)
+        XCTAssertFalse(w.keptOpenMissed(now: t0))
+        XCTAssertFalse(w.keptOpenMissed(now: t0 + 30 * minute))
+        w.keptOpenAnswered()
+        XCTAssertFalse(w.keptOpenMissed(now: t0 + 60 * minute), "an answer starts the count over")
+        XCTAssertFalse(w.keptOpenMissed(now: t0 + 90 * minute))
+        XCTAssertTrue(w.keptOpenMissed(now: t0 + 120 * minute), "three in a row")
+        XCTAssertEqual(w.lastReconnect, t0 + 120 * minute, "counts as the last link try")
+        XCTAssertFalse(w.mayReconnect(now: t0 + 149 * minute, intervalMinutes: 30), "the next try waits the usual interval")
+        XCTAssertTrue(w.mayReconnect(now: t0 + 150 * minute, intervalMinutes: 30))
+        XCTAssertFalse(w.keptOpenMissed(now: t0 + 151 * minute), "the count starts over after closing")
+        XCTAssertEqual(V12Watch.keptOpenMissesToClose, 3)
+    }
+
+    /// Misses on a link that dropped, or before quick checks, don't count against the next kept link.
+    func testNewKeptLinkStartsTheCountOver() {
+        var w = V12Watch(startedAt: t0, carStoppedAnswering: true)
+        XCTAssertFalse(w.keptOpenMissed(now: t0))
+        XCTAssertFalse(w.keptOpenMissed(now: t0 + 30 * minute))
+        w.keptOpenLinkOpened()
+        XCTAssertEqual(w.keptOpenMisses, 0)
+        XCTAssertFalse(w.keptOpenMissed(now: t0 + 60 * minute), "one miss on the new link")
+        XCTAssertFalse(w.keptOpenMissed(now: t0 + 90 * minute))
+        XCTAssertTrue(w.keptOpenMissed(now: t0 + 120 * minute), "three in a row on the new link")
     }
 
     func testIntervals() {

@@ -10,18 +10,27 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
+import android.os.PowerManager
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 
 data class FoundAdapter(val address: String, val name: String, val rssi: Int)
+
+/** The device connected but has no characteristic pair an OBD adapter would use. */
+class NotObdAdapter(message: String) : IllegalStateException(message)
 
 /**
  * Talks to an ELM327-style Bluetooth LE OBD adapter (vLinker, OBDLink CX,
@@ -51,20 +60,72 @@ class ElmTransport(context: Context) {
     val bluetoothOn: Boolean get() = adapter?.isEnabled == true
     val connected: Boolean get() = writeChar != null
 
-    fun startScan(onFound: (FoundAdapter) -> Unit) {
+    /** Lists advertising adapters until [stopScan]. [onFailed] gets Android's error code if the search couldn't run. */
+    fun startScan(onFound: (FoundAdapter) -> Unit, onFailed: (Int) -> Unit) {
         stopScan()
         val scanner = adapter?.bluetoothLeScanner ?: return
         val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                val name = result.scanRecord?.deviceName ?: result.device.name
-                if (name.isNullOrBlank()) return
-                onFound(FoundAdapter(result.device.address, name, result.rssi))
+                found(result)?.let(onFound)
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                // Only this search's own failure; a newer search may have replaced it.
+                if (scanCallback !== this) return
+                stopScan()
+                onFailed(errorCode)
             }
         }
         scanCallback = callback
-        val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
-        scanner.startScan(null, settings, callback)
+        scanner.startScan(null, scanSettings(), callback)
     }
+
+    /**
+     * One search that ends at the first adapter [stopAt] accepts, or after [timeoutMs]. Returns
+     * that adapter, or null. Only listens: nothing is connected and nothing reaches the car.
+     * The search is always stopped before this returns, unless a newer one has taken over.
+     * With the screen off it only looks for adapters advertising one of [names].
+     */
+    suspend fun scanOnce(timeoutMs: Long, names: Set<String>, stopAt: (FoundAdapter) -> Boolean): FoundAdapter? {
+        stopScan()
+        // Android pauses a search without a filter while the screen is off (a locked phone, Android Auto),
+        // so search by name then. With the screen on, list everything as Find adapter does and let
+        // stopAt check the name: some phones' name filters miss a name sent only in the scan response.
+        val filters = if (screenOn() || names.isEmpty()) null else names.map { ScanFilter.Builder().setDeviceName(it).build() }
+        val scanner = adapter?.takeIf { it.isEnabled }?.bluetoothLeScanner ?: return null
+        val result = CompletableDeferred<FoundAdapter?>()
+        val callback = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, r: ScanResult) {
+                val a = found(r) ?: return
+                if (stopAt(a)) result.complete(a)
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                result.complete(null)
+            }
+        }
+        scanCallback = callback
+        try {
+            scanner.startScan(filters, scanSettings(), callback)
+            return withTimeoutOrNull(timeoutMs) { result.await() }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            // Bluetooth turned off as the search started.
+            return null
+        } finally {
+            if (scanCallback === callback) stopScan()
+        }
+    }
+
+    private fun found(result: ScanResult): FoundAdapter? {
+        val name = result.scanRecord?.deviceName ?: result.device.name
+        if (name.isNullOrBlank()) return null
+        return FoundAdapter(result.device.address, name, result.rssi)
+    }
+
+    private fun scanSettings(): ScanSettings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
+
+    private fun screenOn(): Boolean = appContext.getSystemService(PowerManager::class.java)?.isInteractive != false
 
     fun stopScan() {
         val callback = scanCallback ?: return
@@ -130,8 +191,24 @@ class ElmTransport(context: Context) {
 
     suspend fun initialize() {
         for (command in Elm.initCommands) {
-            send(command, if (command == "ATZ") 6_000 else 4_000)
-            if (command == "ATZ") delay(300)
+            if (command == "ATZ") {
+                var retried = false
+                try {
+                    send(command, 6_000)
+                } catch (_: TimeoutCancellationException) {
+                    // A just-woken adapter can miss the first reset. One more try, nothing else is repeated.
+                    currentCoroutineContext().ensureActive()
+                    // A late answer to the first reset that arrives now, with nothing waiting, is dropped.
+                    delay(1_000)
+                    send(command, 6_000)
+                    retried = true
+                }
+                // After a second reset, let it finish first: a late answer from either one must not
+                // be taken as the answer to the next command, or echo could stay on.
+                delay(if (retried) 1_500 else 300)
+            } else {
+                send(command, 4_000)
+            }
         }
     }
 
@@ -213,7 +290,7 @@ class ElmTransport(context: Context) {
                 }
             }
             if (notify == null || write == null) {
-                ready?.completeExceptionally(IllegalStateException(appContext.getString(R.string.elm_not_obd)))
+                ready?.completeExceptionally(NotObdAdapter(appContext.getString(R.string.elm_not_obd)))
                 return
             }
             writeType = if (write.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) {

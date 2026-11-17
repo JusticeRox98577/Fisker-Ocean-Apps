@@ -24,6 +24,9 @@ struct CarState: Equatable {
     var nextWatch: Int64?
     /// Quick checks couldn't reach the adapter twice in a row or more (it has probably turned its Bluetooth off).
     var watchUnreachable = false
+    /// An adapter with the saved name, found at a new Bluetooth identifier after the saved one couldn't be reached.
+    /// Only offered on the start card: the app never connects to it by itself.
+    var movedAdapter: FoundAdapter?
 
     var connected: Bool { status == .live }
     /// The status line while watching the 12V.
@@ -147,6 +150,9 @@ final class Car: ObservableObject {
     private var sleepPolicy = SleepPolicy()
     /// Reconnect attempts since the adapter dropped. Back to 0 once the car answers.
     private var adapterRetries = 0
+    /// The look for the saved adapter at a new Bluetooth identifier while its scan runs, so a late end of it
+    /// never stops a newer scan.
+    private var movedToken: UUID?
 
     /// The next 12V reading of this connection is its first.
     private var v12FirstOfConnection = true
@@ -275,7 +281,9 @@ final class Car: ObservableObject {
 
     func connect(_ adapter: FoundAdapter) { connect(id: adapter.id, name: adapter.name) }
 
-    func connect(id: UUID, name: String) {
+    /// `lookForMoved`: the saved adapter was asked for (auto-connect, CarPlay or its Connect button). If it can't
+    /// be reached, one short scan looks for it at a new Bluetooth identifier.
+    func connect(id: UUID, name: String, lookForMoved: Bool = false) {
         stopTask()
         endWatch()
         wantConnected = true
@@ -285,12 +293,25 @@ final class Car: ObservableObject {
         state.message = nil
         state.stopped = nil
         state.adapterName = name
-        task = Task { await runSession(id: id, firstAttempt: true) }
+        task = Task { await runSession(id: id, firstAttempt: true, lookForMoved: lookForMoved) }
     }
 
     func connectSaved() {
         guard let raw = settings.adapterId, let id = UUID(uuidString: raw) else { return }
-        connect(id: id, name: settings.adapterName ?? String(localized: "Adapter"))
+        connect(id: id, name: settings.adapterName ?? String(localized: "Adapter"), lookForMoved: true)
+    }
+
+    /// "Use it": the owner says the adapter found at a new Bluetooth identifier is theirs. Connects to it and saves
+    /// it, as picking it from the list does. Only ever called from the button.
+    func useMovedAdapter() {
+        guard let moved = state.movedAdapter else { return }
+        connect(id: moved.id, name: settings.adapterName ?? moved.name)
+    }
+
+    /// "Not now": the offer goes until the next connect that can't reach the adapter.
+    func dismissMovedAdapter() {
+        if movedToken != nil { transport.stopScan() }
+        endMovedCheck()
     }
 
     func disconnect() {
@@ -339,19 +360,24 @@ final class Car: ObservableObject {
         task?.cancel()
         task = nil
         transport.stopScan()
+        // A look for the adapter at a new identifier runs in the task: it ends too, and its offer goes.
+        endMovedCheck()
     }
 
-    private func runSession(id: UUID, firstAttempt: Bool) async {
+    private func runSession(id: UUID, firstAttempt: Bool, lookForMoved: Bool = false) async {
         var first = firstAttempt
         adapterRetries = 0
         sleepPolicy.reset()
         while wantConnected && !Task.isCancelled {
+            // The Bluetooth link is open and the adapter is being set up.
+            var linkUp = false
             do {
                 // Watch mode may have kept the link to this adapter open.
                 if transport.connectedId != id {
                     transport.disconnect()
                     try await transport.connect(id: id)
                 }
+                linkUp = true
                 await bus.lock()
                 do {
                     try await transport.initialize()
@@ -387,11 +413,14 @@ final class Car: ObservableObject {
                 transport.disconnect()
                 endSessions()
                 if first {
-                    // A first attempt that fails is usually the wrong adapter or the car being off.
+                    // A first attempt that fails is usually the adapter asleep or held by another app, the wrong
+                    // adapter or the car being off. No second try: say what failed and what helps.
                     wantConnected = false
+                    let failure = FirstConnect.failure(error, linkUp: linkUp)
                     state.status = .error
-                    state.message = error.localizedDescription
+                    state.message = FirstConnect.message(failure, error: error, adapterName: settings.adapterName)
                     updateScreenLock()
+                    if failure == .unreachable && lookForMoved { await lookForMovedAdapter(savedId: id) }
                     return
                 }
                 // The adapter dropped while the car was answering: a few short tries, then stop.
@@ -411,6 +440,48 @@ final class Car: ObservableObject {
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
         }
+    }
+
+    /// After the saved adapter couldn't be reached: one Bluetooth scan of at most 8 s for an adapter with the same
+    /// name at a new identifier (a vLinker MC+ gets a new one each time it's plugged in). A scan only listens, so
+    /// it never reaches the car. A match is only offered: another Ocean's adapter with the same name may be parked
+    /// next to you. Runs in the session task, so a connect, a scan or a disconnect ends it.
+    private func lookForMovedAdapter(savedId: UUID) async {
+        let savedName = settings.adapterName
+        // Bluetooth off or not allowed: skip it quietly, the message already says what to try.
+        guard MovedAdapter.canLookFor(savedName), transport.poweredOn, !Task.isCancelled else { return }
+        let token = UUID()
+        movedToken = token
+        do {
+            try await transport.startScan { [weak self] adapter in
+                guard let self, self.movedToken == token else { return }
+                if adapter.id == savedId {
+                    // Awake at its saved identifier after all: nothing to offer.
+                    self.endMovedScan(token)
+                } else if MovedAdapter.matches(name: adapter.name, id: adapter.id, savedName: savedName, savedId: savedId) {
+                    self.endMovedScan(token)
+                    self.state.movedAdapter = adapter
+                }
+            }
+        } catch {
+            if movedToken == token { movedToken = nil }
+            return
+        }
+        try? await Task.sleep(nanoseconds: UInt64(MovedAdapter.scanSeconds * 1_000_000_000))
+        endMovedScan(token)
+    }
+
+    /// Stops the look's scan, unless something newer (a connect, the adapter list) has taken over since.
+    private func endMovedScan(_ token: UUID) {
+        guard movedToken == token else { return }
+        movedToken = nil
+        transport.stopScan()
+    }
+
+    /// Forgets a running look (its caller stops the scan) and takes the offer off the start card.
+    private func endMovedCheck() {
+        movedToken = nil
+        if state.movedAdapter != nil { state.movedAdapter = nil }
     }
 
     private func adapterDropped() {
@@ -797,6 +868,8 @@ final class Car: ObservableObject {
                 return
             }
             guard watch != nil else { return } // the user disconnected meanwhile
+            // A new link: its checks count from zero, also after quick checks in between.
+            watch?.keptOpenLinkOpened()
         }
         await bus.lock()
         let reply = try? await query(Elm.voltageCommand)
@@ -805,9 +878,20 @@ final class Car: ObservableObject {
         let now = nowMs()
         markChecked(now)
         guard let volts = reply.flatMap({ Elm.adapterVoltage($0) }) else {
+            if transport.connectedId == id, var w = watch {
+                // An adapter that stopped answering isn't held forever: after a few checks in a row with the link
+                // still open, let go of it. That counts as the last link try, so the next one waits the usual interval.
+                let close = w.keptOpenMissed(now: now)
+                watch = w
+                if close { transport.disconnect() }
+            }
             watchNextAt = now + intervalMs
             state.nextWatch = watchNextAt
             return
+        }
+        if var w = watch {
+            w.keptOpenAnswered()
+            watch = w
         }
         afterWatchReading(volts, method: .keptOpen, id: id, now: now)
     }

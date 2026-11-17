@@ -305,6 +305,8 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
                                             onConnectSaved = { withBluetooth { Car.connectSaved() } },
                                             onDisconnect = { Car.disconnect() },
                                             onOpen12v = { show12v = true; tab = Tab.Battery.ordinal },
+                                            onUseMovedAdapter = { withBluetooth { Car.useMovedAdapter() } },
+                                            onDismissMovedAdapter = { Car.dismissMovedAdapter() },
                                         )
                                         // The tip banner: phone in portrait only (landscape may be the car's screen),
                                         // never while driving or charging, and only when Google Play has the tips.

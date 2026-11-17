@@ -94,6 +94,9 @@
     <string name="connecting_hint">Configuration de l\'adaptateur et réveil des modules de la voiture</string>
     <string name="scan_looking">Recherche d\'adaptateurs…</string>
     <string name="scan_hint">Vérifiez que l\'adaptateur est branché et que la voiture est allumée.</string>
+    <string name="scan_hint_asleep">S\'il est en veille, appuyez sur son bouton ou rebranchez-le, et fermez les autres apps qui l\'utilisent.</string>
+    <string name="scan_failed">Impossible de rechercher des adaptateurs (erreur %1$d). Désactivez puis réactivez le Bluetooth, puis réessayez.</string>
+    <string name="scan_location_off">Activez la localisation pour rechercher des adaptateurs. Android 11 et les versions antérieures en ont besoin pour les recherches Bluetooth.</string>
     <string name="battery_health">Santé de la batterie</string>
     <string name="battery_measured_capacity">Capacité mesurée</string>
     <string name="battery_usable_now">Utilisable aujourd\'hui</string>
@@ -246,6 +249,12 @@
     <string name="msg_adapter_disconnected">Adaptateur déconnecté.</string>
     <string name="msg_car_woke">La voiture s\'est réveillée. Nouvelle lecture.</string>
     <string name="msg_could_not_connect">Connexion impossible.</string>
+    <string name="connect_unreachable">Adaptateur injoignable. Il est peut-être en veille ou connecté à une autre app. Fermez les autres apps OBD, appuyez sur le bouton de l\'adaptateur ou rebranchez-le, puis touchez Connecter.</string>
+    <string name="connect_no_answer">L\'adaptateur s\'est connecté mais n\'a pas répondu. Débranchez-le quelques secondes, rebranchez-le, puis touchez Connecter.</string>
+    <string name="connect_vlinker_firmware">Les adaptateurs vLinker ont besoin du firmware 2.2.82 ou plus récent pour sortir seuls de veille dans une voiture électrique.</string>
+    <string name="moved_adapter_found">%1$s trouvé à proximité avec une nouvelle adresse Bluetooth. Ne l\'utilisez que s\'il s\'agit de l\'adaptateur de votre voiture.</string>
+    <string name="moved_adapter_use">L\'utiliser</string>
+    <string name="not_now">Pas maintenant</string>
     <string name="msg_watch_unreachable">Adaptateur injoignable. Nouvel essai toutes les %1$d min.</string>
     <string name="msg_scan_stopped">Recherche interrompue.</string>
     <string name="sleep_asleep">La voiture est en veille. Ocean Live a arrêté la lecture pour la laisser dormir.</string>

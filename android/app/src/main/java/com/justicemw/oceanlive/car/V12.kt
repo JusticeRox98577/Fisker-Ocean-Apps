@@ -304,6 +304,8 @@ object V12Watch {
     const val QUICK_TIMEOUT_MS = 15_000L
     /** Quick checks in a row that can't reach the adapter before the status says so. */
     const val UNREACHABLE_AFTER = 2
+    /** With the adapter kept connected: checks in a row with no 12V answer over an open link before it is closed. */
+    const val SILENT_LINK_MISSES = 3
     /** Unreachable checks are remembered this long. */
     const val MISSES_KEEP_MS = 14L * 24 * 3_600_000
     private const val MISSES_MAX = 2_000
@@ -347,6 +349,13 @@ object V12Watch {
 
     /** Whether the status should say the adapter can't be reached, after this many unreachable quick checks in a row. */
     fun unreachable(missesInARow: Int): Boolean = missesInARow >= UNREACHABLE_AFTER
+
+    /**
+     * With the adapter kept connected: whether to close a link that is still open but stopped
+     * answering, after this many checks in a row without a 12V answer. Closing counts as the
+     * last link try, so the next one waits the normal gap (no extra checks, no shorter interval).
+     */
+    fun closeSilentLink(missesInARow: Int): Boolean = missesInARow >= SILENT_LINK_MISSES
 
     // ── Unreachable quick checks, remembered for the 12V screen ──
 
