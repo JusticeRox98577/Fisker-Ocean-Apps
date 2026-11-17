@@ -84,7 +84,7 @@ APPLE_APP_ID = ""
 REPORT_DAILY_LIMIT = "20"
 # Store review sign-in: with this address AND the secret REVIEW_CODE set, a code requested for this
 # address is not emailed; REVIEW_CODE is the code. Empty: off. This account never gets rewards or a balance.
-REVIEW_EMAIL = ""
+REVIEW_EMAIL = "appreview@oceanlive.org"
 # Admin page (admin.oceanlive.org): balance, badge and admin changes per admin per day.
 ADMIN_WRITE_LIMIT = "100"
 
