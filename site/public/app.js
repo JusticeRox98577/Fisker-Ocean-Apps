@@ -130,8 +130,8 @@
     scenes.forEach(function (el) { sheetIo.observe(el); });
   }
 
-  // Latest release, from oceanlive.org itself: /downloads/latest.json is written at deploy time
-  // (tools/deploy.mjs) with the version, file sizes and SHA-256 of the APKs next to it. Only the
+  // Latest release, from oceanlive.org itself: /downloads/latest.json (written by tools/downloads.mjs,
+  // served by src/worker.js) has the version, file sizes and SHA-256 of the APKs next to it. Only the
   // stable channel is ever used here. Without it the buttons keep pointing at GitHub Releases.
   var android = document.getElementById("dl-android");
   if (!android || !window.fetch) return;

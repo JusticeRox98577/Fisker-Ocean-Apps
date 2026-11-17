@@ -30,23 +30,6 @@
   Content-Type: application/manifest+json
   Cache-Control: public, max-age=86400
 
-# Downloads, staged at deploy time by tools/deploy.mjs (never in git).
-# "! Cache-Control" drops the value from /* so the one below is the only one.
-# APKs are no-cache (revalidated by ETag): their names never change, so a cached copy could be
-# an older build than the version and SHA-256 that latest.json and the page show.
-/downloads/*.apk
-  Content-Type: application/vnd.android.package-archive
-  Content-Disposition: attachment
-  ! Cache-Control
-  Cache-Control: public, no-cache
-
-/downloads/*latest.json
-  ! Cache-Control
-  Cache-Control: no-cache
-
-/downloads/preview/*
-  X-Robots-Tag: noindex
-
 # Mailing list confirm and unsubscribe pages (the links in its emails): never in search results.
 /list/*
   X-Robots-Tag: noindex

@@ -7,7 +7,9 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "dtc": "node scripts/build-dtc-kv.mjs",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "cf:build": "npm run check && npm test && node scripts/fill-ids.mjs",
+    "cf:deploy": "node scripts/fill-ids.mjs && wrangler d1 migrations apply ocean-live-ask-log --remote && wrangler deploy"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0"

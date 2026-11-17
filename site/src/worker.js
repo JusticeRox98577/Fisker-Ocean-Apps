@@ -1,7 +1,7 @@
-// oceanlive.org: the static site plus tiny proxies for the mailing list and the public roadmap, and the
-// community notes pages.
+// oceanlive.org: the static site plus tiny proxies for the mailing list and the public roadmap, the
+// community notes pages and the APK downloads.
 //
-// wrangler.jsonc runs this script first only for /api/* and /community*; every other path is served straight from
+// wrangler.jsonc runs this script first only for /api/*, /community* and /downloads/*; every other path is served straight from
 // public/ by the assets binding. The mailing list itself lives in the mail Worker (ocean-live-mail,
 // bound as MAIL): this script only forwards its three public endpoints to it, so the pages can call
 // them same-origin and the site's CSP (connect-src 'self') stays as it is.
@@ -17,6 +17,9 @@
 //                                   Ocean Live server, ASK binding, path /knowledge); the page's own
 //                                   fallback text when the server can't be reached
 //   GET  /community/<id>         -> public/community/note.html filled in for that note; 404 page if none
+//   GET  /downloads/OceanLive-Android.apk, /downloads/OceanLive-Wear.apk, /downloads/latest.json
+//                                -> the APK downloads, from R2 (bucket ocean-live-downloads, bound as DOWNLOADS);
+//                                   the same under /downloads/preview/ (unlisted); anything else there is a 404
 //
 // Plain JS, no dependencies. Tested by tools/worker.test.mjs (node --test).
 
@@ -233,9 +236,165 @@ async function community(request, env, url) {
   return htmlResponse(head ? null : html, 200, "public, max-age=300");
 }
 
+// ── APK downloads: /downloads/ (stable, the one the pages use) and /downloads/preview/ (unlisted) ──
+// The files are in R2. tools/downloads.mjs uploads every build to its own objects, then writes
+// <channel>/latest.json last: the public latest.json plus, per file, "object", the R2 key its fixed URL
+// serves. So one write switches both files and the version and SHA-256 the pages show, all at once.
+// A channel with no latest.json in R2 yet is served from public/ (env.ASSETS), as before R2.
+const DOWNLOAD = /^\/downloads\/(preview\/)?(OceanLive-Android\.apk|OceanLive-Wear\.apk|latest\.json)$/;
+const DOWNLOAD_KEYS = { "OceanLive-Android.apk": "android", "OceanLive-Wear.apk": "wear" };
+// The only objects ever served: one build's folder in the same channel, and the requested file.
+// tools/downloads-lib.mjs writes keys of exactly this form.
+const DOWNLOAD_OBJECT = /^(stable|preview)\/b\d{1,9}-[0-9a-f]{7,8}\/(OceanLive-(?:Android|Wear)\.apk)$/;
+const APK_TYPE = "application/vnd.android.package-archive";
+const MAX_LATEST = 64 * 1024;
+const DOWNLOAD_UNAVAILABLE = "This download isn't available right now. Try again later.";
+
+// No-cache everywhere: the APK names never change, so a cached copy could be an older build than the
+// version and SHA-256 that latest.json and the pages show. Revalidating by ETag is cheap.
+function downloadHeaders(channel, extra) {
+  const headers = new Headers({ ...PAGE_HEADERS, "Cache-Control": "no-cache", ...extra });
+  if (channel === "preview") headers.set("X-Robots-Tag", "noindex");
+  return headers;
+}
+
+function downloadUnavailable(channel) {
+  return new Response(DOWNLOAD_UNAVAILABLE, {
+    status: 503,
+    headers: downloadHeaders(channel, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "Retry-After": "60" }),
+  });
+}
+
+// If-None-Match compares weakly (W/"x" matches "x"), If-Match strongly. Both take a list, or "*".
+function etagListHas(header, etag, weak) {
+  return header.split(",").some((t) => {
+    t = t.trim();
+    return t === "*" || t === etag || (weak && t.replace(/^W\//, "") === etag);
+  });
+}
+
+// One "bytes=" range: {offset, length}, "unsatisfiable", or null to send the whole file (no Range, several
+// ranges or a malformed one, which a server may ignore).
+function parseRange(header, size) {
+  const m = header ? /^bytes=(\d*)-(\d*)$/.exec(header.trim()) : null;
+  if (!m || (m[1] === "" && m[2] === "")) return null;
+  if (m[1] === "") {
+    const n = Number(m[2]);
+    if (n === 0) return "unsatisfiable";
+    const length = Math.min(n, size);
+    return { offset: size - length, length };
+  }
+  const start = Number(m[1]);
+  const end = m[2] === "" ? Infinity : Number(m[2]);
+  if (end < start) return null;
+  if (start >= size) return "unsatisfiable";
+  return { offset: start, length: Math.min(end, size - 1) - start + 1 };
+}
+
+// A channel R2 doesn't have yet: whatever public/downloads/ was deployed with, given the headers
+// public/_headers used to give it. Anything else from the assets (their 404 page) passes through.
+async function downloadFromAssets(request, env, channel, file) {
+  const res = await env.ASSETS.fetch(request);
+  if (res.status !== 200 && res.status !== 304) return res;
+  const out = new Response(res.body, res);
+  const set = file === "latest.json"
+    ? { "Content-Type": "application/json", "Cache-Control": "no-cache" }
+    : { "Content-Type": APK_TYPE, "Content-Disposition": "attachment", "Cache-Control": "no-cache" };
+  for (const [k, v] of Object.entries(set)) out.headers.set(k, v);
+  out.headers.set("X-Content-Type-Options", "nosniff");
+  if (channel === "preview") out.headers.set("X-Robots-Tag", "noindex");
+  return out;
+}
+
+async function download(request, env, url) {
+  const m = DOWNLOAD.exec(url.pathname);
+  if (!m) return notFound(env, url);
+  const head = request.method === "HEAD";
+  if (!head && request.method !== "GET") return new Response("Method not allowed.", { status: 405, headers: { Allow: "GET, HEAD" } });
+  const channel = m[1] ? "preview" : "stable";
+  const file = m[2];
+  if (!env.DOWNLOADS) return downloadFromAssets(request, env, channel, file);
+  let latest, raw;
+  try {
+    latest = await env.DOWNLOADS.get(`${channel}/latest.json`);
+    if (latest && latest.size <= MAX_LATEST) raw = await latest.text();
+    else if (latest && latest.body) await latest.body.cancel();
+  } catch {
+    return downloadUnavailable(channel);
+  }
+  if (!latest) return downloadFromAssets(request, env, channel, file);
+  if (raw === undefined) return downloadUnavailable(channel);
+
+  if (file === "latest.json") {
+    const headers = downloadHeaders(channel, { "Content-Type": "application/json; charset=utf-8", ETag: latest.httpEtag });
+    const inm = request.headers.get("If-None-Match");
+    if (inm && etagListHas(inm, latest.httpEtag, true)) return new Response(null, { status: 304, headers });
+    return new Response(head ? null : raw, { status: 200, headers });
+  }
+
+  // The APK: only the object latest.json names for this file, and only one of the expected form.
+  let info;
+  try {
+    info = JSON.parse(raw);
+  } catch {
+    return downloadUnavailable(channel);
+  }
+  const f = info && typeof info.files === "object" && info.files ? info.files[DOWNLOAD_KEYS[file]] : null;
+  const o = f && typeof f.object === "string" ? DOWNLOAD_OBJECT.exec(f.object) : null;
+  if (!o || o[1] !== channel || o[2] !== file || !Number.isSafeInteger(f.size) || f.size <= 0) return downloadUnavailable(channel);
+  const name = typeof f.name === "string" && /^[\w.-]{1,100}\.apk$/.test(f.name) ? f.name : file;
+  return downloadApk(request, env.DOWNLOADS, channel, f.object, f.size, name, head);
+}
+
+async function downloadApk(request, bucket, channel, key, size, name, head) {
+  const fixed = { "Content-Type": APK_TYPE, "Content-Disposition": `attachment; filename="${name}"`, "Accept-Ranges": "bytes" };
+  const ifMatch = request.headers.get("If-Match");
+  const ifNoneMatch = request.headers.get("If-None-Match");
+  let range = head ? null : parseRange(request.headers.get("Range"), size);
+  try {
+    // HEAD, conditional and range requests look at the object first; a plain GET streams it straight away.
+    let meta = null;
+    if (head || ifMatch || ifNoneMatch || range) {
+      meta = await bucket.head(key);
+      // The size latest.json gives must be the object's: a mismatch is never served.
+      if (!meta || meta.size !== size) return downloadUnavailable(channel);
+      const headers = downloadHeaders(channel, { ...fixed, ETag: meta.httpEtag });
+      if (ifMatch && !etagListHas(ifMatch, meta.httpEtag, false)) return new Response(null, { status: 412, headers });
+      if (ifNoneMatch && etagListHas(ifNoneMatch, meta.httpEtag, true)) return new Response(null, { status: 304, headers });
+      // Resuming a download of another build gets the whole new file, never a mix of two builds.
+      const ifRange = request.headers.get("If-Range");
+      if (range && ifRange && ifRange.trim() !== meta.httpEtag) range = null;
+      if (range === "unsatisfiable") {
+        headers.set("Content-Range", `bytes */${size}`);
+        return new Response(null, { status: 416, headers });
+      }
+      if (head) {
+        headers.set("Content-Length", String(size));
+        return new Response(null, { status: 200, headers });
+      }
+    }
+    const obj = await bucket.get(key, range ? { range: { offset: range.offset, length: range.length } } : {});
+    if (!obj || !obj.body || obj.size !== size || (meta && obj.etag !== meta.etag)) {
+      if (obj && obj.body) await obj.body.cancel();
+      return downloadUnavailable(channel);
+    }
+    const headers = downloadHeaders(channel, { ...fixed, ETag: obj.httpEtag });
+    if (!range) {
+      headers.set("Content-Length", String(size));
+      return new Response(obj.body, { status: 200, headers });
+    }
+    headers.set("Content-Range", `bytes ${range.offset}-${range.offset + range.length - 1}/${size}`);
+    headers.set("Content-Length", String(range.length));
+    return new Response(obj.body, { status: 206, headers });
+  } catch {
+    return downloadUnavailable(channel);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/downloads/")) return download(request, env, url);
     if (url.pathname === "/community" || url.pathname.startsWith("/community/") || url.pathname === "/community.html") return community(request, env, url);
     if (url.pathname === ROADMAP) return roadmap(request, env);
     if (PUBLIC.has(url.pathname)) return proxy(request, env, url);

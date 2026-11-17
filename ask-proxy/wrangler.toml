@@ -29,13 +29,15 @@ globs = ["**/*.md", "**/*?raw"]
 fallthrough = false
 
 # Counters (per device, per network, monthly spend) and the fault code table.
-# Replace the id with the one `npx wrangler kv namespace create ASK_KV` prints.
+# The id stays a placeholder here: the Cloudflare build fills it in from the build variable
+# ASK_KV_ID (scripts/fill-ids.mjs). It is the id `npx wrangler kv namespace create ASK_KV` printed.
 [[kv_namespaces]]
 binding = "ASK_KV"
 id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
 
 # Research log of questions and answers (see migrations/ and PRIVACY.md).
-# Replace the id with the one `npx wrangler d1 create ocean-live-ask-log` prints.
+# The id stays a placeholder here: the Cloudflare build fills it in from the build variable
+# ASK_D1_ID (scripts/fill-ids.mjs). It is the id `npx wrangler d1 create ocean-live-ask-log` printed.
 [[d1_databases]]
 binding = "LOG_DB"
 database_name = "ocean-live-ask-log"
@@ -46,6 +48,9 @@ migrations_dir = "migrations"
 [triggers]
 crons = ["17 3 * * *"]
 
+# Every deploy gives the live Worker these values. GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID and
+# REVIEW_EMAIL stay empty here: the Cloudflare build fills them in from build variables of the same
+# names (scripts/fill-ids.mjs).
 [vars]
 # Days to keep the research log. PRIVACY.md promises 90; change both together.
 LOG_RETENTION_DAYS = "90"

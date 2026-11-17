@@ -15,7 +15,8 @@
     "run_worker_first": ["/api/*"]
   },
 
-  // Check results and daily totals.
+  // Check results and daily totals. The id stays a placeholder here: the Cloudflare build fills
+  // it in from the build variable STATUS_D1_ID (scripts/fill-ids.mjs).
   "d1_databases": [
     {
       "binding": "DB",

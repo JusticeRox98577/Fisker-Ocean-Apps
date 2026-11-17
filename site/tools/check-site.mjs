@@ -1,6 +1,7 @@
 // Static checks for public/: every local reference resolves to a file, in-page anchors exist,
 // the CSP hash matches the inline import map, and nothing loads from a third party (the CSP's
-// connect-src is 'self' only and every fetch is same-origin).
+// connect-src is 'self' only and every fetch is same-origin). Also checks that src/worker.js
+// serves the APK downloads with their headers.
 // Usage (from site/): node tools/check-site.mjs
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, dirname, relative, resolve, extname } from "node:path";
@@ -112,7 +113,7 @@ for (const f of files.filter((f) => f.endsWith(".js") && !rel(f).startsWith("ven
   }
   for (const m of src.matchAll(/(?:fetch|loadModel|load)\(\s*["'](\/[^/"'][^"']*)["']/g)) {
     if (m[1].startsWith("/api/")) continue; // checked above
-    // /downloads/ is staged by tools/deploy.mjs at deploy time and is never in git.
+    // /downloads/ is served by src/worker.js from R2 (checked below) and is never in public/.
     if (m[1].startsWith("/downloads/")) {
       if (m[1].startsWith("/downloads/preview/")) fail(where, `the pages must not use the preview channel (${m[1]})`);
       continue;
@@ -125,16 +126,48 @@ for (const f of files.filter((f) => f.endsWith(".js") && !rel(f).startsWith("ven
   if (!rel(f).startsWith("vendor/") && /api\.github\.com/.test(src)) fail(where, "uses the GitHub API (the site makes no third-party requests)");
 }
 
-// CSP: no third-party connections, and the download headers are in place.
+// CSP: no third-party connections.
+const headers = readFileSync(join(ROOT, "_headers"), "utf8");
 {
-  const headers = readFileSync(join(ROOT, "_headers"), "utf8");
   const csp = (headers.match(/Content-Security-Policy:([^\n]*)/) || [])[1] || "";
   const connect = ((csp.match(/connect-src([^;]*)/) || [])[1] || "").trim();
   if (connect !== "'self'") fail("_headers", `connect-src must be 'self' only, got "${connect}"`);
-  for (const rule of ["/downloads/*.apk", "/downloads/*latest.json"]) {
-    if (!new RegExp("^" + rule.replace(/[.*]/g, "\\$&") + "\\r?$", "m").test(headers)) fail("_headers", `no ${rule} rule`);
+}
+
+// Downloads: src/worker.js serves both channels from R2 and sets their headers itself (_headers is never
+// applied to a Worker's responses), so wrangler.jsonc must send /downloads/* to it, and the files must not
+// be in public/. Each download path is asked for here, with a stand-in bucket.
+{
+  const APK = "application/vnd.android.package-archive";
+  const config = readFileSync(fileURLToPath(new URL("../wrangler.jsonc", import.meta.url)), "utf8");
+  if (!config.includes('"/downloads/*"')) fail("wrangler.jsonc", "run_worker_first does not send /downloads/* to src/worker.js");
+  if (!/"binding":\s*"DOWNLOADS",\s*"bucket_name":\s*"ocean-live-downloads"/.test(config)) fail("wrangler.jsonc", "no DOWNLOADS binding to the ocean-live-downloads bucket");
+  if (/^\/downloads/m.test(headers)) fail("_headers", "has a /downloads rule; src/worker.js sets the download headers");
+  if (existsSync(join(ROOT, "downloads"))) fail("downloads", "public/downloads/ must not exist: the APKs are in R2");
+  const { default: worker } = await import("../src/worker.js");
+  const objects = new Map();
+  const apk = Buffer.from("PK\x03\x04 check-site");
+  for (const [channel, prefix] of [["stable", "/downloads/"], ["preview", "/downloads/preview/"]]) {
+    const files = {};
+    for (const [key, file] of [["android", "OceanLive-Android.apk"], ["wear", "OceanLive-Wear.apk"]]) {
+      const object = `${channel}/b1-0123abcd/${file}`;
+      objects.set(object, apk);
+      files[key] = { name: file, path: prefix + file, size: apk.length, sha256: createHash("sha256").update(apk).digest("hex"), object };
+    }
+    objects.set(`${channel}/latest.json`, Buffer.from(JSON.stringify({ version: "1.0.0", short: "1", build: 1, commit: "0123abcd", files })));
   }
-  if (!headers.includes("application/vnd.android.package-archive")) fail("_headers", "APKs need Content-Type application/vnd.android.package-archive");
+  const obj = (k) => objects.has(k) ? { size: objects.get(k).length, etag: "e", httpEtag: '"e"', body: new Response(objects.get(k)).body, text: async () => objects.get(k).toString("utf8") } : null;
+  const env = { DOWNLOADS: { get: async (k) => obj(k), head: async (k) => obj(k) }, ASSETS: { fetch: async () => new Response("not found", { status: 404 }) } };
+  for (const prefix of ["/downloads/", "/downloads/preview/"]) {
+    for (const [file, type] of [["OceanLive-Android.apk", APK], ["OceanLive-Wear.apk", APK], ["latest.json", "application/json"]]) {
+      checked++;
+      const res = await worker.fetch(new Request("https://oceanlive.org" + prefix + file), env);
+      const got = `${res.status} ${res.headers.get("Content-Type")} ${res.headers.get("Cache-Control")}`;
+      if (res.status !== 200 || !(res.headers.get("Content-Type") || "").startsWith(type) || res.headers.get("Cache-Control") !== "no-cache") fail("src/worker.js", `${prefix + file} answers ${got}`);
+      if (type === APK && !(res.headers.get("Content-Disposition") || "").startsWith("attachment")) fail("src/worker.js", `${prefix + file} is not sent as an attachment`);
+      await res.arrayBuffer();
+    }
+  }
 }
 
 // CSS url(...)

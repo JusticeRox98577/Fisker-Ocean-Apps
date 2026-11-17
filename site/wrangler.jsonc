@@ -1,9 +1,11 @@
 {
-  // Ocean Live website: static files, plus src/worker.js for /api/* (the mailing list and roadmap proxies) and /community*.
+  // Ocean Live website: static files, plus src/worker.js for /api/* (the mailing list and roadmap proxies),
+  // /community* and the APK downloads (/downloads/*, from R2).
   "name": "ocean-live-site",
   "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
-  // workers.dev stays on so CI can read the live downloads (oceanlive.org's bot protection blocks GitHub's runners).
+  // workers.dev stays on so scripts can reach the site (oceanlive.org's bot protection blocks them), for
+  // example tools/downloads.mjs seed, which copies the downloads deployed in public/ the old way into R2.
   "workers_dev": true,
   "preview_urls": false,
   "assets": {
@@ -11,14 +13,18 @@
     "binding": "ASSETS",
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash",
-    // Only /api/* and the community notes pages (filled in from the app server) reach the script;
-    // every other path is served from public/ without it.
-    "run_worker_first": ["/api/*", "/community", "/community/*", "/community.html"]
+    // Only /api/*, the community notes pages (filled in from the app server) and the downloads (from R2)
+    // reach the script; every other path is served from public/ without it.
+    "run_worker_first": ["/api/*", "/community", "/community/*", "/community.html", "/downloads/*"]
   },
-  // The mailing list lives in the mail Worker (mail/). Apply its migration and deploy it before
-  // pushing site changes to main (a push deploys the site).
+  // The APK downloads: tools/downloads.mjs writes them, src/worker.js serves them under /downloads/.
+  "r2_buckets": [
+    { "binding": "DOWNLOADS", "bucket_name": "ocean-live-downloads" }
+  ],
+  // The mailing list lives in the mail Worker (mail/). Apply its migration and deploy it before site
+  // changes that use it reach main (Cloudflare builds and deploys the site from main).
   // The public roadmap (/api/roadmap) comes from the app server (ask-proxy/, ocean-live-ask):
-  // deploy it with its /roadmap endpoint before pushing site changes that use it.
+  // deploy it with its /roadmap endpoint before site changes that use it reach main.
   "services": [
     { "binding": "MAIL", "service": "ocean-live-mail" },
     { "binding": "ASK", "service": "ocean-live-ask" }

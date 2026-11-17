@@ -7,8 +7,8 @@ It is plain HTML, CSS and JavaScript ES modules, with no frameworks, no cookies,
 and no third-party requests: fonts, scripts, the 3D model and the downloads are all served from
 oceanlive.org. A small Cloudflare Worker serves the files and passes the mailing list's public
 endpoints on to the mail Worker (`mail/`) and the public roadmap on to the app server
-(`ask-proxy/`), and fills the community notes pages from the app server, so the pages only
-ever talk to oceanlive.org.
+(`ask-proxy/`), fills the community notes pages from the app server and serves the APK
+downloads from Cloudflare R2, so the pages only ever talk to oceanlive.org.
 
 ## Pages
 
@@ -43,7 +43,7 @@ The fault code, module and glossary pages are made only from the public owner gu
 | `public/styles.css`, `public/app.js` | Shared styles and script |
 | `public/js/` | Page modules: the mailing list forms, the fault code search, the calculators, the roadmap and the 3D blueprint (`js/scene/`) |
 | `public/data/ocean-codes.json` | The data behind `/codes` |
-| `src/worker.js` | The Worker script for `/api/*` (the mailing list and the roadmap) and the community notes pages |
+| `src/worker.js` | The Worker script for `/api/*` (the mailing list and the roadmap), the community notes pages and the APK downloads |
 | `tools/` | Node scripts that write the generated pages, the code data, the 3D model and the blueprint drawing, and check the site |
 | `design-system/` | The site's design notes |
 

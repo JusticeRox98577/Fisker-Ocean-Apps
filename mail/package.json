@@ -6,7 +6,9 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "vitest run",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "cf:build": "npm run check && npm test",
+    "cf:deploy": "wrangler d1 migrations apply ocean-live-mail --remote && wrangler deploy"
   },
   "dependencies": {
     "postal-mime": "^4.2.1"

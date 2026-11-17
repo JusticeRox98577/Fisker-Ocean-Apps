@@ -1,5 +1,6 @@
-// Tests for src/worker.js (the /api/list/* and /api/roadmap proxies, and the /community pages), with fake MAIL, ASK and ASSETS bindings.
-// Usage: node --test site/tools/worker.test.mjs   (Node 20+, no dependencies)
+// Tests for src/worker.js (the /api/list/* and /api/roadmap proxies, the /community pages and the /downloads/ files),
+// with fake MAIL, ASK, ASSETS and DOWNLOADS (R2) bindings.
+// Usage (from site/): node --test tools/worker.test.mjs   (Node 20+, no dependencies)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import worker from "../src/worker.js";
@@ -309,4 +310,403 @@ test("/community falls back to the page's own text when the server can't be reac
   const post = await worker.fetch(new Request("https://oceanlive.org/community", { method: "POST", body: "{}" }), env);
   assert.equal(post.status, 405);
   assert.equal(env.calls.ask.length, 0);
+});
+
+// ── /downloads/ and /downloads/preview/: the APKs and latest.json from the DOWNLOADS (R2) binding ──
+import { createHash } from "node:crypto";
+import { publish } from "./downloads-lib.mjs";
+
+const hex = (data) => createHash("sha256").update(data).digest("hex");
+const APKS = {
+  android: Buffer.concat([Buffer.from("PK\x03\x04"), Buffer.from("android-apk-".repeat(10))]),
+  wear: Buffer.concat([Buffer.from("PK\x03\x04"), Buffer.from("wear-apk-".repeat(7))]),
+};
+const FILE_OF = { android: "OceanLive-Android.apk", wear: "OceanLive-Wear.apk" };
+const PREFIX = { stable: "/downloads/", preview: "/downloads/preview/" };
+
+// An R2 bucket in memory: head() and get() with {range}, as the Workers R2 binding has them.
+function fakeBucket(objects) {
+  const calls = [];
+  const meta = (key) => {
+    const etag = createHash("md5").update(objects.get(key)).digest("hex");
+    return { key, size: objects.get(key).length, etag, httpEtag: `"${etag}"` };
+  };
+  return {
+    calls,
+    async head(key) {
+      calls.push(["head", key]);
+      return objects.has(key) ? meta(key) : null;
+    },
+    async get(key, options = {}) {
+      calls.push(["get", key, options]);
+      if (!objects.has(key)) return null;
+      let data = objects.get(key);
+      if (options.range) data = data.subarray(options.range.offset, options.range.offset + options.range.length);
+      return { ...meta(key), body: new Response(data).body, text: async () => Buffer.from(data).toString("utf8") };
+    },
+  };
+}
+
+// Puts one build of a channel into the bucket the way tools/downloads.mjs lays it out.
+function putChannel(objects, channel, { build = 7, files: edit = {} } = {}) {
+  const files = {};
+  for (const [key, file] of Object.entries(FILE_OF)) {
+    const object = `${channel}/b${build}-0123abcd/${file}`;
+    objects.set(object, APKS[key]);
+    files[key] = {
+      name: `OceanLive-1.4-${key === "android" ? "Android" : "Wear"}.apk`,
+      path: PREFIX[channel] + file,
+      size: APKS[key].length,
+      sha256: hex(APKS[key]),
+      object,
+      ...edit[key],
+    };
+  }
+  const info = { version: "1.4.0", short: "1.4", build, commit: "0123abcd" + "0".repeat(32), date: "2026-11-17T00:00:00.000Z", files, previous: null };
+  objects.set(`${channel}/latest.json`, Buffer.from(JSON.stringify(info, null, 2) + "\n"));
+  return info;
+}
+
+// statics: the files public/ would have (the old static downloads); "/404" is the 404 page.
+function downloadsEnv(objects = new Map(), statics = {}) {
+  const assets = [];
+  return {
+    assets,
+    DOWNLOADS: fakeBucket(objects),
+    ASSETS: {
+      fetch: async (req) => {
+        const p = new URL(req.url).pathname;
+        assets.push(p);
+        if (p === "/404") return new Response("<h1>Not found</h1>", { headers: { "Content-Type": "text/html" } });
+        if (p in statics) return new Response(statics[p], { headers: { "Content-Type": "application/octet-stream", "Cache-Control": "public, max-age=300" } });
+        return new Response("<h1>Not found</h1>", { status: 404, headers: { "Content-Type": "text/html" } });
+      },
+    },
+  };
+}
+const get = (path, headers = {}, method = "GET") => new Request("https://oceanlive.org" + path, { method, headers });
+const etagOf = (data) => `"${createHash("md5").update(data).digest("hex")}"`;
+
+test("both channels stream each APK that latest.json names, as a no-cache attachment", async () => {
+  const objects = new Map();
+  putChannel(objects, "stable", { build: 7 });
+  putChannel(objects, "preview", { build: 9 });
+  for (const channel of ["stable", "preview"]) {
+    for (const [key, file] of Object.entries(FILE_OF)) {
+      const env = downloadsEnv(objects);
+      const res = await worker.fetch(get(PREFIX[channel] + file), env);
+      const where = `${channel} ${file}`;
+      assert.equal(res.status, 200, where);
+      assert.deepEqual(Buffer.from(await res.arrayBuffer()), APKS[key], where);
+      assert.equal(res.headers.get("Content-Type"), "application/vnd.android.package-archive", where);
+      assert.equal(res.headers.get("Content-Disposition"), `attachment; filename="OceanLive-1.4-${key === "android" ? "Android" : "Wear"}.apk"`, where);
+      assert.equal(res.headers.get("Cache-Control"), "no-cache", where);
+      assert.equal(res.headers.get("ETag"), etagOf(APKS[key]), where);
+      assert.equal(res.headers.get("X-Content-Type-Options"), "nosniff", where);
+      assert.equal(res.headers.get("Content-Length"), String(APKS[key].length), where);
+      assert.equal(res.headers.get("Accept-Ranges"), "bytes", where);
+      assert.equal(res.headers.get("X-Robots-Tag"), channel === "preview" ? "noindex" : null, where);
+      const build = channel === "stable" ? 7 : 9;
+      assert.deepEqual(env.DOWNLOADS.calls.map((c) => c[1]), [`${channel}/latest.json`, `${channel}/b${build}-0123abcd/${file}`], where);
+      assert.deepEqual(env.assets, [], where);
+    }
+  }
+});
+
+test("latest.json is served as stored, no-cache, with a 304 for a matching ETag", async () => {
+  const objects = new Map();
+  putChannel(objects, "stable");
+  putChannel(objects, "preview");
+  for (const channel of ["stable", "preview"]) {
+    const stored = objects.get(`${channel}/latest.json`);
+    const path = PREFIX[channel] + "latest.json";
+    const res = await worker.fetch(get(path), downloadsEnv(objects));
+    assert.equal(res.status, 200);
+    assert.equal(await res.text(), stored.toString("utf8"));
+    assert.match(res.headers.get("Content-Type"), /^application\/json/);
+    assert.equal(res.headers.get("Cache-Control"), "no-cache");
+    assert.equal(res.headers.get("X-Robots-Tag"), channel === "preview" ? "noindex" : null);
+    const etag = res.headers.get("ETag");
+    assert.equal(etag, etagOf(stored));
+    for (const inm of [etag, `W/${etag}`, `"x", ${etag}`, "*"]) {
+      const again = await worker.fetch(get(path, { "If-None-Match": inm }), downloadsEnv(objects));
+      assert.equal(again.status, 304, inm);
+      assert.equal(await again.text(), "");
+    }
+    const changed = await worker.fetch(get(path, { "If-None-Match": '"older"' }), downloadsEnv(objects));
+    assert.equal(changed.status, 200);
+    const head = await worker.fetch(get(path, {}, "HEAD"), downloadsEnv(objects));
+    assert.equal(head.status, 200);
+    assert.equal(await head.text(), "");
+  }
+});
+
+test("HEAD on an APK gives its headers and length without reading the file", async () => {
+  const objects = new Map();
+  putChannel(objects, "stable");
+  const env = downloadsEnv(objects);
+  const res = await worker.fetch(get("/downloads/OceanLive-Wear.apk", {}, "HEAD"), env);
+  assert.equal(res.status, 200);
+  assert.equal(await res.text(), "");
+  assert.equal(res.headers.get("Content-Length"), String(APKS.wear.length));
+  assert.equal(res.headers.get("ETag"), etagOf(APKS.wear));
+  assert.equal(res.headers.get("Content-Type"), "application/vnd.android.package-archive");
+  assert.deepEqual(env.DOWNLOADS.calls.map((c) => c[0] + " " + c[1]), ["get stable/latest.json", "head stable/b7-0123abcd/OceanLive-Wear.apk"]);
+});
+
+test("If-None-Match gives 304 and a failed If-Match 412 on an APK", async () => {
+  const objects = new Map();
+  putChannel(objects, "preview");
+  const path = "/downloads/preview/OceanLive-Android.apk";
+  const etag = etagOf(APKS.android);
+  for (const inm of [etag, `W/${etag}`, `"a", ${etag}`, "*"]) {
+    const env = downloadsEnv(objects);
+    const res = await worker.fetch(get(path, { "If-None-Match": inm }), env);
+    assert.equal(res.status, 304, inm);
+    assert.equal(await res.text(), "");
+    assert.equal(res.headers.get("ETag"), etag);
+    assert.ok(!env.DOWNLOADS.calls.some((c) => c[0] === "get" && c[1].endsWith(".apk")), "the file is never read for a 304");
+  }
+  const other = await worker.fetch(get(path, { "If-None-Match": '"an-older-build"' }), downloadsEnv(objects));
+  assert.equal(other.status, 200);
+  assert.deepEqual(Buffer.from(await other.arrayBuffer()), APKS.android);
+  const failed = await worker.fetch(get(path, { "If-Match": `W/${etag}` }), downloadsEnv(objects));
+  assert.equal(failed.status, 412);
+  const matched = await worker.fetch(get(path, { "If-Match": etag }), downloadsEnv(objects));
+  assert.equal(matched.status, 200);
+});
+
+test("a single Range gets 206 with Content-Range, an unsatisfiable one 416, anything else the whole file", async () => {
+  const objects = new Map();
+  putChannel(objects, "stable");
+  const data = APKS.android;
+  const size = data.length;
+  const path = "/downloads/OceanLive-Android.apk";
+  const partial = [
+    ["bytes=0-3", 0, 3],
+    ["bytes=10-", 10, size - 1],
+    ["bytes=-5", size - 5, size - 1],
+    [`bytes=0-${size + 100}`, 0, size - 1],
+    [`bytes=-${size + 100}`, 0, size - 1],
+    [` bytes=4-4 `, 4, 4],
+  ];
+  for (const [range, start, end] of partial) {
+    const env = downloadsEnv(objects);
+    const res = await worker.fetch(get(path, { Range: range }), env);
+    assert.equal(res.status, 206, range);
+    assert.equal(res.headers.get("Content-Range"), `bytes ${start}-${end}/${size}`, range);
+    assert.equal(res.headers.get("Content-Length"), String(end - start + 1), range);
+    assert.deepEqual(Buffer.from(await res.arrayBuffer()), data.subarray(start, end + 1), range);
+    const read = env.DOWNLOADS.calls.find((c) => c[0] === "get" && c[1].endsWith(".apk"));
+    assert.deepEqual(read[2], { range: { offset: start, length: end - start + 1 } }, range);
+  }
+  for (const range of [`bytes=${size}-`, `bytes=${size + 5}-${size + 9}`, "bytes=-0"]) {
+    const res = await worker.fetch(get(path, { Range: range }), downloadsEnv(objects));
+    assert.equal(res.status, 416, range);
+    assert.equal(res.headers.get("Content-Range"), `bytes */${size}`, range);
+    assert.equal(await res.text(), "");
+  }
+  for (const range of ["bytes=0-1,4-5", "bytes=5-2", "items=0-1", "bytes=-", "bytes=a-b"]) {
+    const res = await worker.fetch(get(path, { Range: range }), downloadsEnv(objects));
+    assert.equal(res.status, 200, range);
+    assert.deepEqual(Buffer.from(await res.arrayBuffer()), data, range);
+  }
+  // Resuming with If-Range: only the same build gets the rest; another build is sent whole.
+  const resumed = await worker.fetch(get(path, { Range: "bytes=10-", "If-Range": etagOf(data) }), downloadsEnv(objects));
+  assert.equal(resumed.status, 206);
+  const stale = await worker.fetch(get(path, { Range: "bytes=10-", "If-Range": '"an-older-build"' }), downloadsEnv(objects));
+  assert.equal(stale.status, 200);
+  assert.deepEqual(Buffer.from(await stale.arrayBuffer()), data);
+  const staleBeyond = await worker.fetch(get(path, { Range: `bytes=${size}-`, "If-Range": '"an-older-build"' }), downloadsEnv(objects));
+  assert.equal(staleBeyond.status, 200);
+});
+
+test("any other path under /downloads/ is the 404 page and never reaches R2", async () => {
+  const objects = new Map();
+  putChannel(objects, "stable");
+  putChannel(objects, "preview");
+  const paths = [
+    "/downloads/",
+    "/downloads/preview/",
+    "/downloads/preview",
+    "/downloads/OceanLive.apk",
+    "/downloads/oceanlive-android.apk",
+    "/downloads/OceanLive-Android.apk/",
+    "/downloads/latest.json/x",
+    "/downloads/preview/preview/latest.json",
+    "/downloads/stable/latest.json",
+    "/downloads/b7-0123abcd/OceanLive-Android.apk",
+    "/downloads/preview/b7-0123abcd/OceanLive-Android.apk",
+    "/downloads/OceanLive-1.4-Android.apk",
+    "/downloads/latest.json%00",
+  ];
+  for (const path of paths) {
+    const env = downloadsEnv(objects);
+    const res = await worker.fetch(get(path), env);
+    assert.equal(res.status, 404, path);
+    assert.match(await res.text(), /Not found/, path);
+    assert.deepEqual(env.DOWNLOADS.calls, [], path);
+    assert.deepEqual(env.assets, ["/404"], path);
+  }
+  const env = downloadsEnv(objects);
+  const post = await worker.fetch(get("/downloads/OceanLive-Android.apk", {}, "POST"), env);
+  assert.equal(post.status, 405);
+  assert.equal(post.headers.get("Allow"), "GET, HEAD");
+  assert.deepEqual(env.DOWNLOADS.calls, []);
+});
+
+test("a channel with no latest.json in R2 (or no binding) is served from public/, with the download headers", async () => {
+  const objects = new Map();
+  putChannel(objects, "stable");
+  const statics = {
+    "/downloads/preview/latest.json": '{"version":"1.3.0"}',
+    "/downloads/preview/OceanLive-Android.apk": "old static apk",
+    "/downloads/OceanLive-Android.apk": "old static stable apk",
+  };
+  const env = downloadsEnv(objects, statics);
+  const json = await worker.fetch(get("/downloads/preview/latest.json"), env);
+  assert.equal(json.status, 200);
+  assert.equal(await json.text(), '{"version":"1.3.0"}');
+  assert.equal(json.headers.get("Content-Type"), "application/json");
+  assert.equal(json.headers.get("Cache-Control"), "no-cache");
+  assert.equal(json.headers.get("X-Robots-Tag"), "noindex");
+  const apk = await worker.fetch(get("/downloads/preview/OceanLive-Android.apk"), env);
+  assert.equal(apk.status, 200);
+  assert.equal(await apk.text(), "old static apk");
+  assert.equal(apk.headers.get("Content-Type"), "application/vnd.android.package-archive");
+  assert.equal(apk.headers.get("Content-Disposition"), "attachment");
+  assert.equal(apk.headers.get("Cache-Control"), "no-cache");
+  assert.deepEqual(env.assets, ["/downloads/preview/latest.json", "/downloads/preview/OceanLive-Android.apk"]);
+  // Not in public/ either: the assets' own 404 passes through.
+  const missing = await worker.fetch(get("/downloads/preview/OceanLive-Wear.apk"), env);
+  assert.equal(missing.status, 404);
+  // The stable channel is in R2, so its static copy is never used.
+  const stable = await worker.fetch(get("/downloads/OceanLive-Android.apk"), env);
+  assert.deepEqual(Buffer.from(await stable.arrayBuffer()), APKS.android);
+  // No R2 binding at all: everything comes from public/.
+  const bare = downloadsEnv(objects, statics);
+  delete bare.DOWNLOADS;
+  const old = await worker.fetch(get("/downloads/OceanLive-Android.apk"), bare);
+  assert.equal(await old.text(), "old static stable apk");
+  assert.equal(old.headers.get("Content-Type"), "application/vnd.android.package-archive");
+});
+
+test("an object key in latest.json that isn't this channel's file is refused, and nothing else is read", async () => {
+  const hostile = [
+    "preview/b7-0123abcd/OceanLive-Android.apk",
+    "stable/b7-0123abcd/OceanLive-Wear.apk",
+    "stable/latest.json",
+    "preview/latest.json",
+    "stable/b7-0123abcd/../../preview/latest.json",
+    "stable/b7-0123abcd/OceanLive-Android.apk/../../secret",
+    "stable/b7-0123abcd/OceanLive-Android.apk\nX-Evil: 1",
+    "/stable/b7-0123abcd/OceanLive-Android.apk",
+    "stable//b7-0123abcd/OceanLive-Android.apk",
+    "stable/b7-0123ABCD/OceanLive-Android.apk",
+    "stable/b1234567890-0123abcd/OceanLive-Android.apk",
+    "stable/b7-0123abcd/OceanLive-Android.apk ",
+    "secret.txt",
+    "",
+    42,
+    null,
+    ["stable/b7-0123abcd/OceanLive-Android.apk"],
+    { toString: "stable/b7-0123abcd/OceanLive-Android.apk" },
+  ];
+  for (const object of hostile) {
+    const objects = new Map();
+    putChannel(objects, "stable", { files: { android: { object } } });
+    putChannel(objects, "preview");
+    objects.set("secret.txt", Buffer.from("secret"));
+    const env = downloadsEnv(objects);
+    const res = await worker.fetch(get("/downloads/OceanLive-Android.apk"), env);
+    const where = JSON.stringify(object);
+    assert.equal(res.status, 503, where);
+    assert.equal(await res.text(), "This download isn't available right now. Try again later.", where);
+    assert.equal(res.headers.get("Cache-Control"), "no-store", where);
+    assert.deepEqual(env.DOWNLOADS.calls.map((c) => c[1]), ["stable/latest.json"], where);
+  }
+  // A missing object key, or a latest.json that isn't JSON, is refused the same way.
+  const objects = new Map();
+  putChannel(objects, "stable", { files: { android: { object: undefined } } });
+  assert.equal((await worker.fetch(get("/downloads/OceanLive-Android.apk"), downloadsEnv(objects))).status, 503);
+  objects.set("stable/latest.json", Buffer.from("{not json"));
+  assert.equal((await worker.fetch(get("/downloads/OceanLive-Android.apk"), downloadsEnv(objects))).status, 503);
+  objects.set("stable/latest.json", Buffer.from('{"files":null}'));
+  assert.equal((await worker.fetch(get("/downloads/OceanLive-Android.apk"), downloadsEnv(objects))).status, 503);
+});
+
+test("an APK is only served when its size matches latest.json; a bad name falls back to the fixed one", async () => {
+  for (const size of [APKS.android.length + 1, 0, -1, "12", 1.5, null]) {
+    const objects = new Map();
+    putChannel(objects, "stable", { files: { android: { size } } });
+    for (const headers of [{}, { Range: "bytes=0-3" }]) {
+      const res = await worker.fetch(get("/downloads/OceanLive-Android.apk", headers), downloadsEnv(objects));
+      assert.equal(res.status, 503, `${size} ${JSON.stringify(headers)}`);
+      assert.equal(await res.text(), "This download isn't available right now. Try again later.");
+    }
+  }
+  const objects = new Map();
+  putChannel(objects, "stable");
+  objects.delete("stable/b7-0123abcd/OceanLive-Android.apk");
+  assert.equal((await worker.fetch(get("/downloads/OceanLive-Android.apk"), downloadsEnv(objects))).status, 503);
+  assert.equal((await worker.fetch(get("/downloads/OceanLive-Android.apk", {}, "HEAD"), downloadsEnv(objects))).status, 503);
+  for (const name of ['x"; filename="evil.exe', "evil\r\nSet-Cookie: a=b.apk", "../x.apk", "x.exe", 7]) {
+    const named = new Map();
+    putChannel(named, "stable", { files: { android: { name } } });
+    const res = await worker.fetch(get("/downloads/OceanLive-Android.apk"), downloadsEnv(named));
+    assert.equal(res.status, 200, String(name));
+    assert.equal(res.headers.get("Content-Disposition"), 'attachment; filename="OceanLive-Android.apk"', String(name));
+  }
+});
+
+test("R2 errors and an oversized latest.json give 503, never the static copy", async () => {
+  const env = downloadsEnv(new Map(), { "/downloads/OceanLive-Android.apk": "old" });
+  env.DOWNLOADS.get = async () => { throw new Error("R2 down"); };
+  for (const path of ["/downloads/OceanLive-Android.apk", "/downloads/latest.json"]) {
+    const res = await worker.fetch(get(path), env);
+    assert.equal(res.status, 503, path);
+  }
+  assert.deepEqual(env.assets, []);
+  const objects = new Map();
+  putChannel(objects, "stable");
+  objects.set("stable/latest.json", Buffer.alloc(70 * 1024, 32));
+  assert.equal((await worker.fetch(get("/downloads/latest.json"), downloadsEnv(objects))).status, 503);
+});
+
+test("builds published by tools/downloads-lib.mjs are served with the SHA-256 their latest.json gives", async () => {
+  const objects = new Map();
+  const r2 = {
+    get: async (key) => (objects.has(key) ? Buffer.from(objects.get(key)) : null),
+    put: async (key, data) => { objects.set(key, Buffer.from(data)); },
+    delete: async (key) => { objects.delete(key); },
+  };
+  const quiet = () => {};
+  const builds = [];
+  for (const [build, tag] of [[101, "one"], [102, "two"], [103, "three"]]) {
+    const apks = {
+      android: Buffer.concat([Buffer.from("PK\x03\x04"), Buffer.from(`phone ${tag}`)]),
+      wear: Buffer.concat([Buffer.from("PK\x03\x04"), Buffer.from(`watch ${tag}`)]),
+    };
+    await publish({ r2, channel: "preview", apks, version: "1.5.0", build: String(build), commit: "abcdef0123456789abcdef0123456789abcdef01", log: quiet, warn: quiet });
+    builds.push(apks);
+    const latest = JSON.parse(await (await worker.fetch(get("/downloads/preview/latest.json"), downloadsEnv(objects))).text());
+    assert.equal(latest.build, build);
+    for (const [key, file] of Object.entries(FILE_OF)) {
+      const res = await worker.fetch(get("/downloads/preview/" + file), downloadsEnv(objects));
+      assert.equal(res.status, 200, `${build} ${file}`);
+      const body = Buffer.from(await res.arrayBuffer());
+      assert.deepEqual(body, apks[key]);
+      assert.equal(hex(body), latest.files[key].sha256);
+      assert.equal(body.length, latest.files[key].size);
+      assert.equal(res.headers.get("Content-Disposition"), `attachment; filename="OceanLive-1.5-${key === "android" ? "Android" : "Wear"}.apk"`);
+    }
+  }
+  // Current and previous build kept, the one before deleted; the stable channel never touched.
+  assert.deepEqual([...objects.keys()].filter((k) => k.endsWith(".apk")).sort(), [
+    "preview/b102-abcdef01/OceanLive-Android.apk",
+    "preview/b102-abcdef01/OceanLive-Wear.apk",
+    "preview/b103-abcdef01/OceanLive-Android.apk",
+    "preview/b103-abcdef01/OceanLive-Wear.apk",
+  ]);
+  assert.equal((await worker.fetch(get("/downloads/latest.json"), downloadsEnv(objects, {}))).status, 404);
 });

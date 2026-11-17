@@ -6,7 +6,9 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "vitest run",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "cf:build": "npm run check && npm test && node scripts/fill-ids.mjs",
+    "cf:deploy": "node scripts/fill-ids.mjs && wrangler d1 migrations apply ocean-live-status --remote && wrangler deploy"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.8.2",

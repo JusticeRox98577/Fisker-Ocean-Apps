@@ -14,7 +14,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # On the build job, not the workflow, so a newer run never cancels a deploy in progress.
+    # On the build job, not the workflow, so a newer run never cancels a publish in progress.
     # A newer push cancels an older push build, but never a manual release build (its own group,
     # never cancelled), so an ordinary push cannot silently drop a release.
     concurrency:
@@ -136,8 +136,9 @@ jobs:
             --notes-file "$RUNNER_TEMP/notes.md"
 
   # The signed APKs on oceanlive.org: a manual release run updates the public download
-  # (/downloads/), a push to main updates the unlisted preview (/downloads/preview/).
-  # GitHub releases are unchanged. Shares one queue with site.yml, so deploys never overlap.
+  # (/downloads/), a push to main updates the unlisted preview (/downloads/preview/). They are
+  # files in R2 that the site's Worker serves (site/src/worker.js); the site itself is not
+  # deployed here. GitHub releases are unchanged. One queue, so two publishes never overlap.
   publish:
     name: Publish to oceanlive.org
     needs: build
@@ -152,14 +153,15 @@ jobs:
       group: oceanlive-deploy
       cancel-in-progress: false
     steps:
-      # The site files (and deploy.mjs) always come from the current main, never from this run's
-      # commit or tag: wrangler replaces every file, and this job can start minutes after the
-      # build, so an older checkout would roll back site changes deployed by site.yml meanwhile.
-      # Only the APKs come from this run (the artifact below).
+      # Only site/tools, from the current main, never from this run's commit or tag: Cloudflare
+      # deploys the Worker that reads these files from main, so the script that writes them must be
+      # main's too. An older checkout (a release tag, or a run that starts minutes after a newer
+      # push) could write an older layout that the live Worker refuses. Nothing else of the site is
+      # deployed here, so nothing can be rolled back. Only the APKs come from this run (the artifact).
       - uses: actions/checkout@v4
         with:
           ref: main
-          sparse-checkout: site
+          sparse-checkout: site/tools
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -182,7 +184,11 @@ jobs:
             echo "No Cloudflare token or account ID: the preview was not published." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          node site/tools/deploy.mjs --channel "$CHANNEL" \
+          # First copy the other channel into R2 if R2 doesn't have it yet, from the downloads the old
+          # site still serves (once, at the switch to R2; after that it only checks). It never
+          # overwrites R2, and if it fails nothing is published.
+          node site/tools/downloads.mjs seed --skip "$CHANNEL"
+          node site/tools/downloads.mjs publish --channel "$CHANNEL" \
             --android "$RUNNER_TEMP/apks/OceanLive-$SHORT-Android.apk" \
             --wear "$RUNNER_TEMP/apks/OceanLive-$SHORT-Wear.apk" \
             --version "$VERSION" --build "$GITHUB_RUN_NUMBER" --commit "$GITHUB_SHA"
@@ -194,11 +200,13 @@ jobs:
             echo "* https://oceanlive.org/${DIR}OceanLive-Android.apk"
             echo "* https://oceanlive.org/${DIR}OceanLive-Wear.apk"
             echo "* https://oceanlive.org/${DIR}latest.json"
+            echo
+            echo "The files are in R2 and switched over in one step; the site itself was not redeployed."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # GitHub keeps only one pending run per concurrency group, so while a deploy is running a
-  # newer site.yml or preview deploy can cancel a queued stable publish. The GitHub release
-  # already exists by then, so make that loud: this job fails and says how to recover.
+  # GitHub keeps only one pending run per concurrency group, so while a publish is running a
+  # newer preview publish can cancel a queued stable publish. The GitHub release already exists
+  # by then, so make that loud: this job fails and says how to recover.
   publish-cancelled:
     name: Check the oceanlive.org publish
     needs: [build, publish]
@@ -208,5 +216,5 @@ jobs:
     steps:
       - name: The stable download was not updated
         run: |
-          echo "::error::The publish job was cancelled (another deploy took its place in the oceanlive-deploy queue), so oceanlive.org still offers the previous release. Use Re-run failed jobs on this run to publish it."
+          echo "::error::The publish job was cancelled (a newer publish took its place in the oceanlive-deploy queue), so oceanlive.org still offers the previous release. Use Re-run failed jobs on this run to publish it."
           exit 1
