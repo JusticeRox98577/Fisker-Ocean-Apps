@@ -40,6 +40,13 @@ Each `## x.y.z` section is used as the release notes for that version.
   review. Nothing is used until an admin approves it; approved notes are kept without your name,
   help answer everyone's questions and appear at oceanlive.org/community. App feedback goes to
   the developer only. The privacy policy says what's stored and when it's deleted
+* "Any questions?" can look beyond the owner guide: when a question needs it, Claude can search
+  the web and read web pages (through Anthropic, which sends search terms made from your
+  question to its search provider) and look at Ocean Live's public GitHub (issues, releases
+  and files). Answers that do may list their sources. Claude is told to search only with
+  what you asked, not your car's readings or balance, and it never sees your email address,
+  account ID or install ID. Paid answers that search the web cost a little more from your
+  balance (1 cent per search plus the AI cost). The privacy policy says what goes where
 * Settings → Account (and account.oceanlive.org) now say under the balance that it's used
   automatically for extra "Any questions?" answers after your 10 free ones each day
 * Privacy policy: says what's kept when you share something in "Any questions?" and for

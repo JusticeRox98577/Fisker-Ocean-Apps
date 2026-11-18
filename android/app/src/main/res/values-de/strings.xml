@@ -562,7 +562,7 @@
     <string name="ask_title">Fragen?</string>
     <string name="ask_back">Zurück</string>
     <string name="ask_new_chat">Neuer Chat</string>
-    <string name="ask_intro">Frag etwas zu deinem Fisker Ocean oder zu Ocean Live. Die Antworten kommen von Claude, einer KI von Anthropic, mit einem Ocean-Leitfaden und einer Fehlercode-Tabelle.</string>
+    <string name="ask_intro">Frag etwas zu deinem Fisker Ocean oder zu Ocean Live. Die Antworten kommen von Claude, einer KI von Anthropic, mit einem Ocean-Leitfaden, einer Fehlercode-Tabelle, der Websuche und Ocean Live auf GitHub.</string>
     <string name="ask_share_car">Werte meines Autos mitsenden</string>
     <string name="ask_share_car_on">Deine letzten Werte und Fehlercodes gehen mit jeder Frage mit, nie deine FIN oder dein Standort. Fragen weckt das Auto nie.</string>
     <string name="ask_share_car_off">Nur deine Frage wird gesendet.</string>
@@ -574,7 +574,7 @@
     <string name="ask_placeholder">Stell eine Frage</string>
     <string name="ask_send">Senden</string>
     <string name="ask_thinking">Denkt nach…</string>
-    <string name="ask_disclaimer">KI-Antworten können falsch sein. Lass Wichtiges von einer qualifizierten E-Auto-Werkstatt prüfen. Fragen, Antworten und die mitgesendeten Werte gehen an den Server von Ocean Live und an Anthropic, und Ocean Live speichert sie 90 Tage lang zu Forschungszwecken.</string>
+    <string name="ask_disclaimer">KI-Antworten können falsch sein. Lass Wichtiges von einer qualifizierten E-Auto-Werkstatt prüfen. Fragen, Antworten und die mitgesendeten Werte gehen an den Server von Ocean Live und an Anthropic, und Ocean Live speichert sie 90 Tage lang zu Forschungszwecken. Für Websuchen können Wörter aus deiner Frage über Anthropic an einen Suchdienst gehen.</string>
     <string name="ask_error_limit">Das waren alle Fragen für heute. Versuch es morgen wieder.</string>
     <string name="ask_error_budget">Fragen sind bis nächsten Monat pausiert.</string>
     <string name="ask_error_no_answer">Darauf gab es keine Antwort. Versuch es anders zu formulieren.</string>

@@ -580,7 +580,7 @@
     <string name="ask_title">¿Preguntas?</string>
     <string name="ask_back">Atrás</string>
     <string name="ask_new_chat">Nuevo chat</string>
-    <string name="ask_intro">Pregunta sobre tu Fisker Ocean o sobre Ocean Live. Las respuestas vienen de Claude, una IA de Anthropic, con una guía del Ocean y una tabla de códigos de avería.</string>
+    <string name="ask_intro">Pregunta sobre tu Fisker Ocean o sobre Ocean Live. Las respuestas vienen de Claude, una IA de Anthropic, con una guía del Ocean, una tabla de códigos de avería, búsquedas en la web y el GitHub de Ocean Live.</string>
     <string name="ask_share_car">Incluir los datos de mi coche</string>
     <string name="ask_share_car_on">Tus últimos datos y códigos de avería van con cada pregunta, nunca tu VIN ni tu ubicación. Preguntar nunca despierta el coche.</string>
     <string name="ask_share_car_off">Solo se envía tu pregunta.</string>
@@ -592,7 +592,7 @@
     <string name="ask_placeholder">Haz una pregunta</string>
     <string name="ask_send">Enviar</string>
     <string name="ask_thinking">Pensando…</string>
-    <string name="ask_disclaimer">Las respuestas de una IA pueden ser incorrectas. Comprueba lo importante con un taller cualificado en eléctricos. Las preguntas, las respuestas y los datos enviados van al servidor de Ocean Live y a Anthropic, y Ocean Live los guarda 90 días con fines de investigación.</string>
+    <string name="ask_disclaimer">Las respuestas de una IA pueden ser incorrectas. Comprueba lo importante con un taller cualificado en eléctricos. Las preguntas, las respuestas y los datos enviados van al servidor de Ocean Live y a Anthropic, y Ocean Live los guarda 90 días con fines de investigación. Para buscar en la web, se pueden enviar palabras de tu pregunta a un servicio de búsqueda a través de Anthropic.</string>
     <string name="ask_error_limit">Esas son todas las preguntas de hoy. Vuelve a intentarlo mañana.</string>
     <string name="ask_error_budget">Las preguntas están en pausa hasta el mes que viene.</string>
     <string name="ask_error_no_answer">No hubo respuesta para eso. Prueba a preguntarlo de otra forma.</string>

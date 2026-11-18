@@ -569,7 +569,7 @@
     <string name="ask_title">Any questions?</string>
     <string name="ask_back">Back</string>
     <string name="ask_new_chat">New chat</string>
-    <string name="ask_intro">Ask about your Fisker Ocean or Ocean Live. Answers come from Claude, an AI by Anthropic, using an Ocean guide and a fault code table.</string>
+    <string name="ask_intro">Ask about your Fisker Ocean or Ocean Live. Answers come from Claude, an AI by Anthropic, using an Ocean guide, a fault code table, web search and Ocean Live\'s GitHub.</string>
     <string name="ask_share_car">Include my car\'s readings</string>
     <string name="ask_share_car_on">Your latest readings and fault codes go with each question, never your VIN or location. Asking never wakes the car.</string>
     <string name="ask_share_car_off">Only your question is sent.</string>
@@ -581,7 +581,7 @@
     <string name="ask_placeholder">Ask a question</string>
     <string name="ask_send">Send</string>
     <string name="ask_thinking">Thinking…</string>
-    <string name="ask_disclaimer">AI answers can be wrong. Check anything important with a qualified EV shop. Questions, answers and the readings sent with them go to Ocean Live\'s server and to Anthropic, and Ocean Live keeps them for 90 days for research.</string>
+    <string name="ask_disclaimer">AI answers can be wrong. Check anything important with a qualified EV shop. Questions, answers and the readings sent with them go to Ocean Live\'s server and to Anthropic, and Ocean Live keeps them for 90 days for research. For web searches, words from your question can be sent through Anthropic to a search provider.</string>
     <string name="ask_error_limit">That\'s all the questions for today. Try again tomorrow.</string>
     <string name="ask_error_budget">Questions are paused until next month.</string>
     <string name="ask_error_no_answer">Couldn\'t answer that one. Try asking another way.</string>

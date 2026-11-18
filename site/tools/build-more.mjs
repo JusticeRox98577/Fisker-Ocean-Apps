@@ -202,7 +202,7 @@ write({
       <li><strong>12V</strong>: the 12V history and an optional watch while the car sleeps, without keeping the car awake.</li>
       <li><strong>Trips</strong>: drives, charges, charging curves and costs.</li>
       <li><strong>Faults</strong>: fault codes from 39 modules, with descriptions when known. See <a href="/codes">Fault codes</a>.</li>
-      <li><strong>"Any questions?"</strong>: ask about your Ocean or the app; answers come from an owner guide and can be wrong.</li>
+      <li><strong>"Any questions?"</strong>: ask about your Ocean or the app; answers come from an owner guide, web search and Ocean Live's GitHub, and can be wrong.</li>
     </ul>
     <p>More in <a href="/help">Help</a> and on the <a href="/">home page</a>.</p>
 
@@ -286,7 +286,7 @@ write({
     <blockquote class="guide-quote"><p>${SHORT}</p></blockquote>
     <h3 id="long">Long</h3>
     <blockquote class="guide-quote">
-      <p>Ocean Live is an independent, owner-made app for the Fisker Ocean. Through a Bluetooth OBD adapter it shows live charge, battery health measured from your own charging, a 12V battery monitor, trips and charging costs, and fault codes from 39 modules, with Android Auto, CarPlay, widgets and Wear OS and Apple Watch apps. "Any questions?" answers questions about the car and the app from an owner guide. No ads, no tracking: what the app reads from your car stays on your phone.</p>
+      <p>Ocean Live is an independent, owner-made app for the Fisker Ocean. Through a Bluetooth OBD adapter it shows live charge, battery health measured from your own charging, a 12V battery monitor, trips and charging costs, and fault codes from 39 modules, with Android Auto, CarPlay, widgets and Wear OS and Apple Watch apps. "Any questions?" answers questions about the car and the app from an owner guide, web search and Ocean Live's GitHub. No ads, no tracking: what the app reads from your car stays on your phone.</p>
       <p>Ocean Live is not affiliated with or endorsed by Fisker Inc.</p>
     </blockquote>
     <p>Name: <strong>Ocean Live</strong> (two words). Platforms: Android, Wear OS, iPhone and Apple Watch. Website: oceanlive.org.</p>

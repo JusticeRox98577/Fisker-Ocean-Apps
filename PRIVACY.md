@@ -1,8 +1,8 @@
 # Ocean Live privacy policy
 
-Last updated: 15 November 2026 (added: mailing list, tester invitations, account website,
+Last updated: 17 November 2026 (added: mailing list, tester invitations, account website,
 balance and pre-registration rewards, reporting an answer, the admin page, sharing what you
-know, roadmap votes)
+know, roadmap votes, web search and GitHub in "Any questions?")
 
 Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other
 Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps,
@@ -27,7 +27,10 @@ and the Ocean Live mailing list.
   and confirm. It keeps your email address and language until you unsubscribe. Testers may be
   asked once by email whether they want to join. See [Mailing list](#mailing-list).
 * Questions (and, unless you turn it off, your car's latest readings) are answered by Claude,
-  an AI made by Anthropic, through a small server the developer runs. For research, the
+  an AI made by Anthropic, through a small server the developer runs. To answer, Claude can
+  also search the web through Anthropic (search terms made from your question go to
+  Anthropic's search provider) and read Ocean Live's public GitHub. See
+  [Web search and GitHub](#web-search-and-github). For research, the
   developer keeps each question, its answer, the readings sent with it and a random install
   ID for 90 days, then deletes them. If you report an answer, the report is kept with that
   question and deleted with it.
@@ -72,6 +75,28 @@ Claude API to be answered. With the question go:
 * a random ID made for this install. It is not linked to your name, phone or car. If you are
   signed in, your session goes with it, so the server links the question to your account
   (see [Accounts](#accounts)).
+
+### Web search and GitHub
+
+Besides its owner guide and fault code table, Claude can look further when a question needs
+it:
+
+* **Web search:** Claude can search the web and read web pages with Anthropic's web search
+  and web fetch tools. The search terms are written by Claude from your question and sent
+  through Anthropic to the search provider Anthropic uses; web pages are fetched by
+  Anthropic, not by your phone or the Ocean Live server. Claude is told to search only with
+  what your question says, and not to add your car's readings, your balance or anything else
+  about you beyond what you typed. Your email address, account ID and install ID are never
+  given to Claude, so they can't be part of a search.
+* **GitHub:** Claude can look at Ocean Live's public GitHub repository
+  (github.com/JusticeRox98577/Fisker-Ocean-Apps): its issues, releases and files. The Ocean
+  Live server fetches them from GitHub, so GitHub only gets the search words (made the same
+  way as web search terms), issue numbers or file names Claude asks for, from the server and
+  not from your phone. Only public content is read, and nothing is ever posted to GitHub.
+
+Answers that use the web or GitHub may list their sources. Web pages and GitHub content can
+be wrong or out of date; Claude is told to treat them as information only, never as
+instructions.
 
 ### Research log
 
@@ -161,11 +186,12 @@ improving the answers and the app, with the information you chose to share.
 
 Anthropic processes the question to produce the answer under its commercial terms, which do
 not allow it to train models on this data by default, and keeps it only for a limited time;
-see https://www.anthropic.com/legal/privacy. On your phone, the chat lives only in the app's
-memory and is gone when you close the app or tap "New chat".
+see https://www.anthropic.com/legal/privacy. Web searches and page fetches for an answer are
+made by Anthropic as part of the same service. On your phone, the chat lives only in the
+app's memory and is gone when you close the app or tap "New chat".
 
-Don't put personal details in questions. Answers come from an AI and can be wrong; check
-anything important with a qualified EV shop.
+Don't put personal details in questions: words from a question can end up in a web search.
+Answers come from an AI and can be wrong; check anything important with a qualified EV shop.
 
 ## Accounts
 

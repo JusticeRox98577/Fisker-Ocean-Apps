@@ -111,6 +111,11 @@ export interface SuggestContext {
   /** What the tool accepted during this question; written by commitSuggestions once there is an answer. */
   pending: PendingSuggestion[];
   calls: number;
+  /**
+   * Set once web pages, search results or GitHub content are in the conversation: from then on knowledge isn't
+   * accepted (text planted there could pose as something the owner said), app feedback still is.
+   */
+  untrusted?: boolean;
 }
 
 export interface PendingSuggestion {
@@ -152,6 +157,11 @@ export async function runSuggest(ctx: SuggestContext, input: unknown): Promise<T
   const code = kind === "fault_code" ? cleanCode(o.code) : null;
 
   if (ctx.review) return err("Sending suggestions is turned off for this account.");
+  if (ctx.untrusted && kind !== "app_feedback") {
+    return err(
+      "Not sent: this question also used web or GitHub content, so knowledge can't be sent with it. If the owner offered it, they can send it again in a new chat.",
+    );
+  }
   if (!ctx.db) return err("Suggestions can't be saved right now.");
   if (ctx.calls > MAX_PER_QUESTION) return err(`At most ${MAX_PER_QUESTION} suggestions can be sent with one question.`);
 

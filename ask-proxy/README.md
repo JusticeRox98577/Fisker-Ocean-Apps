@@ -28,6 +28,17 @@ Claude (Claude Opus 5.5) answers from [`knowledge/ocean-guide.md`](knowledge/oce
 and looks fault codes up on demand in a table kept on the server. That table is not part of this
 public repo.
 
+When the guide doesn't cover something, or it changes over time (recalls, parts, service options,
+news), Claude can search the web and read pages. For questions about Ocean Live itself it can read
+this public GitHub repository: its issues, pull requests, releases and files. Both are for signed-in
+accounts; older app builds without an account keep the guide and the fault code table. The sources an
+answer used are listed under it. Web pages and GitHub content are treated as information, never as
+instructions, and once a question has read them, knowledge can't be suggested in it. Claude is told to
+search with general words only, never the car's readings, the balance or the owner's account details,
+and GitHub lookups that contain the install ID, account details, an email address or a VIN are
+refused. Each question has a budget: a few searches and pages, a cost ceiling and a time limit, after
+which Claude answers with what it has.
+
 For research into what owners ask and how good the answers are, each answered question is logged
 with its answer, the readings sent with it and the install ID (and the account, once signed in).
 Entries are deleted automatically after 90 days. IP addresses are never logged; the daily counters
@@ -65,8 +76,8 @@ install for apps without an account). A report is kept with its question and del
 ## Balance and rewards
 
 An account can have a balance in US dollars. It pays for extra "Any questions?" questions after the
-free ones each day: each costs what Claude charged for that answer, rounded up to the next cent, and
-a question that fails costs nothing. Anonymous installs never use a balance.
+free ones each day: each costs what Claude charged for that answer (web searches included), rounded
+up to the next cent, and a question that fails costs nothing. Anonymous installs never use a balance.
 
 Owners who pre-registered on Google Play or pre-ordered on the App Store get US$5 and an "Early
 supporter" badge, once per store account and once per Ocean Live account. The Worker checks a Play

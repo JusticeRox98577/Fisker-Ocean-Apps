@@ -78,7 +78,7 @@ struct AskView: View {
                             Text(verbatim: Ask.noticeText(notice))
                                 .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(4)
                         }
-                        Text("AI answers can be wrong. Check anything important with a qualified EV shop. Questions, answers and the readings sent with them go to Ocean Live's server and to Anthropic, and Ocean Live keeps them for 90 days for research.")
+                        Text("AI answers can be wrong. Check anything important with a qualified EV shop. Questions, answers and the readings sent with them go to Ocean Live's server and to Anthropic, and Ocean Live keeps them for 90 days for research. For web searches, words from your question can be sent through Anthropic to a search provider.")
                             .font(.system(size: 11)).foregroundStyle(Theme.dim)
                             .padding(.top, 4)
                             .id("bottom")
@@ -149,7 +149,7 @@ struct AskView: View {
     private var intro: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Any questions?").font(.system(size: 26, weight: .bold)).foregroundStyle(.white)
-            Text("Ask about your Fisker Ocean or Ocean Live. Answers come from Claude, an AI by Anthropic, using an Ocean guide and a fault code table.")
+            Text("Ask about your Fisker Ocean or Ocean Live. Answers come from Claude, an AI by Anthropic, using an Ocean guide, a fault code table, web search and Ocean Live's GitHub.")
                 .font(.system(size: 13)).foregroundStyle(Theme.dim)
             CardBox {
                 Toggle(isOn: Binding(get: { car.settings.askShareCar }, set: { v in car.updateSettings { $0.askShareCar = v } })) {
