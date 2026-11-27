@@ -1,12 +1,10 @@
 # Ocean Live privacy policy
 
-Last updated: 17 November 2026 (added: mailing list, tester invitations, account website,
-balance and pre-registration rewards, reporting an answer, the admin page, sharing what you
-know, roadmap votes, web search and GitHub in "Any questions?")
+Last updated: 27 November 2026 (added: the Nova hardware beta sign-up)
 
 Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other
 Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps,
-and the Ocean Live mailing list.
+the Ocean Live mailing list and the Nova hardware beta sign-up.
 
 ## The short version
 
@@ -26,6 +24,10 @@ and the Ocean Live mailing list.
 * The mailing list on oceanlive.org is separate from the app and only for people who sign up
   and confirm. It keeps your email address and language until you unsubscribe. Testers may be
   asked once by email whether they want to join. See [Mailing list](#mailing-list).
+* The Nova hardware beta sign-up at hardware.oceanlive.org is separate too. It keeps what you
+  fill in (your email address, your top five features and any details you add) so the
+  developer can plan Nova and pick testers. Only the developer can read it; the page shows
+  totals only. See [Nova hardware beta](#nova-hardware-beta-only-if-you-sign-up).
 * Questions (and, unless you turn it off, your car's latest readings) are answered by Claude,
   an AI made by Anthropic, through a small server the developer runs. To answer, Claude can
   also search the web through Anthropic (search terms made from your question go to
@@ -428,6 +430,46 @@ read back, but someone who already knows an address can check it against the has
 counts as personal data. Email justice@oceanlive.org to have it removed (you could then be
 invited again). The legal basis in the EU and UK is legitimate interests: asking testers once,
 and respecting the answer.
+
+## Nova hardware beta (only if you sign up)
+
+At hardware.oceanlive.org you can sign up to beta test Nova, the add-on hardware for the Fisker
+Ocean that the developer is building. It is separate from the app, your account and the mailing
+list: signing up doesn't create an account or add you to the news emails.
+
+What is stored, in a Cloudflare D1 database that only the developer can read:
+
+* your email address, and whatever else you choose to fill in: your name, country or region,
+  which Ocean you have, which phone you use, which Nova products you'd like to test, your five
+  most important features in order, a feature you wrote in, whether you'd install it yourself,
+  and your notes;
+* when you signed up and when you last changed your answer (signing up again with the same
+  address replaces your earlier answer);
+* if you are picked as a tester: that you were picked and when, a hash of the code in your
+  invitation link, and whether and when you said yes or no.
+
+To limit abuse, the server counts sign-ups, and tries of invitation links, per network for an
+hour, stored only as a hash of the IP address and deleted within a day. That count is not linked
+to your email address.
+
+What everyone can see: only totals, on hardware.oceanlive.org: how many people signed up, how
+many are interested in each Nova product, and how many test boards are taken. Never your name,
+email address or answers.
+
+Why: to plan Nova (which features matter most) and to pick beta testers and email them about the
+beta. Your answers are never sold or shared, and never used for anything else.
+
+Who processes it: **Cloudflare** stores it and runs the server. If you are picked, the
+invitation email is delivered by **Resend**, so it receives your email address and that email,
+and a copy is kept in the developer's mailbox on the Ocean Live mail server. The sign-up page
+sets no cookies. (Its admin page, for the developer only, sets one strictly necessary sign-in
+cookie.)
+
+How long: until the Nova beta is over, or until you ask for it to be deleted, whichever comes
+first. Email justice@oceanlive.org to have your answer deleted, or to ask what is held.
+
+The legal basis in the EU and UK is your consent, given when you sign up, which you can withdraw
+at any time by asking for your answer to be deleted.
 
 ## Children
 

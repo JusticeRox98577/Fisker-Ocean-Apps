@@ -156,4 +156,8 @@ export default {
       return json({ error: "Something went wrong on my side. Please try again in a minute." }, 500);
     }
   },
+
+  async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+    await cleanup(env.DB, Date.now());
+  },
 };

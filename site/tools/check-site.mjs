@@ -45,7 +45,7 @@ function checkRef(where, url, base) {
 
 // HTML: src, href, import map, inline styles/scripts, third-party loads. Links (never loads) may also
 // go to the account page and the status page, which are separate Workers.
-const ALLOWED_LINKS = /^https:\/\/(github\.com|play\.google\.com|sketchfab\.com|creativecommons\.org|www\.anthropic\.com|threejs\.org|gsap\.com|oceanlive\.org|account\.oceanlive\.org|status\.oceanlive\.org|testflight\.apple\.com|groups\.google\.com)\//;
+const ALLOWED_LINKS = /^https:\/\/(github\.com|play\.google\.com|sketchfab\.com|creativecommons\.org|www\.anthropic\.com|threejs\.org|gsap\.com|oceanlive\.org|account\.oceanlive\.org|status\.oceanlive\.org|hardware\.oceanlive\.org|testflight\.apple\.com|groups\.google\.com)\//;
 for (const f of files.filter((f) => f.endsWith(".html"))) {
   const html = readFileSync(f, "utf8");
   const where = rel(f);

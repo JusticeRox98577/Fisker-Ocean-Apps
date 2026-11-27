@@ -26,6 +26,9 @@
     }
   ],
 
+  // Every day at 03:41 UTC: delete expired spam counters, sign-in links and sessions.
+  "triggers": { "crons": ["41 3 * * *"] },
+
   // Emails go out through the mail Worker (mail/src/notify.ts), which has the Resend key.
   "services": [{ "binding": "MAIL", "service": "ocean-live-mail", "entrypoint": "Notify" }],
 
