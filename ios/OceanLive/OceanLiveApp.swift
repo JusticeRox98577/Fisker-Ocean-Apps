@@ -25,6 +25,8 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var accounts = Accounts.shared
     @State private var tab = 0
+    /// The app opens on a choice: the OBD dashboard, or Nova (StartView). Home returns to it.
+    @State private var section: String?
 
     init() {
         let bar = UITabBarAppearance()
@@ -41,6 +43,10 @@ struct RootView: View {
             // after that the app works offline. The car side below runs the same either way.
             if Accounts.required && !accounts.signedIn {
                 SignInView()
+            } else if section == nil {
+                StartView(onObd: { section = "obd" }, onNova: { section = "nova" })
+            } else if section == "nova" {
+                NovaView(onBack: { section = nil })
             } else {
                 TabView(selection: $tab) {
                     LiveView().tabItem { Label("Live", systemImage: "bolt.circle") }.tag(0)
@@ -50,6 +56,18 @@ struct RootView: View {
                     SettingsView().tabItem { Label("Settings", systemImage: "gearshape") }.tag(4)
                 }
                 .tint(Theme.aqua)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    HStack {
+                        Button { section = nil } label: {
+                            Label("Home", systemImage: "chevron.left").font(.system(size: 14, weight: .semibold))
+                        }
+                        .foregroundStyle(Theme.aqua)
+                        .frame(minHeight: 36)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .background(Theme.bg)
+                }
             }
         }
         // Connects only once the app is actually on screen, never from a launch in the background.

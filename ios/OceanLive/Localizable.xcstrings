@@ -1183,6 +1183,62 @@
         }
       }
     },
+    "12 V battery too low": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12-V-Batterie zu schwach"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "batería de 12 V demasiado baja"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "batterie 12 V trop faible"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12V-accu te laag"
+          }
+        }
+      }
+    },
+    "12 V battery: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12-V-Batterie: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batería de 12 V: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batterie 12 V : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12V-accu: %@"
+          }
+        }
+      }
+    },
     "12V battery": {
       "localizations": {
         "de": {
@@ -2303,6 +2359,34 @@
         }
       }
     },
+    "Back": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurück"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atrás"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retour"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terug"
+          }
+        }
+      }
+    },
     "Balance": {
       "localizations": {
         "de": {
@@ -2831,6 +2915,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Auto slaapt · 12V wordt bewaakt"
+          }
+        }
+      }
+    },
+    "Car last seen %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto zuletzt gemeldet %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coche visto por última vez %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voiture vue pour la dernière fois %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto laatst gezien %@"
           }
         }
       }
@@ -3899,6 +4011,62 @@
         }
       }
     },
+    "Climate off": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klima aus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clima apagado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Climatisation arrêt"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klimaat uit"
+          }
+        }
+      }
+    },
+    "Climate on": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klima an"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clima encendido"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Climatisation marche"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klimaat aan"
+          }
+        }
+      }
+    },
     "Code": {
       "localizations": {
         "de": {
@@ -3951,6 +4119,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Codebeschrijvingen"
+          }
+        }
+      }
+    },
+    "Code from the car screen": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code vom Bildschirm im Auto"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código de la pantalla del coche"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code affiché dans la voiture"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code van het scherm in de auto"
           }
         }
       }
@@ -4567,6 +4763,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "De vragendienst is niet bereikbaar. Probeer het zo opnieuw."
+          }
+        }
+      }
+    },
+    "Couldn't reach the server: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server nicht erreichbar: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo conectar con el servidor: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serveur injoignable : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server niet bereikbaar: %@"
           }
         }
       }
@@ -5691,6 +5915,34 @@
         }
       }
     },
+    "Forget this car": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Auto vergessen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olvidar este coche"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oublier cette voiture"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze auto vergeten"
+          }
+        }
+      }
+    },
     "Found %@ nearby at a new Bluetooth address. Use it only if it's the adapter in your car.": {
       "localizations": {
         "de": {
@@ -6183,6 +6435,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hoogste en laagste cel verschillen %lld mV."
+          }
+        }
+      }
+    },
+    "Home": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicio"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accueil"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
           }
         }
       }
@@ -6869,6 +7149,62 @@
         }
       }
     },
+    "Last command: done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzter Befehl: ausgeführt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Última orden: hecha"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dernière commande : faite"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laatste opdracht: uitgevoerd"
+          }
+        }
+      }
+    },
+    "Last command: refused (%@)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzter Befehl: abgelehnt (%@)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Última orden: rechazada (%@)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dernière commande : refusée (%@)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laatste opdracht: geweigerd (%@)"
+          }
+        }
+      }
+    },
     "Last month": {
       "localizations": {
         "de": {
@@ -7149,6 +7485,34 @@
         }
       }
     },
+    "Live data, battery, trips and fault codes through your OBD adapter.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-Daten, Batterie, Fahrten und Fehlercodes über deinen OBD-Adapter."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datos en directo, batería, viajes y códigos de avería con tu adaptador OBD."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Données en direct, batterie, trajets et codes défaut via votre adaptateur OBD."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live gegevens, accu, ritten en foutcodes via je OBD-adapter."
+          }
+        }
+      }
+    },
     "Live readings from": {
       "localizations": {
         "de": {
@@ -7201,6 +7565,62 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fooien laden…"
+          }
+        }
+      }
+    },
+    "Lock": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verriegeln"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloquear"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verrouiller"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergrendelen"
+          }
+        }
+      }
+    },
+    "Lock, unlock and run the climate from this phone. First pair it in the car: on the car screen, Settings → This Nova → Pair a phone shows a code.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit diesem Handy verriegeln, entriegeln und die Klimatisierung starten. Zuerst im Auto koppeln: Auf dem Bildschirm im Auto zeigt Einstellungen → Diese Nova → Handy koppeln einen Code."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloquea, desbloquea y enciende el climatizador desde este teléfono. Primero vincúlalo en el coche: en la pantalla del coche, Ajustes → Esta Nova → Vincular un teléfono muestra un código."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verrouillez, déverrouillez et lancez la climatisation depuis ce téléphone. Associez-le d’abord dans la voiture : sur l’écran de la voiture, Réglages → Cette Nova → Associer un téléphone affiche un code."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergrendel, ontgrendel en start de klimaatregeling met deze telefoon. Koppel hem eerst in de auto: op het scherm in de auto toont Instellingen → Deze Nova → Telefoon koppelen een code."
           }
         }
       }
@@ -8465,6 +8885,34 @@
         }
       }
     },
+    "Nova": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova"
+          }
+        }
+      }
+    },
     "Now": {
       "localizations": {
         "de": {
@@ -8489,6 +8937,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nu"
+          }
+        }
+      }
+    },
+    "OBD": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OBD"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OBD"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OBD"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OBD"
           }
         }
       }
@@ -9161,6 +9637,62 @@
           "stringUnit": {
             "state": "translated",
             "value": "Betaald van je tegoed: %1$@ · nog %2$@ over"
+          }
+        }
+      }
+    },
+    "Pair this phone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Handy koppeln"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincular este teléfono"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Associer ce téléphone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze telefoon koppelen"
+          }
+        }
+      }
+    },
+    "Pairing was refused in the car.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Kopplung wurde im Auto abgelehnt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La vinculación se rechazó en el coche."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’association a été refusée dans la voiture."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppelen is in de auto geweigerd."
           }
         }
       }
@@ -10845,6 +11377,34 @@
         }
       }
     },
+    "Sent. The car acts on it at its next check-in.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesendet. Das Auto führt es beim nächsten Melden aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviado. El coche lo hará en su próxima conexión."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyé. La voiture l’exécute à sa prochaine connexion."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verstuurd. De auto voert het uit bij de volgende melding."
+          }
+        }
+      }
+    },
     "Sessions": {
       "localizations": {
         "de": {
@@ -11989,6 +12549,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opgeslagen codes"
+          }
+        }
+      }
+    },
+    "SuperNova": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SuperNova"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SuperNova"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SuperNova"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SuperNova"
           }
         }
       }
@@ -13561,6 +14149,34 @@
         }
       }
     },
+    "Unlock": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entriegeln"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desbloquear"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déverrouiller"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ontgrendelen"
+          }
+        }
+      }
+    },
     "Updated %lld days ago": {
       "localizations": {
         "de": {
@@ -14099,6 +14715,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wacht tot de scan klaar is."
+          }
+        }
+      }
+    },
+    "Waiting for approval on the car screen…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warte auf Bestätigung im Auto…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando la aprobación en el coche…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente d’approbation dans la voiture…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wachten op goedkeuring in de auto…"
           }
         }
       }
@@ -14663,6 +15307,34 @@
         }
       }
     },
+    "Your Nova: lock, unlock and climate from your phone, and your car's status.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Nova: verriegeln, entriegeln und Klima vom Handy aus, und der Zustand deines Autos."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu Nova: bloquear, desbloquear y clima desde el teléfono, y el estado de tu coche."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre Nova : verrouillage, déverrouillage et climatisation depuis votre téléphone, et l’état de votre voiture."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je Nova: vergrendelen, ontgrendelen en klimaat vanaf je telefoon, en de status van je auto."
+          }
+        }
+      }
+    },
     "Your Ocean reached the level you set.": {
       "localizations": {
         "de": {
@@ -15167,6 +15839,34 @@
         }
       }
     },
+    "not in Park": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nicht in P"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no está en P"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pas en P"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "niet in P"
+          }
+        }
+      }
+    },
     "not measured yet": {
       "localizations": {
         "de": {
@@ -15219,6 +15919,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "nog niet gedaan"
+          }
+        }
+      }
+    },
+    "not set up for this car yet": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "für dieses Auto noch nicht eingerichtet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aún no configurado para este coche"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pas encore configurée pour cette voiture"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nog niet ingesteld voor deze auto"
           }
         }
       }
@@ -15471,6 +16199,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "tik om te tonen"
+          }
+        }
+      }
+    },
+    "the car refused it": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vom Auto abgelehnt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "el coche la rechazó"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "la voiture l’a refusée"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de auto weigerde het"
           }
         }
       }

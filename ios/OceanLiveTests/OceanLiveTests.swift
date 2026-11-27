@@ -1,3 +1,4 @@
+import CryptoKit
 import XCTest
 @testable import OceanLive
 
@@ -1754,5 +1755,42 @@ final class AccountTests: XCTestCase {
 
     func testAskSignInError() {
         XCTAssertEqual(Ask.errorMessage(status: 401, error: "signin_required"), "Sign in again to ask questions.")
+    }
+}
+
+/// SuperNova remote commands: the same layout and counters as the Android NovaTest and the car's novacmd.
+final class NovaTests: XCTestCase {
+    func testCommandLayoutMatchesTheCar() throws {
+        let key = Curve25519.Signing.PrivateKey()
+        let uid = Data((1...12).map { UInt8($0) })
+        let c = try NovaCommands.build(key: key, uid: uid, slot: 2, action: NovaCommands.unlock, counter: 380_000_123, now: 1_795_000_000)
+        XCTAssertEqual(c.count, 104)
+        XCTAssertEqual(NovaCommands.hex(c.prefix(4)), "4e56434d") // "NVCM"
+        XCTAssertEqual(c[4], 1)
+        XCTAssertEqual(Int(c[5]), NovaCommands.unlock)
+        XCTAssertEqual(c.subdata(in: 8..<20), uid)
+        func u32(_ o: Int) -> UInt32 { (0..<4).reduce(0) { $0 | UInt32(c[o + $1]) << (8 * UInt32($1)) } }
+        XCTAssertEqual(u32(20), 380_000_123)
+        XCTAssertEqual(u32(24), 1_795_000_000)
+        XCTAssertEqual(u32(28), 1_795_000_000 + NovaCommands.lifeSeconds)
+        XCTAssertEqual(c[32], 2)
+        XCTAssertTrue(key.publicKey.isValidSignature(c.subdata(in: 40..<104), for: c.prefix(40)))
+    }
+
+    func testRfc8032Key() throws {
+        // RFC 8032 test 1, the same key the car's and the Android app's tests use
+        let key = try Curve25519.Signing.PrivateKey(rawRepresentation: NovaCommands.unhex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")!)
+        XCTAssertEqual(NovaCommands.hex(key.publicKey.rawRepresentation), "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a")
+    }
+
+    func testCountersOnlyGoUp() {
+        let a = NovaCommands.counter(now: 1_795_000_000, last: 0)
+        XCTAssertEqual(a, (1_795_000_000 - 1_700_000_000) * 4)
+        XCTAssertEqual(NovaCommands.counter(now: 1_795_000_000, last: a), a + 1)
+    }
+
+    func testNovaStringsAreTranslated() {
+        guard let de = Bundle.main.path(forResource: "de", ofType: "lproj").flatMap(Bundle.init(path:)) else { return XCTFail("de missing") }
+        XCTAssertEqual(de.localizedString(forKey: "Pair this phone", value: nil, table: nil), "Dieses Handy koppeln")
     }
 }
