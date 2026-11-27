@@ -30,10 +30,10 @@ function show(state, name) {
   $("inv-no").hidden = state !== "declined";
   title.textContent =
     state === "accepted" ? "You're testing Nova" :
-    state === "declined" ? "Thanks for letting us know" :
+    state === "declined" ? "Thanks for letting me know" :
     "You've been picked to test Nova";
   if (state === "invited") {
-    $("inv-hello").textContent = `${name ? `Hi ${name}, t` : "T"}hanks for signing up. You're one of the few people we'd like to send a Nova test board to.`;
+    $("inv-hello").textContent = `${name ? `Hi ${name}, t` : "T"}hanks for signing up. You're one of the few people I'd like to send a Nova test board to.`;
   }
 }
 

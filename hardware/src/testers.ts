@@ -33,11 +33,11 @@ function invitation(name: string, link: string, total: number): { subject: strin
     subject: "You've been picked to beta test Nova",
     text:
       `${hi}\n\n` +
-      `Thanks for signing up to beta test Nova. There are only ${total} test boards, and we'd like one of them to go in your Ocean.\n\n` +
-      `Please tell us whether you're in:\n\n${link}\n\n` +
+      `Thanks for signing up to beta test Nova. There are only ${total} test boards, and I'd like one of them to go in your Ocean.\n\n` +
+      `Please tell me whether you're in:\n\n${link}\n\n` +
       `That page explains what testing involves and has a Yes and a No button. Please answer either way: a No passes the board to the next person.\n\n` +
-      `Once you say yes, we'll email you about shipping and installing it. Questions? Just reply to this email.\n\n` +
-      `Ocean Live`,
+      `Once you say yes, I'll email you about shipping and installing it. Questions? Just reply to this email.\n\n` +
+      `Justice\nOcean Live`,
   };
 }
 

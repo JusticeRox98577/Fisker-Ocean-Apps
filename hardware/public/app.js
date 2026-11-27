@@ -137,7 +137,7 @@ form.addEventListener("submit", async (e) => {
     return;
   }
   if (!consent.checked) {
-    say("Tick the box to say we may email you about the beta.", "error");
+    say("Tick the box to say I may email you about the beta.", "error");
     consent.focus();
     return;
   }
@@ -191,7 +191,7 @@ form.addEventListener("submit", async (e) => {
   const h = document.createElement("h3");
   h.textContent = "You're on the list. Thank you!";
   const p = document.createElement("p");
-  p.textContent = "We'll email you when we pick beta testers. Changed your mind about a feature? Sign up again with the same email and your new answer replaces the old one.";
+  p.textContent = "I'll email you when I pick beta testers. Changed your mind about a feature? Sign up again with the same email and your new answer replaces the old one.";
   thanks.append(h, p);
   form.replaceWith(thanks);
   thanks.focus();

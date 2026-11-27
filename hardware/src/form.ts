@@ -64,7 +64,7 @@ function ids(v: unknown, max: number): string[] | null {
 export function checkSignUp(body: Record<string, unknown>): Checked {
   const email = line(body.email, 254).toLowerCase();
   if (!EMAIL.test(email)) return { ok: false, error: "Enter a valid email address." };
-  if (body.consent !== true) return { ok: false, error: "Tick the box to say we may email you about the beta." };
+  if (body.consent !== true) return { ok: false, error: "Tick the box to say I may email you about the beta." };
 
   const features = ids(body.features, MAX_FEATURES);
   if (features === null) return { ok: false, error: `Pick up to ${MAX_FEATURES} features.` };

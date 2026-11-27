@@ -153,7 +153,7 @@ export default {
       }
     } catch (e) {
       console.error("hardware error", e instanceof Error ? e.stack : e);
-      return json({ error: "Something went wrong on our side. Please try again in a minute." }, 500);
+      return json({ error: "Something went wrong on my side. Please try again in a minute." }, 500);
     }
   },
 };
