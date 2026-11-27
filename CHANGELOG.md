@@ -11,6 +11,10 @@ Each `## x.y.z` section is used as the release notes for that version.
   12V. Your phone's key is made on the phone and never leaves it; every command is signed and
   checked by the car. Waiting for approval survives leaving the page or the app, and a code that
   runs out says so instead of waiting forever
+* Nova dashboard: once paired, the Nova page shows your car at a glance: online or not and when
+  it last checked in, parked or driving, the 12V and its health, LTE signal, speed and gear, where
+  it is (open it in Maps), big lock, unlock, climate and flash-the-lights buttons, and your recent
+  commands with whether the car did them
 * News by email: sign up at oceanlive.org/news (or in the downloads section of the home page)
   to get an email when there's a new release or an important fix. Nobody is added without
   confirming by email, and every email has a one-click unsubscribe that deletes your address

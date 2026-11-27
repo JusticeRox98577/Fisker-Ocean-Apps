@@ -161,20 +161,48 @@ class NovaPhone(private val context: Context) {
         call("/api/box/command", JSONObject().put("uid", u).put("cmd", NovaCommands.hex(cmd)))
     }
 
-    data class Status(val lastSeen: Long, val v12mV: Int, val locked: String?, val lat: Double?, val lon: Double?, val lastResult: Int?)
+    /** The car's last check-in (GET /api/box/status) and the latest commands from any paired phone. */
+    data class Status(
+        val lastSeen: Long, val v12mV: Int, val ignition: Boolean,
+        /** enum nova_gear: 0 unknown, 1 P, 2 R, 3 N, 4 D. */
+        val gear: Int, val speedKmh: Double, val lat: Double?, val lon: Double?,
+        val rsrp: Int, val phones: Int, val firmware: Int, val commands: List<Command>,
+    ) {
+        /** [result] is null while the car hasn't acted on it yet; 0 done; otherwise why it refused. */
+        data class Command(val action: Int, val counter: Long, val sent: Long, val result: Int?)
+
+        val lastResult get() = commands.firstOrNull()?.result
+        /** Checked in within the last 3 minutes (it checks in every minute or so while it has signal). */
+        fun online(now: Long = System.currentTimeMillis()) = lastSeen > 0 && now - lastSeen < 180_000
+
+        companion object {
+            fun parse(j: JSONObject): Status {
+                val b = j.optJSONObject("box")
+                fun int(k: String) = b?.optInt(k) ?: 0
+                fun dbl(k: String) = b?.takeIf { !it.isNull(k) && it.has(k) }?.optDouble(k)
+                val cmds = j.optJSONArray("commands")
+                val commands = (0 until (cmds?.length() ?: 0)).mapNotNull { i ->
+                    val c = cmds!!.optJSONObject(i) ?: return@mapNotNull null
+                    Command(c.optInt("action"), c.optLong("counter"), c.optLong("created_at"),
+                        if (c.isNull("result") || !c.has("result")) null else c.optInt("result"))
+                }
+                val lat = dbl("lat")
+                val lon = dbl("lon")
+                val located = lat != null && lon != null && (lat != 0.0 || lon != 0.0)
+                return Status(
+                    b?.optLong("last_seen") ?: 0, int("v12"), int("ignition") != 0, int("gear"), int("speed") / 100.0,
+                    if (located) lat else null, if (located) lon else null,
+                    int("rsrp"), int("phones"), int("fw"), commands,
+                )
+            }
+        }
+    }
 
     fun status(): Status {
         val u = uid ?: throw IllegalStateException("not paired")
         val t = System.currentTimeMillis() / 1000
         val sig = NovaCommands.hex(NovaCommands.statusSig(seed(), u, t))
-        val j = call("/api/box/status?uid=$u&slot=$slot&t=$t&sig=$sig")
-        val b = j.optJSONObject("box")
-        val last = j.optJSONArray("commands")?.optJSONObject(0)
-        return Status(
-            b?.optLong("last_seen") ?: 0, b?.optInt("v12") ?: 0, null,
-            b?.takeIf { !it.isNull("lat") }?.optDouble("lat"), b?.takeIf { !it.isNull("lon") }?.optDouble("lon"),
-            last?.takeIf { !it.isNull("result") }?.optInt("result"),
-        )
+        return Status.parse(call("/api/box/status?uid=$u&slot=$slot&t=$t&sig=$sig"))
     }
 
     fun forget() = prefs.edit().remove("uid").remove("slot").remove("pendingCode").apply()

@@ -181,7 +181,7 @@ struct NovaView: View {
                     Text(headline(s)).font(.system(size: 26, weight: .bold, design: .rounded)).foregroundStyle(.white)
                     if let seen {
                         Text(online ? String(localized: "Checked in \(seen.formatted(.relative(presentation: .named)))")
-                                    : String(localized: "Last seen \(seen.formatted(.relative(presentation: .named)))"))
+                                    : String(localized: "Seen \(seen.formatted(.relative(presentation: .named)))"))
                             .font(.system(size: 13)).foregroundStyle(Theme.dim)
                     } else if s != nil {
                         Text("The Nova hasn't checked in yet. It does once it's in the car with signal.")
