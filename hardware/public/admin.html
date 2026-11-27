@@ -68,6 +68,28 @@
       </section>
     </div>
 
+    <section aria-labelledby="rel-title">
+      <h2 id="rel-title" class="section-title">Releases</h2>
+      <p class="muted small">What Nova boxes update to. Supervisor and video card files must be owner-signed <code>.nova</code> images (checked here and again on the box). Android OTAs are too big to upload here: put them in the <code>nova-releases</code> R2 bucket with <code>wrangler r2 object put</code>, then register them.</p>
+      <ul class="people" id="releases"></ul>
+      <details class="panel dev-register">
+        <summary>Upload a release</summary>
+        <select class="input" id="rel-target" aria-label="What it is">
+          <option value="supervisor">Supervisor firmware (.nova)</option>
+          <option value="card">Video card firmware (.nova)</option>
+          <option value="app">Nova app (.apk)</option>
+          <option value="android">Android OTA (already in R2)</option>
+        </select>
+        <input class="input" type="file" id="rel-file" aria-label="File">
+        <input class="input" id="rel-key" placeholder="R2 key, e.g. ota/nova-os-20261127.zip" aria-label="R2 key" hidden>
+        <input class="input" id="rel-version" placeholder="Version: app versionCode, or Android ro.build.date.utc (firmware: read from the file)" aria-label="Version">
+        <input class="input" id="rel-label" maxlength="40" placeholder="Label shown to people (optional)" aria-label="Label">
+        <select class="input" id="rel-channel" aria-label="Channel"><option value="stable">Stable: every box</option><option value="beta">Beta: boxes set to beta</option></select>
+        <input class="input" id="rel-notes" maxlength="1000" placeholder="Notes (optional)" aria-label="Notes">
+        <button class="btn btn-small btn-primary" type="button" id="rel-send">Publish</button>
+      </details>
+    </section>
+
     <section aria-labelledby="dev-title">
       <h2 id="dev-title" class="section-title">Developer access (<span id="dev-n">0</span>)</h2>
       <p class="muted small" id="dev-keys"></p>

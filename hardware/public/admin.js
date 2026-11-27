@@ -219,6 +219,75 @@ async function act(button, what, r, question) {
   say($("dash-status"), done[what], "ok");
 }
 
+// ---- releases -----------------------------------------------------------------------------------
+
+const TARGET_NAME = { supervisor: "Supervisor firmware", card: "Video card firmware", app: "Nova app", android: "Android" };
+const mb = (n) => `${(n / 1048576).toFixed(n > 10485760 ? 0 : 1)} MB`;
+
+async function loadReleases() {
+  const out = await call("/api/admin/releases");
+  if (out.signedOut || out.error) return;
+  $("releases").replaceChildren(...(out.releases.length ? out.releases.map((r) => {
+    const li = el("li", "person panel");
+    const head = el("div", "person-head");
+    const who = el("div");
+    who.append(el("h3", "", `${TARGET_NAME[r.target] || r.target} ${r.label}`), el("span", "small muted", `${mb(r.size)} · ${r.channel} · ${when(r.created_at)}`));
+    head.append(who, el("span", `pill is-${r.retired ? "declined" : "accepted"}`, r.retired ? "Retired" : "Live"));
+    li.append(head);
+    if (r.notes) li.append(el("p", "notes", r.notes));
+    if (!r.retired) {
+      const actions = el("div", "actions");
+      const b = el("button", "btn btn-small btn-ghost btn-danger", "Retire");
+      b.type = "button";
+      b.addEventListener("click", async () => {
+        if (!confirm(`Stop offering ${TARGET_NAME[r.target]} ${r.label}? Boxes that have it keep it.`)) return;
+        const res = await call("/api/admin/releases/retire", { id: r.id });
+        if (res.error) return say($("dash-status"), res.error, "error");
+        loadReleases();
+      });
+      actions.append(b);
+      li.append(actions);
+    }
+    return li;
+  }) : [el("li", "muted", out.storage ? "No releases yet." : "The RELEASES R2 bucket isn't set up yet.")]));
+}
+
+$("rel-target").addEventListener("change", () => {
+  const android = $("rel-target").value === "android";
+  $("rel-file").hidden = android;
+  $("rel-key").hidden = !android;
+});
+
+$("rel-send").addEventListener("click", async () => {
+  const target = $("rel-target").value;
+  const b = $("rel-send");
+  const common = { version: $("rel-version").value.trim(), label: $("rel-label").value.trim(), channel: $("rel-channel").value, notes: $("rel-notes").value };
+  let out;
+  b.disabled = true;
+  say($("dash-status"), "Publishing…");
+  if (target === "android") {
+    out = await call("/api/admin/releases/register", { target, key: $("rel-key").value.trim(), ...common });
+  } else {
+    const file = $("rel-file").files[0];
+    if (!file) { b.disabled = false; return say($("dash-status"), "Choose the file.", "error"); }
+    const q = new URLSearchParams({ target, ...common });
+    try {
+      const res = await fetch(`/api/admin/releases?${q}`, { method: "POST", body: file, credentials: "same-origin",
+        headers: { "Content-Type": "application/octet-stream" } });
+      out = await res.json().catch(() => ({ error: `Upload failed (${res.status}).` }));
+      if (res.status === 401) out = { signedOut: true };
+    } catch {
+      out = { error: "Couldn't reach the server." };
+    }
+  }
+  b.disabled = false;
+  if (out.signedOut) return showSignIn();
+  if (out.error) return say($("dash-status"), out.error, "error");
+  say($("dash-status"), `Published ${TARGET_NAME[target]} ${out.label || ""}.`, "ok");
+  $("rel-file").value = "";
+  loadReleases();
+});
+
 // ---- developer access (docs: Oceanlive-nova docs/updates.md) --------------------------------------
 
 const ver = (v) => (v ? `${v >>> 24}.${(v >>> 16) & 0xff}.${v & 0xffff}` : "–");
@@ -323,6 +392,7 @@ async function load() {
   $("sign-out").hidden = false;
   render();
   loadDev();
+  loadReleases();
 }
 
 function showSignIn() {

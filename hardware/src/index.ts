@@ -17,6 +17,7 @@
  *   POST /api/admin/unpick    { email }   free their board
  *   POST /api/admin/delete    { email }   remove their answer
  *
+ * Nova releases (releases.ts): GET /api/updates, /api/updates/file/<id>; /api/admin/releases*.
  * Developer access to Nova boxes (dev.ts): POST /api/dev/checkin from boxes, /api/admin/dev* for the owner.
  *
  * Everything else is the static pages in public/. No cookies for visitors; the only thing kept about
@@ -27,6 +28,7 @@ import { type Env, boards, isClosed, num } from "./env";
 import { checkSignUp } from "./form";
 import { allRows, deleteSignUp, publicStats, saveSignUp, tally, toCsv } from "./store";
 import { checkin, checkins, listCerts, register, revoke } from "./dev";
+import * as releases from "./releases";
 import { inviteAnswer, inviteInfo, pick, unpick } from "./testers";
 import { bump, cleanup, json, plainHeaders, readJson, sameOrigin, sha256, tokenFrom } from "./util";
 
@@ -113,6 +115,19 @@ async function admin(req: Request, env: Env, ctx: ExecutionContext, path: string
     });
   }
 
+  if (path === "/api/admin/releases") {
+    if (req.method === "GET") return releases.list(env);
+    if (req.method !== "POST") return wrongMethod("GET, POST");
+    if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
+    return releases.upload(env, req, now);
+  }
+  if (path === "/api/admin/releases/register" || path === "/api/admin/releases/retire") {
+    if (req.method !== "POST") return wrongMethod("POST");
+    if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
+    const body = await readJson(req);
+    if (!body || body === "too-big") return badBody();
+    return path.endsWith("/register") ? releases.register(env, body, now) : releases.retire(env, body);
+  }
   if (path === "/api/admin/dev") return req.method === "GET" ? listCerts(env, now) : wrongMethod("GET");
   if (path === "/api/admin/dev/checkins") {
     return req.method === "GET" ? checkins(env, Number(new URL(req.url).searchParams.get("serial"))) : wrongMethod("GET");
@@ -149,6 +164,11 @@ export default {
     const now = Date.now();
     try {
       if (url.pathname.startsWith("/api/admin/")) return await admin(req, env, ctx, url.pathname, now);
+      const fileId = /^\/api\/updates\/file\/(\d+)$/.exec(url.pathname);
+      if (fileId) {
+        if (req.method !== "GET" && req.method !== "HEAD") return wrongMethod("GET, HEAD");
+        return await releases.file(env, req, Number(fileId[1]));
+      }
       switch (url.pathname) {
         case "/api/info":
           if (req.method !== "GET" && req.method !== "HEAD") return wrongMethod("GET, HEAD");
@@ -159,6 +179,9 @@ export default {
         case "/api/signup":
           if (req.method !== "POST") return wrongMethod("POST");
           return await signUp(req, env, ctx, now);
+        case "/api/updates":
+          if (req.method !== "GET" && req.method !== "HEAD") return wrongMethod("GET, HEAD");
+          return await releases.check(env, url);
         case "/api/dev/checkin": {
           // From the Nova app on a box with a developer certificate (no browser, no cookies).
           if (req.method !== "POST") return wrongMethod("POST");

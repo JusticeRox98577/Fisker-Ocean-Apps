@@ -26,6 +26,9 @@
     }
   ],
 
+  // Nova release files: firmware images, the Nova app APK, Android OTAs (src/releases.ts).
+  "r2_buckets": [{ "binding": "RELEASES", "bucket_name": "nova-releases" }],
+
   // Every day at 03:41 UTC: delete expired spam counters, sign-in links and sessions.
   "triggers": { "crons": ["41 3 * * *"] },
 

@@ -20,6 +20,8 @@ export interface Env {
   PER_IP_PER_HOUR?: string;
   /** "true" closes the form. */
   CLOSED?: string;
+  /** Release files (supervisor / card images, the Nova app, Android OTAs). */
+  RELEASES?: R2Bucket;
   /** The Nova owner public key (hex): checks developer certificates registered in /admin. */
   OWNER_PUB?: string;
   /** Secret: the lease key (hex) that signs developer lease renewals and revocations. */
