@@ -89,13 +89,21 @@ final class NovaPhone: ObservableObject {
         var rsrp: Int
         var phones: Int
         var firmware: Int
+        /// A Nova Light (listen-only, no GPS) rather than a SuperNova.
+        var isLight: Bool
+        /// A Light's own car state: 0 starting, 1 parked, 2 awake, 3 saving the 12 V (self-protect).
+        var lightState: Int
+        /// Data a Light used this month, kB (its budget is 3,000 kB).
+        var dataKb: Int
+        var lightAlert: Bool
         var commands: [Command]
         var lastResult: Int? { commands.first?.result }
 
         static func == (a: Status, b: Status) -> Bool {
             a.lastSeen == b.lastSeen && a.v12mV == b.v12mV && a.ignition == b.ignition && a.gear == b.gear &&
                 a.speedKmh == b.speedKmh && a.location?.lat == b.location?.lat && a.location?.lon == b.location?.lon &&
-                a.rsrp == b.rsrp && a.phones == b.phones && a.firmware == b.firmware && a.commands == b.commands
+                a.rsrp == b.rsrp && a.phones == b.phones && a.firmware == b.firmware && a.commands == b.commands &&
+                a.isLight == b.isLight && a.lightState == b.lightState && a.dataKb == b.dataKb && a.lightAlert == b.lightAlert
         }
 
         /// Checked in within the last 3 minutes (it checks in every minute or so while it has signal).
@@ -117,7 +125,8 @@ final class NovaPhone: ObservableObject {
                 lastSeen: dbl("last_seen").map { Date(timeIntervalSince1970: $0 / 1000) },
                 v12mV: int("v12"), ignition: int("ignition") != 0, gear: int("gear"),
                 speedKmh: Double(int("speed")) / 100, location: location, rsrp: int("rsrp"),
-                phones: int("phones"), firmware: int("fw"), commands: commands
+                phones: int("phones"), firmware: int("fw"), isLight: (box?["kind"] as? String) == "light",
+                lightState: int("state"), dataKb: int("budget_kb"), lightAlert: int("alerts") != 0, commands: commands
             )
         }
     }

@@ -66,4 +66,16 @@ class NovaTest {
         assertNull(s.lat)
         assertFalse(s.online())
     }
+
+    @Test fun statusKnowsANovaLight() {
+        val s = NovaPhone.Status.parse(JSONObject("""
+            {"box":{"kind":"light","last_seen":1795000000000,"v12":12100,"state":3,"budget_kb":41,"alerts":1,"gear":0,"speed":0},
+             "commands":[]}
+        """))
+        assertTrue(s.isLight)
+        assertEquals(3, s.lightState)
+        assertEquals(41, s.dataKb)
+        assertTrue(s.lightAlert)
+        assertFalse(NovaPhone.Status.parse(JSONObject("""{"box":{"kind":"supernova"},"commands":[]}""")).isLight)
+    }
 }

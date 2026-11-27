@@ -167,6 +167,13 @@ class NovaPhone(private val context: Context) {
         /** enum nova_gear: 0 unknown, 1 P, 2 R, 3 N, 4 D. */
         val gear: Int, val speedKmh: Double, val lat: Double?, val lon: Double?,
         val rsrp: Int, val phones: Int, val firmware: Int, val commands: List<Command>,
+        /** A Nova Light (listen-only, no GPS) rather than a SuperNova. */
+        val isLight: Boolean = false,
+        /** A Light's own car state: 0 starting, 1 parked, 2 awake, 3 saving the 12 V (self-protect). */
+        val lightState: Int = 0,
+        /** Data a Light used this month, kB (its budget is 3,000 kB). */
+        val dataKb: Int = 0,
+        val lightAlert: Boolean = false,
     ) {
         /** [result] is null while the car hasn't acted on it yet; 0 done; otherwise why it refused. */
         data class Command(val action: Int, val counter: Long, val sent: Long, val result: Int?)
@@ -193,6 +200,7 @@ class NovaPhone(private val context: Context) {
                     b?.optLong("last_seen") ?: 0, int("v12"), int("ignition") != 0, int("gear"), int("speed") / 100.0,
                     if (located) lat else null, if (located) lon else null,
                     int("rsrp"), int("phones"), int("fw"), commands,
+                    b?.optString("kind") == "light", int("state"), int("budget_kb"), int("alerts") != 0,
                 )
             }
         }

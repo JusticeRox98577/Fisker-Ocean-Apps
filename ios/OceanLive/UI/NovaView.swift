@@ -138,6 +138,42 @@ struct NovaView: View {
         if let message {
             Text(message).font(.system(size: 13)).foregroundStyle(Theme.dim).padding(.horizontal, 4)
         }
+        if s?.isLight == true {
+            CardBox {
+                Text("This Nova Light only listens to the car. Lock, unlock and climate need a SuperNova.")
+                    .font(.system(size: 14)).foregroundStyle(.white)
+            }
+        } else {
+            controlsSection
+        }
+
+        SectionTitle(String(localized: "Car"))
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+            v12Tile(s)
+            signalTile(s)
+            if s?.isLight == true {
+                Tile(label: String(localized: "Data this month"), value: s.flatMap { $0.lastSeen == nil ? nil : "\($0.dataKb) kB" },
+                     caption: String(localized: "of 3,000 kB"), accent: Theme.cyan)
+            } else {
+                Tile(label: String(localized: "Speed"), value: s.flatMap { $0.lastSeen == nil ? nil : speed($0.speedKmh) },
+                     caption: s.map { gearText($0.gear) }, accent: Theme.violet)
+                Tile(label: String(localized: "Phones paired"), value: s.flatMap { $0.lastSeen == nil ? nil : "\($0.phones) / 4" },
+                     caption: String(localized: "This one is slot \(phone.slot + 1)"), accent: Theme.cyan)
+            }
+        }
+        locationCard(s)
+        if s?.isLight != true { activityCard(s) }
+
+        SectionTitle(String(localized: "This Nova"))
+        CardBox {
+            KeyValue(String(localized: "Device ID"), phone.uid.map { String($0.suffix(8)).uppercased() })
+            KeyValue(String(localized: "Firmware"), s.flatMap { $0.firmware > 0 ? "\($0.firmware)" : nil })
+            GhostButton(title: String(localized: "Forget this car"), color: Theme.dim) { phone.forget() }
+                .padding(.top, 8)
+        }
+    }
+
+    @ViewBuilder private var controlsSection: some View {
         SectionTitle(String(localized: "Controls"))
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
             control(NovaCommands.lock, "lock.fill", String(localized: "Lock"))
@@ -148,26 +184,6 @@ struct NovaView: View {
         control(NovaCommands.lights, "light.beacon.max.fill", String(localized: "Flash the lights"), wide: true)
         Text("The car acts on a command at its next check-in, usually within a minute. It only acts while parked, with a healthy 12 V battery.")
             .font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.horizontal, 4)
-
-        SectionTitle(String(localized: "Car"))
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-            v12Tile(s)
-            signalTile(s)
-            Tile(label: String(localized: "Speed"), value: s.flatMap { $0.lastSeen == nil ? nil : speed($0.speedKmh) },
-                 caption: s.map { gearText($0.gear) }, accent: Theme.violet)
-            Tile(label: String(localized: "Phones paired"), value: s.flatMap { $0.lastSeen == nil ? nil : "\($0.phones) / 4" },
-                 caption: String(localized: "This one is slot \(phone.slot + 1)"), accent: Theme.cyan)
-        }
-        locationCard(s)
-        activityCard(s)
-
-        SectionTitle(String(localized: "This Nova"))
-        CardBox {
-            KeyValue(String(localized: "Device ID"), phone.uid.map { String($0.suffix(8)).uppercased() })
-            KeyValue(String(localized: "Firmware"), s.flatMap { $0.firmware > 0 ? "\($0.firmware)" : nil })
-            GhostButton(title: String(localized: "Forget this car"), color: Theme.dim) { phone.forget() }
-                .padding(.top, 8)
-        }
     }
 
     /// Where the car is in words, with a pill for whether it's reachable right now.
@@ -208,6 +224,14 @@ struct NovaView: View {
     private func headline(_ s: NovaPhone.Status?) -> String {
         guard let s else { return String(localized: "Checking…") }
         guard s.lastSeen != nil else { return String(localized: "Not connected yet") }
+        if s.isLight {
+            // the Light knows awake or asleep from the 12 V, not the gear
+            switch s.lightState {
+            case 2: return String(localized: "On")
+            case 3: return String(localized: "Saving the 12 V")
+            default: return String(localized: "Off")
+            }
+        }
         if s.gear == 4 || s.gear == 2 || s.speedKmh > 1 { return String(localized: "Driving") }
         if s.gear == 1 { return s.ignition ? String(localized: "Parked, on") : String(localized: "Parked") }
         return s.ignition ? String(localized: "On") : String(localized: "Off")
@@ -229,7 +253,8 @@ struct NovaView: View {
 
     private func v12Tile(_ s: NovaPhone.Status?) -> some View {
         let v = s.flatMap { $0.v12mV > 0 ? Double($0.v12mV) / 1000 : nil }
-        let caption: String? = v.map { $0 >= V12Log.low ? String(localized: "Healthy") : $0 >= V12Log.veryLow ? String(localized: "Low") : String(localized: "Very low") }
+        var caption: String? = v.map { $0 >= V12Log.low ? String(localized: "Healthy") : $0 >= V12Log.veryLow ? String(localized: "Low") : String(localized: "Very low") }
+        if s?.lightAlert == true { caption = String(localized: "Low") }
         return Tile(label: String(localized: "12 V battery"), value: v.map { String(format: "%.1f V", $0) },
                     caption: caption, accent: v.map(v12StatusColor) ?? Theme.dim, captionColor: v.map(v12StatusColor) ?? Theme.dim)
     }
@@ -268,6 +293,9 @@ struct NovaView: View {
                 .id("\(l.lat),\(l.lon)")
                 .frame(height: 190)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            } else if s?.isLight == true {
+                Text("The Nova Light has no GPS, so it can't show where the car is.")
+                    .font(.system(size: 14)).foregroundStyle(.white)
             } else {
                 Text("No GPS position yet. The Nova sends one when it has a fix.")
                     .font(.system(size: 14)).foregroundStyle(.white)

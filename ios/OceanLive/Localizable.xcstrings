@@ -17714,6 +17714,146 @@
           }
         }
       }
+    },
+    "This Nova Light only listens to the car. Lock, unlock and climate need a SuperNova.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Nova Light hört nur zu. Verriegeln, Entriegeln und Klima brauchen eine SuperNova."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta Nova Light solo escucha al coche. Bloquear, desbloquear y la climatización necesitan una SuperNova."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette Nova Light ne fait qu’écouter la voiture. Verrouiller, déverrouiller et la climatisation demandent une SuperNova."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze Nova Light luistert alleen naar de auto. Vergrendelen, ontgrendelen en klimaat hebben een SuperNova nodig."
+          }
+        }
+      }
+    },
+    "Data this month": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daten diesen Monat"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datos este mes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Données ce mois-ci"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data deze maand"
+          }
+        }
+      }
+    },
+    "of 3,000 kB": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "von 3.000 kB"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de 3.000 kB"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sur 3 000 kB"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "van 3.000 kB"
+          }
+        }
+      }
+    },
+    "Saving the 12 V": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12 V wird geschont"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protegiendo la 12 V"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Préserve la 12 V"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spaart de 12V-accu"
+          }
+        }
+      }
+    },
+    "The Nova Light has no GPS, so it can't show where the car is.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Nova Light hat kein GPS und kann nicht zeigen, wo das Auto steht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La Nova Light no tiene GPS, así que no puede mostrar dónde está el coche."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La Nova Light n’a pas de GPS : elle ne peut pas montrer où est la voiture."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De Nova Light heeft geen GPS en kan dus niet laten zien waar de auto staat."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

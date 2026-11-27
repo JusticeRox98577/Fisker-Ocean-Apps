@@ -146,15 +146,21 @@ fun NovaSection() {
     Hero(s)
     message?.let { Text(it, fontSize = 13.sp, color = Dim, modifier = Modifier.padding(top = 8.dp, start = 4.dp)) }
 
-    SectionTitle(stringResource(R.string.nova_controls))
-    TileGrid(2, listOf<@Composable (Modifier) -> Unit>(
-        { m -> Control(m, "🔒", stringResource(R.string.nova_lock), sending, NovaCommands.LOCK, send) },
-        { m -> Control(m, "🔓", stringResource(R.string.nova_unlock), sending, NovaCommands.UNLOCK, send) },
-        { m -> Control(m, "❄", stringResource(R.string.nova_climate_on), sending, NovaCommands.CLIMATE_ON, send) },
-        { m -> Control(m, "⏻", stringResource(R.string.nova_climate_off), sending, NovaCommands.CLIMATE_OFF, send) },
-    ))
-    Control(Modifier.fillMaxWidth().padding(top = 10.dp), "💡", stringResource(R.string.nova_flash_lights), sending, NovaCommands.LIGHTS, send, wide = true)
-    Text(stringResource(R.string.nova_acts_note), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
+    val light = s?.isLight == true
+    if (light) {
+        Spacer(Modifier.padding(top = 6.dp))
+        Card { Text(stringResource(R.string.nova_light_listens), fontSize = 14.sp) }
+    } else {
+        SectionTitle(stringResource(R.string.nova_controls))
+        TileGrid(2, listOf<@Composable (Modifier) -> Unit>(
+            { m -> Control(m, "🔒", stringResource(R.string.nova_lock), sending, NovaCommands.LOCK, send) },
+            { m -> Control(m, "🔓", stringResource(R.string.nova_unlock), sending, NovaCommands.UNLOCK, send) },
+            { m -> Control(m, "❄", stringResource(R.string.nova_climate_on), sending, NovaCommands.CLIMATE_ON, send) },
+            { m -> Control(m, "⏻", stringResource(R.string.nova_climate_off), sending, NovaCommands.CLIMATE_OFF, send) },
+        ))
+        Control(Modifier.fillMaxWidth().padding(top = 10.dp), "💡", stringResource(R.string.nova_flash_lights), sending, NovaCommands.LIGHTS, send, wide = true)
+        Text(stringResource(R.string.nova_acts_note), color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
+    }
 
     SectionTitle(stringResource(R.string.nova_section_car))
     val settings by Car.settings.collectAsState()
@@ -166,7 +172,8 @@ fun NovaSection() {
     val signalWords = listOf(R.string.nova_signal_none, R.string.nova_signal_weak, R.string.nova_signal_fair, R.string.nova_signal_good, R.string.nova_signal_excellent)
     val v12Title = stringResource(R.string.nova_v12_title)
     val v12Caption = volts?.let {
-        stringResource(if (it >= V12Log.LOW_VOLTS) R.string.nova_v12_healthy else if (it >= V12Log.VERY_LOW_VOLTS) R.string.nova_v12_low else R.string.nova_v12_very_low)
+        stringResource(if (s.lightAlert) R.string.nova_v12_low else if (it >= V12Log.LOW_VOLTS) R.string.nova_v12_healthy
+            else if (it >= V12Log.VERY_LOW_VOLTS) R.string.nova_v12_low else R.string.nova_v12_very_low)
     }
     val signalTitle = stringResource(R.string.nova_signal)
     val signalValue = if (seen) stringResource(signalWords[bars]) else null
@@ -177,15 +184,36 @@ fun NovaSection() {
     val gearCaption = s?.let { stringResource(gearText(it.gear)) }
     val phonesTitle = stringResource(R.string.nova_phones)
     val slotCaption = stringResource(R.string.nova_slot, phone.slot + 1)
-    TileGrid(2, listOf<@Composable (Modifier) -> Unit>(
-        { m -> Tile(v12Title, volts?.let { "%.1f V".format(it) }, m, caption = v12Caption, accent = voltsColor, captionColor = voltsColor) },
-        { m -> Tile(signalTitle, signalValue, m, caption = if (rsrp == 0) null else "$rsrp dBm", accent = if (bars >= 3) Good else if (bars == 2) Warn else Dim) },
+    val dataTitle = stringResource(R.string.nova_data_month)
+    val dataCaption = stringResource(R.string.nova_data_of)
+    val v12Tile: @Composable (Modifier) -> Unit =
+        { m -> Tile(v12Title, volts?.let { "%.1f V".format(it) }, m, caption = v12Caption, accent = voltsColor, captionColor = voltsColor) }
+    val signalTile: @Composable (Modifier) -> Unit =
+        { m -> Tile(signalTitle, signalValue, m, caption = if (rsrp == 0) null else "$rsrp dBm", accent = if (bars >= 3) Good else if (bars == 2) Warn else Dim) }
+    TileGrid(2, if (light) listOf(
+        v12Tile, signalTile,
+        { m -> Tile(dataTitle, s?.takeIf { seen }?.let { "${it.dataKb} kB" }, m, caption = dataCaption, accent = Cyan) },
+    ) else listOf(
+        v12Tile, signalTile,
         { m -> Tile(speedTitle, speedValue, m, caption = gearCaption, accent = Violet) },
         { m -> Tile(phonesTitle, s?.takeIf { seen }?.let { "${it.phones} / 4" }, m, caption = slotCaption, accent = Cyan) },
     ))
     Spacer(Modifier.padding(top = 10.dp))
     Location(s)
 
+    if (!light) RecentCommands(s)
+
+    SectionTitle(stringResource(R.string.nova_this_nova))
+    Card {
+        KeyValue(stringResource(R.string.nova_device_id), phone.uid?.takeLast(8)?.uppercase())
+        KeyValue(stringResource(R.string.nova_firmware), s?.firmware?.takeIf { it > 0 }?.toString())
+        GhostButton(stringResource(R.string.nova_forget), onClick = { phone.forget(); paired = false; status = null; message = null },
+            modifier = Modifier.padding(top = 8.dp), color = Dim)
+    }
+}
+
+@Composable
+private fun RecentCommands(s: NovaPhone.Status?) {
     SectionTitle(stringResource(R.string.nova_recent))
     Card {
         val cmds = s?.commands.orEmpty().take(5)
@@ -201,14 +229,6 @@ fun NovaSection() {
             }
             if (i < cmds.size - 1) HorizontalDivider(color = CardEdge)
         }
-    }
-
-    SectionTitle(stringResource(R.string.nova_this_nova))
-    Card {
-        KeyValue(stringResource(R.string.nova_device_id), phone.uid?.takeLast(8)?.uppercase())
-        KeyValue(stringResource(R.string.nova_firmware), s?.firmware?.takeIf { it > 0 }?.toString())
-        GhostButton(stringResource(R.string.nova_forget), onClick = { phone.forget(); paired = false; status = null; message = null },
-            modifier = Modifier.padding(top = 8.dp), color = Dim)
     }
 }
 
@@ -241,6 +261,8 @@ private fun Hero(s: NovaPhone.Status?) {
 private fun headline(s: NovaPhone.Status?): Int = when {
     s == null -> R.string.nova_checking
     s.lastSeen <= 0 -> R.string.nova_not_connected
+    // the Light knows awake or asleep from the 12 V, not the gear
+    s.isLight -> when (s.lightState) { 2 -> R.string.nova_on; 3 -> R.string.nova_saving_12v; else -> R.string.nova_off }
     s.gear == 4 || s.gear == 2 || s.speedKmh > 1 -> R.string.nova_driving
     s.gear == 1 -> if (s.ignition) R.string.nova_parked_on else R.string.nova_parked
     else -> if (s.ignition) R.string.nova_on else R.string.nova_off
@@ -309,7 +331,8 @@ private fun Location(s: NovaPhone.Status?) {
                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
             }, modifier = Modifier.padding(top = 10.dp))
         } else {
-            Text(stringResource(R.string.nova_no_gps), color = Color.White, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+            Text(stringResource(if (s?.isLight == true) R.string.nova_light_no_gps else R.string.nova_no_gps), color = Color.White, fontSize = 14.sp,
+                modifier = Modifier.padding(top = 6.dp))
         }
     }
 }
