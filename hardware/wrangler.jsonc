@@ -51,7 +51,7 @@
     "CLOSED": "false",
     // The Nova owner PUBLIC key (owner.pub, 64 hex digits): checks developer certificates registered in
     // /admin. Empty until set. The lease key is a secret: wrangler secret put LEASE_KEY (contents of lease.key).
-    "OWNER_PUB": "",
+    "OWNER_PUB": "5806f2f124722108f79aefcabd7ff3d9e53753db8f7ae249e177ae2d377ec265",
     // Seconds the public counters (/api/stats) are reused.
     "STATS_CACHE_SECONDS": "60"
   }
