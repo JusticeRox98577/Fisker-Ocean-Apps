@@ -182,8 +182,12 @@ describe("admin sign-in", () => {
   });
 
   it("limits sign-in emails", async () => {
-    for (let i = 0; i < 5; i++) expect((await call("/api/admin/login", { method: "POST", body: "{}" })).res.status).toBe(200);
-    expect((await call("/api/admin/login", { method: "POST", body: "{}" })).res.status).toBe(429);
+    const from = (ip: string) => call("/api/admin/login", { method: "POST", body: "{}", headers: { "CF-Connecting-IP": ip } });
+    // one network can't use up the hour's sign-in emails on its own
+    for (let i = 0; i < 3; i++) expect((await from("203.0.113.1")).res.status).toBe(200);
+    expect((await from("203.0.113.1")).res.status).toBe(429);
+    for (let i = 0; i < 7; i++) expect((await from(`198.51.100.${i}`)).res.status).toBe(200);
+    expect((await from("192.0.2.1")).res.status).toBe(429);
   });
 
   it("signs out", async () => {

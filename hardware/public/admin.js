@@ -181,11 +181,12 @@ function renderPeople() {
             actions.append(b);
           };
           if (!r.pick || r.pick === "declined") {
-            btn(full ? "All boards taken" : "Pick as tester", "btn-primary", (b) => act(b, "pick", r, `Email ${r.email} that they've been picked?`), full);
+            btn(full ? "All boards taken" : "Pick as tester", full ? "btn-ghost" : "btn-primary", (b) => act(b, "pick", r, `Email ${r.email} that they've been picked?`), full);
           }
           if (r.pick === "invited") btn("Re-send invitation", "btn-ghost", (b) => act(b, "pick", r, `Send ${r.email} a new invitation link? The old link stops working.`));
           if (r.pick === "invited" || r.pick === "accepted") btn("Un-pick", "btn-ghost", (b) => act(b, "unpick", r, `Free ${r.name || r.email}'s board? Their link stops working. No email is sent.`));
-          btn("Delete", "btn-ghost btn-danger", (b) => act(b, "delete", r, `Delete ${r.email}'s answer for good?`));
+          const frees = r.pick === "invited" || r.pick === "accepted" ? " This also frees their board, and no email is sent." : "";
+          btn("Delete", "btn-ghost btn-danger", (b) => act(b, "delete", r, `Delete ${r.email}'s answer for good?${frees}`));
           li.append(actions);
           return li;
         })

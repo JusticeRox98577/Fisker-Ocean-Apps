@@ -14,8 +14,10 @@ export const COOKIE = "__Host-olhw";
 const LINK_MS = 15 * 60 * 1000;
 const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
-/** Sign-in emails per hour, in total. */
-const LINKS_PER_HOUR = 5;
+/** Sign-in emails per hour from one network, and in total. The per-network cap stops one visitor from
+ * using up the total and locking the admin out for the hour. */
+const LINKS_PER_IP_PER_HOUR = 3;
+const LINKS_PER_HOUR = 10;
 
 function cookie(value: string, maxAgeSec: number): string {
   return `${COOKIE}=${value}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${maxAgeSec}`;
@@ -34,6 +36,10 @@ export async function isSignedIn(req: Request, env: Env, now: number): Promise<b
 export async function requestLink(req: Request, env: Env, now: number): Promise<Response> {
   if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
   const sent = { ok: true, to: maskEmail(env.ADMIN_EMAIL) };
+  const ip = req.headers.get("CF-Connecting-IP");
+  if (ip && (await bump(env.DB, `admin-links:${await sha256(`hardware:${ip}`)}`, HOUR, now)) > LINKS_PER_IP_PER_HOUR) {
+    return json({ error: "Too many sign-in emails this hour. Use the last one, or try again later." }, 429);
+  }
   if ((await bump(env.DB, "admin-links", HOUR, now)) > LINKS_PER_HOUR) {
     return json({ error: "Too many sign-in emails this hour. Use the last one, or try again later." }, 429);
   }

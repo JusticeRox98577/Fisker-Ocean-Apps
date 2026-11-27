@@ -62,7 +62,7 @@ main:focus { outline: none; }
 
 .top { border-bottom: 1px solid var(--line); background: rgba(7, 26, 51, .86); }
 .top-row { display: flex; align-items: center; gap: 12px; min-height: 64px; }
-.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font: 600 1.1rem/1 var(--font-head); letter-spacing: -0.01em; min-height: 44px; }
+.brand { white-space: nowrap; display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font: 600 1.1rem/1 var(--font-head); letter-spacing: -0.01em; min-height: 44px; }
 .brand-logo { display: block; flex: none; width: 34px; height: 34px; }
 .brand-logo img { display: block; width: 34px; height: 34px; border-radius: 8px; }
 .top-label { font: 500 .8rem/1 var(--font-body); color: var(--ink-muted); border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; }
@@ -219,7 +219,7 @@ textarea.input { resize: vertical; min-height: 110px; }
 .thanks-neutral { border-color: var(--line); background: rgba(234,244,255,.04); }
 .thanks-neutral h3 { color: var(--ink); }
 .link-btn { padding: 0; border: 0; background: none; color: var(--cyan); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 44px; }
-.top-end { margin-left: auto; }
+.top-end { margin-left: auto; white-space: nowrap; }
 
 .admin { display: grid; gap: 32px; padding-top: 32px; padding-bottom: 48px; }
 .signin { max-width: 560px; display: grid; gap: 14px; }
