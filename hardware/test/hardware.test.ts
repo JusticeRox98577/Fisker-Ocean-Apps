@@ -287,6 +287,17 @@ describe("picking testers", () => {
     expect(late.res.status).toBe(409);
   });
 
+  it("someone who said no can change their mind while a board is free", async () => {
+    const cookie = await signIn();
+    await post(good);
+    const token = await invitationToken(cookie, good.email);
+    await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "no" }) });
+    const again = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "yes" }) });
+    expect(await again.res.json()).toEqual({ ok: true, status: "accepted" });
+    expect(again.sent[0].subject).toMatch(/said yes/);
+    expect((await allRows(env.DB))[0].pick).toBe("accepted");
+  });
+
   it("re-sending replaces the link; un-picking stops it working", async () => {
     const cookie = await signIn();
     await post(good);

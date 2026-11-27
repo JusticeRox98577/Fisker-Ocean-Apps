@@ -95,7 +95,8 @@ export async function inviteAnswer(env: Env, ctx: ExecutionContext, token: strin
 
   const next: Pick = answer === "yes" ? "accepted" : "declined";
   if (p.pick === next) return json({ ok: true, status: next });
-  if (next === "accepted" && p.pick !== "invited") {
+  // Saying yes after a no works while a board is still free (the "Changed your mind?" button).
+  if (next === "accepted" && p.pick !== "invited" && (p.pick !== "declined" || (await taken(env.DB)) >= boards(env))) {
     return json({ error: "Your board has gone to someone else. Reply to the invitation email if you'd still like to test." }, 409);
   }
   await env.DB.prepare("UPDATE responses SET pick = ?2, answered_at = ?3 WHERE email = ?1").bind(p.email, next, now).run();
