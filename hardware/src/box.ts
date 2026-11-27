@@ -6,7 +6,9 @@
  *        -> { commands: [hex] }   signed commands for this car that are still valid and not used yet
  *   A Nova Light (kind "light") adds { state, budget, alerts, rn: [first, last], r: [[t, mV, flags], ...] }:
  *   its stored 12 V readings, kept as telemetry; the answer adds { ack: last, t: server time } and never
- *   carries commands (the Light is listen-only).
+ *   carries commands (the Light is listen-only). When a newer Light build is published (stable channel,
+ *   release target nrf-light) it adds { update: { id, v, size } }: the Light downloads
+ *   /api/updates/file/<id> with Range while the car is awake and its bootloader installs it.
  * The Nova screen (compute module), to pair a phone:
  *   POST /api/box/pair/start { uid }        -> { code, secret, expiresIn }   the code is shown on screen;
  *                                              the secret never leaves the car screen
@@ -74,7 +76,15 @@ export async function checkin(env: Env, b: Record<string, unknown>, now: number)
       .bind(uid, counter, cmd[1] ?? 0),
   ]);
   if (light) {
-    return json({ commands: [], t: Math.floor(now / 1000), ...(readings?.ack !== undefined ? { ack: readings.ack } : {}) });
+    const rel = await env.DB.prepare(
+      `SELECT id, version, size FROM releases WHERE target = 'nrf-light' AND retired = 0 AND channel = 'stable'
+         AND version > ?1 AND size <= ?2 ORDER BY version DESC LIMIT 1`,
+    ).bind(num(b.fw), LIGHT_STAGING).first<{ id: number; version: number; size: number }>();
+    return json({
+      commands: [], t: Math.floor(now / 1000),
+      ...(readings?.ack !== undefined ? { ack: readings.ack } : {}),
+      ...(rel ? { update: { id: rel.id, v: rel.version, size: rel.size } } : {}),
+    });
   }
   // commands still valid and above the car's counter (it ignores the rest anyway)
   const { results } = await env.DB.prepare(
@@ -86,6 +96,8 @@ export async function checkin(env: Env, b: Record<string, unknown>, now: number)
 const NOCLOCK = 0x20; // reading flag: t is seconds since the Light's boot, not Unix time
 const AWAKE = 0x01;
 const MAX_READINGS = 200;
+/** The Light's staging area (Oceanlive-nova fw/nrf/pm_static_light.yml): bigger images can't be offered. */
+const LIGHT_STAGING = 0x58000;
 
 /** A Light's readings as telemetry rows [ms, mV, awake]; ack = the last record number sent. */
 export function lightReadings(b: Record<string, unknown>, now: number): { rows: [number, number, number][]; ack?: number } | "bad" {

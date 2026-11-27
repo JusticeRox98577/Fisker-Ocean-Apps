@@ -142,6 +142,9 @@ export async function upload(env: Env, req: Request, now: number): Promise<Respo
     if (!owner || owner.length !== 32) return json({ error: "OWNER_PUB isn't set." }, 500);
     const v = checkNova(bytes, target, owner);
     if (typeof v === "string") return json({ error: v }, 400);
+    if (target === "nrf-light" && bytes.length > 0x58000) {
+      return json({ error: "Too big for a Nova Light: its staging area holds 352 KB (header, TF-M and firmware)." }, 400);
+    }
     version = v;
     m.label = m.label || fwLabel(v);
   }

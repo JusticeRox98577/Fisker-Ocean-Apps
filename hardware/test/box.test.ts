@@ -117,4 +117,26 @@ describe("SuperNova boxes", () => {
       expect((await call("/api/box/checkin", { ...light, ...bad })).status).toBe(400);
     }
   });
+
+  it("offers a Nova Light the newest stable Light build it can hold", async () => {
+    await env.DB.prepare("DELETE FROM releases").run();
+    const light = { uid: UID, kind: "light", fw: 0x00010000, v12: 13600, ignition: 1, state: 2 };
+    const add = (target: string, version: number, size: number, channel = "stable", retired = 0) =>
+      env.DB.prepare(`INSERT INTO releases (target, version, label, channel, r2_key, size, sha256, notes, created_at, retired)
+        VALUES (?1, ?2, 'x', ?3, 'k', ?4, 's', '', 0, ?5)`).bind(target, version, channel, size, retired).run();
+    expect((await call("/api/box/checkin", light)).body.update).toBeUndefined();
+    await add("nrf-nova", 0x00020000, 180000);              // the SuperNova build: never for a Light
+    await add("nrf-light", 0x00010000, 180000);             // the same version
+    await add("nrf-light", 0x00030000, 180000, "beta");     // beta
+    await add("nrf-light", 0x00040000, 180000, "stable", 1); // retired
+    await add("nrf-light", 0x00050000, 0x58001);            // too big for the staging area
+    expect((await call("/api/box/checkin", light)).body.update).toBeUndefined();
+    await add("nrf-light", 0x00010002, 181000);
+    await add("nrf-light", 0x00010001, 180500);
+    const r = (await call("/api/box/checkin", light)).body;
+    expect(r.update).toMatchObject({ v: 0x00010002, size: 181000 });
+    expect(Number.isInteger(r.update.id)).toBe(true);
+    // a SuperNova check-in never gets one
+    expect((await call("/api/box/checkin", { uid: UID, fw: 0x00010000 })).body.update).toBeUndefined();
+  });
 });
