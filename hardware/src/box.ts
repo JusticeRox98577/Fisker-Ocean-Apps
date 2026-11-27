@@ -1,9 +1,12 @@
 /**
  * SuperNova boxes (Oceanlive-nova docs/nrf.md).
  *
- * The car (nRF9151):
+ * The car (nRF9151, either build of the Nova firmware):
  *   POST /api/box/checkin { uid, fw, lat, lon, fix, rsrp, gear, speed, ignition, v12, phones, counter, cmd: [action, result] }
  *        -> { commands: [hex] }   signed commands for this car that are still valid and not used yet
+ *   A Nova Light (kind "light") adds { state, budget, alerts, rn: [first, last], r: [[t, mV, flags], ...] }:
+ *   its stored 12 V readings, kept as telemetry; the answer adds { ack: last, t: server time } and never
+ *   carries commands (the Light is listen-only).
  * The Nova screen (compute module), to pair a phone:
  *   POST /api/box/pair/start { uid }        -> { code, secret, expiresIn }   the code is shown on screen;
  *                                              the secret never leaves the car screen
@@ -44,17 +47,25 @@ export async function checkin(env: Env, b: Record<string, unknown>, now: number)
   const lon = fix ? num(b.lon) / 1e7 : null;
   const cmd = Array.isArray(b.cmd) ? b.cmd.map(num) : [0, 0];
   const counter = num(b.counter);
+  const light = b.kind === "light";
+  const readings = light ? lightReadings(b, now) : null;
+  if (readings === "bad") return json({ error: "readings" }, 400);
   await env.DB.batch([
     env.DB.prepare(
-      `INSERT INTO boxes (uid, first_seen, last_seen, fw, lat, lon, fix, rsrp, gear, speed, ignition, v12, phones, counter, last_cmd_action, last_cmd_result)
-       VALUES (?1, ?2, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
+      `INSERT INTO boxes (uid, first_seen, last_seen, fw, lat, lon, fix, rsrp, gear, speed, ignition, v12, phones, counter,
+         last_cmd_action, last_cmd_result, kind, state, budget_kb, alerts)
+       VALUES (?1, ?2, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
        ON CONFLICT(uid) DO UPDATE SET last_seen = ?2, fw = ?3, lat = COALESCE(?4, lat), lon = COALESCE(?5, lon), fix = ?6,
          rsrp = ?7, gear = ?8, speed = ?9, ignition = ?10, v12 = ?11, phones = ?12, counter = ?13,
-         last_cmd_action = ?14, last_cmd_result = ?15`,
+         last_cmd_action = ?14, last_cmd_result = ?15, kind = ?16, state = ?17, budget_kb = ?18, alerts = ?19`,
     ).bind(uid, now, num(b.fw), lat, lon, fix ? 1 : 0, num(b.rsrp), num(b.gear), num(b.speed), b.ignition ? 1 : 0,
-      num(b.v12), num(b.phones), counter, cmd[0] ?? 0, cmd[1] ?? 0),
+      num(b.v12), num(b.phones), counter, cmd[0] ?? 0, cmd[1] ?? 0, light ? "light" : "supernova",
+      light ? num(b.state) : 0, light ? num(b.budget) : 0, light ? num(b.alerts) : 0),
+    // a Light's stored readings: one row each (sent again after a lost answer: kept once)
+    ...(readings?.rows ?? []).map(([at, mv, awake]) =>
+      env.DB.prepare("INSERT OR IGNORE INTO box_telemetry (uid, at, v12, ignition) VALUES (?1, ?2, ?3, ?4)").bind(uid, at, mv, awake)),
     env.DB.prepare(
-      `INSERT INTO box_telemetry (uid, at, lat, lon, v12, gear, speed, ignition, rsrp)
+      `INSERT OR IGNORE INTO box_telemetry (uid, at, lat, lon, v12, gear, speed, ignition, rsrp)
        SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9
        WHERE NOT EXISTS (SELECT 1 FROM box_telemetry WHERE uid = ?1 AND at > ?2 - 55000)`,
     ).bind(uid, now, lat, lon, num(b.v12), num(b.gear), num(b.speed), b.ignition ? 1 : 0, num(b.rsrp)),
@@ -62,11 +73,36 @@ export async function checkin(env: Env, b: Record<string, unknown>, now: number)
     env.DB.prepare("UPDATE commands SET result = ?3 WHERE uid = ?1 AND counter = ?2 AND result IS NULL")
       .bind(uid, counter, cmd[1] ?? 0),
   ]);
+  if (light) {
+    return json({ commands: [], t: Math.floor(now / 1000), ...(readings?.ack !== undefined ? { ack: readings.ack } : {}) });
+  }
   // commands still valid and above the car's counter (it ignores the rest anyway)
   const { results } = await env.DB.prepare(
     "SELECT cmd FROM commands WHERE uid = ?1 AND expires_at > ?2 AND counter > ?3 ORDER BY counter LIMIT 4",
   ).bind(uid, now, counter).all<{ cmd: string }>();
   return json({ commands: results.map((r) => r.cmd) });
+}
+
+const NOCLOCK = 0x20; // reading flag: t is seconds since the Light's boot, not Unix time
+const AWAKE = 0x01;
+const MAX_READINGS = 200;
+
+/** A Light's readings as telemetry rows [ms, mV, awake]; ack = the last record number sent. */
+export function lightReadings(b: Record<string, unknown>, now: number): { rows: [number, number, number][]; ack?: number } | "bad" {
+  if (b.r === undefined) return { rows: [] };
+  const r = b.r, rn = b.rn;
+  if (!Array.isArray(r) || r.length > MAX_READINGS || !Array.isArray(rn) || rn.length !== 2) return "bad";
+  const [first, last] = rn.map(Number);
+  if (!Number.isInteger(first) || !Number.isInteger(last) || first < 1 || last < first || last > 0xffffffff) return "bad";
+  const rows: [number, number, number][] = [];
+  for (const x of r) {
+    if (!Array.isArray(x) || x.length !== 3 || !x.every((v) => Number.isInteger(v) && v >= 0)) return "bad";
+    const [t, mv, fl] = x as number[];
+    // readings from before the Light knew the time can't be placed; ones from the future are wrong
+    if (fl & NOCLOCK || t < 1_600_000_000 || t * 1000 > now + 300_000 || mv > 65535) continue;
+    rows.push([t * 1000, mv, fl & AWAKE ? 1 : 0]);
+  }
+  return { rows, ack: last };
 }
 
 /* ---- pairing ---- */
@@ -181,7 +217,8 @@ export async function status(env: Env, url: URL, now: number): Promise<Response>
 
 export async function listBoxes(env: Env): Promise<Response> {
   const { results } = await env.DB.prepare(
-    `SELECT b.uid, b.last_seen, b.fw, b.v12, b.rsrp, b.phones, b.ignition, b.last_cmd_action, b.last_cmd_result,
+    `SELECT b.uid, b.kind, b.last_seen, b.fw, b.v12, b.rsrp, b.phones, b.ignition, b.state, b.budget_kb, b.alerts,
+       b.last_cmd_action, b.last_cmd_result,
        (SELECT COUNT(*) FROM commands c WHERE c.uid = b.uid) AS commands
      FROM boxes b ORDER BY b.last_seen DESC LIMIT 200`,
   ).all();

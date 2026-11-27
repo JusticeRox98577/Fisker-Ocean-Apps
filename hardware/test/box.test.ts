@@ -91,4 +91,30 @@ describe("SuperNova boxes", () => {
     const bad = hex(ed25519.sign(new TextEncoder().encode(`nova-status:${UID}:${t}`), stranger));
     expect((await call(`/api/box/status?uid=${UID}&slot=0&t=${t}&sig=${bad}`)).status).toBe(403);
   });
+
+  it("keeps a Nova Light's 12 V readings, acknowledges them and never sends it commands", async () => {
+    const t0 = 1_795_000_000;
+    const light = { uid: UID, kind: "light", fw: 65536, v12: 12600, ignition: 0, state: 1, rsrp: -97, budget: 41, alerts: 0,
+      gear: 0, speed: 0, fix: 0, lat: 0, lon: 0, phones: 0, counter: 0, cmd: [0, 0] };
+    const r1 = await call("/api/box/checkin", { ...light, rn: [41, 43],
+      r: [[t0, 12610, 2], [t0 + 300, 12600, 3], [120, 12590, 0x20]] }); // the last one has no clock: skipped
+    expect(r1.status).toBe(200);
+    expect(r1.body).toMatchObject({ commands: [], ack: 43 });
+    expect(r1.body.t).toBeGreaterThan(1_700_000_000);
+    // sent again (its answer was lost): stored once
+    expect((await call("/api/box/checkin", { ...light, rn: [41, 42], r: [[t0, 12610, 2], [t0 + 300, 12600, 3]] })).body.ack).toBe(42);
+    const rows = (await env.DB.prepare("SELECT at, v12, ignition FROM box_telemetry WHERE uid = ?1 AND at < ?2 ORDER BY at")
+      .bind(UID, (t0 + 1000) * 1000).all()).results;
+    expect(rows).toEqual([{ at: t0 * 1000, v12: 12610, ignition: 0 }, { at: (t0 + 300) * 1000, v12: 12600, ignition: 1 }]);
+    const box = await env.DB.prepare("SELECT kind, state, budget_kb FROM boxes WHERE uid = ?1").bind(UID).first();
+    expect(box).toEqual({ kind: "light", state: 1, budget_kb: 41 });
+    // status only: no readings, no ack
+    const r3 = await call("/api/box/checkin", light);
+    expect(r3.body.ack).toBeUndefined();
+    // malformed batches are refused, so the Light keeps them for the next try
+    for (const bad of [{ rn: [5], r: [] }, { rn: [5, 4], r: [] }, { rn: [1, 2], r: [[t0, -1, 0]] }, { rn: [1, 2], r: "x" },
+      { rn: [1, 300], r: Array.from({ length: 201 }, () => [t0, 12000, 0]) }]) {
+      expect((await call("/api/box/checkin", { ...light, ...bad })).status).toBe(400);
+    }
+  });
 });

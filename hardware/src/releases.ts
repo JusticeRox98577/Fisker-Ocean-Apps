@@ -26,7 +26,7 @@ const eddsa = twistedEdwards({ ...ed25519.CURVE, hash: (m: Uint8Array | string) 
 export const TARGETS = ["supervisor", "card", "app", "android", "nrf-light", "nrf-nova"] as const;
 type Target = (typeof TARGETS)[number];
 // .nova chip numbers (fw/lib/novaboot enum nb_target). The nRF9151 (SuperNova) has two firmware lines:
-// nrf-light, the existing Nova Light firmware, and nrf-nova, the new Nova firmware. Each box follows one.
+// nrf-light and nrf-nova: the Nova firmware's Light build (Nova Light boards) and SuperNova build.
 const FW_TARGET: Record<string, number> = { supervisor: 1, card: 2, "nrf-light": 3, "nrf-nova": 3 };
 const CHIP: Record<number, string> = { 1: "supervisor", 2: "video card", 3: "nRF9151" };
 const MAX_UPLOAD = 90 * 1024 * 1024;

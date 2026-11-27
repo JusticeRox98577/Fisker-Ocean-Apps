@@ -69,7 +69,7 @@
     </div>
 
     <section aria-labelledby="box-title">
-      <h2 id="box-title" class="section-title">SuperNova boxes (<span id="box-n">0</span>)</h2>
+      <h2 id="box-title" class="section-title">Nova boxes (<span id="box-n">0</span>)</h2>
       <p class="muted small">Cars whose nRF9151 checks in. Locations stay with the owner's paired phones and aren't shown here.</p>
       <ul class="people" id="boxes"></ul>
     </section>
@@ -80,17 +80,17 @@
       <ul class="people" id="releases"></ul>
       <details class="panel dev-register">
         <summary>Upload a release</summary>
-        <div class="chips" role="group" aria-label="nRF9151 firmware line">
-          <button class="btn btn-small btn-ghost" type="button" id="rel-nrf-light">nRF9151 · existing Nova Light firmware</button>
-          <button class="btn btn-small btn-ghost" type="button" id="rel-nrf-nova">nRF9151 · new Nova firmware</button>
+        <div class="chips" role="group" aria-label="nRF9151 firmware build">
+          <button class="btn btn-small btn-ghost" type="button" id="rel-nrf-light">nRF9151 · Nova Light (Light build)</button>
+          <button class="btn btn-small btn-ghost" type="button" id="rel-nrf-nova">nRF9151 · SuperNova build</button>
         </div>
         <select class="input" id="rel-target" aria-label="What it is">
           <option value="supervisor">Supervisor firmware (.nova)</option>
           <option value="card">Video card firmware (.nova)</option>
           <option value="app">Nova app (.apk)</option>
           <option value="android">Android OTA (already in R2)</option>
-          <option value="nrf-light">nRF9151: existing Nova Light firmware (.nova)</option>
-          <option value="nrf-nova">nRF9151: new Nova firmware (.nova)</option>
+          <option value="nrf-light">nRF9151: Nova firmware, Light build, for Nova Light boards (.nova)</option>
+          <option value="nrf-nova">nRF9151: Nova firmware, SuperNova build (.nova)</option>
         </select>
         <input class="input" type="file" id="rel-file" aria-label="File">
         <input class="input" id="rel-key" placeholder="R2 key, e.g. ota/nova-os-20261127.zip" aria-label="R2 key" hidden>

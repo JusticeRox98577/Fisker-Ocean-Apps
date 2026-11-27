@@ -219,7 +219,7 @@ async function act(button, what, r, question) {
   say($("dash-status"), done[what], "ok");
 }
 
-// ---- SuperNova boxes ---------------------------------------------------------------------------
+// ---- Nova boxes (SuperNova and Nova Light) ---------------------------------------------------------------------------
 
 const TX = ["sent", "not parked", "12 V low", "not set up for this car yet", "gate not raised", "not a SuperNova"];
 async function loadBoxes() {
@@ -228,24 +228,31 @@ async function loadBoxes() {
   $("box-n").textContent = String(out.boxes.length);
   $("boxes").replaceChildren(...(out.boxes.length ? out.boxes.map((b) => {
     const li = el("li", "person panel");
-    li.append(el("h3", "", `Box ${b.uid}`));
+    const light = b.kind === "light";
+    li.append(el("h3", "", `${light ? "Nova Light" : "SuperNova"} ${b.uid}`));
     li.append(el("p", "facts", [
       `Last seen ${when(b.last_seen)}`,
       `firmware ${ver(b.fw)}`,
       b.v12 ? `12 V ${(b.v12 / 1000).toFixed(1)} V` : "12 V not measured",
       b.rsrp ? `signal ${b.rsrp} dBm` : "",
-      `${b.phones} paired phone${b.phones === 1 ? "" : "s"}`,
-      `${b.commands} remote commands`,
-      b.last_cmd_action ? `last: ${b.last_cmd_result >= 128 ? "refused by the car" : TX[b.last_cmd_result] || b.last_cmd_result}` : "",
+      ...(light ? [
+        ["starting", "parked", "car awake", "self-protect (12 V low)"][b.state] || "",
+        `${b.budget_kb} kB of data this month`,
+        b.alerts ? "12 V alert open" : "",
+      ] : [
+        `${b.phones} paired phone${b.phones === 1 ? "" : "s"}`,
+        `${b.commands} remote commands`,
+        b.last_cmd_action ? `last: ${b.last_cmd_result >= 128 ? "refused by the car" : TX[b.last_cmd_result] || b.last_cmd_result}` : "",
+      ]),
     ].filter(Boolean).join(" · ")));
     return li;
-  }) : [el("li", "muted", "No SuperNova has checked in yet.")]));
+  }) : [el("li", "muted", "No Nova box has checked in yet.")]));
 }
 
 // ---- releases -----------------------------------------------------------------------------------
 
 const TARGET_NAME = { supervisor: "Supervisor firmware", card: "Video card firmware", app: "Nova app", android: "Android",
-  "nrf-light": "nRF9151 · Nova Light firmware", "nrf-nova": "nRF9151 · new Nova firmware" };
+  "nrf-light": "nRF9151 · Nova Light (Light build)", "nrf-nova": "nRF9151 · SuperNova build" };
 const mb = (n) => `${(n / 1048576).toFixed(n > 10485760 ? 0 : 1)} MB`;
 
 async function loadReleases() {
