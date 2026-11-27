@@ -19,6 +19,9 @@ in.
   Every news email says why it was sent and has an unsubscribe link plus a one-click unsubscribe
   header (RFC 8058); unsubscribing deletes the address. App testers may get one email asking if
   they want the news, and are added only if they click its link.
+- **Sending for other Workers:** the `Notify` entry point (`src/notify.ts`), reached only over a service
+  binding, sends one email from a mailbox here through the same path as webmail (same limits, copy in
+  Sent). The hardware beta (`hardware/`) uses it for sign-in links and tester invitations.
 - **Health check:** `GET /api/health` answers `{ "ok": true, "service": "mail" }` for the status page.
 
 ## Privacy and security

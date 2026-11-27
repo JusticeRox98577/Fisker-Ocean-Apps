@@ -6,6 +6,7 @@
  * GET /api/health is public (status page).
  * The mailing list's public endpoints (/api/list/subscribe, confirm, unsubscribe) need no session; oceanlive.org
  * forwards them here. Everything else under /api/ needs a webmail session (and CSRF for changes).
+ * - Notify (notify.ts): sending for other Ocean Live Workers over a service binding.
  */
 import { csrfOk, getSession, login, logout } from "./auth";
 import { type Env, num } from "./env";
@@ -38,6 +39,8 @@ import {
 import { handleEmail } from "./receive";
 import { sendMail } from "./send";
 import { fail, json, withApiHeaders } from "./util";
+
+export { Notify } from "./notify";
 
 const ID = "([0-9a-z]{19})";
 const ATT = "([0-9a-z]{19}-[0-9]{1,4})";

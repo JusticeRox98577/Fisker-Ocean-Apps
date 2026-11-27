@@ -1,9 +1,16 @@
+/** The mail Worker's Notify entry point (mail/src/notify.ts). */
+export interface MailService {
+  send(notice: { from: string; to: string; subject: string; text: string }): Promise<{ ok: true } | { ok: false; error: string }>;
+}
+
 export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
   /** The only address that can sign in to /admin. */
   ADMIN_EMAIL: string;
-  /** Sender of the sign-in and invitation emails. */
+  /** Sends the emails: a service binding to the mail Worker. */
+  MAIL?: MailService;
+  /** Sender of the sign-in and invitation emails: a mailbox in the mail Worker. */
   MAIL_FROM: string;
   /** This site, for links in emails. */
   SITE_URL: string;
@@ -15,10 +22,6 @@ export interface Env {
   CLOSED?: string;
   /** Seconds the public counters are reused (0: never). */
   STATS_CACHE_SECONDS?: string;
-  /** Secret: Resend API key, for the emails. */
-  RESEND_API_KEY?: string;
-  /** Tests only: replaces the Resend API call. */
-  RESEND_FETCH?: typeof fetch;
 }
 
 export function num(value: string | undefined, fallback: number): number {

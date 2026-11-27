@@ -26,11 +26,15 @@
     }
   ],
 
+  // Emails go out through the mail Worker (mail/src/notify.ts), which has the Resend key.
+  "services": [{ "binding": "MAIL", "service": "ocean-live-mail", "entrypoint": "Notify" }],
+
   "vars": {
     // The only address that can sign in to /admin: sign-in links are emailed here and nowhere else.
     "ADMIN_EMAIL": "justice@oceanlive.org",
-    // Sender of the sign-in links and the "you've been picked" emails (oceanlive.org is set up in Resend).
-    "MAIL_FROM": "Ocean Live <justice@oceanlive.org>",
+    // Sender of the sign-in links and the "you've been picked" emails: a mailbox in the mail Worker.
+    // Copies land in its Sent folder.
+    "MAIL_FROM": "justice@oceanlive.org",
     // This site, for the links in those emails.
     "SITE_URL": "https://hardware.oceanlive.org",
     // How many test boards there are. Open invitations plus acceptances can't go above this.
@@ -42,7 +46,4 @@
     // Seconds the public counters (/api/stats) are reused.
     "STATS_CACHE_SECONDS": "60"
   }
-  // Secret, set once with: npx wrangler secret put RESEND_API_KEY
-  //   RESEND_API_KEY  the same Resend key the mail Worker uses (or a new one with sending access for
-  //                   oceanlive.org). Without it nobody can sign in to /admin and no one can be picked.
 }

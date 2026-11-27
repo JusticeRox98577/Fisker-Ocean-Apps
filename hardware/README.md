@@ -69,9 +69,10 @@ take it back.
 2. In Cloudflare, connect this repository as a new Worker (Workers Builds) with the root directory
    `hardware`, build command `npm ci && npm run cf:build` and deploy command `npm run cf:deploy`.
    The custom domain `hardware.oceanlive.org` comes from `routes` in `wrangler.jsonc`.
-3. Set the Resend key, the same one the mail Worker uses: `npx wrangler secret put RESEND_API_KEY`
-   (from this folder), or in the dashboard under the Worker's Settings, Variables and Secrets.
-   Without it, sign-in links and invitations can't be sent.
+3. Deploy the mail Worker (`mail/`) first, or with the same push: emails go out through its
+   `Notify` entry point (`mail/src/notify.ts`) over a service binding, using its Resend key. This
+   Worker has no key of its own. Each email is sent from `MAIL_FROM` (justice@oceanlive.org), and a
+   copy is kept in that mailbox's Sent folder in webmail.
 
 ## Privacy
 
@@ -84,16 +85,16 @@ earlier answer.
 
 - `src/` the Worker: `form.ts` (checking an answer), `store.ts` (D1, the CSV, the ranking and the
   public counts), `auth.ts` (admin sign-in), `testers.ts` (picking testers and their answers),
-  `mail.ts` (Resend), `index.ts` (the API).
+  `mail.ts` (sending through the mail Worker), `index.ts` (the API).
 - `public/` the pages: `index.html` (sign-up), `admin.html`, `invite.html`. Plain HTML, CSS and
   JavaScript modules, in the oceanlive.org look.
 - `migrations/` the database tables.
 - `test/` tests that run in the Workers runtime: `npm test`.
 
-Try it locally (emails can't go out without a Resend key, so sign in by adding a session row):
+Try it locally, with the mail Worker alongside (emails stop at the mail Worker without its Resend key):
 
 ```sh
 npm ci
 npx wrangler d1 migrations apply ocean-live-hardware --local
-npx wrangler dev
+npx wrangler dev -c wrangler.jsonc -c ../mail/wrangler.jsonc
 ```

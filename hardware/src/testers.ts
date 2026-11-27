@@ -104,11 +104,10 @@ export async function inviteAnswer(env: Env, ctx: ExecutionContext, token: strin
   ctx.waitUntil(
     sendEmail(env, {
       to: env.ADMIN_EMAIL,
-      replyTo: p.email,
       subject: next === "accepted" ? `Nova beta: ${who} said yes` : `Nova beta: ${who} said no`,
       text:
         next === "accepted"
-          ? `${who} accepted a Nova test board. Reply to this email to write to them about shipping.\n\n${env.SITE_URL}/admin`
+          ? `${who} accepted a Nova test board. Write to them at ${p.email} about shipping.\n\n${env.SITE_URL}/admin`
           : `${who} said no to a Nova test board, so it's free again. Pick someone else:\n\n${env.SITE_URL}/admin`,
     }).then((r) => {
       if (!r.ok) console.error("admin notice not sent", r.error);

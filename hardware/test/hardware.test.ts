@@ -1,25 +1,29 @@
 import { SELF, createExecutionContext, env, waitOnExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Env } from "../src/env";
+import type { Env, MailService } from "../src/env";
 import { checkSignUp } from "../src/form";
 import worker from "../src/index";
 import { allRows, tally, toCsv, type Row } from "../src/store";
 
 const ORIGIN = "https://hardware.oceanlive.org";
 
-/** A fake Resend that keeps what it was asked to send. */
-function fakeResend() {
-  const sent: { to: string[]; subject: string; text: string; reply_to: string; from: string }[] = [];
-  const fn = (async (_url: RequestInfo | URL, init?: RequestInit) => {
-    sent.push(JSON.parse(String(init?.body)));
-    return Response.json({ id: `e${sent.length}` });
-  }) as typeof fetch;
-  return { fn, sent };
+type Sent = { from: string; to: string; subject: string; text: string };
+
+/** A fake mail Worker that keeps what it was asked to send. */
+function fakeMail() {
+  const sent: Sent[] = [];
+  const service: MailService = {
+    send: async (n) => {
+      sent.push(n);
+      return { ok: true };
+    },
+  };
+  return { service, sent };
 }
 
-/** Calls the Worker with Resend faked; returns the response and what was emailed. */
-async function call(path: string, init: RequestInit & { cookie?: string } = {}, resend = fakeResend()) {
-  const e: Env = { ...env, RESEND_FETCH: resend.fn };
+/** Calls the Worker with the mail service faked; returns the response and what was emailed. */
+async function call(path: string, init: RequestInit & { cookie?: string } = {}, mail: { service: MailService; sent: Sent[] } = fakeMail()) {
+  const e: Env = { ...env, MAIL: mail.service };
   const headers = new Headers(init.headers);
   if (init.body !== undefined) headers.set("Content-Type", "application/json");
   if (init.cookie) headers.set("Cookie", init.cookie);
@@ -27,14 +31,14 @@ async function call(path: string, init: RequestInit & { cookie?: string } = {}, 
   const ctx = createExecutionContext();
   const res = await worker.fetch(new Request(`${ORIGIN}${path}`, { ...init, headers }), e, ctx);
   await waitOnExecutionContext(ctx);
-  return { res, sent: resend.sent };
+  return { res, sent: mail.sent };
 }
 
 /** Signs in the way the admin does: ask for a link, take it from the email, swap it for a cookie. */
 async function signIn(): Promise<string> {
   const { res, sent } = await call("/api/admin/login", { method: "POST", body: "{}" });
   expect(res.status).toBe(200);
-  expect(sent[0].to).toEqual(["justice@oceanlive.org"]);
+  expect(sent[0]).toMatchObject({ from: "justice@oceanlive.org", to: "justice@oceanlive.org" });
   const token = sent[0].text.match(/#login=([A-Za-z0-9_-]+)/)![1];
   const s = await call("/api/admin/session", { method: "POST", body: JSON.stringify({ token }) });
   expect(s.res.status).toBe(200);
@@ -166,7 +170,7 @@ describe("admin sign-in", () => {
 
   it("only ever emails the admin address, and doesn't print it in full", async () => {
     const { res, sent } = await call("/api/admin/login", { method: "POST", body: JSON.stringify({ email: "attacker@example.com" }) });
-    expect(sent.map((m) => m.to)).toEqual([["justice@oceanlive.org"]]);
+    expect(sent.map((m) => m.to)).toEqual(["justice@oceanlive.org"]);
     expect(await res.json()).toEqual({ ok: true, to: "j••••••@oceanlive.org" });
   });
 
@@ -224,7 +228,7 @@ describe("the admin page's data", () => {
   it("refuses changes from other sites", async () => {
     const cookie = await signIn();
     await post(good);
-    const e: Env = { ...env, RESEND_FETCH: fakeResend().fn };
+    const e: Env = { ...env, MAIL: fakeMail().service };
     const ctx = createExecutionContext();
     const res = await worker.fetch(
       new Request(`${ORIGIN}/api/admin/delete`, {
@@ -244,7 +248,7 @@ describe("picking testers", () => {
   async function invitationToken(cookie: string, email: string) {
     const { res, sent } = await call("/api/admin/pick", { method: "POST", body: JSON.stringify({ email }), cookie });
     expect(res.status).toBe(200);
-    expect(sent[0].to).toEqual([email.toLowerCase()]);
+    expect(sent[0].to).toBe(email.toLowerCase());
     expect(sent[0].subject).toMatch(/picked/);
     return sent[0].text.match(/\/invite#([A-Za-z0-9_-]+)/)![1];
   }
@@ -260,9 +264,9 @@ describe("picking testers", () => {
 
     const yes = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "yes" }) });
     expect(await yes.res.json()).toEqual({ ok: true, status: "accepted" });
-    expect(yes.sent[0].to).toEqual(["justice@oceanlive.org"]);
+    expect(yes.sent[0].to).toBe("justice@oceanlive.org");
     expect(yes.sent[0].subject).toMatch(/said yes/);
-    expect(yes.sent[0].reply_to).toBe("owner@example.com");
+    expect(yes.sent[0].text).toContain("owner@example.com");
     expect((await allRows(env.DB))[0].pick).toBe("accepted");
   });
 
@@ -298,7 +302,7 @@ describe("picking testers", () => {
   it("doesn't take a board when the email fails", async () => {
     const cookie = await signIn();
     await post(good);
-    const broken = { fn: (async () => Response.json({ message: "nope" }, { status: 500 })) as typeof fetch, sent: [] };
+    const broken = { service: { send: async () => ({ ok: false as const, error: "nope" }) }, sent: [] };
     const { res } = await call("/api/admin/pick", { method: "POST", body: JSON.stringify({ email: good.email }), cookie }, broken);
     expect(res.status).toBe(502);
     expect((await allRows(env.DB))[0].pick).toBe("");
