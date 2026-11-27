@@ -671,4 +671,27 @@
     <string name="tips_banner_text">Bevalt Ocean Live? Steun het met een fooi</string>
     <string name="tips_banner_support">Steunen</string>
     <string name="tips_banner_close">Fooitip verbergen</string>
+
+    <!-- SuperNova remote commands -->
+    <string name="nova_title">SuperNova</string>
+    <string name="nova_intro">Vergrendel, ontgrendel en start de klimaatregeling met deze telefoon. Koppel hem eerst in de auto: op het scherm in de auto toont Instellingen → Deze Nova → Telefoon koppelen een code.</string>
+    <string name="nova_code">Code van het scherm in de auto</string>
+    <string name="nova_pair">Deze telefoon koppelen</string>
+    <string name="nova_waiting">Wachten op goedkeuring in de auto…</string>
+    <string name="nova_refused">Koppelen is in de auto geweigerd.</string>
+    <string name="nova_lock">Vergrendelen</string>
+    <string name="nova_unlock">Ontgrendelen</string>
+    <string name="nova_climate_on">Klimaat aan</string>
+    <string name="nova_climate_off">Klimaat uit</string>
+    <string name="nova_sent">Verstuurd. De auto voert het uit bij de volgende melding.</string>
+    <string name="nova_last_seen">Auto laatst gezien %1$s</string>
+    <string name="nova_v12">12V-accu: %1$s</string>
+    <string name="nova_result_ok">Laatste opdracht: uitgevoerd</string>
+    <string name="nova_result_refused">Laatste opdracht: geweigerd (%1$s)</string>
+    <string name="nova_why_parked">niet in P</string>
+    <string name="nova_why_battery">12V-accu te laag</string>
+    <string name="nova_why_setup">nog niet ingesteld voor deze auto</string>
+    <string name="nova_why_car">de auto weigerde het</string>
+    <string name="nova_forget">Deze auto vergeten</string>
+    <string name="nova_error">Server niet bereikbaar: %1$s</string>
 </resources>

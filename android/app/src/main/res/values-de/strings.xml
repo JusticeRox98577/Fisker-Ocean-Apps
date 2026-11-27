@@ -671,4 +671,27 @@
     <string name="tips_banner_text">Gefällt dir Ocean Live? Unterstütze es mit einem Trinkgeld</string>
     <string name="tips_banner_support">Unterstützen</string>
     <string name="tips_banner_close">Trinkgeld-Hinweis ausblenden</string>
+
+    <!-- SuperNova remote commands -->
+    <string name="nova_title">SuperNova</string>
+    <string name="nova_intro">Mit diesem Handy verriegeln, entriegeln und die Klimatisierung starten. Zuerst im Auto koppeln: Auf dem Bildschirm im Auto zeigt Einstellungen → Diese Nova → Handy koppeln einen Code.</string>
+    <string name="nova_code">Code vom Bildschirm im Auto</string>
+    <string name="nova_pair">Dieses Handy koppeln</string>
+    <string name="nova_waiting">Warte auf Bestätigung im Auto…</string>
+    <string name="nova_refused">Die Kopplung wurde im Auto abgelehnt.</string>
+    <string name="nova_lock">Verriegeln</string>
+    <string name="nova_unlock">Entriegeln</string>
+    <string name="nova_climate_on">Klima an</string>
+    <string name="nova_climate_off">Klima aus</string>
+    <string name="nova_sent">Gesendet. Das Auto führt es beim nächsten Melden aus.</string>
+    <string name="nova_last_seen">Auto zuletzt gemeldet %1$s</string>
+    <string name="nova_v12">12-V-Batterie: %1$s</string>
+    <string name="nova_result_ok">Letzter Befehl: ausgeführt</string>
+    <string name="nova_result_refused">Letzter Befehl: abgelehnt (%1$s)</string>
+    <string name="nova_why_parked">nicht in P</string>
+    <string name="nova_why_battery">12-V-Batterie zu schwach</string>
+    <string name="nova_why_setup">für dieses Auto noch nicht eingerichtet</string>
+    <string name="nova_why_car">vom Auto abgelehnt</string>
+    <string name="nova_forget">Dieses Auto vergessen</string>
+    <string name="nova_error">Server nicht erreichbar: %1$s</string>
 </resources>

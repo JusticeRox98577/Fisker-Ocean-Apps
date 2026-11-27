@@ -678,4 +678,27 @@
     <string name="tips_banner_text">Enjoying Ocean Live? Support it with a tip</string>
     <string name="tips_banner_support">Support</string>
     <string name="tips_banner_close">Hide tip suggestion</string>
+
+    <!-- SuperNova remote commands -->
+    <string name="nova_title">SuperNova</string>
+    <string name="nova_intro">Lock, unlock and run the climate from this phone. First pair it in the car: on the car screen, Settings → This Nova → Pair a phone shows a code.</string>
+    <string name="nova_code">Code from the car screen</string>
+    <string name="nova_pair">Pair this phone</string>
+    <string name="nova_waiting">Waiting for approval on the car screen…</string>
+    <string name="nova_refused">Pairing was refused in the car.</string>
+    <string name="nova_lock">Lock</string>
+    <string name="nova_unlock">Unlock</string>
+    <string name="nova_climate_on">Climate on</string>
+    <string name="nova_climate_off">Climate off</string>
+    <string name="nova_sent">Sent. The car acts on it at its next check-in.</string>
+    <string name="nova_last_seen">Car last seen %1$s</string>
+    <string name="nova_v12">12 V battery: %1$s</string>
+    <string name="nova_result_ok">Last command: done</string>
+    <string name="nova_result_refused">Last command: refused (%1$s)</string>
+    <string name="nova_why_parked">not in Park</string>
+    <string name="nova_why_battery">12 V battery too low</string>
+    <string name="nova_why_setup">not set up for this car yet</string>
+    <string name="nova_why_car">the car refused it</string>
+    <string name="nova_forget">Forget this car</string>
+    <string name="nova_error">Couldn\'t reach the server: %1$s</string>
 </resources>

@@ -85,6 +85,8 @@ dependencies {
     // Tips through Google Play Billing (one-time consumables). The plain Java artifact, not billing-ktx:
     // billing-ktx 8+/9 pulls kotlin-stdlib 2.2, which this project's Kotlin 2.0 compiler can't read.
     implementation("com.android.billingclient:billing:9.1.0")
+    // Ed25519 for SuperNova remote commands (Android's own Ed25519 needs API 33; minSdk is 26)
+    implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }

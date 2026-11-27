@@ -690,4 +690,27 @@
     <string name="tips_banner_text">¿Te gusta Ocean Live? Apóyalo con una propina</string>
     <string name="tips_banner_support">Apoyar</string>
     <string name="tips_banner_close">Ocultar la sugerencia de propina</string>
+
+    <!-- SuperNova remote commands -->
+    <string name="nova_title">SuperNova</string>
+    <string name="nova_intro">Bloquea, desbloquea y enciende el climatizador desde este teléfono. Primero vincúlalo en el coche: en la pantalla del coche, Ajustes → Esta Nova → Vincular un teléfono muestra un código.</string>
+    <string name="nova_code">Código de la pantalla del coche</string>
+    <string name="nova_pair">Vincular este teléfono</string>
+    <string name="nova_waiting">Esperando la aprobación en el coche…</string>
+    <string name="nova_refused">La vinculación se rechazó en el coche.</string>
+    <string name="nova_lock">Bloquear</string>
+    <string name="nova_unlock">Desbloquear</string>
+    <string name="nova_climate_on">Clima encendido</string>
+    <string name="nova_climate_off">Clima apagado</string>
+    <string name="nova_sent">Enviado. El coche lo hará en su próxima conexión.</string>
+    <string name="nova_last_seen">Coche visto por última vez %1$s</string>
+    <string name="nova_v12">Batería de 12 V: %1$s</string>
+    <string name="nova_result_ok">Última orden: hecha</string>
+    <string name="nova_result_refused">Última orden: rechazada (%1$s)</string>
+    <string name="nova_why_parked">no está en P</string>
+    <string name="nova_why_battery">batería de 12 V demasiado baja</string>
+    <string name="nova_why_setup">aún no configurado para este coche</string>
+    <string name="nova_why_car">el coche la rechazó</string>
+    <string name="nova_forget">Olvidar este coche</string>
+    <string name="nova_error">No se pudo conectar con el servidor: %1$s</string>
 </resources>
