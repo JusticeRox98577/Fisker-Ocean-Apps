@@ -75,7 +75,8 @@ jobs:
           # A target left with no dependencies loses the empty list.
           perl -0pi -e 's/    dependencies:\n(?!      [-#])//g' project.yml
           xcodegen generate
-          echo "BUILD_NUMBER=$((3000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          # Above every earlier upload (3.4.0 used 3000 + run number, and 3400 from Xcode).
+          echo "BUILD_NUMBER=$((3500 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
       - name: Build (unsigned)
         run: |
           xcodebuild -project OceanLive.xcodeproj -scheme OceanLive -configuration Release \
@@ -86,11 +87,11 @@ jobs:
         run: |
           rm -rf Payload && mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/OceanLive.app Payload/
-          zip -qry OceanLive-3.4-iOS-unsigned.ipa Payload
+          zip -qry OceanLive-3.5-iOS-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
           name: OceanLive-iOS-unsigned
-          path: ios/OceanLive-3.4-iOS-unsigned.ipa
+          path: ios/OceanLive-3.5-iOS-unsigned.ipa
       - name: Archive, sign and upload to TestFlight
         if: github.event_name == 'workflow_dispatch'
         env:
