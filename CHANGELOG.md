@@ -9,7 +9,8 @@ Each `## x.y.z` section is used as the release notes for that version.
 * Nova: pair your phone with a SuperNova using the code on the car screen (you approve it in the
   car), then lock, unlock and run the climate from your phone, and see the car's last check-in and
   12V. Your phone's key is made on the phone and never leaves it; every command is signed and
-  checked by the car
+  checked by the car. Waiting for approval survives leaving the page or the app, and a code that
+  runs out says so instead of waiting forever
 * News by email: sign up at oceanlive.org/news (or in the downloads section of the home page)
   to get an email when there's a new release or an important fix. Nobody is added without
   confirming by email, and every email has a one-click unsubscribe that deletes your address
