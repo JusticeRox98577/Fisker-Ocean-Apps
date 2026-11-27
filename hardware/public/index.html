@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0B2545">
+<meta name="color-scheme" content="dark">
+<!-- EDIT: the title and description shown in search results and link previews. -->
+<title>Beta test Nova hardware · Ocean Live</title>
+<meta name="description" content="Sign up to beta test Ocean Live's Nova hardware for the Fisker Ocean, and tell us the five features that matter most to you.">
+<link rel="canonical" href="https://hardware.oceanlive.org/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ocean Live">
+<meta property="og:url" content="https://hardware.oceanlive.org/">
+<meta property="og:title" content="Beta test Nova hardware · Ocean Live">
+<meta property="og:description" content="Sign up to beta test Ocean Live's Nova hardware for the Fisker Ocean, and tell us the five features that matter most to you.">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script type="module" src="/app.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="https://oceanlive.org/">
+      <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+      Ocean Live
+    </a>
+    <span class="top-label">Hardware beta</span>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+<section class="doc-hero">
+  <div class="wrap">
+    <div class="lightbar" aria-hidden="true"></div>
+    <div class="eyebrow">Nova hardware</div>
+    <!-- EDIT: the headline and the line under it. -->
+    <h1>Help test Nova in your Ocean</h1>
+    <p class="lede">We're building Nova, a family of add-on boxes for the Fisker Ocean: a new center screen, live car data and remote control, made by the people behind the Ocean Live app. Sign up to be a beta tester, and tell us what matters most so we build the right thing first.</p>
+  </div>
+</section>
+
+<div class="wrap">
+  <!-- EDIT: the four products. Change the names and descriptions as the line-up changes. -->
+  <section aria-labelledby="line-title">
+    <h2 id="line-title" class="section-title">The line-up</h2>
+    <ul class="products">
+      <li class="panel product">
+        <h3>Nova Light</h3>
+        <p>A cellular CAN reader. Reads the car and sends its data to the cloud: charge, 12V, location, ABRP.</p>
+      </li>
+      <li class="panel product">
+        <h3>Nova Flare</h3>
+        <p>Takes over the center screen with CarPlay, Android Auto, apps and a live dashboard. Pairs with a Nova Light.</p>
+      </li>
+      <li class="panel product">
+        <h3>Nova Quasar</h3>
+        <p>Nova Flare with its own LTE modem, so it streams without your phone's hotspot.</p>
+      </li>
+      <li class="panel product">
+        <h3>SuperNova</h3>
+        <p>Everything in one box: the screen, the CAN reader, telemetry, LTE and remote lock and climate.</p>
+      </li>
+    </ul>
+    <!-- EDIT: the status line. -->
+    <p class="muted small">These are early designs, not products you can buy yet. Names, features and prices may change.</p>
+  </section>
+
+  <section class="sheet form-sheet" aria-labelledby="form-title">
+    <h2 id="form-title">Sign up to beta test</h2>
+    <p class="muted">Takes about two minutes. Only the email address and your feature picks are required.</p>
+
+    <p class="closed-note" id="closed-note" role="note" hidden>Sign-ups for the beta are closed for now. Follow <a href="https://oceanlive.org/news">Ocean Live news</a> to hear when they open again.</p>
+
+    <form class="beta-form" id="beta-form" novalidate aria-labelledby="form-title">
+      <fieldset class="group">
+        <legend>About you</legend>
+        <div class="fields">
+          <div class="field">
+            <label for="f-email">Email address <span class="req">required</span></label>
+            <input class="input" id="f-email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="f-name">Name <span class="opt">optional</span></label>
+            <input class="input" id="f-name" name="name" type="text" maxlength="100" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="f-region">Country or region <span class="opt">optional</span></label>
+            <input class="input" id="f-region" name="region" type="text" maxlength="100" autocomplete="country-name" placeholder="For example: California, USA">
+          </div>
+          <div class="field">
+            <!-- EDIT: the car choices. The value is what's saved; the text is what people see. -->
+            <label for="f-car">Your Ocean <span class="opt">optional</span></label>
+            <select class="input" id="f-car" name="car">
+              <option value="">Choose…</option>
+              <option value="sport">Ocean Sport</option>
+              <option value="ultra">Ocean Ultra</option>
+              <option value="extreme">Ocean Extreme</option>
+              <option value="one">Ocean One</option>
+              <option value="none">I don't have an Ocean (yet)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-phone">Your phone <span class="opt">optional</span></label>
+            <select class="input" id="f-phone" name="phone">
+              <option value="">Choose…</option>
+              <option value="iphone">iPhone</option>
+              <option value="android">Android</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <!-- EDIT: which products people can say they're interested in. Values: short ids, lower case, no spaces. -->
+        <legend>Which would you like to test? <span class="opt">optional, pick any</span></legend>
+        <div class="chips">
+          <label class="chip"><input type="checkbox" name="products" value="light"><span>Nova Light</span></label>
+          <label class="chip"><input type="checkbox" name="products" value="flare"><span>Nova Flare</span></label>
+          <label class="chip"><input type="checkbox" name="products" value="quasar"><span>Nova Quasar</span></label>
+          <label class="chip"><input type="checkbox" name="products" value="supernova"><span>SuperNova</span></label>
+          <label class="chip"><input type="checkbox" name="products" value="not-sure"><span>Not sure yet</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="group" id="features-group" aria-describedby="features-help">
+        <legend>Your top 5 features <span class="req">required</span></legend>
+        <p class="help" id="features-help">Tap up to five, in order of importance: the first one you pick is #1. You can reorder them below.</p>
+        <!-- EDIT: the feature list. Add, remove or rename freely. Each value is a short id
+             (lower case, numbers and dashes, up to 40 characters); it's what lands in the database and
+             the CSV, so keep an id the same once people have answered, and give new features new ids. -->
+        <div class="features" id="features">
+          <label class="feature"><input type="checkbox" name="features" value="carplay"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Wireless CarPlay and Android Auto</b> on the center screen</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="dashboard"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Live dashboard</b>: battery, power, temperatures, tyre pressures</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="android-apps"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Android apps</b> on the screen, like maps and video while parked</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="remote-status"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Remote status</b>: charge, 12V battery and location from anywhere</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="remote-commands"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Remote lock and climate</b> from your phone</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="lte-streaming"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Built-in LTE</b>: streaming without your phone's hotspot</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="abrp"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>ABRP live data</b> for route planning</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="trips"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Trip and charging history</b></span></label>
+          <label class="feature"><input type="checkbox" name="features" value="fault-alerts"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Fault code alerts</b> as soon as the car logs one</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="portrait"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Portrait and landscape</b> with the screen's Revolve</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="low-drain"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>No 12V drain</b>: the car sleeps normally when parked</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="fail-safe"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Fail-safe</b>: the car goes back to stock if Nova is off or unplugged</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="easy-install"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Plug-in install</b>, no cutting or splicing wires</span></label>
+          <label class="feature"><input type="checkbox" name="features" value="updates"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Over-the-air updates</b></span></label>
+          <label class="feature"><input type="checkbox" name="features" value="price"><span class="rank" aria-hidden="true"></span><span class="f-text"><b>Low price</b></span></label>
+        </div>
+
+        <div class="picked" id="picked" hidden>
+          <h3 class="picked-title" id="picked-title">Your order</h3>
+          <ol class="picked-list" id="picked-list" aria-labelledby="picked-title"></ol>
+        </div>
+        <p class="sr-only" id="picked-live" aria-live="polite"></p>
+
+        <div class="field field-wide">
+          <label for="f-other">Something missing? <span class="opt">optional</span></label>
+          <input class="input" id="f-other" name="otherFeature" type="text" maxlength="300" placeholder="A feature you'd want that isn't listed">
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <!-- EDIT: the install question. -->
+        <legend>Would you install it yourself? <span class="opt">optional</span></legend>
+        <p class="help">Installing means taking off the center console trim and plugging in a harness.</p>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="install" value="yes"><span>Yes, I'm happy to</span></label>
+          <label class="chip"><input type="radio" name="install" value="help"><span>With a guide or video</span></label>
+          <label class="chip"><input type="radio" name="install" value="no"><span>I'd want someone to do it</span></label>
+        </div>
+      </fieldset>
+
+      <div class="field field-wide">
+        <label for="f-notes">Anything else? <span class="opt">optional</span></label>
+        <textarea class="input" id="f-notes" name="notes" rows="4" maxlength="2000" placeholder="How you use your Ocean, what annoys you about the stock screen, questions for us…"></textarea>
+      </div>
+
+      <div class="hp" aria-hidden="true">
+        <label for="f-website">Leave this empty</label>
+        <input id="f-website" name="website" type="text" tabindex="-1" autocomplete="off">
+      </div>
+
+      <label class="consent">
+        <input type="checkbox" name="consent" id="f-consent" required>
+        <span>Ocean Live may email me about the Nova beta. My answers are only used to plan Nova and pick testers, and are never shared. <a href="https://oceanlive.org/privacy">Privacy policy</a>.</span>
+      </label>
+
+      <div class="submit-row">
+        <button class="btn btn-primary" type="submit">Sign up for the beta</button>
+        <p class="status" id="status" role="status" aria-live="polite" tabindex="-1"></p>
+      </div>
+    </form>
+    <p class="nojs">The sign-up form needs JavaScript. You can also write to <a href="mailto:support@oceanlive.org?subject=Nova%20beta">support@oceanlive.org</a> with your top five features.</p>
+  </section>
+
+  <!-- EDIT: the questions and answers. -->
+  <section class="about" aria-labelledby="faq-title">
+    <h2 id="faq-title" class="section-title">Questions</h2>
+    <h3>What does a beta tester do?</h3>
+    <p>Fit an early Nova unit in your Ocean, use it day to day, and tell us what works and what doesn't. We'll pick testers from the sign-ups in small batches.</p>
+    <h3>Does signing up mean I'll get a unit?</h3>
+    <p>No. It tells us you're interested and what you care about. If we pick you, we'll email you with the details first, and you can still say no.</p>
+    <h3>What happens to my answers?</h3>
+    <p>They're kept so we can plan Nova and contact you about the beta, and nothing else. Signing up again with the same email replaces your earlier answer. To be removed, write to <a href="mailto:support@oceanlive.org">support@oceanlive.org</a>.</p>
+  </section>
+</div>
+</main>
+
+<footer class="foot wrap">
+  <a href="https://oceanlive.org/">oceanlive.org</a>
+  <a href="https://oceanlive.org/privacy">Privacy</a>
+  <a href="https://status.oceanlive.org/">Status</a>
+  <a href="mailto:support@oceanlive.org">Contact</a>
+</footer>
+</body>
+</html>

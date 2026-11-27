@@ -1,0 +1,38 @@
+// Ocean Live Hardware: the Nova beta tester sign-up at hardware.oceanlive.org.
+// Its own Worker and database, so sign-ups are kept apart from the mailing list and the app server.
+{
+  "name": "ocean-live-hardware",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "hardware.oceanlive.org", "custom_domain": true }],
+
+  // The page (public/) is served as static files; /api/* always runs the Worker.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // The answers. The id stays a placeholder here: the Cloudflare build fills it in from the build
+  // variable HARDWARE_D1_ID (scripts/fill-ids.mjs).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ocean-live-hardware",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "vars": {
+    // Sign-ups allowed per network (hashed IP) per hour, to slow down spam.
+    "PER_IP_PER_HOUR": "5",
+    // Set to "true" to close the form: the page then says sign-ups are closed and the API refuses new ones.
+    "CLOSED": "false"
+  }
+  // Secret, set with: npx wrangler secret put ADMIN_TOKEN
+  //   ADMIN_TOKEN  a long random string; GET /api/responses with "Authorization: Bearer <it>"
+  //                downloads every answer as CSV (or JSON with ?format=json).
+}

@@ -1,0 +1,20 @@
+{
+  "name": "ocean-live-hardware",
+  "private": true,
+  "description": "Nova hardware beta tester sign-up at hardware.oceanlive.org: who wants to test, and the five features that matter most to them.",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "deploy": "wrangler deploy",
+    "cf:build": "npm run check && npm test && node scripts/fill-ids.mjs",
+    "cf:deploy": "node scripts/fill-ids.mjs && wrangler d1 migrations apply ocean-live-hardware --remote && wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.2",
+    "@cloudflare/workers-types": "^5.20261114.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.162.0"
+  }
+}

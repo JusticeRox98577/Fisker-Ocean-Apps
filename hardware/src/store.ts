@@ -1,0 +1,156 @@
+/** Saving and reading answers in D1. */
+import { MAX_FEATURES, type SignUp } from "./form";
+
+export interface Row {
+  email: string;
+  name: string;
+  region: string;
+  car: string;
+  phone: string;
+  products: string[];
+  features: string[];
+  otherFeature: string;
+  install: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface DbRow {
+  email: string;
+  name: string;
+  region: string;
+  car: string;
+  phone: string;
+  products: string;
+  features: string;
+  other_feature: string;
+  install: string;
+  notes: string;
+  created_at: number;
+  updated_at: number;
+}
+
+/** Saves an answer. Signing up again with the same address replaces the earlier answer. */
+export async function saveSignUp(db: D1Database, s: SignUp, now: number): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO responses (email, name, region, car, phone, products, features, other_feature, install, notes, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)
+       ON CONFLICT(email) DO UPDATE SET
+         name = excluded.name, region = excluded.region, car = excluded.car, phone = excluded.phone,
+         products = excluded.products, features = excluded.features, other_feature = excluded.other_feature,
+         install = excluded.install, notes = excluded.notes, updated_at = excluded.updated_at`,
+    )
+    .bind(
+      s.email, s.name, s.region, s.car, s.phone,
+      JSON.stringify(s.products), JSON.stringify(s.features),
+      s.otherFeature, s.install, s.notes, now,
+    )
+    .run();
+}
+
+function list(v: string): string[] {
+  try {
+    const a = JSON.parse(v);
+    return Array.isArray(a) ? a.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function allRows(db: D1Database): Promise<Row[]> {
+  const { results } = await db.prepare("SELECT * FROM responses ORDER BY created_at").all<DbRow>();
+  return results.map((r) => ({
+    email: r.email,
+    name: r.name,
+    region: r.region,
+    car: r.car,
+    phone: r.phone,
+    products: list(r.products),
+    features: list(r.features),
+    otherFeature: r.other_feature,
+    install: r.install,
+    notes: r.notes,
+    createdAt: new Date(r.created_at).toISOString(),
+    updatedAt: new Date(r.updated_at).toISOString(),
+  }));
+}
+
+export async function deleteSignUp(db: D1Database, email: string): Promise<boolean> {
+  const r = await db.prepare("DELETE FROM responses WHERE email = ?1").bind(email.trim().toLowerCase()).run();
+  return (r.meta.changes ?? 0) > 0;
+}
+
+export interface Tally {
+  feature: string;
+  /** How many people picked it at all. */
+  picks: number;
+  /** How many put it first. */
+  first: number;
+  /** 5 points for 1st place, 4 for 2nd ... 1 for 5th. */
+  points: number;
+}
+
+/** Which features matter most, across everyone. Highest points first. */
+export function tally(rows: Row[]): { responses: number; features: Tally[]; products: Record<string, number> } {
+  const byFeature = new Map<string, Tally>();
+  const products: Record<string, number> = {};
+  for (const r of rows) {
+    r.features.slice(0, MAX_FEATURES).forEach((f, i) => {
+      const t = byFeature.get(f) ?? { feature: f, picks: 0, first: 0, points: 0 };
+      t.picks += 1;
+      t.points += MAX_FEATURES - i;
+      if (i === 0) t.first += 1;
+      byFeature.set(f, t);
+    });
+    for (const p of r.products) products[p] = (products[p] ?? 0) + 1;
+  }
+  const features = [...byFeature.values()].sort(
+    (a, b) => b.points - a.points || b.first - a.first || a.feature.localeCompare(b.feature),
+  );
+  return { responses: rows.length, features, products };
+}
+
+/** CSV for a spreadsheet. Cells that a spreadsheet would run as a formula are prefixed with '. */
+export function toCsv(rows: Row[]): string {
+  const head = [
+    "email", "name", "region", "car", "phone", "products",
+    ...Array.from({ length: MAX_FEATURES }, (_, i) => `feature_${i + 1}`),
+    "other_feature", "install", "notes", "created_at", "updated_at",
+  ];
+  const cell = (v: string) => {
+    let s = v;
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [head.join(",")];
+  for (const r of rows) {
+    const feats = Array.from({ length: MAX_FEATURES }, (_, i) => r.features[i] ?? "");
+    lines.push(
+      [r.email, r.name, r.region, r.car, r.phone, r.products.join(" "), ...feats, r.otherFeature, r.install, r.notes, r.createdAt, r.updatedAt]
+        .map(cell)
+        .join(","),
+    );
+  }
+  return lines.join("\r\n") + "\r\n";
+}
+
+/** Fixed-window counter; returns the count including this one. */
+export async function bump(db: D1Database, key: string, windowMs: number, now: number): Promise<number> {
+  const row = await db
+    .prepare(
+      `INSERT INTO counters (key, count, reset_at) VALUES (?1, 1, ?2)
+       ON CONFLICT(key) DO UPDATE SET
+         count = CASE WHEN reset_at <= ?3 THEN 1 ELSE count + 1 END,
+         reset_at = CASE WHEN reset_at <= ?3 THEN ?2 ELSE reset_at END
+       RETURNING count`,
+    )
+    .bind(key, now + windowMs, now)
+    .first<{ count: number }>();
+  return row?.count ?? 1;
+}
+
+export async function cleanupCounters(db: D1Database, now: number): Promise<void> {
+  await db.prepare("DELETE FROM counters WHERE reset_at <= ?1").bind(now).run();
+}

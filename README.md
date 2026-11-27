@@ -13,6 +13,7 @@ to A Better Route Planner if you set that up.
 | `ask-proxy` | The app server (Cloudflare Worker): "Any questions?", accounts, and the web account page at account.oceanlive.org. See [ask-proxy/README.md](ask-proxy/README.md) |
 | `site` | The website, [oceanlive.org](https://oceanlive.org). See [site/README.md](site/README.md) |
 | `status` | The status page at status.oceanlive.org. See [status/README.md](status/README.md) |
+| `hardware` | The Nova hardware beta tester sign-up at hardware.oceanlive.org. See [hardware/README.md](hardware/README.md) |
 | `mail` | Private webmail for the oceanlive.org mailboxes, and the news mailing list. See [mail/README.md](mail/README.md) |
 
 Both phone apps have the same features and decode the car the same way; their unit tests
