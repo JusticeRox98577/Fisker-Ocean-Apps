@@ -43,12 +43,13 @@ interface ReleaseRow {
 
 /** A .nova image (fw/lib/novaboot): owner-signed, for the named chip. Returns its version or an error. */
 export function checkNova(img: Uint8Array, target: Target, ownerPub: Uint8Array): number | string {
-  if (img.length < 0x100 + 8 || u32(img, 0) !== 0x4d49564e || img[4] !== 1) return "That isn't a signed Nova image (.nova).";
+  if (img.length < 0x200 + 8 || u32(img, 0) !== 0x4d49564e || img[4] !== 1) return "That isn't a signed Nova image (.nova).";
   if (img[5] !== FW_TARGET[target]) return `That image is for the ${CHIP[img[5]] ?? "?"}.`;
   if (img[6] !== 0) return "That image is signed with a developer key. Releases must be signed with the owner key.";
   const size = u32(img, 12);
-  if (img.length !== 0x100 + size) return "The image size doesn't match its header.";
-  const digest = blake2b(new Uint8Array([...img.slice(0, 64), ...img.slice(0x100)]), { dkLen: 64 });
+  const area = img[5] === 3 ? 0x200 : 0x100; // header area: 0x200 on the nRF9151 (TF-M alignment)
+  if (img.length !== area + size) return "The image size doesn't match its header.";
+  const digest = blake2b(new Uint8Array([...img.slice(0, 64), ...img.slice(area)]), { dkLen: 64 });
   if (!eddsa.verify(img.slice(64, 128), digest, ownerPub)) return "The signature doesn't match the owner key.";
   return u32(img, 8);
 }

@@ -41,8 +41,9 @@ function nova(target: number, version: number, signer = 0, key = owner, codeLen 
   dv.setUint32(0, 0x4d49564e, true); h[4] = 1; h[5] = target; h[6] = signer;
   dv.setUint32(8, version, true); dv.setUint32(12, code.length, true);
   const sig = eddsa.sign(blake2b(new Uint8Array([...h, ...code]), { dkLen: 64 }), key);
-  const out = new Uint8Array(0x100 + code.length);
-  out.set(h); out.set(sig, 64); out.set(code, 0x100);
+  const area = target === 3 ? 0x200 : 0x100;
+  const out = new Uint8Array(area + code.length);
+  out.set(h); out.set(sig, 64); out.set(code, area);
   return out;
 }
 
