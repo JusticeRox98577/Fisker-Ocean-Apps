@@ -701,4 +701,11 @@
     <string name="nova_why_car">the car refused it</string>
     <string name="nova_forget">Forget this car</string>
     <string name="nova_error">Couldn\'t reach the server: %1$s</string>
+
+    <!-- start page: OBD or Nova -->
+    <string name="home_title" translatable="false">Ocean Live</string>
+    <string name="home_obd_title">OBD</string>
+    <string name="home_obd_body">Live data, battery, trips and fault codes through your OBD adapter.</string>
+    <string name="home_nova_title">Nova</string>
+    <string name="home_nova_body">Your Nova: lock, unlock and climate from your phone, and your car\'s status.</string>
 </resources>

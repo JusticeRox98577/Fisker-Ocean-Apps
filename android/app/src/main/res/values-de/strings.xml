@@ -694,4 +694,10 @@
     <string name="nova_why_car">vom Auto abgelehnt</string>
     <string name="nova_forget">Dieses Auto vergessen</string>
     <string name="nova_error">Server nicht erreichbar: %1$s</string>
+
+    <!-- start page: OBD or Nova -->
+    <string name="home_obd_title">OBD</string>
+    <string name="home_obd_body">Live-Daten, Batterie, Fahrten und Fehlercodes über deinen OBD-Adapter.</string>
+    <string name="home_nova_title">Nova</string>
+    <string name="home_nova_body">Deine Nova: verriegeln, entriegeln und Klima vom Handy aus, und der Zustand deines Autos.</string>
 </resources>

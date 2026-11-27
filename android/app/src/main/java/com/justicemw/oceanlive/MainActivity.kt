@@ -100,6 +100,8 @@ import com.justicemw.oceanlive.ui.LocalLandscape
 import com.justicemw.oceanlive.ui.OceanBrush
 import com.justicemw.oceanlive.ui.SettingsScreen
 import com.justicemw.oceanlive.ui.SignInScreen
+import com.justicemw.oceanlive.ui.NovaScreen
+import com.justicemw.oceanlive.ui.StartScreen
 import com.justicemw.oceanlive.ui.SupportScreen
 import com.justicemw.oceanlive.ui.TipBanner
 import com.justicemw.oceanlive.ui.TripsScreen
@@ -159,6 +161,9 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
     val v12Misses by Car.v12Misses.collectAsState()
     val importedCount by Car.importedDescriptions.collectAsState()
     val v12 by Car.v12.collectAsState()
+    // The app opens on a choice: the OBD dashboard, or Nova. Back returns to it.
+    var section by rememberSaveable { mutableStateOf<String?>(null) }
+    BackHandler(enabled = section != null) { section = null }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     // The 12V battery screen, opened from the Battery tab or the Live 12V tile.
     var show12v by rememberSaveable { mutableStateOf(false) }
@@ -250,6 +255,13 @@ private fun App(keepScreenOn: (Boolean) -> Unit) {
         if (showSupport) {
             Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
                 SupportScreen(tips, onBuy = { activity, id -> TipJar.buy(activity, id) }, onRetry = { TipJar.load() }, onBack = closeSupport)
+            }
+            return@BoxWithConstraints
+        }
+        if (section == null || section == "nova") {
+            Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
+                if (section == null) StartScreen(onObd = { section = "obd" }, onNova = { section = "nova" })
+                else NovaScreen(onBack = { section = null })
             }
             return@BoxWithConstraints
         }

@@ -713,4 +713,10 @@
     <string name="nova_why_car">el coche la rechazó</string>
     <string name="nova_forget">Olvidar este coche</string>
     <string name="nova_error">No se pudo conectar con el servidor: %1$s</string>
+
+    <!-- start page: OBD or Nova -->
+    <string name="home_obd_title">OBD</string>
+    <string name="home_obd_body">Datos en directo, batería, viajes y códigos de avería con tu adaptador OBD.</string>
+    <string name="home_nova_title">Nova</string>
+    <string name="home_nova_body">Tu Nova: bloquear, desbloquear y clima desde el teléfono, y el estado de tu coche.</string>
 </resources>

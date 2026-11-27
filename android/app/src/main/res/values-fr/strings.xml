@@ -713,4 +713,10 @@
     <string name="nova_why_car">la voiture l’a refusée</string>
     <string name="nova_forget">Oublier cette voiture</string>
     <string name="nova_error">Serveur injoignable : %1$s</string>
+
+    <!-- start page: OBD or Nova -->
+    <string name="home_obd_title">OBD</string>
+    <string name="home_obd_body">Données en direct, batterie, trajets et codes défaut via votre adaptateur OBD.</string>
+    <string name="home_nova_title">Nova</string>
+    <string name="home_nova_body">Votre Nova : verrouillage, déverrouillage et climatisation depuis votre téléphone, et l’état de votre voiture.</string>
 </resources>

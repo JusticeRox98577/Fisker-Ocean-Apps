@@ -51,7 +51,6 @@ fun SettingsScreen(
 ) {
     if (com.justicemw.oceanlive.car.Accounts.required) AccountSection()
     SupportRow(onSupport)
-    NovaSection()
     SectionTitle(stringResource(R.string.settings_car))
     Card {
         CarModel.entries.forEach { m ->

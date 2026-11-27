@@ -694,4 +694,10 @@
     <string name="nova_why_car">de auto weigerde het</string>
     <string name="nova_forget">Deze auto vergeten</string>
     <string name="nova_error">Server niet bereikbaar: %1$s</string>
+
+    <!-- start page: OBD or Nova -->
+    <string name="home_obd_title">OBD</string>
+    <string name="home_obd_body">Live gegevens, accu, ritten en foutcodes via je OBD-adapter.</string>
+    <string name="home_nova_title">Nova</string>
+    <string name="home_nova_body">Je Nova: vergrendelen, ontgrendelen en klimaat vanaf je telefoon, en de status van je auto.</string>
 </resources>
