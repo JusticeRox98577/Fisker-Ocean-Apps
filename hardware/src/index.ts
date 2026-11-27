@@ -200,9 +200,11 @@ export default {
           return await fn(env, body, now);
         }
         case "/api/box/pair/poll":
+          if (req.method !== "GET") return wrongMethod("GET");
+          return await box.pairPoll(env, url.searchParams.get("code") ?? "", url.searchParams.get("secret") ?? "", now);
         case "/api/box/pair/status":
           if (req.method !== "GET") return wrongMethod("GET");
-          return await box.pairPoll(env, url.searchParams.get("code") ?? "", now);
+          return await box.pairStatus(env, url.searchParams.get("code") ?? "", now);
         case "/api/box/status":
           if (req.method !== "GET") return wrongMethod("GET");
           return await box.status(env, url, now);

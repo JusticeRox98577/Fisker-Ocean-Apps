@@ -686,6 +686,7 @@
     <string name="nova_pair">Pair this phone</string>
     <string name="nova_waiting">Waiting for approval on the car screen…</string>
     <string name="nova_refused">Pairing was refused in the car.</string>
+    <string name="nova_expired">That code has expired. Start again on the car screen.</string>
     <string name="nova_lock">Lock</string>
     <string name="nova_unlock">Unlock</string>
     <string name="nova_climate_on">Climate on</string>

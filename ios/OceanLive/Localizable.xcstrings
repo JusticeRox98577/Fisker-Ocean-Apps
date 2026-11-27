@@ -16482,6 +16482,34 @@
           }
         }
       }
+    },
+    "That code has expired. Start again on the car screen.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Code ist abgelaufen. Starte am Autobildschirm neu."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ese código ha caducado. Vuelve a empezar en la pantalla del coche."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce code a expiré. Recommencez sur l’écran de la voiture."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die code is verlopen. Begin opnieuw op het autoscherm."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

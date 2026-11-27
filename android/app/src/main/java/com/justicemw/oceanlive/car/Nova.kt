@@ -73,6 +73,11 @@ class NovaPhone(private val context: Context) {
     val uid: String? get() = prefs.getString("uid", null)
     val slot: Int get() = prefs.getInt("slot", -1)
     val paired get() = uid != null && slot >= 0
+    /** The code this phone sent and is waiting on (kept across launches, so a wait is never lost). */
+    val pendingCode: String? get() = prefs.getString("pendingCode", null)
+
+    /** An answer from the server that isn't 2xx. */
+    class ServerError(val code: Int, message: String) : Exception(message)
 
     private fun aes(): SecretKey {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -113,9 +118,12 @@ class NovaPhone(private val context: Context) {
         }
         val ok = c.responseCode in 200..299
         val j = JSONObject((if (ok) c.inputStream else c.errorStream)?.bufferedReader()?.readText() ?: "{}")
-        if (!ok) throw IllegalStateException(j.optString("error", "HTTP ${c.responseCode}"))
+        if (!ok) throw ServerError(c.responseCode, j.optString("error", "HTTP ${c.responseCode}"))
         return j
     }
+
+    /** Stop waiting on the code (the car screen can start a new one). */
+    fun cancelPairing() = prefs.edit().remove("pendingCode").apply()
 
     /** Send this phone's key for the code on the car screen. */
     fun requestPairing(code: String) {
@@ -125,10 +133,16 @@ class NovaPhone(private val context: Context) {
         prefs.edit().putString("pendingCode", code.trim().uppercase().replace(" ", "")).apply()
     }
 
-    /** "waiting", "requested", "paired" or "refused"; on "paired" the car and slot are kept. */
+    /** "waiting", "requested", "paired", "refused", "expired" or "none"; on "paired" the car and slot are kept. */
     fun pairingStatus(): String {
-        val code = prefs.getString("pendingCode", null) ?: return if (paired) "paired" else "none"
-        val j = call("/api/box/pair/status?code=$code")
+        val code = pendingCode ?: return if (paired) "paired" else "none"
+        val j = try {
+            call("/api/box/pair/status?code=$code")
+        } catch (e: ServerError) {
+            if (e.code != 404) throw e
+            cancelPairing()
+            return "expired"
+        }
         val st = j.getString("status")
         if (st == "paired") {
             prefs.edit().putString("uid", j.getString("uid")).putInt("slot", j.getInt("slot")).remove("pendingCode").apply()

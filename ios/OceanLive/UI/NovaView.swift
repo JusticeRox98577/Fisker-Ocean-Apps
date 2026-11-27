@@ -48,7 +48,6 @@ struct NovaView: View {
     @StateObject private var phone = NovaPhone.shared
     @State private var code = ""
     @State private var message: String?
-    @State private var waiting = false
 
     var body: some View {
         ScrollView {
@@ -72,14 +71,16 @@ struct NovaView: View {
         }
         .background(Theme.background.ignoresSafeArea())
         .task(id: phone.paired) { if phone.paired { await run { try await phone.refresh() } } }
-        .task(id: waiting) {
-            while waiting && !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(2))
+        // while a code is pending (also after leaving the page or the app), ask every 2 seconds
+        .task(id: phone.pendingCode) {
+            while phone.pendingCode != nil && !Task.isCancelled {
                 switch (try? await phone.pairingStatus()) ?? "" {
-                case "paired": waiting = false; message = nil
-                case "refused": waiting = false; message = String(localized: "Pairing was refused in the car.")
+                case "paired": message = nil
+                case "refused": message = String(localized: "Pairing was refused in the car.")
+                case "expired": message = String(localized: "That code has expired. Start again on the car screen.")
                 default: break
                 }
+                try? await Task.sleep(for: .seconds(2))
             }
         }
     }
@@ -94,14 +95,19 @@ struct NovaView: View {
                 .font(.system(size: 20, design: .monospaced))
                 .padding(12)
                 .background(Theme.track, in: RoundedRectangle(cornerRadius: 12))
-            GradientButton(title: String(localized: "Pair this phone"),
-                           enabled: code.filter { $0.isLetter || $0.isNumber }.count == 8 && !waiting) {
-                Task {
-                    if await run({ try await phone.requestPairing(code: code) }) {
-                        waiting = true
-                        message = String(localized: "Waiting for approval on the car screen…")
+            if phone.pendingCode == nil {
+                GradientButton(title: String(localized: "Pair this phone"),
+                               enabled: code.filter { $0.isLetter || $0.isNumber }.count == 8) {
+                    Task {
+                        if await run({ try await phone.requestPairing(code: code) }) { message = nil }
                     }
                 }
+            } else {
+                HStack(spacing: 10) {
+                    ProgressView().tint(Theme.aqua)
+                    Text("Waiting for approval on the car screen…").font(.system(size: 14)).foregroundStyle(.white)
+                }
+                GhostButton(title: String(localized: "Cancel"), color: Theme.dim) { phone.cancelPairing() }
             }
         }
     }

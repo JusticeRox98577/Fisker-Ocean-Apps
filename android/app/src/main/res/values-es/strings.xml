@@ -698,6 +698,7 @@
     <string name="nova_pair">Vincular este teléfono</string>
     <string name="nova_waiting">Esperando la aprobación en el coche…</string>
     <string name="nova_refused">La vinculación se rechazó en el coche.</string>
+    <string name="nova_expired">Ese código ha caducado. Vuelve a empezar en la pantalla del coche.</string>
     <string name="nova_lock">Bloquear</string>
     <string name="nova_unlock">Desbloquear</string>
     <string name="nova_climate_on">Clima encendido</string>

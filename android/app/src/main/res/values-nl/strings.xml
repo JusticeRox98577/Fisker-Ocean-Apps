@@ -679,6 +679,7 @@
     <string name="nova_pair">Deze telefoon koppelen</string>
     <string name="nova_waiting">Wachten op goedkeuring in de auto…</string>
     <string name="nova_refused">Koppelen is in de auto geweigerd.</string>
+    <string name="nova_expired">Die code is verlopen. Begin opnieuw op het autoscherm.</string>
     <string name="nova_lock">Vergrendelen</string>
     <string name="nova_unlock">Ontgrendelen</string>
     <string name="nova_climate_on">Klimaat aan</string>

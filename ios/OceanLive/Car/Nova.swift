@@ -78,12 +78,15 @@ final class NovaPhone: ObservableObject {
     @Published private(set) var uid: String?
     @Published private(set) var slot: Int
     @Published var status: Status?
+    /// The code this phone sent and is waiting on (kept across launches, so a wait is never lost).
+    @Published private(set) var pendingCode: String?
 
     var paired: Bool { uid != nil && slot >= 0 }
 
     private init() {
         uid = defaults.string(forKey: "nova.uid")
         slot = defaults.object(forKey: "nova.slot") as? Int ?? -1
+        pendingCode = defaults.string(forKey: "nova.pendingCode")
     }
 
     /// The phone's key, made on first use.
@@ -100,7 +103,12 @@ final class NovaPhone: ObservableObject {
 
     enum NovaError: LocalizedError {
         case message(String)
-        var errorDescription: String? { if case .message(let m) = self { return m }; return nil }
+        case server(Int, String)
+        var errorDescription: String? {
+            switch self {
+            case .message(let m), .server(_, let m): return m
+            }
+        }
     }
 
     private func call(_ path: String, body: [String: Any]? = nil) async throws -> [String: Any] {
@@ -115,7 +123,7 @@ final class NovaPhone: ObservableObject {
         let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         let code = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(code) else {
-            throw NovaError.message(json["error"] as? String ?? "HTTP \(code)")
+            throw NovaError.server(code, json["error"] as? String ?? "HTTP \(code)")
         }
         return json
     }
@@ -132,22 +140,36 @@ final class NovaPhone: ObservableObject {
             "phonePub": NovaCommands.hex(try key().publicKey.rawRepresentation),
             "phoneName": String(UIDevice.current.name.prefix(40)),
         ])
-        defaults.set(c, forKey: "nova.pendingCode")
+        setPending(c)
     }
 
-    /// "waiting", "requested", "paired", "refused" or "none"; on "paired" the car and slot are kept.
+    private func setPending(_ c: String?) {
+        if let c { defaults.set(c, forKey: "nova.pendingCode") } else { defaults.removeObject(forKey: "nova.pendingCode") }
+        pendingCode = c
+    }
+
+    /// Stop waiting on the code (the car screen can start a new one).
+    func cancelPairing() { setPending(nil) }
+
+    /// "waiting", "requested", "paired", "refused", "expired" or "none"; on "paired" the car and slot are kept.
     func pairingStatus() async throws -> String {
-        guard let code = defaults.string(forKey: "nova.pendingCode") else { return paired ? "paired" : "none" }
-        let j = try await call("/api/box/pair/status?code=\(code)")
+        guard let code = pendingCode else { return paired ? "paired" : "none" }
+        let j: [String: Any]
+        do {
+            j = try await call("/api/box/pair/status?code=\(code)")
+        } catch NovaError.server(404, _) {
+            setPending(nil)
+            return "expired"
+        }
         let st = j["status"] as? String ?? "waiting"
-        if st == "paired", let u = j["uid"] as? String, let s = j["slot"] as? Int {
+        if st == "paired", let u = j["uid"] as? String, let s = (j["slot"] as? NSNumber)?.intValue {
             defaults.set(u, forKey: "nova.uid")
             defaults.set(s, forKey: "nova.slot")
-            defaults.removeObject(forKey: "nova.pendingCode")
             uid = u
             slot = s
+            setPending(nil)
         } else if st == "refused" {
-            defaults.removeObject(forKey: "nova.pendingCode")
+            setPending(nil)
         }
         return st
     }
@@ -178,6 +200,7 @@ final class NovaPhone: ObservableObject {
 
     func forget() {
         for k in ["nova.uid", "nova.slot", "nova.pendingCode"] { defaults.removeObject(forKey: k) }
+        pendingCode = nil
         uid = nil
         slot = -1
         status = nil

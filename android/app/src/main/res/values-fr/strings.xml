@@ -698,6 +698,7 @@
     <string name="nova_pair">Associer ce téléphone</string>
     <string name="nova_waiting">En attente d’approbation dans la voiture…</string>
     <string name="nova_refused">L’association a été refusée dans la voiture.</string>
+    <string name="nova_expired">Ce code a expiré. Recommencez sur l’écran de la voiture.</string>
     <string name="nova_lock">Verrouiller</string>
     <string name="nova_unlock">Déverrouiller</string>
     <string name="nova_climate_on">Climatisation marche</string>

@@ -679,6 +679,7 @@
     <string name="nova_pair">Dieses Handy koppeln</string>
     <string name="nova_waiting">Warte auf Bestätigung im Auto…</string>
     <string name="nova_refused">Die Kopplung wurde im Auto abgelehnt.</string>
+    <string name="nova_expired">Dieser Code ist abgelaufen. Starte am Autobildschirm neu.</string>
     <string name="nova_lock">Verriegeln</string>
     <string name="nova_unlock">Entriegeln</string>
     <string name="nova_climate_on">Klima an</string>

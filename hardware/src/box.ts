@@ -5,9 +5,10 @@
  *   POST /api/box/checkin { uid, fw, lat, lon, fix, rsrp, gear, speed, ignition, v12, phones, counter, cmd: [action, result] }
  *        -> { commands: [hex] }   signed commands for this car that are still valid and not used yet
  * The Nova screen (compute module), to pair a phone:
- *   POST /api/box/pair/start { uid }        -> { code, expiresIn }   shown on the car screen
- *   GET  /api/box/pair/poll?code=           -> { status, phoneName, phonePub }
- *   POST /api/box/pair/finish { code, slot } (slot from the nRF9151, or refused: true)
+ *   POST /api/box/pair/start { uid }        -> { code, secret, expiresIn }   the code is shown on screen;
+ *                                              the secret never leaves the car screen
+ *   GET  /api/box/pair/poll?code=&secret=   -> { status, phoneName, phonePub }
+ *   POST /api/box/pair/finish { code, secret, slot } (slot from the nRF9151, or refused: true)
  * The phone (Ocean Live app):
  *   POST /api/box/pair/request { code, phonePub, phoneName } -> { uid }
  *   GET  /api/box/pair/status?code=         -> { status, slot, uid }
@@ -20,7 +21,7 @@
 import { ed25519 } from "@noble/curves/ed25519";
 import { hex, unhex } from "./dev";
 import type { Env } from "./env";
-import { json } from "./util";
+import { json, randomToken, sha256 } from "./util";
 
 const PAIR_MS = 10 * 60 * 1000;
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O, 1/I
@@ -73,37 +74,58 @@ export async function checkin(env: Env, b: Record<string, unknown>, now: number)
 export async function pairStart(env: Env, b: Record<string, unknown>, now: number): Promise<Response> {
   if (!uidOk(b.uid)) return json({ error: "uid" }, 400);
   const c = code();
-  await env.DB.prepare("INSERT INTO pairings (code, uid, created_at, expires_at) VALUES (?1, ?2, ?3, ?4)")
-    .bind(c, b.uid, now, now + PAIR_MS).run();
-  return json({ code: c, expiresIn: PAIR_MS / 1000 });
+  const secret = randomToken();
+  await env.DB.prepare("INSERT INTO pairings (code, uid, created_at, expires_at, secret_hash) VALUES (?1, ?2, ?3, ?4, ?5)")
+    .bind(c, b.uid, now, now + PAIR_MS, await sha256(secret)).run();
+  return json({ code: c, secret, expiresIn: PAIR_MS / 1000 });
+}
+
+/** Whether the caller is the car screen that started this pairing. */
+async function fromCarScreen(p: { secret_hash: string | null }, secret: unknown): Promise<boolean> {
+  return typeof secret === "string" && secret.length > 0 && p.secret_hash !== null && (await sha256(secret)) === p.secret_hash;
 }
 
 async function pairing(env: Env, c: unknown, now: number) {
   if (typeof c !== "string" || !/^[A-Z2-9]{8}$/.test(c)) return null;
   return env.DB.prepare("SELECT * FROM pairings WHERE code = ?1 AND expires_at > ?2").bind(c, now)
-    .first<{ code: string; uid: string; status: string; phone_pub: string | null; phone_name: string | null; slot: number | null }>();
+    .first<{ code: string; uid: string; status: string; phone_pub: string | null; phone_name: string | null; slot: number | null; secret_hash: string | null }>();
 }
 
 export async function pairRequest(env: Env, b: Record<string, unknown>, now: number): Promise<Response> {
   const p = await pairing(env, String(b.code ?? "").toUpperCase().replace(/[^A-Z0-9]/g, ""), now);
-  if (!p || p.status !== "waiting") return json({ error: "That code isn't valid or has expired. Start again on the car screen." }, 404);
+  if (!p) return json({ error: "That code isn't valid or has expired. Start again on the car screen." }, 404);
   const pub = unhex(b.phonePub);
   if (!pub || pub.length !== 32) return json({ error: "phonePub" }, 400);
+  // the same phone asking again (it lost track, or was reinstalled mid-pairing) just gets the answer again
+  if (p.status !== "waiting") {
+    if (p.phone_pub === hex(pub)) return json({ ok: true, uid: p.uid });
+    return json({ error: "That code has been used. Start again on the car screen." }, 404);
+  }
   const name = String(b.phoneName ?? "Phone").slice(0, 40);
   await env.DB.prepare("UPDATE pairings SET status = 'requested', phone_pub = ?2, phone_name = ?3 WHERE code = ?1")
     .bind(p.code, hex(pub), name).run();
   return json({ ok: true, uid: p.uid });
 }
 
-export async function pairPoll(env: Env, c: string, now: number): Promise<Response> {
+/** The car screen: who is asking to pair (needs the secret from pair/start). */
+export async function pairPoll(env: Env, c: string, secret: string, now: number): Promise<Response> {
   const p = await pairing(env, c, now);
   if (!p) return json({ error: "expired" }, 404);
+  if (!(await fromCarScreen(p, secret))) return json({ error: "Not the car screen that started this pairing." }, 403);
   return json({ status: p.status, phoneName: p.phone_name, phonePub: p.phone_pub, slot: p.slot, uid: p.uid });
+}
+
+/** The phone: whether the car approved it. Says nothing about the phone. */
+export async function pairStatus(env: Env, c: string, now: number): Promise<Response> {
+  const p = await pairing(env, c, now);
+  if (!p) return json({ error: "That code has expired. Start again on the car screen." }, 404);
+  return json(p.status === "paired" ? { status: p.status, slot: p.slot, uid: p.uid } : { status: p.status });
 }
 
 export async function pairFinish(env: Env, b: Record<string, unknown>, now: number): Promise<Response> {
   const p = await pairing(env, b.code, now);
   if (!p || p.status !== "requested" || !p.phone_pub) return json({ error: "Nothing to finish." }, 404);
+  if (!(await fromCarScreen(p, b.secret))) return json({ error: "Not the car screen that started this pairing." }, 403);
   if (b.refused === true || !Number.isInteger(b.slot) || (b.slot as number) < 0 || (b.slot as number) > 3) {
     await env.DB.prepare("UPDATE pairings SET status = 'refused' WHERE code = ?1").bind(p.code).run();
     return json({ ok: true, status: "refused" });

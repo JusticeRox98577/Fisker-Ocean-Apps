@@ -40,10 +40,11 @@ fun NovaSection() {
     var code by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf<NovaPhone.Status?>(null) }
-    var waiting by remember { mutableStateOf(false) }
+    var waiting by remember { mutableStateOf(phone.pendingCode != null) } // also after leaving the page or the app
     val sentText = stringResource(R.string.nova_sent)
     val waitingText = stringResource(R.string.nova_waiting)
     val refusedText = stringResource(R.string.nova_refused)
+    val expiredText = stringResource(R.string.nova_expired)
     val errorText = stringResource(R.string.nova_error)
 
     suspend fun <T> io(block: () -> T): T? = try {
@@ -55,11 +56,13 @@ fun NovaSection() {
 
     LaunchedEffect(waiting) {
         while (waiting) {
-            delay(2000)
             when (io { phone.pairingStatus() }) {
                 "paired" -> { waiting = false; paired = true; message = null }
                 "refused" -> { waiting = false; message = refusedText }
+                "expired" -> { waiting = false; message = expiredText }
+                else -> if (phone.pendingCode == null) waiting = false
             }
+            if (waiting) delay(2000)
         }
     }
     LaunchedEffect(paired) { if (paired) status = io { phone.status() } }
@@ -73,11 +76,17 @@ fun NovaSection() {
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
-            GradientButton(stringResource(R.string.nova_pair), enabled = code.replace(" ", "").length == 8 && !waiting, onClick = {
-                scope.launch {
-                    if (io { phone.requestPairing(code) } != null) { waiting = true; message = waitingText }
-                }
-            }, modifier = Modifier.padding(top = 8.dp))
+            if (!waiting) {
+                GradientButton(stringResource(R.string.nova_pair), enabled = code.replace(" ", "").length == 8, onClick = {
+                    scope.launch {
+                        if (io { phone.requestPairing(code) } != null) { waiting = true; message = null }
+                    }
+                }, modifier = Modifier.padding(top = 8.dp))
+            } else {
+                Text(waitingText, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
+                GhostButton(stringResource(R.string.cancel), onClick = { phone.cancelPairing(); waiting = false; message = null },
+                    modifier = Modifier.padding(top = 8.dp))
+            }
         } else {
             val s = status
             if (s != null && s.lastSeen > 0) {

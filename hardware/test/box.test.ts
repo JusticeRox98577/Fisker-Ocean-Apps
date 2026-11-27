@@ -33,19 +33,37 @@ beforeEach(async () => {
 
 async function pair(): Promise<void> {
   const start = await call("/api/box/pair/start", { uid: UID });
-  const code = start.body.code;
+  const { code, secret } = start.body;
   expect(code).toMatch(/^[A-Z2-9]{8}$/);
-  expect((await call(`/api/box/pair/poll?code=${code}`)).body.status).toBe("waiting");
+  expect((await call(`/api/box/pair/poll?code=${code}&secret=${secret}`)).body.status).toBe("waiting");
   const req = await call("/api/box/pair/request", { code: code.toLowerCase().replace(/(....)/, "$1-"), phonePub: hex(ed25519.getPublicKey(phone)), phoneName: "Pixel" });
   expect(req.body.uid).toBe(UID);
-  const poll = (await call(`/api/box/pair/poll?code=${code}`)).body;
+  const poll = (await call(`/api/box/pair/poll?code=${code}&secret=${secret}`)).body;
   expect(poll).toMatchObject({ status: "requested", phoneName: "Pixel" });
   // the car screen: approved, the nRF9151 put the phone in slot 0
-  expect((await call("/api/box/pair/finish", { code, slot: 0 })).body.status).toBe("paired");
+  expect((await call("/api/box/pair/finish", { code, secret, slot: 0 })).body.status).toBe("paired");
   expect((await call(`/api/box/pair/status?code=${code}`)).body).toMatchObject({ status: "paired", slot: 0, uid: UID });
 }
 
 describe("SuperNova boxes", () => {
+  it("lets only the car screen that started a pairing see the request and approve it", async () => {
+    const { code, secret } = (await call("/api/box/pair/start", { uid: UID })).body;
+    const pub = hex(ed25519.getPublicKey(phone));
+    await call("/api/box/pair/request", { code, phonePub: pub, phoneName: "Pixel" });
+    // someone who only saw the code on screen
+    expect((await call(`/api/box/pair/poll?code=${code}`)).status).toBe(403);
+    expect((await call(`/api/box/pair/poll?code=${code}&secret=x${secret}`)).status).toBe(403);
+    expect((await call("/api/box/pair/finish", { code, slot: 0 })).status).toBe(403);
+    expect((await call("/api/box/pair/finish", { code, secret: "nope", slot: 0 })).status).toBe(403);
+    expect((await call(`/api/box/pair/status?code=${code}`)).body).toEqual({ status: "requested" });
+    // another phone can't take over the code; the same phone asking again is fine
+    expect((await call("/api/box/pair/request", { code, phonePub: hex(ed25519.getPublicKey(stranger)) })).status).toBe(404);
+    expect((await call("/api/box/pair/request", { code, phonePub: pub })).body.uid).toBe(UID);
+    expect((await call("/api/box/pair/finish", { code, secret, slot: 1 })).body.status).toBe("paired");
+    expect((await call("/api/box/pair/request", { code, phonePub: pub })).body.uid).toBe(UID);
+    expect((await call(`/api/box/pair/status?code=${code}`)).body).toEqual({ status: "paired", slot: 1, uid: UID });
+  });
+
   it("pairs a phone only through a code from the car screen", async () => {
     expect((await call("/api/box/pair/request", { code: "AAAAAAAA", phonePub: hex(ed25519.getPublicKey(phone)) })).status).toBe(404);
     await pair();
