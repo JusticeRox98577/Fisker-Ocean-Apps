@@ -13,3 +13,11 @@
 
 /icons/*
   Cache-Control: public, max-age=604800
+
+/admin*
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
+
+/invite*
+  X-Robots-Tag: noindex
+  Cache-Control: no-store

@@ -1,10 +1,48 @@
-import { SELF, env } from "cloudflare:test";
+import { SELF, createExecutionContext, env, waitOnExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
+import type { Env } from "../src/env";
 import { checkSignUp } from "../src/form";
+import worker from "../src/index";
 import { allRows, tally, toCsv, type Row } from "../src/store";
 
 const ORIGIN = "https://hardware.oceanlive.org";
-const ADMIN = "test-admin-token-0123456789abcdef";
+
+/** A fake Resend that keeps what it was asked to send. */
+function fakeResend() {
+  const sent: { to: string[]; subject: string; text: string; reply_to: string; from: string }[] = [];
+  const fn = (async (_url: RequestInfo | URL, init?: RequestInit) => {
+    sent.push(JSON.parse(String(init?.body)));
+    return Response.json({ id: `e${sent.length}` });
+  }) as typeof fetch;
+  return { fn, sent };
+}
+
+/** Calls the Worker with Resend faked; returns the response and what was emailed. */
+async function call(path: string, init: RequestInit & { cookie?: string } = {}, resend = fakeResend()) {
+  const e: Env = { ...env, RESEND_FETCH: resend.fn };
+  const headers = new Headers(init.headers);
+  if (init.body !== undefined) headers.set("Content-Type", "application/json");
+  if (init.cookie) headers.set("Cookie", init.cookie);
+  if (init.method === "POST") headers.set("Origin", ORIGIN);
+  const ctx = createExecutionContext();
+  const res = await worker.fetch(new Request(`${ORIGIN}${path}`, { ...init, headers }), e, ctx);
+  await waitOnExecutionContext(ctx);
+  return { res, sent: resend.sent };
+}
+
+/** Signs in the way the admin does: ask for a link, take it from the email, swap it for a cookie. */
+async function signIn(): Promise<string> {
+  const { res, sent } = await call("/api/admin/login", { method: "POST", body: "{}" });
+  expect(res.status).toBe(200);
+  expect(sent[0].to).toEqual(["justice@oceanlive.org"]);
+  const token = sent[0].text.match(/#login=([A-Za-z0-9_-]+)/)![1];
+  const s = await call("/api/admin/session", { method: "POST", body: JSON.stringify({ token }) });
+  expect(s.res.status).toBe(200);
+  const cookie = s.res.headers.get("Set-Cookie")!;
+  expect(cookie).toMatch(/HttpOnly/);
+  expect(cookie).toMatch(/SameSite=Strict/);
+  return cookie.split(";")[0];
+}
 
 const good = {
   email: "Owner@Example.com",
@@ -29,12 +67,9 @@ function post(body: unknown, headers: Record<string, string> = {}) {
   });
 }
 
-function admin(path: string, init: RequestInit = {}, token = ADMIN) {
-  return SELF.fetch(`${ORIGIN}${path}`, { ...init, headers: { Authorization: `Bearer ${token}` } });
-}
 
 beforeEach(async () => {
-  await env.DB.batch([env.DB.prepare("DELETE FROM responses"), env.DB.prepare("DELETE FROM counters")]);
+  await env.DB.batch(["responses", "counters", "sessions", "login_links"].map((t) => env.DB.prepare(`DELETE FROM ${t}`)));
 });
 
 describe("checking a sign-up", () => {
@@ -119,39 +154,176 @@ describe("POST /api/signup", () => {
   });
 });
 
-describe("the admin endpoints", () => {
-  it("need the token", async () => {
-    expect((await SELF.fetch(`${ORIGIN}/api/responses`)).status).toBe(401);
-    expect((await admin("/api/responses", {}, "wrong-token-wrong-token")).status).toBe(401);
+describe("admin sign-in", () => {
+  it("keeps the answers private without a session", async () => {
+    await post(good);
+    for (const path of ["/api/admin/responses", "/api/admin/responses?format=json", "/api/admin/responses?format=summary"]) {
+      expect((await SELF.fetch(`${ORIGIN}${path}`)).status).toBe(401);
+    }
+    expect((await call("/api/admin/pick", { method: "POST", body: JSON.stringify({ email: good.email }) })).res.status).toBe(401);
+    expect((await call("/api/admin/responses", { cookie: "__Host-olhw=made-up-session-token-123456" })).res.status).toBe(401);
   });
 
-  it("download the answers as CSV, JSON and a ranking", async () => {
+  it("only ever emails the admin address, and doesn't print it in full", async () => {
+    const { res, sent } = await call("/api/admin/login", { method: "POST", body: JSON.stringify({ email: "attacker@example.com" }) });
+    expect(sent.map((m) => m.to)).toEqual([["justice@oceanlive.org"]]);
+    expect(await res.json()).toEqual({ ok: true, to: "j••••••@oceanlive.org" });
+  });
+
+  it("uses each link once", async () => {
+    const { sent } = await call("/api/admin/login", { method: "POST", body: "{}" });
+    const token = sent[0].text.match(/#login=([A-Za-z0-9_-]+)/)![1];
+    expect((await call("/api/admin/session", { method: "POST", body: JSON.stringify({ token }) })).res.status).toBe(200);
+    expect((await call("/api/admin/session", { method: "POST", body: JSON.stringify({ token }) })).res.status).toBe(401);
+  });
+
+  it("limits sign-in emails", async () => {
+    for (let i = 0; i < 5; i++) expect((await call("/api/admin/login", { method: "POST", body: "{}" })).res.status).toBe(200);
+    expect((await call("/api/admin/login", { method: "POST", body: "{}" })).res.status).toBe(429);
+  });
+
+  it("signs out", async () => {
+    const cookie = await signIn();
+    expect((await call("/api/admin/responses", { cookie })).res.status).toBe(200);
+    await call("/api/admin/logout", { method: "POST", body: "{}", cookie });
+    expect((await call("/api/admin/responses", { cookie })).res.status).toBe(401);
+  });
+});
+
+describe("the admin page's data", () => {
+  it("downloads the answers as CSV, JSON and a ranking", async () => {
+    const cookie = await signIn();
     await post(good);
     await post({ ...good, email: "b@example.com", features: ["remote-status", "carplay"], notes: "=SUM(A1)" });
 
-    const csv = await admin("/api/responses");
-    expect(csv.status).toBe(200);
+    const csv = (await call("/api/admin/responses", { cookie })).res;
     expect(csv.headers.get("Content-Type")).toMatch(/text\/csv/);
     const text = await csv.text();
     expect(text.split("\r\n")[0]).toContain("feature_1,feature_2");
     expect(text).toContain("'=SUM(A1)");
     expect(text).toContain('"Line one\nLine two"');
 
-    const j = await admin("/api/responses?format=json");
-    expect((await j.json<{ responses: Row[] }>()).responses).toHaveLength(2);
+    const j = await (await call("/api/admin/responses?format=json", { cookie })).res.json<{ responses: Row[]; boards: number }>();
+    expect(j.responses).toHaveLength(2);
+    expect(j.boards).toBe(4);
 
-    const s = await (await admin("/api/responses?format=summary")).json<ReturnType<typeof tally>>();
+    const s = await (await call("/api/admin/responses?format=summary", { cookie })).res.json<ReturnType<typeof tally>>();
     expect(s.responses).toBe(2);
     // carplay: 5 + 4 = 9; remote-status: 4 + 5 = 9, tie broken by firsts (1 each), then by name.
     expect(s.features.slice(0, 2).map((f) => [f.feature, f.points])).toEqual([["carplay", 9], ["remote-status", 9]]);
-    expect(s.products).toEqual({ flare: 2, supernova: 2 });
   });
 
-  it("delete one person", async () => {
+  it("deletes one person", async () => {
+    const cookie = await signIn();
     await post(good);
-    const res = await admin("/api/responses?email=OWNER@example.com", { method: "DELETE" });
+    const { res } = await call("/api/admin/delete", { method: "POST", body: JSON.stringify({ email: "OWNER@example.com" }), cookie });
     expect(await res.json()).toEqual({ ok: true, deleted: true });
     expect(await allRows(env.DB)).toHaveLength(0);
+  });
+
+  it("refuses changes from other sites", async () => {
+    const cookie = await signIn();
+    await post(good);
+    const e: Env = { ...env, RESEND_FETCH: fakeResend().fn };
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      new Request(`${ORIGIN}/api/admin/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: cookie, Origin: "https://evil.example" },
+        body: JSON.stringify({ email: good.email }),
+      }),
+      e,
+      ctx,
+    );
+    expect(res.status).toBe(403);
+    expect(await allRows(env.DB)).toHaveLength(1);
+  });
+});
+
+describe("picking testers", () => {
+  async function invitationToken(cookie: string, email: string) {
+    const { res, sent } = await call("/api/admin/pick", { method: "POST", body: JSON.stringify({ email }), cookie });
+    expect(res.status).toBe(200);
+    expect(sent[0].to).toEqual([email.toLowerCase()]);
+    expect(sent[0].subject).toMatch(/picked/);
+    return sent[0].text.match(/\/invite#([A-Za-z0-9_-]+)/)![1];
+  }
+
+  it("emails the person a link to say yes, and tells the admin", async () => {
+    const cookie = await signIn();
+    await post(good);
+    const token = await invitationToken(cookie, "owner@example.com");
+    expect((await allRows(env.DB))[0].pick).toBe("invited");
+
+    const info = await call("/api/invite", { method: "POST", body: JSON.stringify({ token }) });
+    expect(await info.res.json()).toEqual({ name: "Sam", status: "invited", boards: 4 });
+
+    const yes = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "yes" }) });
+    expect(await yes.res.json()).toEqual({ ok: true, status: "accepted" });
+    expect(yes.sent[0].to).toEqual(["justice@oceanlive.org"]);
+    expect(yes.sent[0].subject).toMatch(/said yes/);
+    expect(yes.sent[0].reply_to).toBe("owner@example.com");
+    expect((await allRows(env.DB))[0].pick).toBe("accepted");
+  });
+
+  it("never invites more people than there are boards; a no frees one", async () => {
+    const cookie = await signIn();
+    for (let i = 0; i < 5; i++) await post({ ...good, email: `p${i}@example.com` });
+    const tokens: string[] = [];
+    for (let i = 0; i < 4; i++) tokens.push(await invitationToken(cookie, `p${i}@example.com`));
+    const fifth = await call("/api/admin/pick", { method: "POST", body: JSON.stringify({ email: "p4@example.com" }), cookie });
+    expect(fifth.res.status).toBe(409);
+    expect(fifth.sent).toHaveLength(0);
+
+    await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token: tokens[0], answer: "no" }) });
+    await invitationToken(cookie, "p4@example.com");
+
+    // The one who said no can't take the board back once it's gone.
+    const late = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token: tokens[0], answer: "yes" }) });
+    expect(late.res.status).toBe(409);
+  });
+
+  it("re-sending replaces the link; un-picking stops it working", async () => {
+    const cookie = await signIn();
+    await post(good);
+    const first = await invitationToken(cookie, good.email);
+    const second = await invitationToken(cookie, good.email);
+    expect((await call("/api/invite", { method: "POST", body: JSON.stringify({ token: first }) })).res.status).toBe(404);
+    expect((await call("/api/invite", { method: "POST", body: JSON.stringify({ token: second }) })).res.status).toBe(200);
+    await call("/api/admin/unpick", { method: "POST", body: JSON.stringify({ email: good.email }), cookie });
+    expect((await call("/api/invite", { method: "POST", body: JSON.stringify({ token: second }) })).res.status).toBe(404);
+    expect((await allRows(env.DB))[0].pick).toBe("");
+  });
+
+  it("doesn't take a board when the email fails", async () => {
+    const cookie = await signIn();
+    await post(good);
+    const broken = { fn: (async () => Response.json({ message: "nope" }, { status: 500 })) as typeof fetch, sent: [] };
+    const { res } = await call("/api/admin/pick", { method: "POST", body: JSON.stringify({ email: good.email }), cookie }, broken);
+    expect(res.status).toBe(502);
+    expect((await allRows(env.DB))[0].pick).toBe("");
+  });
+
+  it("keeps the pick when the person signs up again", async () => {
+    const cookie = await signIn();
+    await post(good);
+    await invitationToken(cookie, good.email);
+    await post({ ...good, features: ["abrp"] });
+    expect((await allRows(env.DB))[0]).toMatchObject({ pick: "invited", features: ["abrp"] });
+  });
+});
+
+describe("public counters", () => {
+  it("show counts only", async () => {
+    const cookie = await signIn();
+    await post(good);
+    await post({ ...good, email: "b@example.com", products: ["flare"] });
+    await post({ ...good, email: "c@example.com", products: [] });
+    await call("/api/admin/pick", { method: "POST", body: JSON.stringify({ email: "b@example.com" }), cookie });
+    const res = await SELF.fetch(`${ORIGIN}/api/stats`);
+    const body = await res.json();
+    expect(body).toEqual({ responses: 3, interest: { flare: 2, supernova: 1 }, boards: 4, spokenFor: 1 });
+    expect(JSON.stringify(body)).not.toContain("@");
   });
 });
 

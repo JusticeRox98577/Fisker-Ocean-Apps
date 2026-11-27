@@ -14,6 +14,10 @@ export interface Row {
   notes: string;
   createdAt: string;
   updatedAt: string;
+  /** '' not picked, invited, accepted, declined. */
+  pick: string;
+  pickedAt: string;
+  answeredAt: string;
 }
 
 interface DbRow {
@@ -29,6 +33,9 @@ interface DbRow {
   notes: string;
   created_at: number;
   updated_at: number;
+  pick: string;
+  picked_at: number | null;
+  answered_at: number | null;
 }
 
 /** Saves an answer. Signing up again with the same address replaces the earlier answer. */
@@ -74,6 +81,9 @@ export async function allRows(db: D1Database): Promise<Row[]> {
     notes: r.notes,
     createdAt: new Date(r.created_at).toISOString(),
     updatedAt: new Date(r.updated_at).toISOString(),
+    pick: r.pick,
+    pickedAt: r.picked_at ? new Date(r.picked_at).toISOString() : "",
+    answeredAt: r.answered_at ? new Date(r.answered_at).toISOString() : "",
   }));
 }
 
@@ -117,7 +127,7 @@ export function toCsv(rows: Row[]): string {
   const head = [
     "email", "name", "region", "car", "phone", "products",
     ...Array.from({ length: MAX_FEATURES }, (_, i) => `feature_${i + 1}`),
-    "other_feature", "install", "notes", "created_at", "updated_at",
+    "other_feature", "install", "notes", "created_at", "updated_at", "picked", "picked_at", "answered_at",
   ];
   const cell = (v: string) => {
     let s = v;
@@ -128,7 +138,7 @@ export function toCsv(rows: Row[]): string {
   for (const r of rows) {
     const feats = Array.from({ length: MAX_FEATURES }, (_, i) => r.features[i] ?? "");
     lines.push(
-      [r.email, r.name, r.region, r.car, r.phone, r.products.join(" "), ...feats, r.otherFeature, r.install, r.notes, r.createdAt, r.updatedAt]
+      [r.email, r.name, r.region, r.car, r.phone, r.products.join(" "), ...feats, r.otherFeature, r.install, r.notes, r.createdAt, r.updatedAt, r.pick, r.pickedAt, r.answeredAt]
         .map(cell)
         .join(","),
     );
@@ -136,21 +146,29 @@ export function toCsv(rows: Row[]): string {
   return lines.join("\r\n") + "\r\n";
 }
 
-/** Fixed-window counter; returns the count including this one. */
-export async function bump(db: D1Database, key: string, windowMs: number, now: number): Promise<number> {
-  const row = await db
-    .prepare(
-      `INSERT INTO counters (key, count, reset_at) VALUES (?1, 1, ?2)
-       ON CONFLICT(key) DO UPDATE SET
-         count = CASE WHEN reset_at <= ?3 THEN 1 ELSE count + 1 END,
-         reset_at = CASE WHEN reset_at <= ?3 THEN ?2 ELSE reset_at END
-       RETURNING count`,
-    )
-    .bind(key, now + windowMs, now)
-    .first<{ count: number }>();
-  return row?.count ?? 1;
+export interface PublicStats {
+  /** Everyone who signed up. */
+  responses: number;
+  /** People interested in each product, by product id. */
+  interest: Record<string, number>;
+  /** Test boards in total, and how many are taken by an open invitation or an acceptance. */
+  boards: number;
+  spokenFor: number;
 }
 
-export async function cleanupCounters(db: D1Database, now: number): Promise<void> {
-  await db.prepare("DELETE FROM counters WHERE reset_at <= ?1").bind(now).run();
+/** The numbers anyone may see: counts only, nothing about a person. */
+export async function publicStats(db: D1Database, boards: number): Promise<PublicStats> {
+  const [total, interest, taken] = await db.batch<Record<string, unknown>>([
+    db.prepare("SELECT COUNT(*) AS n FROM responses"),
+    db.prepare("SELECT j.value AS product, COUNT(*) AS n FROM responses, json_each(responses.products) AS j GROUP BY j.value"),
+    db.prepare("SELECT COUNT(*) AS n FROM responses WHERE pick IN ('invited', 'accepted')"),
+  ]);
+  const byProduct: Record<string, number> = {};
+  for (const r of interest.results) byProduct[String(r.product)] = Number(r.n);
+  return {
+    responses: Number(total.results[0]?.n ?? 0),
+    interest: byProduct,
+    boards,
+    spokenFor: Math.min(boards, Number(taken.results[0]?.n ?? 0)),
+  };
 }

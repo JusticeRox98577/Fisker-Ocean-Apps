@@ -195,7 +195,37 @@ form.addEventListener("submit", async (e) => {
   thanks.append(h, p);
   form.replaceWith(thanks);
   thanks.focus();
+  if (stats) {
+    stats.responses += 1;
+    for (const p of data.products) stats.interest[p] = (stats.interest[p] || 0) + 1;
+    showStats(stats);
+  }
 });
+
+// Public counters: how many signed up, interest per product, boards still free. Counts only.
+const fmt = (n) => Number(n || 0).toLocaleString("en");
+function showStats(st) {
+  if (!st || typeof st.responses !== "number") return;
+  const free = Math.max(0, st.boards - st.spokenFor);
+  document.getElementById("c-responses").textContent = fmt(st.responses);
+  document.getElementById("c-responses-label").textContent = st.responses === 1 ? "person signed up" : "people signed up";
+  document.getElementById("c-boards").textContent = fmt(st.boards);
+  document.getElementById("c-free").textContent = fmt(free);
+  document.getElementById("c-free-label").textContent = free === 0 ? "all spoken for" : "still free";
+  document.getElementById("counters").hidden = false;
+  for (const el of document.querySelectorAll(".boards-n")) el.textContent = fmt(st.boards);
+  for (const card of document.querySelectorAll(".product[data-product]")) {
+    const n = (st.interest && st.interest[card.dataset.product]) || 0;
+    const line = card.querySelector(".interest");
+    line.querySelector("b").textContent = fmt(n);
+    line.hidden = false;
+  }
+}
+let stats = null;
+fetch("/api/stats", { cache: "no-store" })
+  .then((r) => (r.ok ? r.json() : null))
+  .then((st) => { stats = st; showStats(st); })
+  .catch(() => {});
 
 // Closed for now? Say so instead of showing a form that will refuse.
 fetch("/api/info", { cache: "no-store" })

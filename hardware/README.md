@@ -28,43 +28,50 @@ Worker accepts.
 The number of picks (5) is `MAX` in `public/app.js` and `MAX_FEATURES` in `src/form.ts`.
 
 To close sign-ups, set `CLOSED` to `"true"` in `wrangler.jsonc`. The page then says sign-ups are
-closed, and the API refuses new ones.
+closed, and the API refuses new ones. The invitation email's wording is in `src/testers.ts`
+(`invitation`), and the yes/no page is `public/invite.html`.
 
-## Reading the answers
+## Who sees what
 
-Set a long random admin token once:
+- **Everyone** sees counts only, on the sign-up page (`GET /api/stats`): how many people signed up,
+  how many are interested in each product, and how many of the test boards are spoken for. Never
+  names, emails or answers.
+- **Only `ADMIN_EMAIL`** (justice@oceanlive.org) sees the answers, at
+  **https://hardware.oceanlive.org/admin**. There's no password: press *Email me a sign-in link*, and a
+  one-time link (good for 15 minutes) goes to that address and nowhere else. The session lasts 30
+  days in that browser, or until *Sign out*.
 
-```sh
-npx wrangler secret put ADMIN_TOKEN
-```
+## The admin page
 
-Then:
+- **Test boards:** one box per board (`BOARDS`, 4), showing who has it: invited (no answer yet) or
+  said yes.
+- **Most important features:** everyone's top 5 added up: 5 points for a #1 pick down to 1 for #5.
+- **Interest:** how many people want to test each product.
+- **People:** every answer, newest first, with search and a filter. For each person:
+  - **Pick as tester** emails them that they've been picked, with a link to a page where they say
+    yes or no. It's refused when all boards are taken, and a board is only taken once the email has
+    gone out.
+  - **Re-send invitation** sends a new link (the old one stops working).
+  - **Un-pick** frees their board; their link stops working. No email is sent, so write to them
+    yourself if needed.
+  - **Delete** removes their answer, for example when someone asks to be removed.
+- **Download CSV** gets every answer as a spreadsheet.
 
-```sh
-# Every answer as CSV (opens in Excel, Numbers or Google Sheets)
-curl -H "Authorization: Bearer $TOKEN" https://hardware.oceanlive.org/api/responses -o nova-beta.csv
-
-# The feature ranking: 5 points for a #1 pick, 4 for #2 ... 1 for #5, plus how often each was picked
-curl -H "Authorization: Bearer $TOKEN" "https://hardware.oceanlive.org/api/responses?format=summary"
-
-# Every answer as JSON
-curl -H "Authorization: Bearer $TOKEN" "https://hardware.oceanlive.org/api/responses?format=json"
-
-# Remove someone who asks to be removed
-curl -X DELETE -H "Authorization: Bearer $TOKEN" "https://hardware.oceanlive.org/api/responses?email=them@example.com"
-```
-
-Without `ADMIN_TOKEN` set, these endpoints don't exist (404).
+When a picked person answers, you get an email ("said yes" or "said no"). Replying to it writes to
+them. A no frees the board straight away; once their board has gone to someone else, they can't
+take it back.
 
 ## First deploy
 
 1. Create the database: `npx wrangler d1 create ocean-live-hardware`. Put its id in the Cloudflare
    build variable `HARDWARE_D1_ID` (the committed `wrangler.jsonc` keeps a placeholder, filled in
    by `scripts/fill-ids.mjs` during the build, the same as `status/`).
-2. In Cloudflare, connect this repository as a new Worker with the root directory `hardware`, build
-   command `npm ci && npm run cf:build` and deploy command `npm run cf:deploy`. The custom domain
-   `hardware.oceanlive.org` comes from `routes` in `wrangler.jsonc`.
-3. Set the secret: `npx wrangler secret put ADMIN_TOKEN`.
+2. In Cloudflare, connect this repository as a new Worker (Workers Builds) with the root directory
+   `hardware`, build command `npm ci && npm run cf:build` and deploy command `npm run cf:deploy`.
+   The custom domain `hardware.oceanlive.org` comes from `routes` in `wrangler.jsonc`.
+3. Set the Resend key, the same one the mail Worker uses: `npx wrangler secret put RESEND_API_KEY`
+   (from this folder), or in the dashboard under the Worker's Settings, Variables and Secrets.
+   Without it, sign-in links and invitations can't be sent.
 
 ## Privacy
 
@@ -75,16 +82,18 @@ earlier answer.
 
 ## How it is built
 
-- `src/` the Worker: `form.ts` (checking an answer), `store.ts` (D1, the CSV and the ranking),
-  `index.ts` (the API).
-- `public/` the page: plain HTML, CSS and one JavaScript module, in the oceanlive.org look.
+- `src/` the Worker: `form.ts` (checking an answer), `store.ts` (D1, the CSV, the ranking and the
+  public counts), `auth.ts` (admin sign-in), `testers.ts` (picking testers and their answers),
+  `mail.ts` (Resend), `index.ts` (the API).
+- `public/` the pages: `index.html` (sign-up), `admin.html`, `invite.html`. Plain HTML, CSS and
+  JavaScript modules, in the oceanlive.org look.
 - `migrations/` the database tables.
 - `test/` tests that run in the Workers runtime: `npm test`.
 
-Try it locally:
+Try it locally (emails can't go out without a Resend key, so sign in by adding a session row):
 
 ```sh
 npm ci
 npx wrangler d1 migrations apply ocean-live-hardware --local
-npx wrangler dev --var ADMIN_TOKEN:some-long-local-token
+npx wrangler dev
 ```

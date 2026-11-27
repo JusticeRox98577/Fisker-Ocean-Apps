@@ -43,6 +43,12 @@
     <!-- EDIT: the headline and the line under it. -->
     <h1>Help test Nova in your Ocean</h1>
     <p class="lede">We're building Nova, a family of add-on boxes for the Fisker Ocean: a new center screen, live car data and remote control, made by the people behind the Ocean Live app. Sign up to be a beta tester, and tell us what matters most so we build the right thing first.</p>
+    <!-- Filled in from /api/stats: counts only, never who signed up. -->
+    <ul class="counters" id="counters" aria-label="Beta sign-ups so far" hidden>
+      <li><b id="c-responses">0</b> <span id="c-responses-label">people signed up</span></li>
+      <li><b id="c-boards">4</b> test boards</li>
+      <li><b id="c-free">4</b> <span id="c-free-label">still free</span></li>
+    </ul>
   </div>
 </section>
 
@@ -51,21 +57,25 @@
   <section aria-labelledby="line-title">
     <h2 id="line-title" class="section-title">The line-up</h2>
     <ul class="products">
-      <li class="panel product">
+      <li class="panel product" data-product="light">
         <h3>Nova Light</h3>
         <p>A cellular CAN reader. Reads the car and sends its data to the cloud: charge, 12V, location, ABRP.</p>
+        <p class="interest" hidden><b>0</b> <span>interested</span></p>
       </li>
-      <li class="panel product">
+      <li class="panel product" data-product="flare">
         <h3>Nova Flare</h3>
         <p>Takes over the center screen with CarPlay, Android Auto, apps and a live dashboard. Pairs with a Nova Light.</p>
+        <p class="interest" hidden><b>0</b> <span>interested</span></p>
       </li>
-      <li class="panel product">
+      <li class="panel product" data-product="quasar">
         <h3>Nova Quasar</h3>
         <p>Nova Flare with its own LTE modem, so it streams without your phone's hotspot.</p>
+        <p class="interest" hidden><b>0</b> <span>interested</span></p>
       </li>
-      <li class="panel product">
+      <li class="panel product" data-product="supernova">
         <h3>SuperNova</h3>
         <p>Everything in one box: the screen, the CAN reader, telemetry, LTE and remote lock and climate.</p>
+        <p class="interest" hidden><b>0</b> <span>interested</span></p>
       </li>
     </ul>
     <!-- EDIT: the status line. -->
@@ -206,7 +216,9 @@
     <h3>What does a beta tester do?</h3>
     <p>Fit an early Nova unit in your Ocean, use it day to day, and tell us what works and what doesn't. We'll pick testers from the sign-ups in small batches.</p>
     <h3>Does signing up mean I'll get a unit?</h3>
-    <p>No. It tells us you're interested and what you care about. If we pick you, we'll email you with the details first, and you can still say no.</p>
+    <p>No. There are only <span class="boards-n">4</span> test boards. If you're picked, you'll get an email with a link to say yes or no, and a no passes the board to the next person.</p>
+    <h3>Who can see my answers?</h3>
+    <p>Only the person building Nova. Your answers are private and never shared. The numbers on this page are counts only: how many people signed up and how many are interested in each product, never who.</p>
     <h3>What happens to my answers?</h3>
     <p>They're kept so we can plan Nova and contact you about the beta, and nothing else. Signing up again with the same email replaces your earlier answer. To be removed, write to <a href="mailto:support@oceanlive.org">support@oceanlive.org</a>.</p>
   </section>

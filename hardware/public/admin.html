@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B2545">
+<meta name="color-scheme" content="dark">
+<title>Admin · Nova beta</title>
+<meta name="description" content="Nova beta sign-ups.">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script type="module" src="/admin.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+      Ocean Live
+    </a>
+    <span class="top-label">Hardware beta</span>
+    <button class="btn btn-ghost btn-small top-end" type="button" id="sign-out" hidden>Sign out</button>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+<div class="wrap admin">
+  <section class="sheet signin" id="signin" hidden aria-labelledby="signin-title">
+    <h1 id="signin-title" class="h-md">Nova beta admin</h1>
+    <p class="muted">Only the Ocean Live admin can sign in. We'll email a one-time link to the admin address.</p>
+    <div class="submit-row">
+      <button class="btn btn-primary" type="button" id="send-link">Email me a sign-in link</button>
+      <p class="status" id="signin-status" role="status" aria-live="polite" tabindex="-1"></p>
+    </div>
+  </section>
+
+  <div id="dash" hidden>
+    <header class="dash-head">
+      <div>
+        <div class="eyebrow">Nova beta</div>
+        <h1 class="h-md">Sign-ups</h1>
+      </div>
+      <a class="btn btn-ghost btn-small" href="/api/admin/responses" download>Download CSV</a>
+    </header>
+    <p class="status" id="dash-status" role="status" aria-live="polite" tabindex="-1"></p>
+
+    <section aria-labelledby="boards-title">
+      <h2 id="boards-title" class="section-title">Test boards</h2>
+      <ol class="slots" id="slots"></ol>
+    </section>
+
+    <div class="two-col">
+      <section aria-labelledby="rank-title">
+        <h2 id="rank-title" class="section-title">Most important features</h2>
+        <p class="muted small">5 points for a #1 pick, 4 for #2 … 1 for #5.</p>
+        <ol class="ranking" id="ranking"></ol>
+      </section>
+      <section aria-labelledby="interest-title">
+        <h2 id="interest-title" class="section-title">Interest</h2>
+        <ul class="interest-list" id="interest"></ul>
+      </section>
+    </div>
+
+    <section aria-labelledby="people-title">
+      <h2 id="people-title" class="section-title">People (<span id="people-n">0</span>)</h2>
+      <div class="filters">
+        <input class="input" type="search" id="search" placeholder="Search name, email, car, notes…" aria-label="Search sign-ups">
+        <select class="input" id="filter" aria-label="Show">
+          <option value="all">Everyone</option>
+          <option value="none">Not picked</option>
+          <option value="picked">Picked (invited or yes)</option>
+          <option value="declined">Said no</option>
+        </select>
+      </div>
+      <ul class="people" id="people"></ul>
+    </section>
+  </div>
+</div>
+</main>
+
+<footer class="foot wrap">
+  <a href="https://oceanlive.org/">oceanlive.org</a>
+  <a href="https://oceanlive.org/privacy">Privacy</a>
+  <a href="mailto:support@oceanlive.org">Contact</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B2545">
+<meta name="color-scheme" content="dark">
+<title>You've been picked · Nova beta</title>
+<meta name="description" content="Say yes or no to a Nova test board.">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script type="module" src="/invite.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+      Ocean Live
+    </a>
+    <span class="top-label">Hardware beta</span>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+<section class="doc-hero">
+  <div class="wrap narrow">
+    <div class="lightbar" aria-hidden="true"></div>
+    <div class="eyebrow">Nova beta</div>
+    <h1 id="inv-title">Checking your link…</h1>
+  </div>
+</section>
+
+<div class="wrap narrow">
+  <section class="sheet" aria-labelledby="inv-title">
+    <p class="status" id="inv-status" role="status" aria-live="polite" tabindex="-1"></p>
+
+    <div id="inv-ask" hidden>
+      <p class="lede-sm" id="inv-hello"></p>
+      <!-- EDIT: what testing involves. -->
+      <h2 class="h-sm">What testing involves</h2>
+      <ul class="plain-list">
+        <li>We send you a Nova test board and the harness, free.</li>
+        <li>You fit it behind the center console trim (there's a guide, and we can talk you through it), and use it in your Ocean day to day.</li>
+        <li>You tell us what works and what doesn't, roughly once a week, by email.</li>
+        <li>It's early hardware: expect bugs. If anything goes wrong, unplugging it puts the car back to stock.</li>
+      </ul>
+      <div class="answer-row">
+        <button class="btn btn-primary" type="button" data-answer="yes">Yes, I'm in</button>
+        <button class="btn btn-ghost" type="button" data-answer="no">No thanks</button>
+      </div>
+      <p class="muted small">Saying no is fine: the board goes to the next person on the list.</p>
+    </div>
+
+    <div class="thanks" id="inv-yes" hidden>
+      <h3>You're in. Thank you!</h3>
+      <p>We'll email you soon about shipping and installing your board. Questions before then? Reply to the invitation email.</p>
+    </div>
+    <div class="thanks thanks-neutral" id="inv-no" hidden>
+      <h3>No problem, thanks for letting us know.</h3>
+      <p>Your board goes to the next person. You stay on the sign-up list, and we'll keep you posted on Nova.</p>
+      <p class="small"><button class="link-btn" type="button" id="inv-undo">Changed your mind? Say yes instead</button></p>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer class="foot wrap">
+  <a href="https://oceanlive.org/">oceanlive.org</a>
+  <a href="https://oceanlive.org/privacy">Privacy</a>
+  <a href="mailto:support@oceanlive.org">Contact</a>
+</footer>
+</body>
+</html>
