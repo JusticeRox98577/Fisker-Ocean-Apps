@@ -49,7 +49,9 @@ async function loadLabels() {
     }
   } catch { /* ids are shown instead */ }
 }
-const label = (kind, id) => labels[kind][id] || id;
+// Features taken off the sign-up page: earlier answers still show a readable name.
+const RETIRED = { features: { carplay: "CarPlay / Android Auto (no longer offered)" } };
+const label = (kind, id) => labels[kind][id] || RETIRED[kind]?.[id] || id;
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
