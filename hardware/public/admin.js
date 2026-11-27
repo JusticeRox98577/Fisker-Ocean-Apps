@@ -221,7 +221,8 @@ async function act(button, what, r, question) {
 
 // ---- releases -----------------------------------------------------------------------------------
 
-const TARGET_NAME = { supervisor: "Supervisor firmware", card: "Video card firmware", app: "Nova app", android: "Android" };
+const TARGET_NAME = { supervisor: "Supervisor firmware", card: "Video card firmware", app: "Nova app", android: "Android",
+  "nrf-light": "nRF9151 · Nova Light firmware", "nrf-nova": "nRF9151 · new Nova firmware" };
 const mb = (n) => `${(n / 1048576).toFixed(n > 10485760 ? 0 : 1)} MB`;
 
 async function loadReleases() {
@@ -250,6 +251,16 @@ async function loadReleases() {
     }
     return li;
   }) : [el("li", "muted", out.storage ? "No releases yet." : "The RELEASES R2 bucket isn't set up yet.")]));
+}
+
+// the two nRF9151 lines: quick picks for the target menu
+for (const [id, target] of [["rel-nrf-light", "nrf-light"], ["rel-nrf-nova", "nrf-nova"]]) {
+  $(id).addEventListener("click", () => {
+    $("rel-target").value = target;
+    $("rel-target").dispatchEvent(new Event("change"));
+    for (const b of ["rel-nrf-light", "rel-nrf-nova"]) $(b).classList.toggle("btn-primary", b === id);
+    $("rel-file").focus();
+  });
 }
 
 $("rel-target").addEventListener("change", () => {

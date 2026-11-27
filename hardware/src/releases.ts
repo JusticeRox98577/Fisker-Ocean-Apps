@@ -1,7 +1,7 @@
 /**
  * Nova releases: the files boxes update to (Oceanlive-nova docs/updates.md).
  *
- *   GET  /api/updates?target=supervisor|card|app|android&have=<version>&channel=stable|beta
+ *   GET  /api/updates?target=supervisor|card|app|android|nrf-light|nrf-nova&have=<version>&channel=stable|beta
  *        -> { update: null } or { update: { id, target, version, label, size, sha256, url, payload? } }
  *   GET  /api/updates/file/<id>         the file, with HTTP Range support (Android's update_engine streams)
  * Admin:
@@ -23,9 +23,12 @@ import type { Env } from "./env";
 import { json } from "./util";
 
 const eddsa = twistedEdwards({ ...ed25519.CURVE, hash: (m: Uint8Array | string) => blake2b(m, { dkLen: 64 }) });
-export const TARGETS = ["supervisor", "card", "app", "android"] as const;
+export const TARGETS = ["supervisor", "card", "app", "android", "nrf-light", "nrf-nova"] as const;
 type Target = (typeof TARGETS)[number];
-const FW_TARGET: Record<string, number> = { supervisor: 1, card: 2 };
+// .nova chip numbers (fw/lib/novaboot enum nb_target). The nRF9151 (SuperNova) has two firmware lines:
+// nrf-light, the existing Nova Light firmware, and nrf-nova, the new Nova firmware. Each box follows one.
+const FW_TARGET: Record<string, number> = { supervisor: 1, card: 2, "nrf-light": 3, "nrf-nova": 3 };
+const CHIP: Record<number, string> = { 1: "supervisor", 2: "video card", 3: "nRF9151" };
 const MAX_UPLOAD = 90 * 1024 * 1024;
 
 const u32 = (b: Uint8Array, o: number) => (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
@@ -41,7 +44,7 @@ interface ReleaseRow {
 /** A .nova image (fw/lib/novaboot): owner-signed, for the named chip. Returns its version or an error. */
 export function checkNova(img: Uint8Array, target: Target, ownerPub: Uint8Array): number | string {
   if (img.length < 0x100 + 8 || u32(img, 0) !== 0x4d49564e || img[4] !== 1) return "That isn't a signed Nova image (.nova).";
-  if (img[5] !== FW_TARGET[target]) return `That image is for the ${img[5] === 1 ? "supervisor" : img[5] === 2 ? "video card" : "?"}.`;
+  if (img[5] !== FW_TARGET[target]) return `That image is for the ${CHIP[img[5]] ?? "?"}.`;
   if (img[6] !== 0) return "That image is signed with a developer key. Releases must be signed with the owner key.";
   const size = u32(img, 12);
   if (img.length !== 0x100 + size) return "The image size doesn't match its header.";
@@ -119,8 +122,8 @@ export async function upload(env: Env, req: Request, now: number): Promise<Respo
   if (!env.RELEASES) return json({ error: "The RELEASES bucket isn't set up." }, 500);
   const url = new URL(req.url);
   const target = url.searchParams.get("target") as Target;
-  if (!["supervisor", "card", "app"].includes(target)) {
-    return json({ error: "Upload supervisor, card or app files here; Android OTAs go through R2 (register)." }, 400);
+  if (!["supervisor", "card", "app", "nrf-light", "nrf-nova"].includes(target)) {
+    return json({ error: "Upload firmware or app files here; Android OTAs go through R2 (register)." }, 400);
   }
   const len = Number(req.headers.get("Content-Length") ?? "0");
   if (len > MAX_UPLOAD) return json({ error: "Too big to upload here." }, 413);

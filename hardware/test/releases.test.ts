@@ -91,6 +91,17 @@ describe("releases", () => {
     expect(new Uint8Array(await f.arrayBuffer())).toEqual(nova(1, 0x00020000));
   });
 
+  it("keeps the two nRF9151 firmware lines apart", async () => {
+    const cookie = await signIn();
+    const up = (img: Uint8Array, t: string) => call(`/api/admin/releases?target=${t}`, { method: "POST", body: img, cookie });
+    expect((await up(nova(1, 0x00010000), "nrf-light")).status).toBe(400); // a supervisor image
+    expect((await up(nova(3, 0x00040002), "nrf-light")).status).toBe(200);
+    expect((await up(nova(3, 0x00010000), "nrf-nova")).status).toBe(200);
+    const light = ((await (await call("/api/updates?target=nrf-light&have=0")).json()) as any).update;
+    const fresh = ((await (await call("/api/updates?target=nrf-nova&have=0")).json()) as any).update;
+    expect([light.label, fresh.label]).toEqual(["0.4.2", "0.1.0"]);
+  });
+
   it("serves ranges, and retires", async () => {
     const cookie = await signIn();
     const apk = Uint8Array.from({ length: 5000 }, (_, i) => (i === 0 ? 0x50 : i === 1 ? 0x4b : i & 255));
