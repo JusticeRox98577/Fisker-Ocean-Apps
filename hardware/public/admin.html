@@ -68,6 +68,19 @@
       </section>
     </div>
 
+    <section aria-labelledby="dev-title">
+      <h2 id="dev-title" class="section-title">Developer access (<span id="dev-n">0</span>)</h2>
+      <p class="muted small" id="dev-keys"></p>
+      <ul class="people" id="dev-certs"></ul>
+      <details class="panel dev-register">
+        <summary>Register a developer certificate</summary>
+        <p class="muted small">Make it offline with <code>novaboot.py cert</code>, then paste the hex it prints. Boxes report here only once their certificate is registered.</p>
+        <textarea class="input" id="dev-cert" rows="3" spellcheck="false" placeholder="Certificate hex (320 digits)" aria-label="Certificate hex"></textarea>
+        <input class="input" id="dev-notes" maxlength="500" placeholder="Notes (optional): terms agreed, contact…" aria-label="Notes">
+        <button class="btn btn-small btn-primary" type="button" id="dev-register">Register</button>
+      </details>
+    </section>
+
     <section aria-labelledby="people-title">
       <h2 id="people-title" class="section-title">People (<span id="people-n">0</span>)</h2>
       <div class="filters">

@@ -219,6 +219,100 @@ async function act(button, what, r, question) {
   say($("dash-status"), done[what], "ok");
 }
 
+// ---- developer access (docs: Oceanlive-nova docs/updates.md) --------------------------------------
+
+const ver = (v) => (v ? `${v >>> 24}.${(v >>> 16) & 0xff}.${v & 0xffff}` : "–");
+const when = (ms) => (ms ? new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "never");
+const START_CHECK = ["may start", "no image", "wrong chip", "too big", "bad signature", "no certificate",
+  "certificate not owner-signed", "certificate for another box", "chip not covered", "other certificate",
+  "", "flash error", "", "revoked", "lease ran out", "bad token"];
+
+async function loadDev() {
+  const out = await call("/api/admin/dev");
+  if (out.signedOut || out.error) return;
+  const keys = [];
+  if (!out.ownerKeySet) keys.push("OWNER_PUB isn't set, so certificates can't be registered.");
+  if (!out.leaseKeySet) keys.push("LEASE_KEY isn't set, so leases can't be renewed or revoked.");
+  $("dev-keys").textContent = keys.join(" ");
+  $("dev-n").textContent = String(out.certs.length);
+  $("dev-certs").replaceChildren(...(out.certs.length ? out.certs.map(devCard) : [el("li", "muted", "No developer certificates yet.")]));
+}
+
+function devCard(c) {
+  const li = el("li", "person panel");
+  const head = el("div", "person-head");
+  const who = el("div");
+  who.append(el("h3", "", `${c.holder} · certificate ${c.serial}`), el("span", "small muted", `Box ${c.uid}`));
+  head.append(who, el("span", `pill is-${c.status === "active" ? "accepted" : "declined"}`, c.status === "active" ? "Active" : "Revoked"));
+  li.append(head);
+  const covers = [c.targets & 2 ? "supervisor" : "", c.targets & 4 ? "video card" : ""].filter(Boolean).join(" + ");
+  li.append(el("p", "facts", [
+    `Covers ${covers || "nothing"}`,
+    c.lease ? `lease ${c.lease} starts` : "no lease",
+    `registered ${when(c.registered_at)}`,
+  ].join(" · ")));
+  li.append(el("p", "facts", [
+    `Last seen ${when(c.last_seen)}`,
+    `${c.checkins_30d ?? 0} check-ins in 30 days (${c.checkins ?? 0} in all)`,
+  ].join(" · ")));
+  if (c.last_seen) {
+    li.append(el("p", "facts", [
+      `Running ${c.signer === 1 ? "their firmware" : "your firmware"} ${ver(c.fw_version)}`,
+      `${c.dev_builds ?? 0} developer builds seen`,
+      `${c.dev_starts ?? 0} developer starts${c.lease ? `, lease to ${c.lease_until}` : ""}`,
+      c.app_version ? `Nova app ${c.app_version}` : "",
+    ].filter(Boolean).join(" · ")));
+  }
+  if (c.status === "revoked") li.append(el("p", "small muted", `Revoked ${when(c.revoked_at)}${c.revoke_reason ? `: ${c.revoke_reason}` : ""}`));
+  if (c.notes) li.append(el("p", "notes", c.notes));
+
+  const actions = el("div", "actions");
+  const log = el("ol", "small dev-log");
+  log.hidden = true;
+  const b1 = el("button", "btn btn-small btn-ghost", "Check-ins");
+  b1.type = "button";
+  b1.addEventListener("click", async () => {
+    if (!log.hidden) { log.hidden = true; return; }
+    const out = await call(`/api/admin/dev/checkins?serial=${c.serial}`);
+    if (out.error) return say($("dash-status"), out.error, "error");
+    log.replaceChildren(...(out.checkins.length ? out.checkins.map((k) => el("li", "", [
+      when(k.at),
+      `${k.signer === 1 ? "their" : "your"} firmware ${ver(k.fw_version)}`,
+      `${k.dev_starts} starts`,
+      `start check: ${START_CHECK[k.start_check] || k.start_check}`,
+      k.nova_on_screen ? "Nova on screen" : "factory screen",
+      k.token ? `sent ${k.token}` : "",
+    ].filter(Boolean).join(" · "))) : [el("li", "muted", "No check-ins yet.")]));
+    log.hidden = false;
+  });
+  actions.append(b1);
+  if (c.status === "active") {
+    const b2 = el("button", "btn btn-small btn-ghost btn-danger", "Revoke");
+    b2.type = "button";
+    b2.addEventListener("click", async () => {
+      const reason = prompt(`Revoke ${c.holder}'s certificate ${c.serial}? Their box gets the revocation at its next check-in and start. Reason (kept here):`);
+      if (reason === null) return;
+      const out = await call("/api/admin/dev/revoke", { serial: c.serial, reason });
+      if (out.error) return say($("dash-status"), out.error, "error");
+      say($("dash-status"), `Certificate ${c.serial} revoked.`, "ok");
+      loadDev();
+    });
+    actions.append(b2);
+  }
+  li.append(actions, log);
+  return li;
+}
+
+$("dev-register").addEventListener("click", async () => {
+  const out = await call("/api/admin/dev/register", { cert: $("dev-cert").value.replace(/\s+/g, ""), notes: $("dev-notes").value });
+  if (out.signedOut) return showSignIn();
+  if (out.error) return say($("dash-status"), out.error, "error");
+  say($("dash-status"), `Registered certificate ${out.cert.serial} for ${out.cert.holder}.`, "ok");
+  $("dev-cert").value = "";
+  $("dev-notes").value = "";
+  loadDev();
+});
+
 async function load() {
   const out = await call("/api/admin/responses?format=json");
   if (out.signedOut) return showSignIn();
@@ -228,6 +322,7 @@ async function load() {
   $("dash").hidden = false;
   $("sign-out").hidden = false;
   render();
+  loadDev();
 }
 
 function showSignIn() {

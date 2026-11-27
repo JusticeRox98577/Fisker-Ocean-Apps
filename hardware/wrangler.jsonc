@@ -46,6 +46,9 @@
     "PER_IP_PER_HOUR": "5",
     // Set to "true" to close the form: the page then says sign-ups are closed and the API refuses new ones.
     "CLOSED": "false",
+    // The Nova owner PUBLIC key (owner.pub, 64 hex digits): checks developer certificates registered in
+    // /admin. Empty until set. The lease key is a secret: wrangler secret put LEASE_KEY (contents of lease.key).
+    "OWNER_PUB": "",
     // Seconds the public counters (/api/stats) are reused.
     "STATS_CACHE_SECONDS": "60"
   }

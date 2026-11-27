@@ -264,3 +264,9 @@ textarea.input { resize: vertical; min-height: 110px; }
 .top5 li::marker { color: var(--cyan); font-weight: 600; }
 .notes { white-space: pre-line; font-size: .9375rem; padding: 10px 12px; border-left: 2px solid var(--cyan); background: rgba(234,244,255,.04); overflow-wrap: anywhere; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+/* developer access (admin) */
+.dev-register { padding: 16px; margin-top: 12px; display: grid; gap: 10px; }
+.dev-register summary { cursor: pointer; font-weight: 600; }
+.dev-register textarea { font-family: ui-monospace, monospace; font-size: .85rem; word-break: break-all; }
+.dev-log { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 4px; color: var(--ink-muted); }

@@ -17,6 +17,8 @@
  *   POST /api/admin/unpick    { email }   free their board
  *   POST /api/admin/delete    { email }   remove their answer
  *
+ * Developer access to Nova boxes (dev.ts): POST /api/dev/checkin from boxes, /api/admin/dev* for the owner.
+ *
  * Everything else is the static pages in public/. No cookies for visitors; the only thing kept about
  * someone who doesn't sign up is a hashed network address in a counter that expires after an hour.
  */
@@ -24,6 +26,7 @@ import { endSession, isSignedIn, requestLink, startSession } from "./auth";
 import { type Env, boards, isClosed, num } from "./env";
 import { checkSignUp } from "./form";
 import { allRows, deleteSignUp, publicStats, saveSignUp, tally, toCsv } from "./store";
+import { checkin, checkins, listCerts, register, revoke } from "./dev";
 import { inviteAnswer, inviteInfo, pick, unpick } from "./testers";
 import { bump, cleanup, json, plainHeaders, readJson, sameOrigin, sha256, tokenFrom } from "./util";
 
@@ -110,6 +113,18 @@ async function admin(req: Request, env: Env, ctx: ExecutionContext, path: string
     });
   }
 
+  if (path === "/api/admin/dev") return req.method === "GET" ? listCerts(env, now) : wrongMethod("GET");
+  if (path === "/api/admin/dev/checkins") {
+    return req.method === "GET" ? checkins(env, Number(new URL(req.url).searchParams.get("serial"))) : wrongMethod("GET");
+  }
+  if (path === "/api/admin/dev/register" || path === "/api/admin/dev/revoke") {
+    if (req.method !== "POST") return wrongMethod("POST");
+    if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
+    const body = await readJson(req);
+    if (!body || body === "too-big") return badBody();
+    return path.endsWith("/register") ? register(env, body, now) : revoke(env, body, now);
+  }
+
   const actions: Record<string, (email: string) => Promise<Response>> = {
     "/api/admin/pick": (email) => pick(env, email, now),
     "/api/admin/unpick": (email) => unpick(env, email),
@@ -144,6 +159,17 @@ export default {
         case "/api/signup":
           if (req.method !== "POST") return wrongMethod("POST");
           return await signUp(req, env, ctx, now);
+        case "/api/dev/checkin": {
+          // From the Nova app on a box with a developer certificate (no browser, no cookies).
+          if (req.method !== "POST") return wrongMethod("POST");
+          const body = await readJson(req);
+          if (!body || body === "too-big") return badBody();
+          const ip = req.headers.get("CF-Connecting-IP");
+          if (ip && (await bump(env.DB, `dev:${await sha256(`hardware:${ip}`)}`, HOUR, now)) > 120) {
+            return json({ error: "Too many check-ins. Try again later." }, 429);
+          }
+          return await checkin(env, body, now);
+        }
         case "/api/invite":
         case "/api/invite/answer":
           if (req.method !== "POST") return wrongMethod("POST");

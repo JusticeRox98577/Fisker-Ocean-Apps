@@ -20,6 +20,10 @@ export interface Env {
   PER_IP_PER_HOUR?: string;
   /** "true" closes the form. */
   CLOSED?: string;
+  /** The Nova owner public key (hex): checks developer certificates registered in /admin. */
+  OWNER_PUB?: string;
+  /** Secret: the lease key (hex) that signs developer lease renewals and revocations. */
+  LEASE_KEY?: string;
   /** Seconds the public counters are reused (0: never). */
   STATS_CACHE_SECONDS?: string;
 }
