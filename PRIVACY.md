@@ -1,9 +1,10 @@
 # Ocean Live privacy policy
 
-Last updated: 27 November 2026 (added: the Nova hardware beta sign-up)
+Last updated: 27 November 2026 (added: the Nova hardware beta sign-up; Ocean Live LLC is now the company behind the app)
 
-Ocean Live is an independent app made by an owner, Justice MontgomeryWalkup, for other
-Fisker Ocean owners. This policy covers the Android, Wear OS, iPhone and Apple Watch apps,
+Ocean Live is an independent app for Fisker Ocean owners, made by Ocean Live LLC, a Washington
+company founded by an Ocean owner, Justice MontgomeryWalkup. Ocean Live LLC is responsible for the
+data described here. This policy covers the Android, Wear OS, iPhone and Apple Watch apps,
 the Ocean Live mailing list and the Nova hardware beta sign-up.
 
 ## The short version
