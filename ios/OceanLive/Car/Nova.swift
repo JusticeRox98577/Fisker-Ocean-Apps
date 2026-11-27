@@ -69,10 +69,57 @@ final class NovaPhone: ObservableObject {
     private static let keyAccount = "novaPhoneKey"
     private let defaults = UserDefaults.standard
 
-    struct Status {
+    /// The car's last check-in (GET /api/box/status) and the latest commands from any paired phone.
+    struct Status: Equatable {
+        struct Command: Equatable, Identifiable {
+            var id: Int64 { counter }
+            var action: Int
+            var counter: Int64
+            var sent: Date
+            /// nil while the car hasn't acted on it yet; 0 done; otherwise why it refused.
+            var result: Int?
+        }
         var lastSeen: Date?
         var v12mV: Int
-        var lastResult: Int?
+        var ignition: Bool
+        /// enum nova_gear: 0 unknown, 1 P, 2 R, 3 N, 4 D.
+        var gear: Int
+        var speedKmh: Double
+        var location: (lat: Double, lon: Double)?
+        var rsrp: Int
+        var phones: Int
+        var firmware: Int
+        var commands: [Command]
+        var lastResult: Int? { commands.first?.result }
+
+        static func == (a: Status, b: Status) -> Bool {
+            a.lastSeen == b.lastSeen && a.v12mV == b.v12mV && a.ignition == b.ignition && a.gear == b.gear &&
+                a.speedKmh == b.speedKmh && a.location?.lat == b.location?.lat && a.location?.lon == b.location?.lon &&
+                a.rsrp == b.rsrp && a.phones == b.phones && a.firmware == b.firmware && a.commands == b.commands
+        }
+
+        /// Checked in within the last 3 minutes (it checks in every minute or so while it has signal).
+        func online(now: Date = Date()) -> Bool { lastSeen.map { now.timeIntervalSince($0) < 180 } ?? false }
+
+        static func parse(_ j: [String: Any]) -> Status {
+            let box = j["box"] as? [String: Any]
+            func int(_ k: String) -> Int { (box?[k] as? NSNumber)?.intValue ?? 0 }
+            func dbl(_ k: String) -> Double? { (box?[k] as? NSNumber)?.doubleValue }
+            let commands = (j["commands"] as? [[String: Any]] ?? []).compactMap { c -> Command? in
+                guard let a = (c["action"] as? NSNumber)?.intValue, let n = (c["counter"] as? NSNumber)?.int64Value,
+                      let t = (c["created_at"] as? NSNumber)?.doubleValue else { return nil }
+                return Command(action: a, counter: n, sent: Date(timeIntervalSince1970: t / 1000),
+                               result: (c["result"] as? NSNumber)?.intValue)
+            }
+            var location: (lat: Double, lon: Double)?
+            if let lat = dbl("lat"), let lon = dbl("lon"), lat != 0 || lon != 0 { location = (lat, lon) }
+            return Status(
+                lastSeen: dbl("last_seen").map { Date(timeIntervalSince1970: $0 / 1000) },
+                v12mV: int("v12"), ignition: int("ignition") != 0, gear: int("gear"),
+                speedKmh: Double(int("speed")) / 100, location: location, rsrp: int("rsrp"),
+                phones: int("phones"), firmware: int("fw"), commands: commands
+            )
+        }
     }
 
     @Published private(set) var uid: String?
@@ -189,13 +236,8 @@ final class NovaPhone: ObservableObject {
         let t = Int64(Date().timeIntervalSince1970)
         let sig = NovaCommands.hex(try NovaCommands.statusSignature(key: try key(), uidHex: u, t: t))
         let j = try await call("/api/box/status?uid=\(u)&slot=\(slot)&t=\(t)&sig=\(sig)")
-        let box = j["box"] as? [String: Any]
-        let last = (j["commands"] as? [[String: Any]])?.first
-        status = Status(
-            lastSeen: (box?["last_seen"] as? Double).map { Date(timeIntervalSince1970: $0 / 1000) },
-            v12mV: box?["v12"] as? Int ?? 0,
-            lastResult: last?["result"] as? Int
-        )
+        let s = Status.parse(j)
+        if s != status { status = s }
     }
 
     func forget() {
