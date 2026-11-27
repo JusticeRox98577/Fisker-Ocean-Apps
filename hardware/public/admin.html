@@ -68,6 +68,12 @@
       </section>
     </div>
 
+    <section aria-labelledby="box-title">
+      <h2 id="box-title" class="section-title">SuperNova boxes (<span id="box-n">0</span>)</h2>
+      <p class="muted small">Cars whose nRF9151 checks in. Locations stay with the owner's paired phones and aren't shown here.</p>
+      <ul class="people" id="boxes"></ul>
+    </section>
+
     <section aria-labelledby="rel-title">
       <h2 id="rel-title" class="section-title">Releases</h2>
       <p class="muted small">What Nova boxes update to. Supervisor and video card files must be owner-signed <code>.nova</code> images (checked here and again on the box). Android OTAs are too big to upload here: put them in the <code>nova-releases</code> R2 bucket with <code>wrangler r2 object put</code>, then register them.</p>

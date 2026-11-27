@@ -17,6 +17,7 @@
  *   POST /api/admin/unpick    { email }   free their board
  *   POST /api/admin/delete    { email }   remove their answer
  *
+ * SuperNova boxes (box.ts): /api/box/* for cars, car screens and phones; /api/admin/boxes.
  * Nova releases (releases.ts): GET /api/updates, /api/updates/file/<id>; /api/admin/releases*.
  * Developer access to Nova boxes (dev.ts): POST /api/dev/checkin from boxes, /api/admin/dev* for the owner.
  *
@@ -29,6 +30,7 @@ import { checkSignUp } from "./form";
 import { allRows, deleteSignUp, publicStats, saveSignUp, tally, toCsv } from "./store";
 import { checkin, checkins, listCerts, register, revoke } from "./dev";
 import * as releases from "./releases";
+import * as box from "./box";
 import { inviteAnswer, inviteInfo, pick, unpick } from "./testers";
 import { bump, cleanup, json, plainHeaders, readJson, sameOrigin, sha256, tokenFrom } from "./util";
 
@@ -128,6 +130,7 @@ async function admin(req: Request, env: Env, ctx: ExecutionContext, path: string
     if (!body || body === "too-big") return badBody();
     return path.endsWith("/register") ? releases.register(env, body, now) : releases.retire(env, body);
   }
+  if (path === "/api/admin/boxes") return req.method === "GET" ? box.listBoxes(env) : wrongMethod("GET");
   if (path === "/api/admin/dev") return req.method === "GET" ? listCerts(env, now) : wrongMethod("GET");
   if (path === "/api/admin/dev/checkins") {
     return req.method === "GET" ? checkins(env, Number(new URL(req.url).searchParams.get("serial"))) : wrongMethod("GET");
@@ -179,6 +182,30 @@ export default {
         case "/api/signup":
           if (req.method !== "POST") return wrongMethod("POST");
           return await signUp(req, env, ctx, now);
+        case "/api/box/checkin":
+        case "/api/box/pair/start":
+        case "/api/box/pair/request":
+        case "/api/box/pair/finish":
+        case "/api/box/command": {
+          // from cars, car screens and phones: no browser, no cookies
+          if (req.method !== "POST") return wrongMethod("POST");
+          const body = await readJson(req);
+          if (!body || body === "too-big") return badBody();
+          const ip = req.headers.get("CF-Connecting-IP");
+          if (ip && (await bump(env.DB, `box:${await sha256(`hardware:${ip}`)}`, HOUR, now)) > 600) {
+            return json({ error: "Too many requests. Try again later." }, 429);
+          }
+          const fn = { "/api/box/checkin": box.checkin, "/api/box/pair/start": box.pairStart, "/api/box/pair/request": box.pairRequest,
+            "/api/box/pair/finish": box.pairFinish, "/api/box/command": box.command }[url.pathname]!;
+          return await fn(env, body, now);
+        }
+        case "/api/box/pair/poll":
+        case "/api/box/pair/status":
+          if (req.method !== "GET") return wrongMethod("GET");
+          return await box.pairPoll(env, url.searchParams.get("code") ?? "", now);
+        case "/api/box/status":
+          if (req.method !== "GET") return wrongMethod("GET");
+          return await box.status(env, url, now);
         case "/api/updates":
           if (req.method !== "GET" && req.method !== "HEAD") return wrongMethod("GET, HEAD");
           return await releases.check(env, url);
@@ -208,5 +235,6 @@ export default {
 
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
     await cleanup(env.DB, Date.now());
+    await box.cleanup(env, Date.now());
   },
 };

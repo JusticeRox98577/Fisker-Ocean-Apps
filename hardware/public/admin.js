@@ -219,6 +219,29 @@ async function act(button, what, r, question) {
   say($("dash-status"), done[what], "ok");
 }
 
+// ---- SuperNova boxes ---------------------------------------------------------------------------
+
+const TX = ["sent", "not parked", "12 V low", "not set up for this car yet", "gate not raised", "not a SuperNova"];
+async function loadBoxes() {
+  const out = await call("/api/admin/boxes");
+  if (out.signedOut || out.error) return;
+  $("box-n").textContent = String(out.boxes.length);
+  $("boxes").replaceChildren(...(out.boxes.length ? out.boxes.map((b) => {
+    const li = el("li", "person panel");
+    li.append(el("h3", "", `Box ${b.uid}`));
+    li.append(el("p", "facts", [
+      `Last seen ${when(b.last_seen)}`,
+      `firmware ${ver(b.fw)}`,
+      b.v12 ? `12 V ${(b.v12 / 1000).toFixed(1)} V` : "12 V not measured",
+      b.rsrp ? `signal ${b.rsrp} dBm` : "",
+      `${b.phones} paired phone${b.phones === 1 ? "" : "s"}`,
+      `${b.commands} remote commands`,
+      b.last_cmd_action ? `last: ${b.last_cmd_result >= 128 ? "refused by the car" : TX[b.last_cmd_result] || b.last_cmd_result}` : "",
+    ].filter(Boolean).join(" · ")));
+    return li;
+  }) : [el("li", "muted", "No SuperNova has checked in yet.")]));
+}
+
 // ---- releases -----------------------------------------------------------------------------------
 
 const TARGET_NAME = { supervisor: "Supervisor firmware", card: "Video card firmware", app: "Nova app", android: "Android",
@@ -404,6 +427,7 @@ async function load() {
   render();
   loadDev();
   loadReleases();
+  loadBoxes();
 }
 
 function showSignIn() {
