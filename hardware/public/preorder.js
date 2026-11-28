@@ -221,16 +221,45 @@ function signaturePng() {
 }
 
 const inkLength = () => strokes.reduce((n, s) => n + s.length, 0);
+
+// Reading first: at least READ_MS with the disclosure open (time from earlier openings counts), and
+// scrolled to its end.
+const READ_MS = 60 * 1000;
+let readBefore = 0;    // ms the disclosure was open before this opening
+let openedAt = 0;      // when this opening started (0: closed)
+let reachedEnd = false;
+let tick = 0;
+const readMs = () => readBefore + (openedAt ? Date.now() - openedAt : 0);
+const leftS = () => Math.max(0, Math.ceil((READ_MS - readMs()) / 1000));
+const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+function checkEnd() {
+  const b = $("d-body");
+  if (b.scrollTop + b.clientHeight >= b.scrollHeight - 12) reachedEnd = true;
+  $("d-more").hidden = reachedEnd;
+  checkReady();
+}
+$("d-body").addEventListener("scroll", checkEnd, { passive: true });
+
 /** What's still missing before signing, or "" when ready. */
 function missing() {
+  if (!reachedEnd) return "Please read the whole disclosure first: scroll to the end of it.";
+  if (leftS() > 0) return `Please take at least a minute to read it: ${mmss(leftS())} to go.`;
   if (!$("d-agree").checked) return "Tick the box to say you've read and agree to the disclosure.";
   if ($("d-name").value.trim().length < 3) return "Type your full name.";
   if (inkLength() < 10) return "Draw your signature in the box (with your finger or mouse).";
   return "";
 }
 function checkReady() {
-  $("d-submit").classList.toggle("is-waiting", !!missing());
-  if (!missing()) setStatus($("d-status"), "");
+  const need = missing();
+  const b = $("d-submit");
+  b.classList.toggle("is-waiting", !!need);
+  b.textContent = !reachedEnd ? "Scroll to the end first"
+    : leftS() > 0 ? `Sign and reserve · ${mmss(leftS())}`
+    : "Sign and reserve";
+  const st = $("d-status");
+  if (!need) setStatus(st, "");
+  else if (st.classList.contains("is-error")) setStatus(st, need, true); // keep a shown hint current (the countdown)
 }
 $("d-agree").addEventListener("change", checkReady);
 $("d-name").addEventListener("input", checkReady);
@@ -257,11 +286,24 @@ function openDisclosure(signing) {
   if (signing && !$("d-name").value) $("d-name").value = $("p-name").value;
   setStatus($("d-status"), "");
   show(dialog);
-  $("d-body").scrollTop = 0;
+  openedAt = Date.now();
+  if (!reachedEnd) $("d-body").scrollTop = 0;
+  clearInterval(tick);
+  tick = setInterval(checkReady, 1000);
   if (signing) sizePad();
-  checkReady();
+  checkEnd();
 }
-const closeDisclosure = () => hide(dialog);
+function closeDisclosure() {
+  if (openedAt) readBefore += Date.now() - openedAt;
+  openedAt = 0;
+  clearInterval(tick);
+  hide(dialog);
+}
+dialog.addEventListener("close", () => {
+  if (openedAt) readBefore += Date.now() - openedAt;
+  openedAt = 0;
+  clearInterval(tick);
+});
 $("d-close").addEventListener("click", closeDisclosure);
 $("d-cancel").addEventListener("click", closeDisclosure);
 $("read-disclosure").addEventListener("click", () => openDisclosure(false));

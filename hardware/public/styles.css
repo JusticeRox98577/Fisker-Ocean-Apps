@@ -369,3 +369,5 @@ html.has-dialog { overflow: hidden; }
 .admin-page .slot details summary::before { content: "+"; flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(92,225,230,.14); color: var(--cyan); font-weight: 700; }
 .admin-page .slot details[open] summary::before { content: "–"; }
 .admin-page .slot .checklist { margin-top: 10px; }
+.d-more { margin: 0; padding: 10px 14px; border-radius: 12px; font-size: .9rem; color: var(--amber); background: rgba(246,201,119,.10); border: 1px solid rgba(246,201,119,.4); }
+.d-more[hidden] { display: none; }
