@@ -125,6 +125,7 @@ struct NovaView: View {
                         } else if await run({ try await phone.requestPairing(code: code) }) { message = nil }
                     }
                 }
+                GhostButton(title: String(localized: "See a demo Nova Light"), color: Theme.dim) { phone.startDemo() }
             } else {
                 HStack(spacing: 10) {
                     ProgressView().tint(Theme.aqua)
@@ -139,6 +140,14 @@ struct NovaView: View {
 
     @ViewBuilder private var dashboard: some View {
         let s = phone.status
+        if phone.demo {
+            CardBox(glow: Theme.violet) {
+                Text("Demo: sample data from a made-up Nova Light, not your car.")
+                    .font(.system(size: 14)).foregroundStyle(.white)
+                GhostButton(title: String(localized: "Leave the demo"), color: Theme.violet) { phone.forget() }
+                    .padding(.top, 8)
+            }
+        }
         hero(s)
         if let message {
             Text(message).font(.system(size: 13)).foregroundStyle(Theme.dim).padding(.horizontal, 4)

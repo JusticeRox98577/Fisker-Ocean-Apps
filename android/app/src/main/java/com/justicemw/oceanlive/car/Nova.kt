@@ -72,7 +72,12 @@ class NovaPhone(private val context: Context) {
 
     val uid: String? get() = prefs.getString("uid", null)
     val slot: Int get() = prefs.getInt("slot", -1)
-    val paired get() = uid != null && slot >= 0
+    /** Showing a made-up Nova Light (sample data, nothing sent anywhere) instead of a paired car. */
+    val demo: Boolean get() = prefs.getBoolean("demo", false)
+    val paired get() = (uid != null && slot >= 0) || demo
+
+    /** The demo: a Nova Light dashboard with sample data, for trying the app without a box. */
+    fun startDemo() = prefs.edit().putBoolean("demo", true).apply()
     /** The code this phone sent and is waiting on (kept across launches, so a wait is never lost). */
     val pendingCode: String? get() = prefs.getString("pendingCode", null)
 
@@ -194,6 +199,12 @@ class NovaPhone(private val context: Context) {
         fun online(now: Long = System.currentTimeMillis()) = lastSeen > 0 && now - lastSeen < 180_000
 
         companion object {
+            /** A made-up Nova Light, parked, checked in a minute ago (the demo). */
+            fun demoLight(now: Long = System.currentTimeMillis()) = Status(
+                now - 60_000, 12610, false, 0, 0.0, null, null, -97, 1, 0x00010000, emptyList(),
+                isLight = true, lightState = 1, dataKb = 41, lightAlert = false,
+            )
+
             fun parse(j: JSONObject): Status {
                 val b = j.optJSONObject("box")
                 fun int(k: String) = b?.optInt(k) ?: 0
@@ -218,13 +229,14 @@ class NovaPhone(private val context: Context) {
     }
 
     fun status(): Status {
+        if (demo) return Status.demoLight()
         val u = uid ?: throw IllegalStateException("not paired")
         val t = System.currentTimeMillis() / 1000
         val sig = NovaCommands.hex(NovaCommands.statusSig(seed(), u, t))
         return Status.parse(call("/api/box/status?uid=$u&slot=$slot&t=$t&sig=$sig"))
     }
 
-    fun forget() = prefs.edit().remove("uid").remove("slot").remove("pendingCode").apply()
+    fun forget() = prefs.edit().remove("uid").remove("slot").remove("pendingCode").remove("demo").apply()
 
     companion object {
         const val BASE = "https://hardware.oceanlive.org"

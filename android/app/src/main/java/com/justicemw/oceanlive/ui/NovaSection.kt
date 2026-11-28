@@ -120,6 +120,8 @@ fun NovaSection() {
                         } else if (io { phone.requestPairing(code) } != null) { waiting = true; message = null }
                     }
                 }, modifier = Modifier.padding(top = 8.dp))
+                GhostButton(stringResource(R.string.nova_demo), onClick = { phone.startDemo(); paired = true; message = null },
+                    modifier = Modifier.padding(top = 8.dp), color = Dim)
             } else {
                 Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(18.dp), color = Aqua, strokeWidth = 2.dp)
@@ -148,6 +150,14 @@ fun NovaSection() {
     }
 
     Spacer(Modifier.padding(top = 12.dp))
+    if (phone.demo) {
+        Card(glow = Violet) {
+            Text(stringResource(R.string.nova_demo_banner), fontSize = 14.sp)
+            GhostButton(stringResource(R.string.nova_demo_leave), onClick = { phone.forget(); paired = false; status = null; message = null },
+                modifier = Modifier.padding(top = 8.dp), color = Violet)
+        }
+        Spacer(Modifier.padding(top = 10.dp))
+    }
     Hero(s)
     message?.let { Text(it, fontSize = 13.sp, color = Dim, modifier = Modifier.padding(top = 8.dp, start = 4.dp)) }
 

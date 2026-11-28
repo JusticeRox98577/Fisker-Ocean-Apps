@@ -756,6 +756,9 @@
     <string name="nova_saving_12v">Préserve la 12 V</string>
     <string name="nova_light_no_gps">La Nova Light n’a pas de GPS : elle ne peut pas montrer où est la voiture.</string>
     <string name="nova_light_code_hint">Nova Light : saisissez le code de 12 lettres imprimé dans la boîte.</string>
+    <string name="nova_demo">Voir une Nova Light de démonstration</string>
+    <string name="nova_demo_banner">Démo : données d’exemple d’une Nova Light fictive, pas de votre voiture.</string>
+    <string name="nova_demo_leave">Quitter la démo</string>
     <string name="nova_lock">Verrouiller</string>
     <string name="nova_unlock">Déverrouiller</string>
     <string name="nova_climate_on">Climatisation marche</string>

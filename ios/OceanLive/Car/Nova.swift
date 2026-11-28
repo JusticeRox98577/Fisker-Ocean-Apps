@@ -106,6 +106,13 @@ final class NovaPhone: ObservableObject {
                 a.isLight == b.isLight && a.lightState == b.lightState && a.dataKb == b.dataKb && a.lightAlert == b.lightAlert
         }
 
+        /// A made-up Nova Light, parked, checked in a minute ago (the demo).
+        static func demoLight(now: Date = Date()) -> Status {
+            Status(lastSeen: now.addingTimeInterval(-60), v12mV: 12610, ignition: false, gear: 0, speedKmh: 0,
+                   location: nil, rsrp: -97, phones: 1, firmware: 0x0001_0000, isLight: true, lightState: 1,
+                   dataKb: 41, lightAlert: false, commands: [])
+        }
+
         /// Checked in within the last 3 minutes (it checks in every minute or so while it has signal).
         func online(now: Date = Date()) -> Bool { lastSeen.map { now.timeIntervalSince($0) < 180 } ?? false }
 
@@ -137,9 +144,13 @@ final class NovaPhone: ObservableObject {
     /// The code this phone sent and is waiting on (kept across launches, so a wait is never lost).
     @Published private(set) var pendingCode: String?
 
-    var paired: Bool { uid != nil && slot >= 0 }
+    /// Showing a made-up Nova Light (sample data, nothing sent anywhere) instead of a paired car.
+    @Published private(set) var demo: Bool
+
+    var paired: Bool { (uid != nil && slot >= 0) || demo }
 
     private init() {
+        demo = defaults.bool(forKey: "nova.demo")
         uid = defaults.string(forKey: "nova.uid")
         slot = defaults.object(forKey: "nova.slot") as? Int ?? -1
         pendingCode = defaults.string(forKey: "nova.pendingCode")
@@ -259,7 +270,18 @@ final class NovaPhone: ObservableObject {
         _ = try await call("/api/box/command", body: ["uid": u, "cmd": NovaCommands.hex(cmd)])
     }
 
+    /// The demo: a Nova Light dashboard with sample data, for trying the app without a box.
+    func startDemo() {
+        defaults.set(true, forKey: "nova.demo")
+        demo = true
+        status = Status.demoLight()
+    }
+
     func refresh() async throws {
+        if demo {
+            status = Status.demoLight()
+            return
+        }
         guard let u = uid else { return }
         let t = Int64(Date().timeIntervalSince1970)
         let sig = NovaCommands.hex(try NovaCommands.statusSignature(key: try key(), uidHex: u, t: t))
@@ -269,7 +291,8 @@ final class NovaPhone: ObservableObject {
     }
 
     func forget() {
-        for k in ["nova.uid", "nova.slot", "nova.pendingCode"] { defaults.removeObject(forKey: k) }
+        for k in ["nova.uid", "nova.slot", "nova.pendingCode", "nova.demo"] { defaults.removeObject(forKey: k) }
+        demo = false
         pendingCode = nil
         uid = nil
         slot = -1

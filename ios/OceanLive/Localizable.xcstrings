@@ -17882,6 +17882,90 @@
           }
         }
       }
+    },
+    "See a demo Nova Light": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo einer Nova Light ansehen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver una Nova Light de demostración"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voir une Nova Light de démonstration"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een demo-Nova Light bekijken"
+          }
+        }
+      }
+    },
+    "Demo: sample data from a made-up Nova Light, not your car.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo: Beispieldaten einer erfundenen Nova Light, nicht deines Autos."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demostración: datos de ejemplo de una Nova Light inventada, no de tu coche."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Démo : données d’exemple d’une Nova Light fictive, pas de votre voiture."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo: voorbeeldgegevens van een verzonnen Nova Light, niet van jouw auto."
+          }
+        }
+      }
+    },
+    "Leave the demo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo beenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salir de la demostración"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitter la démo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo verlaten"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
