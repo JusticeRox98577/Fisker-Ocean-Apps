@@ -64,17 +64,31 @@ take it back.
 ## Pre-orders (preorder.oceanlive.org)
 
 The same Worker answers on `preorder.oceanlive.org`, where the home page is `public/preorder.html`.
-People reserve a Nova Light or a SuperNova for free and confirm by email; the link in that email
-(`/reservation#token`) shows their place in line and lets them cancel.
+People reserve the Nova Light, SuperNova, Nova Flare or Nova Quasar for free: they sign the
+first-generation disclosure in a window on the page (typed name and a drawn signature, kept with the
+reservation), then confirm by email. The link in that email (`/reservation#token`) is their order
+status page: place, current price, payments, their batch's build progress, and cancelling. Anyone
+can get fresh links from "Check your order" on the page.
 
-* **Prices, deposits and goals** are in `PRODUCTS` in `src/preorders.ts` (Light $179 / $50 deposit,
-  SuperNova $599 / $100 deposit, goal 10 each). Only those two are open; add the Flare and Quasar
-  there when they are. People keep the price they reserved at.
-* **Nobody is charged by this site.** When a product reaches 10 confirmed reservations you get an
-  email. In /admin, Pre-orders, paste a deposit payment link made in your payment provider (for
-  example a Stripe payment link) and press the button: everyone confirmed gets it by email. Mark
-  deposits as paid when they arrive; refunds are done in the payment provider.
-* **Cancelling** from the reservation page emails you; if they had paid, the email says to refund.
+* **Volume prices, deposits and goals** are in `PRODUCTS` in `src/preorders.ts`. Each product's price
+  steps down as its open batch grows (Light $179 → $149, SuperNova $599 → $499, Flare $470 → $399,
+  Quasar $500 → $429 at 25 / 50 / 100); everyone in a batch pays its lowest reached price, never more
+  than when they reserved. Deposit $100, goal 10 each.
+* **Flare and Quasar need a Nova Light.** Reserving one also reserves a Light at $50 off
+  (`LIGHT_BUNDLE_OFF`), confirmed and cancelled with it, unless they tick that they already have one.
+  At the first step that's $599 (Flare + Light) and $629 (Quasar + Light).
+* **Nobody is charged by this site.** In /admin, Pre-orders:
+  1. at 10 confirmed reservations (you get an email), paste a $100 deposit payment link from your
+     payment provider (for example a Stripe payment link): everyone reserved gets it;
+  2. mark deposits paid as they arrive;
+  3. right before ordering the parts, ask everyone whose deposit is paid for the rest. That closes the
+     batch at its current volume price and gives it a number. Each email states that person's amount
+     (prices can differ: bundled Lights, earlier lower locks), so use a payment link where the customer
+     enters the amount, or one link per amount;
+  4. mark them paid in full, and tick the batch's **build tracker** steps (`BUILD_STEPS`) as you go.
+     The trackers are public (a button on each product) and on each order's status page.
+* **Cancelling** from the status page emails you; if they had paid, the email says what to refund.
+  The disclosure text is in `public/preorder.html`; bump `DISCLOSURE_VERSION` when you change it.
 * `PREORDERS_CLOSED` = `"true"` stops new reservations. Unconfirmed reservations are deleted after
   7 days.
 * The text of the page, the terms and the emails are marked `EDIT` in `public/preorder.html` and

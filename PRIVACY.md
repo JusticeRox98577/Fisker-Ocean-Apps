@@ -474,21 +474,24 @@ at any time by asking for your answer to be deleted.
 
 ## Nova pre-orders (only if you reserve)
 
-At preorder.oceanlive.org you can reserve a Nova Light or a SuperNova from Ocean Live LLC.
+At preorder.oceanlive.org you can reserve Nova hardware (the Nova Light, SuperNova, Nova Flare or Nova Quasar) from Ocean Live LLC.
 Reserving is free and takes no payment details. It is separate from the app, your account, the
 mailing list and the beta sign-up.
 
 What is stored, in the same Cloudflare D1 database as the beta sign-up, which only the developer
 can read: your email address, which product you reserved, the price and deposit when you
 reserved, whatever else you choose to fill in (your name, state, which Ocean you have, your
-notes), the state of your reservation (waiting for confirmation, reserved, deposit asked for,
-deposit paid, cancelled) and when each of those happened, and a hash of the code in your
-reservation link.
+notes), the state of your reservation (waiting for confirmation, reserved, deposit asked for or
+paid, the rest asked for or paid, cancelled), when each of those happened, its build batch, and a
+hash of the code in your reservation link. Before reserving you sign the first-generation
+disclosure: the name you type, the signature you draw (as an image), when you signed and which
+version of the disclosure, are kept with your reservation as the record of what you agreed to.
 
 To limit abuse, the server counts reservations and link tries per network for an hour, stored
 only as a hash of the IP address and deleted within a day.
 
-What everyone can see: only how many people have reserved each product. Never who.
+What everyone can see: how many people have reserved each product, its current price, and each
+batch's build progress. Never who.
 
 Why: to know when enough people have reserved a product to build it, to email you about your
 reservation (the confirmation, the deposit request when the batch is built, and shipping), and to

@@ -143,12 +143,14 @@ async function admin(req: Request, env: Env, ctx: ExecutionContext, path: string
     return box.makeBoxCode(env, body, now);
   }
   if (path === "/api/admin/preorders") return req.method === "GET" ? preorders.list(env, new URL(req.url), now) : wrongMethod("GET");
-  if (path === "/api/admin/preorders/request" || path === "/api/admin/preorders/mark") {
+  if (path === "/api/admin/preorders/signature") return req.method === "GET" ? preorders.signatureImage(env, new URL(req.url)) : wrongMethod("GET");
+  if (path === "/api/admin/preorders/request" || path === "/api/admin/preorders/mark" || path === "/api/admin/preorders/step") {
     if (req.method !== "POST") return wrongMethod("POST");
     if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
     const body = await readJson(req);
     if (!body || body === "too-big") return badBody();
-    return path.endsWith("/request") ? preorders.requestDeposits(env, body, now) : preorders.mark(env, body, now);
+    if (path.endsWith("/step")) return preorders.setStep(env, body, now);
+    return path.endsWith("/request") ? preorders.requestPayments(env, body, now) : preorders.mark(env, body, now);
   }
   if (path === "/api/admin/dev") return req.method === "GET" ? listCerts(env, now) : wrongMethod("GET");
   if (path === "/api/admin/dev/checkins") {
@@ -251,20 +253,26 @@ export default {
         case "/api/preorder/info":
           if (req.method !== "GET" && req.method !== "HEAD") return wrongMethod("GET, HEAD");
           return await preorders.info(env);
+        case "/api/preorder/build":
+          if (req.method !== "GET" && req.method !== "HEAD") return wrongMethod("GET, HEAD");
+          return await preorders.builds(env);
         case "/api/preorder":
+        case "/api/preorder/lookup":
         case "/api/reservation":
         case "/api/reservation/confirm":
         case "/api/reservation/cancel": {
           if (req.method !== "POST") return wrongMethod("POST");
           if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
-          const body = await readJson(req);
-          if (body === "too-big") return json({ error: "That's too long. Shorten the notes and try again." }, 413);
+          // a reservation carries the drawn signature (a small PNG)
+          const body = await readJson(req, url.pathname === "/api/preorder" ? 320 * 1024 : 16 * 1024);
+          if (body === "too-big") return json({ error: "That's too long. Shorten the notes, or clear the signature and sign again." }, 413);
           if (!body) return badBody();
           const ip = req.headers.get("CF-Connecting-IP");
-          const reserving = url.pathname === "/api/preorder";
+          const reserving = url.pathname === "/api/preorder" || url.pathname === "/api/preorder/lookup";
           if (ip && (await bump(env.DB, `${reserving ? "pre" : "res"}:${await sha256(`hardware:${ip}`)}`, HOUR, now)) > (reserving ? num(env.PER_IP_PER_HOUR, 5) : 30)) {
             return json({ error: "Too many tries from this network. Please try again in an hour." }, 429);
           }
+          if (url.pathname === "/api/preorder/lookup") return await preorders.lookup(env, body);
           if (reserving) return await preorders.reserve(env, body, now);
           const token = tokenFrom(body.token);
           if (url.pathname === "/api/reservation") return await preorders.show(env, token);

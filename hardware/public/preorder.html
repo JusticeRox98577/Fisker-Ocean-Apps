@@ -8,13 +8,13 @@
 <meta name="color-scheme" content="dark">
 <!-- EDIT: the title and description shown in search results and link previews. -->
 <title>Pre-order Nova · Ocean Live</title>
-<meta name="description" content="Reserve a Nova Light or a SuperNova for your Fisker Ocean. Nothing is charged until 10 people have reserved.">
+<meta name="description" content="Reserve Nova hardware for your Fisker Ocean. Nothing is charged until 10 people have reserved, and the price drops for everyone as more people join.">
 <link rel="canonical" href="https://preorder.oceanlive.org/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ocean Live">
 <meta property="og:url" content="https://preorder.oceanlive.org/">
 <meta property="og:title" content="Pre-order Nova · Ocean Live">
-<meta property="og:description" content="Reserve a Nova Light or a SuperNova for your Fisker Ocean. Nothing is charged until 10 people have reserved.">
+<meta property="og:description" content="Reserve Nova hardware for your Fisker Ocean. Nothing is charged until 10 people have reserved, and the price drops for everyone as more people join.">
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -42,7 +42,7 @@
     <div class="eyebrow">Nova for the Fisker Ocean</div>
     <!-- EDIT: the headline and the line under it. -->
     <h1>Reserve your Nova</h1>
-    <p class="lede">Reserving is free. When 10 people have reserved a product, I build that batch and ask everyone for a refundable deposit. Nobody pays anything before then.</p>
+    <p class="lede">Reserving is free. When 10 people have reserved a product, I build that batch. And the more people join a batch, the cheaper it gets for everyone in it: the prices below update live, and if your batch's price drops after you reserve, you pay the lower price.</p>
   </div>
 </section>
 
@@ -51,22 +51,6 @@
   <section aria-labelledby="line-title">
     <h2 id="line-title" class="section-title">Available to reserve</h2>
     <ul class="products preorder-products">
-      <li class="panel product" data-product="light">
-        <h3>Nova Light</h3>
-        <p class="price"><b data-price>$179</b></p>
-        <p>A small box that reads your Ocean and sends its data to the Ocean Live app from anywhere.</p>
-        <ul class="plain-list">
-          <li>Charge, 12V battery, location and alerts in the app</li>
-          <li>Its own LTE-M connection, <b>10 years of data included</b></li>
-          <li>Harness for the spider port, plus a fuse-tap power lead</li>
-          <li>Listen-only: it reads the car and never sends to it</li>
-        </ul>
-        <div class="progress" hidden>
-          <div class="bar"><span data-bar></span></div>
-          <p class="small muted"><b data-reserved>0</b> of <span data-goal>10</span> reserved</p>
-        </div>
-        <button class="btn btn-ghost btn-small" type="button" data-pick="light">Reserve a Nova Light</button>
-      </li>
       <li class="panel product" data-product="supernova">
         <h3>SuperNova</h3>
         <p class="price"><b data-price>$599</b></p>
@@ -80,28 +64,77 @@
         </ul>
         <div class="progress" hidden>
           <div class="bar"><span data-bar></span></div>
-          <p class="small muted"><b data-reserved>0</b> of <span data-goal>10</span> reserved</p>
+          <p class="small muted"><b data-reserved>0</b> of <span data-goal>10</span> reserved · <span data-next></span></p>
+          <ol class="tiers" data-tiers></ol>
         </div>
         <button class="btn btn-ghost btn-small" type="button" data-pick="supernova">Reserve a SuperNova</button>
       </li>
+      <li class="panel product" data-product="light">
+        <h3>Nova Light</h3>
+        <p class="price"><b data-price>$179</b></p>
+        <p>A small box that reads your Ocean and sends its data to the Ocean Live app from anywhere.</p>
+        <ul class="plain-list">
+          <li>Charge, 12V battery, location and alerts in the app</li>
+          <li>Its own LTE-M connection, <b>10 years of data included</b></li>
+          <li>Harness for the spider port, plus a fuse-tap power lead</li>
+          <li>Listen-only: it reads the car and never sends to it</li>
+        </ul>
+        <div class="progress" hidden>
+          <div class="bar"><span data-bar></span></div>
+          <p class="small muted"><b data-reserved>0</b> of <span data-goal>10</span> reserved · <span data-next></span></p>
+          <ol class="tiers" data-tiers></ol>
+        </div>
+        <button class="btn btn-ghost btn-small" type="button" data-pick="light">Reserve a Nova Light</button>
+      </li>
+      <li class="panel product" data-product="quasar">
+        <h3>Nova Quasar</h3>
+        <p class="price"><b data-price>$500</b> <span class="price-note" data-bundle>+ Nova Light $129 = $629</span></p>
+        <p>Android on your center screen with its own LTE, working together with a Nova Light.</p>
+        <ul class="plain-list">
+          <li>Android apps on the center screen and a live dashboard</li>
+          <li>Built-in LTE for streaming (bring a data SIM)</li>
+          <li><b>Needs a Nova Light</b>: one is reserved with it at $50 off, unless you already have one</li>
+        </ul>
+        <div class="progress" hidden>
+          <div class="bar"><span data-bar></span></div>
+          <p class="small muted"><b data-reserved>0</b> of <span data-goal>10</span> reserved · <span data-next></span></p>
+          <ol class="tiers" data-tiers></ol>
+        </div>
+        <button class="btn btn-ghost btn-small" type="button" data-pick="quasar">Reserve a Nova Quasar</button>
+      </li>
+      <li class="panel product" data-product="flare">
+        <h3>Nova Flare</h3>
+        <p class="price"><b data-price>$470</b> <span class="price-note" data-bundle>+ Nova Light $129 = $599</span></p>
+        <p>Android on your center screen, working together with a Nova Light. Uses your phone's hotspot or Wi-Fi for internet.</p>
+        <ul class="plain-list">
+          <li>Android apps on the center screen and a live dashboard</li>
+          <li>No built-in LTE: the Quasar adds that</li>
+          <li><b>Needs a Nova Light</b>: one is reserved with it at $50 off, unless you already have one</li>
+        </ul>
+        <div class="progress" hidden>
+          <div class="bar"><span data-bar></span></div>
+          <p class="small muted"><b data-reserved>0</b> of <span data-goal>10</span> reserved · <span data-next></span></p>
+          <ol class="tiers" data-tiers></ol>
+        </div>
+        <button class="btn btn-ghost btn-small" type="button" data-pick="flare">Reserve a Nova Flare</button>
+      </li>
     </ul>
-    <!-- EDIT: the products that aren't open yet. -->
-    <p class="muted small">Nova Flare and Nova Quasar open for reservations later. <a href="https://hardware.oceanlive.org/">Tell me you're interested</a>.</p>
   </section>
 
   <section class="about" aria-labelledby="how-title">
     <h2 id="how-title" class="section-title">How it works</h2>
     <ol class="steps">
-      <li><b>Reserve for free.</b> Fill in the form and confirm from the email. No card, no payment.</li>
-      <li><b>At 10 reservations</b> for a product, I order that batch and email everyone a link to pay a refundable deposit: <span data-deposit="light">$50</span> for a Nova Light, <span data-deposit="supernova">$100</span> for a SuperNova.</li>
-      <li><b>Before your unit ships</b>, you pay the rest. Until then you can cancel and get your deposit back.</li>
-      <li><b>Your price is locked</b> at what it was when you reserved.</li>
+      <li><b>Reserve for free.</b> Sign the first-generation disclosure, then confirm from the email. No card, no payment.</li>
+      <li><b>The more people reserve, the lower the price.</b> Each product's price steps down as its batch grows, for everyone in the batch, including people who reserved earlier. You never pay more than the price when you reserved.</li>
+      <li><b>At 10 reservations</b> for a product, I email everyone a link to pay a refundable <b>$100 deposit</b>.</li>
+      <li><b>Right before I order the parts</b> and start building, I email everyone for the rest of the price, at the batch's final (lowest) price. That closes the batch; later reservations start the next one.</li>
+      <li><b>Until you've paid in full</b>, you can cancel and get your deposit back.</li>
     </ol>
   </section>
 
   <section class="sheet form-sheet" aria-labelledby="form-title" id="reserve">
     <h2 id="form-title">Reserve</h2>
-    <p class="muted">Takes a minute. You'll get an email to confirm, and that email's link lets you check your place in line or cancel at any time.</p>
+    <p class="muted">Takes a minute. When you press Reserve, you'll read and sign the first-generation disclosure. Then you'll get an email to confirm; its link lets you check your place and price, or cancel, at any time.</p>
 
     <p class="closed-note" id="closed-note" role="note" hidden>Pre-orders are closed for now. Follow <a href="https://oceanlive.org/news">Ocean Live news</a> to hear when they open again.</p>
 
@@ -109,10 +142,19 @@
       <fieldset class="group">
         <legend>What would you like? <span class="req">required</span></legend>
         <div class="chips">
-          <label class="chip"><input type="radio" name="product" value="light"><span data-chip="light">Nova Light · $179</span></label>
           <label class="chip"><input type="radio" name="product" value="supernova"><span data-chip="supernova">SuperNova · $599</span></label>
+          <label class="chip"><input type="radio" name="product" value="light"><span data-chip="light">Nova Light · $179</span></label>
+          <label class="chip"><input type="radio" name="product" value="quasar"><span data-chip="quasar">Nova Quasar · $500</span></label>
+          <label class="chip"><input type="radio" name="product" value="flare"><span data-chip="flare">Nova Flare · $470</span></label>
         </div>
-        <p class="help">To reserve both, send the form twice.</p>
+        <div class="light-row" id="light-row" hidden>
+          <label class="consent">
+            <input type="checkbox" name="hasLight" id="p-has-light">
+            <span>I already have a Nova Light (or have reserved one), so don't add another.</span>
+          </label>
+          <p class="help" id="bundle-total" aria-live="polite"></p>
+        </div>
+        <p class="help">To reserve more than one product, send the form again.</p>
       </fieldset>
 
       <fieldset class="group">
@@ -153,11 +195,6 @@
         <input id="p-website" name="website" type="text" tabindex="-1" autocomplete="off">
       </div>
 
-      <label class="consent">
-        <input type="checkbox" name="consent" id="p-consent" required>
-        <span>I've read the <a href="#terms">pre-order terms</a>, including that this is a first-revision device. Ocean Live may email me about my reservation. <a href="https://oceanlive.org/privacy#preorders">Privacy policy</a>.</span>
-      </label>
-
       <div class="submit-row">
         <button class="btn btn-primary" type="submit">Reserve (free)</button>
         <p class="status" id="status" role="status" aria-live="polite" tabindex="-1"></p>
@@ -171,26 +208,126 @@
     <p class="nojs">The form needs JavaScript. You can also write to <a href="mailto:support@oceanlive.org?subject=Nova%20pre-order">support@oceanlive.org</a>.</p>
   </section>
 
-  <!-- EDIT: the pre-order terms. -->
-  <section class="about" aria-labelledby="terms">
-    <h2 id="terms" class="section-title">Pre-order terms</h2>
-    <h3>First-revision hardware</h3>
-    <p>These are the first production units. They're tested in my own Ocean before they ship, but something could still go wrong. I'll fix what I can with over-the-air updates, and I'll tell you plainly what's known to work and what isn't. If a first-revision unit turns out to have a hardware fault, I'll repair or replace it, or refund you.</p>
-    <h3>Nothing is charged until there are 10</h3>
-    <p>A reservation is free and commits you to nothing. When a product reaches 10 confirmed reservations, everyone who reserved it gets an email asking for the deposit. If you don't pay it, your reservation lapses and the next person moves up.</p>
-    <h3>Deposits are refundable</h3>
-    <p>You can cancel at any time before your unit ships, from the link in your emails, and get your whole deposit back. If I can't deliver for any reason, everyone gets a full refund.</p>
-    <h3>Shipping</h3>
-    <p>To the United States for now. Units ship only once they meet the FCC rules for devices with radios (they use certified LTE and Wi-Fi modules). I'll email you a realistic date when your batch is ordered.</p>
-    <h3>Installing</h3>
-    <p>The Nova Light plugs into the spider port behind the dash trim and takes power from a fuse tap. The SuperNova also goes inline with the center screen's video cable. There's a guide, and unplugging Nova returns the car to stock. Like any aftermarket part, it could matter to a dealer for warranty questions on related parts.</p>
-    <h3>What it does to your car</h3>
-    <p>By default Nova only listens to the car's networks and never sends anything to them. Remote commands on the SuperNova stay switched off until they've been tested, and you turn them on yourself.</p>
-    <h3>Who you're buying from</h3>
-    <p>Ocean Live LLC (Washington, USA). Questions: <a href="mailto:support@oceanlive.org">support@oceanlive.org</a>.</p>
+  <section class="sheet" aria-labelledby="lookup-title" id="status-lookup">
+    <h2 id="lookup-title">Check your order</h2>
+    <p class="muted">Enter the email you reserved with, and I'll send you a link to your order's status: your place, your price, your payments, and your batch's build progress.</p>
+    <form class="lookup" id="lookup-form" novalidate>
+      <label class="sr-only" for="l-email">Email address</label>
+      <input class="input" id="l-email" type="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com">
+      <div class="hp" aria-hidden="true"><input id="l-website" type="text" tabindex="-1" autocomplete="off"></div>
+      <button class="btn btn-ghost" type="submit">Email me the status link</button>
+    </form>
+    <p class="status" id="l-status" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="about" aria-labelledby="terms-title">
+    <h2 id="terms-title" class="section-title">Pre-order terms</h2>
+    <p>Every reservation needs the first-generation disclosure signed: what first-generation hardware means, what it does to your car, and the payment and refund terms. <button class="link-btn" type="button" id="read-disclosure">Read the disclosure</button></p>
+    <p>Sold by Ocean Live LLC (Washington, USA). Questions: <a href="mailto:support@oceanlive.org">support@oceanlive.org</a>.</p>
   </section>
 </div>
 </main>
+
+<!-- EDIT: the first-generation disclosure. When you change it, change DISCLOSURE_VERSION in
+     src/preorders.ts too, so each signature records which text was signed. -->
+<dialog class="disclosure" id="disclosure" aria-labelledby="d-title">
+  <div class="d-head">
+    <div>
+      <div class="eyebrow">Version 2026-11-28</div>
+      <h2 id="d-title">First-generation disclosure</h2>
+    </div>
+    <button class="icon-btn" type="button" id="d-close" aria-label="Close">✕</button>
+  </div>
+  <div class="d-body" id="d-body" tabindex="0">
+    <p class="lede-sm">Please read all of this. Nova is first-generation hardware from a small company, and you should know exactly what that means before you reserve.</p>
+
+    <h3>1. What you're reserving</h3>
+    <ul class="plain-list">
+      <li>Nova is made by Ocean Live LLC, a small independent company. It is not made, approved or supported by Fisker or any car maker.</li>
+      <li>Your unit comes from the first production batch (revision 1) of a new design, built in small batches.</li>
+    </ul>
+
+    <h3>2. What "first generation" means</h3>
+    <ul class="plain-list">
+      <li><b>It's new.</b> Each design is tested in my own Ocean before it ships, but it hasn't had years of use in many cars. Expect bugs.</li>
+      <li><b>Not everything is finished at launch.</b> Some features arrive later through over-the-air updates (for example remote lock and climate on the SuperNova). A listed feature may change, arrive late, or be dropped if it turns out to be unsafe or unreliable.</li>
+      <li><b>Hardware can have faults.</b> A unit may need to be sent back for repair or replacement.</li>
+      <li><b>Later revisions will be better.</b> A free upgrade to a later revision isn't promised.</li>
+    </ul>
+
+    <h3>3. Your car</h3>
+    <ul class="plain-list">
+      <li>Installing means removing interior trim, plugging into the car's internal networks at the spider port, and taking power from a fuse tap (the screen products also go inline with the center screen's video cable). Done carelessly, it can damage trim, clips or wiring. You're responsible for installing it, or for having it installed.</li>
+      <li>By default Nova only listens to the car's networks and never sends anything to them. Remote commands stay off until they've been tested, and you turn them on yourself.</li>
+      <li>A faulty unit could drain the 12V battery or cause warning messages. Unplugging Nova returns the car to stock.</li>
+      <li>Like any aftermarket part, it could come up if you make a warranty claim on related parts.</li>
+      <li>Apps on the center screen are for use while parked, or in ways that don't distract you while driving. Don't watch video while driving.</li>
+    </ul>
+
+    <h3>4. Connectivity and data</h3>
+    <ul class="plain-list">
+      <li>The Nova Light (and the Light built into the SuperNova) includes 10 years of LTE-M data. Streaming on the SuperNova or Quasar needs your own data SIM and plan.</li>
+      <li>Features that use the internet depend on cellular coverage and on the Ocean Live servers. How your data is handled is in the <a href="https://oceanlive.org/privacy#preorders">privacy policy</a>.</li>
+    </ul>
+
+    <h3>5. Price and payments</h3>
+    <ul class="plain-list">
+      <li>Reserving is free. Nothing is charged until a product reaches 10 reservations.</li>
+      <li><b>The more people reserve, the lower the price.</b> A batch's price steps down as it grows, for everyone in it. You pay your batch's lowest price when it closes, and never more than the price when you reserved.</li>
+      <li>At 10 reservations, you'll be asked for a <b>$100 deposit</b>, refundable until you've paid in full.</li>
+      <li>Right before I order the parts for your batch, you'll be asked for the rest of the price. That closes the batch at its final price.</li>
+      <li>Once you've paid in full and the parts are ordered, a cancellation is refunded less the cost of the parts already bought for your unit.</li>
+      <li>If I can't deliver your unit for any reason, you get a full refund.</li>
+    </ul>
+
+    <h3>6. Warranty and liability</h3>
+    <ul class="plain-list">
+      <li>If your unit has a hardware fault within 90 days of delivery, I'll repair it, replace it, or refund you.</li>
+      <li>Otherwise it's provided as is. To the extent the law allows, Ocean Live LLC's total liability is limited to what you paid for the unit, and it isn't liable for indirect or consequential damage. Nothing here limits rights you have that can't be limited by law.</li>
+    </ul>
+
+    <h3>7. Shipping</h3>
+    <ul class="plain-list">
+      <li>United States only for now.</li>
+      <li>Units ship only once they meet the FCC rules for devices with radios. Dates are estimates; you'll get an email with a realistic date when your batch's parts are ordered.</li>
+    </ul>
+  </div>
+
+  <div class="d-sign" id="d-sign">
+    <label class="consent">
+      <input type="checkbox" id="d-agree">
+      <span>I've read and understood this disclosure, and I agree to it.</span>
+    </label>
+    <div class="field">
+      <label for="d-name">Your full name <span class="req">required</span></label>
+      <input class="input" id="d-name" type="text" maxlength="100" autocomplete="name">
+    </div>
+    <div class="field">
+      <span class="sig-label" id="d-pad-label">Sign here <span class="req">required</span></span>
+      <canvas class="sig-pad" id="d-pad" width="600" height="160" role="img" aria-labelledby="d-pad-label"></canvas>
+      <p class="help"><button class="link-btn" type="button" id="d-clear">Clear the signature</button> · Signed on <span id="d-date"></span></p>
+    </div>
+    <div class="submit-row">
+      <button class="btn btn-primary" type="button" id="d-submit" disabled>Sign and reserve</button>
+      <button class="btn btn-ghost" type="button" id="d-cancel">Not now</button>
+      <p class="status" id="d-status" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="disclosure tracker" id="tracker" aria-labelledby="t-title">
+  <div class="d-head">
+    <div>
+      <div class="eyebrow">Live</div>
+      <h2 id="t-title">Build tracker</h2>
+    </div>
+    <button class="icon-btn" type="button" id="t-close" aria-label="Close">✕</button>
+  </div>
+  <div class="d-body">
+    <p class="muted" id="t-line"></p>
+    <ol class="checklist" id="t-list"></ol>
+  </div>
+</dialog>
 
 <footer class="foot wrap">
   <a href="https://oceanlive.org/">oceanlive.org</a>

@@ -278,3 +278,34 @@ textarea.input { resize: vertical; min-height: 110px; }
 .progress { display: grid; gap: 6px; margin: 8px 0 4px; }
 .progress .bar span { display: block; height: 100%; width: 0; background: var(--cyan); border-radius: 4px; transition: width var(--dur); }
 .steps { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; }
+.price-note { font: 500 .9rem/1.3 var(--font-body); color: var(--ink-muted); margin-left: 6px; }
+.tiers { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; font-size: .8125rem; color: var(--ink-muted); }
+.tiers li { padding: 3px 8px; border: 1px dashed var(--line); border-radius: 999px; }
+.tiers li.is-now { border: 1px solid var(--cyan); color: var(--ink); background: var(--cyan-soft); }
+.light-row { display: grid; gap: 6px; padding: 12px 14px; border: 1px dashed var(--field-line); border-radius: var(--radius); }
+.lookup { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.lookup .input { flex: 1 1 260px; }
+
+/* windows on the page: the disclosure and the build tracker */
+.disclosure { width: min(760px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; color: var(--ink); background: var(--paper-deep); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 40px 120px -20px rgba(0,0,0,.8); overflow: hidden; }
+.disclosure[open] { display: flex; flex-direction: column; }
+.disclosure::backdrop { background: rgba(4, 18, 38, .78); backdrop-filter: blur(3px); }
+.d-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 20px 20px 14px; border-bottom: 1px solid var(--line); }
+.d-head h2 { font-size: clamp(1.3rem, 3vw, 1.7rem); }
+.d-head .eyebrow { margin-bottom: 6px; }
+.d-body { padding: 18px 20px; overflow-y: auto; flex: 1 1 auto; display: grid; gap: 10px; align-content: start; }
+.d-body h3 { font-size: 1.05rem; margin-top: 12px; }
+.d-sign { display: grid; gap: 14px; padding: 16px 20px 20px; border-top: 1px solid var(--line); background: var(--panel); }
+.d-sign[hidden] { display: none; }
+.sig-label { font-weight: 500; }
+.sig-pad { width: 100%; height: 140px; touch-action: none; cursor: crosshair; background: var(--field); border: 1px solid var(--field-line); border-radius: var(--radius); }
+.checklist { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
+.checklist li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); color: var(--ink-muted); }
+.checklist li.is-done { color: var(--ink); border-color: rgba(126,224,181,.5); background: rgba(126,224,181,.06); }
+.checklist .tick { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--field-line); color: var(--green); font-weight: 700; }
+.checklist li.is-done .tick { border-color: var(--green); }
+.checklist .when { margin-left: auto; font-size: .8125rem; color: var(--ink-muted); }
+.checklist label { display: flex; align-items: center; gap: 10px; flex: 1; cursor: pointer; }
+@media (max-width: 520px) { .d-head, .d-body, .d-sign { padding-left: 14px; padding-right: 14px; } }
+.preorder-products { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.price-note { display: block; margin: 4px 0 0; }

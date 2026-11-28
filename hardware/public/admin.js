@@ -252,40 +252,95 @@ async function loadBoxes() {
 // ---- pre-orders ---------------------------------------------------------------------------------
 
 const PRE_STATUS = { unconfirmed: "not confirmed yet", confirmed: "reserved", deposit_requested: "deposit asked",
-  deposit_paid: "deposit paid", cancelled: "cancelled" };
+  deposit_paid: "deposit paid", balance_requested: "rest asked", paid: "paid in full", cancelled: "cancelled" };
 const usd = (c) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
 
-function preProduct(p, rows) {
-  const li = el("li", "slot");
-  li.append(el("span", "slot-n", p.name), el("b", "", `${p.reserved} of ${p.goal} reserved`),
-    el("span", "slot-state", `${usd(p.price)}, deposit ${usd(p.deposit)}`));
-  const waiting = rows.filter((r) => r.product === p.id && r.status === "confirmed").length;
-  if (p.reserved < p.goal || !waiting) return li;
+/** A payment link box and button: kind "deposit" (to everyone reserved) or "balance" (to everyone whose deposit is paid). */
+function payBox(p, kind, n) {
+  const wrap = el("div", "actions");
   const link = el("input", "input");
-  link.placeholder = "Deposit payment link (https://…)";
-  link.setAttribute("aria-label", `${p.name} deposit payment link`);
-  const send = el("button", "btn btn-small btn-primary", `Email the deposit link to ${waiting}`);
+  link.placeholder = kind === "deposit" ? "Deposit payment link ($100, https://…)" : "Payment link for the rest (https://…)";
+  link.setAttribute("aria-label", `${p.name} ${kind} payment link`);
+  const send = el("button", "btn btn-small btn-primary",
+    kind === "deposit" ? `Ask ${n} for the deposit` : `Ask ${n} for the rest (closes the batch)`);
   send.type = "button";
   send.addEventListener("click", async () => {
-    if (!window.confirm(`Email the ${p.name} deposit link to ${waiting} people?`)) return;
+    const q = kind === "deposit"
+      ? `Email the ${p.name} deposit link to ${n} people?`
+      : `Email ${n} people for the rest of the ${p.name} price? This closes the batch at today's price and starts its build tracker. Each email states that person's amount, so use a payment link where they enter it (or one link per amount).`;
+    if (!window.confirm(q)) return;
     send.disabled = true;
-    const r = await call("/api/admin/preorders/request", { product: p.id, link: link.value.trim() });
+    const r = await call("/api/admin/preorders/request", { product: p.id, link: link.value.trim(), kind });
     send.disabled = false;
     if (r.error) return say($("dash-status"), r.error, "error");
     const missed = r.failed.length ? ` Not sent to: ${r.failed.join(", ")}.` : "";
-    say($("dash-status"), `Sent to ${r.sent}.${missed}`, missed ? "error" : "ok");
+    say($("dash-status"), `Sent to ${r.sent}.${r.batch ? ` This is batch ${r.batch}.` : ""}${missed}`, missed ? "error" : "ok");
     loadPreorders();
   });
-  li.append(link, send);
+  wrap.append(link, send);
+  return wrap;
+}
+
+function buildBox(p, b) {
+  const box = el("details", "panel");
+  const done = b.steps.filter((s) => s.doneAt).length;
+  box.append(el("summary", "", b.batch ? `Batch ${b.batch} build (${done} of ${b.steps.length} done)` : "Build tracker: starts when a batch is asked for the rest"));
+  if (!b.batch) return box;
+  const list = el("ol", "checklist");
+  for (const s of b.steps) {
+    const li = el("li", s.doneAt ? "is-done" : "");
+    const label = el("label");
+    const tick = el("input");
+    tick.type = "checkbox";
+    tick.checked = !!s.doneAt;
+    tick.addEventListener("change", async () => {
+      tick.disabled = true;
+      const r = await call("/api/admin/preorders/step", { product: p.id, batch: b.batch, step: s.id, done: tick.checked });
+      tick.disabled = false;
+      if (r.error) {
+        tick.checked = !tick.checked;
+        return say($("dash-status"), r.error, "error");
+      }
+      li.className = tick.checked ? "is-done" : "";
+    });
+    label.append(tick, el("span", "", s.label));
+    li.append(label);
+    if (s.doneAt) li.append(el("span", "when", when(s.doneAt)));
+    list.append(li);
+  }
+  box.append(list);
+  return box;
+}
+
+function preProduct(p, rows, build) {
+  const li = el("li", "slot");
+  li.append(el("span", "slot-n", p.name), el("b", "", `${p.reserved} of ${p.goal} in the open batch`),
+    el("span", "slot-state", `now ${usd(p.price)}, deposit ${usd(p.deposit)}`));
+  const reserved = rows.filter((r) => r.product === p.id && r.status === "confirmed").length;
+  const deposits = rows.filter((r) => r.product === p.id && r.status === "deposit_paid").length;
+  if (p.reserved >= p.goal && reserved) li.append(payBox(p, "deposit", reserved));
+  if (deposits) li.append(payBox(p, "balance", deposits));
+  if (build) li.append(buildBox(p, build));
   return li;
 }
 
 function preRow(r, names) {
   const li = el("li", "person panel");
   li.append(el("h3", "", `${names[r.product] || r.product}: ${r.name || r.email}`));
-  li.append(el("p", "facts", [r.email, PRE_STATUS[r.status] || r.status, usd(r.price), r.region, r.car,
-    r.confirmedAt ? `confirmed ${when(r.confirmedAt)}` : `asked ${when(r.createdAt)}`,
-    r.paidAt ? `paid ${when(r.paidAt)}` : ""].filter(Boolean).join(" · ")));
+  const bundle = r.bundle === "light" ? "with a Light" : r.bundle === "has-light" ? "has own Light"
+    : r.bundle ? `bundled with ${names[r.bundle] || r.bundle}` : "";
+  li.append(el("p", "facts", [r.email, PRE_STATUS[r.status] || r.status, usd(r.price), bundle, r.batch ? `batch ${r.batch}` : "",
+    r.region, r.car, r.confirmedAt ? `confirmed ${when(r.confirmedAt)}` : `asked ${when(r.createdAt)}`,
+    r.paidAt ? `deposit ${when(r.paidAt)}` : "", r.balancePaidAt ? `paid ${when(r.balancePaidAt)}` : ""].filter(Boolean).join(" · ")));
+  if (r.signedName) {
+    const sig = el("p", "facts", `Signed the disclosure (v${r.signedVersion}) as "${r.signedName}", ${when(r.signedAt)} · `);
+    const a = el("a", "", "see signature");
+    a.href = `/api/admin/preorders/signature?id=${r.id}`;
+    a.target = "_blank";
+    a.rel = "noopener";
+    sig.append(a);
+    li.append(sig);
+  }
   if (r.notes) li.append(el("p", "notes", r.notes));
   const actions = el("div", "actions");
   const button = (label, status, question) => {
@@ -302,17 +357,19 @@ function preRow(r, names) {
     actions.append(b);
   };
   if (r.status === "deposit_requested") button("Deposit paid", "deposit_paid");
-  if (r.status !== "cancelled") button("Cancel", "cancelled", `Cancel ${r.email}'s reservation? Refund any deposit in the payment provider yourself.`);
-  if (r.status === "cancelled" || r.status === "deposit_paid") button("Back to reserved", "confirmed");
+  if (r.status === "balance_requested") button("Paid in full", "paid");
+  if (r.status !== "cancelled") button("Cancel", "cancelled", `Cancel ${r.email}'s reservation? Refund any payment in the payment provider yourself.`);
+  if (r.status === "cancelled") button("Back to reserved", "confirmed");
   if (actions.childElementCount) li.append(actions);
   return li;
 }
 
 async function loadPreorders() {
-  const out = await call("/api/admin/preorders");
+  const [out, build] = await Promise.all([call("/api/admin/preorders"), call("/api/preorder/build")]);
   if (out.signedOut || out.error) return;
   const names = Object.fromEntries(out.products.map((p) => [p.id, p.name]));
-  $("pre-products").replaceChildren(...out.products.map((p) => preProduct(p, out.preorders)));
+  const builds = Object.fromEntries(((build && build.products) || []).map((b) => [b.id, b]));
+  $("pre-products").replaceChildren(...out.products.map((p) => preProduct(p, out.preorders, builds[p.id])));
   $("preorders").replaceChildren(...(out.preorders.length
     ? out.preorders.map((r) => preRow(r, names))
     : [el("li", "muted", "No reservations yet.")]));
