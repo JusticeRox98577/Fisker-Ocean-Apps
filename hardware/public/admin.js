@@ -249,6 +249,26 @@ async function loadBoxes() {
   }) : [el("li", "muted", "No Nova box has checked in yet.")]));
 }
 
+// ---- box codes (Nova Light) ---------------------------------------------------------------------
+
+$("code-make").addEventListener("click", async () => {
+  const uid = $("code-uid").value.trim().toLowerCase();
+  $("code-out").hidden = true;
+  if (!/^[0-9a-f]{24}$/.test(uid)) {
+    $("code-msg").textContent = "The device ID is 24 hex digits (nova id on the board).";
+    return;
+  }
+  $("code-msg").textContent = "Making it…";
+  const out = await call("/api/admin/boxes/code", { uid });
+  if (out.signedOut || out.error) {
+    $("code-msg").textContent = out.error || "Sign in again.";
+    return;
+  }
+  $("code-msg").textContent = `Code for ${out.uid}: print it now, it isn't shown again.`;
+  $("code-out").textContent = out.code;
+  $("code-out").hidden = false;
+});
+
 // ---- releases -----------------------------------------------------------------------------------
 
 const TARGET_NAME = { supervisor: "Supervisor firmware", card: "Video card firmware", app: "Nova app", android: "Android",

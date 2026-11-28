@@ -17854,6 +17854,34 @@
           }
         }
       }
+    },
+    "Nova Light: type the 12-letter code printed inside its box.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova Light: Gib den 12-stelligen Code ein, der in der Verpackung liegt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova Light: escribe el código de 12 letras impreso dentro de la caja."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova Light : saisissez le code de 12 lettres imprimé dans la boîte."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova Light: typ de code van 12 tekens die in de doos ligt."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

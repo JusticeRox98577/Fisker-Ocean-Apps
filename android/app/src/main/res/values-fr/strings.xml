@@ -755,6 +755,7 @@
     <string name="nova_data_of">sur 3 000 kB</string>
     <string name="nova_saving_12v">Préserve la 12 V</string>
     <string name="nova_light_no_gps">La Nova Light n’a pas de GPS : elle ne peut pas montrer où est la voiture.</string>
+    <string name="nova_light_code_hint">Nova Light : saisissez le code de 12 lettres imprimé dans la boîte.</string>
     <string name="nova_lock">Verrouiller</string>
     <string name="nova_unlock">Déverrouiller</string>
     <string name="nova_climate_on">Climatisation marche</string>

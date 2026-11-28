@@ -15,6 +15,8 @@ Each `## x.y.z` section is used as the release notes for that version.
   it last checked in, parked or driving, the 12V and its health, LTE signal, speed and gear, where
   it is (open it in Maps), big lock, unlock, climate and flash-the-lights buttons, and your recent
   commands with whether the car did them
+* Nova Light: pair your phone with the 12-letter code printed inside the box (no car screen
+  needed); the dashboard then shows your Light's 12V, signal and data use
 * News by email: sign up at oceanlive.org/news (or in the downloads section of the home page)
   to get an email when there's a new release or an important fix. Nobody is added without
   confirming by email, and every email has a one-click unsubscribe that deletes your address

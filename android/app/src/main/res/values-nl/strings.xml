@@ -736,6 +736,7 @@
     <string name="nova_data_of">van 3.000 kB</string>
     <string name="nova_saving_12v">Spaart de 12V-accu</string>
     <string name="nova_light_no_gps">De Nova Light heeft geen GPS en kan dus niet laten zien waar de auto staat.</string>
+    <string name="nova_light_code_hint">Nova Light: typ de code van 12 tekens die in de doos ligt.</string>
     <string name="nova_lock">Vergrendelen</string>
     <string name="nova_unlock">Ontgrendelen</string>
     <string name="nova_climate_on">Klimaat aan</string>

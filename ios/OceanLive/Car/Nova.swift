@@ -184,8 +184,27 @@ final class NovaPhone: ObservableObject {
         return json
     }
 
-    private static func cleanCode(_ code: String) -> String {
+
+    /// Letters and digits only, upper case: how both kinds of code are compared.
+    static func cleanCode(_ code: String) -> String {
         code.uppercased().filter { $0.isLetter || $0.isNumber }
+    }
+
+    /// A Nova Light: the 12-letter code printed inside its box pairs this iPhone at once.
+    func claim(code: String) async throws {
+        let j = try await call("/api/box/claim", body: [
+            "code": Self.cleanCode(code),
+            "phonePub": NovaCommands.hex(try key().publicKey.rawRepresentation),
+            "phoneName": String(UIDevice.current.name.prefix(40)),
+        ])
+        guard let u = j["uid"] as? String, let s = (j["slot"] as? NSNumber)?.intValue else {
+            throw NovaError.message("The server's answer wasn't understood.")
+        }
+        defaults.set(u, forKey: "nova.uid")
+        defaults.set(s, forKey: "nova.slot")
+        uid = u
+        slot = s
+        setPending(nil)
     }
 
     /// Send this phone's public key for the code on the car screen.

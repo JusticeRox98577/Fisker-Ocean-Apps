@@ -125,6 +125,17 @@ class NovaPhone(private val context: Context) {
     /** Stop waiting on the code (the car screen can start a new one). */
     fun cancelPairing() = prefs.edit().remove("pendingCode").apply()
 
+    /** Letters and digits only, upper case: how both kinds of code are compared. */
+    fun cleanCode(code: String) = code.uppercase().filter { it.isLetterOrDigit() }
+
+    /** A Nova Light: the 12-letter code printed inside its box pairs this phone at once. */
+    fun claim(code: String) {
+        val name = "${Build.MANUFACTURER} ${Build.MODEL}".trim().take(40)
+        val j = call("/api/box/claim", JSONObject().put("code", cleanCode(code))
+            .put("phonePub", NovaCommands.hex(NovaCommands.publicKey(seed()))).put("phoneName", name))
+        prefs.edit().putString("uid", j.getString("uid")).putInt("slot", j.getInt("slot")).remove("pendingCode").apply()
+    }
+
     /** Send this phone's key for the code on the car screen. */
     fun requestPairing(code: String) {
         val name = "${Build.MANUFACTURER} ${Build.MODEL}".trim().take(40)

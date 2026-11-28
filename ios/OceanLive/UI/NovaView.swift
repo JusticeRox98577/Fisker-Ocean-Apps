@@ -107,6 +107,8 @@ struct NovaView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Lock, unlock and run the climate from this phone. First pair it in the car: on the car screen, Settings → This Nova → Pair a phone shows a code.")
                 .font(.system(size: 14)).foregroundStyle(.white)
+            Text("Nova Light: type the 12-letter code printed inside its box.")
+                .font(.system(size: 13)).foregroundStyle(Theme.dim)
             TextField(String(localized: "Code from the car screen"), text: $code)
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
@@ -114,10 +116,13 @@ struct NovaView: View {
                 .padding(12)
                 .background(Theme.track, in: RoundedRectangle(cornerRadius: 12))
             if phone.pendingCode == nil {
-                GradientButton(title: String(localized: "Pair this phone"),
-                               enabled: code.filter { $0.isLetter || $0.isNumber }.count == 8) {
+                let len = NovaPhone.cleanCode(code).count
+                GradientButton(title: String(localized: "Pair this phone"), enabled: len == 8 || len == 12) {
                     Task {
-                        if await run({ try await phone.requestPairing(code: code) }) { message = nil }
+                        // a Nova Light's box code pairs at once; a car-screen code waits for approval in the car
+                        if len == 12 {
+                            if await run({ try await phone.claim(code: code) }) { message = nil }
+                        } else if await run({ try await phone.requestPairing(code: code) }) { message = nil }
                     }
                 }
             } else {

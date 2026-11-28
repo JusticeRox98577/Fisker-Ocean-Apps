@@ -19,6 +19,11 @@
  *   GET  /api/box/pair/status?code=         -> { status, slot, uid }
  *   POST /api/box/command { uid, cmd }       a command signed on the phone (standard Ed25519)
  *   GET  /api/box/status?uid&slot&t&sig     the car's last check-in; sig = Ed25519 over "nova-status:<uid>:<t>"
+ *   POST /api/box/claim { code, phonePub, phoneName } -> { uid, slot }
+ *        a Nova Light (no screen): the code printed inside its box pairs the phone at once
+ * Admin:
+ *   POST /api/admin/boxes/code { uid } -> { code }   a new box code for that device ID (the old one stops
+ *        working); shown once, to print
  *
  * The cloud carries commands; it can't make one (only the phone's key can), and the car checks every
  * command again. Pairing needs the code on the car screen and a tap on Approve in the car.
@@ -115,6 +120,42 @@ export function lightReadings(b: Record<string, unknown>, now: number): { rows: 
     rows.push([t * 1000, mv, fl & AWAKE ? 1 : 0]);
   }
   return { rows, ack: last };
+}
+
+/* ---- box codes (Nova Light) ---- */
+
+const BOX_CODE_LEN = 12; // 60 bits from CODE_CHARS, shown as XXXX-XXXX-XXXX
+const MAX_PHONES = 4;
+const cleanCode = (c: unknown) => String(c ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+export async function makeBoxCode(env: Env, b: Record<string, unknown>, now: number): Promise<Response> {
+  if (!uidOk(b.uid)) return json({ error: "The device ID is 24 hex digits (nova id on the board)." }, 400);
+  const r = crypto.getRandomValues(new Uint8Array(BOX_CODE_LEN));
+  const c = [...r].map((x) => CODE_CHARS[x & 31]).join("");
+  await env.DB.prepare(
+    `INSERT INTO box_codes (uid, code_hash, created_at) VALUES (?1, ?2, ?3)
+     ON CONFLICT(uid) DO UPDATE SET code_hash = ?2, created_at = ?3`,
+  ).bind(b.uid, await sha256(`box-code:${c}`), now).run();
+  return json({ uid: b.uid, code: `${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8)}` });
+}
+
+export async function claim(env: Env, b: Record<string, unknown>, now: number): Promise<Response> {
+  const c = cleanCode(b.code);
+  const pub = unhex(b.phonePub);
+  if (c.length !== BOX_CODE_LEN || !/^[A-Z2-9]+$/.test(c)) return json({ error: "That code isn't right. It's the 12-letter code inside the box." }, 404);
+  if (!pub || pub.length !== 32) return json({ error: "phonePub" }, 400);
+  const row = await env.DB.prepare("SELECT uid FROM box_codes WHERE code_hash = ?1").bind(await sha256(`box-code:${c}`))
+    .first<{ uid: string }>();
+  if (!row) return json({ error: "That code isn't right. It's the 12-letter code inside the box." }, 404);
+  const { results } = await env.DB.prepare("SELECT slot, pub FROM phones WHERE uid = ?1").bind(row.uid).all<{ slot: number; pub: string }>();
+  const mine = results.find((p) => p.pub === hex(pub));
+  if (mine) return json({ uid: row.uid, slot: mine.slot }); // this phone again: the same answer
+  let slot = 0;
+  while (slot < MAX_PHONES && results.some((p) => p.slot === slot)) slot++;
+  if (slot >= MAX_PHONES) return json({ error: "Four phones are paired with this Nova already." }, 409);
+  await env.DB.prepare("INSERT INTO phones (uid, slot, pub, name, paired_at) VALUES (?1, ?2, ?3, ?4, ?5)")
+    .bind(row.uid, slot, hex(pub), String(b.phoneName ?? "Phone").slice(0, 40), now).run();
+  return json({ uid: row.uid, slot });
 }
 
 /* ---- pairing ---- */

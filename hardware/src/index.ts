@@ -131,6 +131,13 @@ async function admin(req: Request, env: Env, ctx: ExecutionContext, path: string
     return path.endsWith("/register") ? releases.register(env, body, now) : releases.retire(env, body);
   }
   if (path === "/api/admin/boxes") return req.method === "GET" ? box.listBoxes(env) : wrongMethod("GET");
+  if (path === "/api/admin/boxes/code") {
+    if (req.method !== "POST") return wrongMethod("POST");
+    if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
+    const body = await readJson(req);
+    if (!body || body === "too-big") return badBody();
+    return box.makeBoxCode(env, body, now);
+  }
   if (path === "/api/admin/dev") return req.method === "GET" ? listCerts(env, now) : wrongMethod("GET");
   if (path === "/api/admin/dev/checkins") {
     return req.method === "GET" ? checkins(env, Number(new URL(req.url).searchParams.get("serial"))) : wrongMethod("GET");
@@ -186,6 +193,7 @@ export default {
         case "/api/box/pair/start":
         case "/api/box/pair/request":
         case "/api/box/pair/finish":
+        case "/api/box/claim":
         case "/api/box/command": {
           // from cars, car screens and phones: no browser, no cookies
           if (req.method !== "POST") return wrongMethod("POST");
@@ -196,7 +204,7 @@ export default {
             return json({ error: "Too many requests. Try again later." }, 429);
           }
           const fn = { "/api/box/checkin": box.checkin, "/api/box/pair/start": box.pairStart, "/api/box/pair/request": box.pairRequest,
-            "/api/box/pair/finish": box.pairFinish, "/api/box/command": box.command }[url.pathname]!;
+            "/api/box/pair/finish": box.pairFinish, "/api/box/claim": box.claim, "/api/box/command": box.command }[url.pathname]!;
           return await fn(env, body, now);
         }
         case "/api/box/pair/poll":

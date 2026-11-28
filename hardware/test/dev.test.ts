@@ -133,3 +133,46 @@ describe("developer access", () => {
     expect((await call("/api/admin/dev")).status).toBe(401);
   });
 });
+
+describe("Nova Light box codes", () => {
+  const LIGHT = "7e5700000000000000000009";
+  const phoneKey = (n: number) => hex(ed25519.getPublicKey(new Uint8Array(32).fill(n)));
+  const claim = async (code: string, pub: string) => {
+    const r = await call("/api/box/claim", { method: "POST", body: JSON.stringify({ code, phonePub: pub, phoneName: "Test" }) });
+    return { status: r.status, body: (await r.json()) as any };
+  };
+
+  beforeEach(async () => {
+    await env.DB.batch(["box_codes", "phones"].map((t) => env.DB.prepare(`DELETE FROM ${t}`)));
+  });
+
+  it("pairs a phone with the code printed inside the box, made in /admin", async () => {
+    // only the admin can make a code
+    expect((await call("/api/admin/boxes/code", { method: "POST", body: JSON.stringify({ uid: LIGHT }) })).status).toBe(401);
+    const cookie = await signIn();
+    expect((await call("/api/admin/boxes/code", { method: "POST", body: JSON.stringify({ uid: "nope" }), cookie })).status).toBe(400);
+    const made = (await (await call("/api/admin/boxes/code", { method: "POST", body: JSON.stringify({ uid: LIGHT }), cookie })).json()) as any;
+    expect(made.code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    const stored = await env.DB.prepare("SELECT code_hash FROM box_codes WHERE uid = ?1").bind(LIGHT).first<{ code_hash: string }>();
+    expect(stored!.code_hash).not.toContain(made.code.replace(/-/g, "")); // only its hash is kept
+
+    // typed any way: lower case, no dashes
+    const a = await claim(made.code.toLowerCase().replace(/-/g, ""), phoneKey(1));
+    expect(a).toEqual({ status: 200, body: { uid: LIGHT, slot: 0 } });
+    expect((await claim(made.code, phoneKey(1))).body.slot).toBe(0); // the same phone again: the same slot
+    expect((await claim(made.code, phoneKey(2))).body.slot).toBe(1);
+    expect((await claim(made.code, phoneKey(3))).body.slot).toBe(2);
+    expect((await claim(made.code, phoneKey(4))).body.slot).toBe(3);
+    expect((await claim(made.code, phoneKey(5))).status).toBe(409); // four phones at most
+
+    // wrong or malformed codes pair nothing
+    expect((await claim("AAAA-AAAA-AAAA", phoneKey(6))).status).toBe(404);
+    expect((await claim("SHORT", phoneKey(6))).status).toBe(404);
+    expect((await claim(made.code, "zz")).status).toBe(400);
+
+    // a new code (e.g. the box was sold): the old one stops working
+    const again = (await (await call("/api/admin/boxes/code", { method: "POST", body: JSON.stringify({ uid: LIGHT }), cookie })).json()) as any;
+    expect(again.code).not.toBe(made.code);
+    expect((await claim(made.code, phoneKey(7))).status).toBe(404);
+  });
+});

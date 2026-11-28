@@ -72,6 +72,14 @@
       <h2 id="box-title" class="section-title">Nova boxes (<span id="box-n">0</span>)</h2>
       <p class="muted small">Cars whose nRF9151 checks in. Locations stay with the owner's paired phones and aren't shown here.</p>
       <ul class="people" id="boxes"></ul>
+      <details class="panel">
+        <summary>Box code for a Nova Light</summary>
+        <p class="muted small">The code to print and put inside the box: the owner types it in the Ocean Live app to pair their phone (up to four phones). Shown once; making a new one stops the old one working (e.g. a resold box). The device ID is what <code>nova id</code> prints on the board.</p>
+        <input class="input" id="code-uid" placeholder="Device ID, 24 hex digits" aria-label="Device ID" autocomplete="off" spellcheck="false">
+        <button class="btn btn-small" type="button" id="code-make">Make the code</button>
+        <p class="muted small" id="code-msg" role="status"></p>
+        <p id="code-out" hidden style="font: 700 2rem/1.2 ui-monospace, monospace; letter-spacing: 0.08em; margin: 0.5rem 0;"></p>
+      </details>
     </section>
 
     <section aria-labelledby="rel-title">

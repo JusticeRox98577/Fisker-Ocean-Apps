@@ -104,15 +104,20 @@ fun NovaSection() {
         SectionTitle(stringResource(R.string.nova_title))
         Card {
             Text(stringResource(R.string.nova_intro), fontSize = 14.sp)
+            Text(stringResource(R.string.nova_light_code_hint), color = Dim, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
             OutlinedTextField(
-                code, { code = it.uppercase().take(9) }, label = { Text(stringResource(R.string.nova_code)) }, singleLine = true,
+                code, { code = it.uppercase().take(16) }, label = { Text(stringResource(R.string.nova_code)) }, singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             if (!waiting) {
-                GradientButton(stringResource(R.string.nova_pair), enabled = code.replace(" ", "").length == 8, onClick = {
+                val len = phone.cleanCode(code).length
+                GradientButton(stringResource(R.string.nova_pair), enabled = len == 8 || len == 12, onClick = {
                     scope.launch {
-                        if (io { phone.requestPairing(code) } != null) { waiting = true; message = null }
+                        if (len == 12) {
+                            // a Nova Light's box code: paired at once, nothing to approve
+                            if (io { phone.claim(code) } != null) { paired = true; message = null }
+                        } else if (io { phone.requestPairing(code) } != null) { waiting = true; message = null }
                     }
                 }, modifier = Modifier.padding(top = 8.dp))
             } else {
