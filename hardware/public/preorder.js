@@ -68,9 +68,23 @@ function renderPrices() {
       }));
       card.querySelector(".progress").hidden = false;
     }
-    for (const el of document.querySelectorAll(`[data-chip="${p.id}"]`)) el.textContent = `${p.name} · ${money(p.price)}`;
   }
   updateBundle();
+}
+
+/** The product choices: a Flare or Quasar shows its total with the Light it needs, unless they have one. */
+function renderChips() {
+  const own = $("p-has-light").checked;
+  for (const el of document.querySelectorAll("[data-chip]")) {
+    const id = el.dataset.chip;
+    const p = product(id);
+    const name = p ? p.name : el.textContent.split(" · ")[0].replace(" + Light", "");
+    const price = p ? p.price : { light: 17900, supernova: 59900, flare: 47000, quasar: 50000 }[id];
+    const needs = id === "flare" || id === "quasar";
+    el.textContent = needs && !own
+      ? `${name} + Light · ${money(price + lightBundle())}`
+      : `${name} · ${money(price)}`;
+  }
 }
 
 async function loadInfo() {
@@ -92,6 +106,7 @@ function picked() {
 }
 
 function updateBundle() {
+  renderChips();
   const id = picked();
   const p = product(id);
   const needs = id === "flare" || id === "quasar";
