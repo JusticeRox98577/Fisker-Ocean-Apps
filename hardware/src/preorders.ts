@@ -93,7 +93,7 @@ export const PRODUCTS: Record<string, Product> = {
 
 // EDIT: bump when the first-generation disclosure (public/preorder.html, #disclosure) changes, so each
 // signature records which text was signed.
-export const DISCLOSURE_VERSION = "2026-11-28.2";
+export const DISCLOSURE_VERSION = "2026-11-28.3";
 
 for (const p of Object.values(PRODUCTS)) p.price = p.tiers[0][1];
 
