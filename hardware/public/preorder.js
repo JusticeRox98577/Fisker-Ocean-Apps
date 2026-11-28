@@ -221,23 +221,47 @@ function signaturePng() {
 }
 
 const inkLength = () => strokes.reduce((n, s) => n + s.length, 0);
+/** What's still missing before signing, or "" when ready. */
+function missing() {
+  if (!$("d-agree").checked) return "Tick the box to say you've read and agree to the disclosure.";
+  if ($("d-name").value.trim().length < 3) return "Type your full name.";
+  if (inkLength() < 10) return "Draw your signature in the box (with your finger or mouse).";
+  return "";
+}
 function checkReady() {
-  $("d-submit").disabled = !($("d-agree").checked && $("d-name").value.trim().length >= 3 && inkLength() >= 10);
+  $("d-submit").classList.toggle("is-waiting", !!missing());
+  if (!missing()) setStatus($("d-status"), "");
 }
 $("d-agree").addEventListener("change", checkReady);
 $("d-name").addEventListener("input", checkReady);
+
+// <dialog> everywhere it exists; a plain overlay on older browsers.
+function show(d) {
+  if (typeof d.showModal === "function") d.showModal();
+  else {
+    d.setAttribute("open", "");
+    d.classList.add("is-fallback");
+  }
+  document.documentElement.classList.add("has-dialog");
+}
+function hide(d) {
+  if (typeof d.close === "function" && d.open) d.close();
+  d.removeAttribute("open");
+  d.classList.remove("is-fallback");
+  document.documentElement.classList.remove("has-dialog");
+}
 
 function openDisclosure(signing) {
   $("d-sign").hidden = !signing;
   $("d-date").textContent = new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
   if (signing && !$("d-name").value) $("d-name").value = $("p-name").value;
   setStatus($("d-status"), "");
-  dialog.showModal();
+  show(dialog);
   $("d-body").scrollTop = 0;
   if (signing) sizePad();
   checkReady();
 }
-const closeDisclosure = () => dialog.close();
+const closeDisclosure = () => hide(dialog);
 $("d-close").addEventListener("click", closeDisclosure);
 $("d-cancel").addEventListener("click", closeDisclosure);
 $("read-disclosure").addEventListener("click", () => openDisclosure(false));
@@ -246,6 +270,8 @@ window.addEventListener("resize", () => { if (dialog.open && !$("d-sign").hidden
 
 $("d-submit").addEventListener("click", async () => {
   const b = $("d-submit");
+  const need = missing();
+  if (need) return setStatus($("d-status"), need, true);
   b.disabled = true;
   setStatus($("d-status"), "Sending…");
   const data = new FormData(form);
@@ -266,7 +292,7 @@ $("d-submit").addEventListener("click", async () => {
     b.disabled = false;
     return setStatus($("d-status"), r.error, true);
   }
-  dialog.close();
+  hide(dialog);
   strokes = [];
   $("d-agree").checked = false;
   form.hidden = true;
@@ -284,7 +310,7 @@ async function openTracker(id) {
   $("t-title").textContent = `${product(id)?.name || "Nova"} build tracker`;
   $("t-list").replaceChildren();
   $("t-line").textContent = "Loading…";
-  tracker.showModal();
+  show(tracker);
   if (!builds) {
     try {
       const res = await fetch("/api/preorder/build", { credentials: "omit", cache: "no-store" });
@@ -322,8 +348,9 @@ for (const card of document.querySelectorAll(".product[data-product]")) {
   b.addEventListener("click", () => openTracker(card.dataset.product));
   card.append(b);
 }
-$("t-close").addEventListener("click", () => tracker.close());
-tracker.addEventListener("click", (e) => { if (e.target === tracker) tracker.close(); });
+$("t-close").addEventListener("click", () => hide(tracker));
+tracker.addEventListener("click", (e) => { if (e.target === tracker) hide(tracker); });
+for (const d of [dialog, tracker]) d.addEventListener("close", () => document.documentElement.classList.remove("has-dialog"));
 
 // ---- order status lookup -------------------------------------------------------------------------------
 

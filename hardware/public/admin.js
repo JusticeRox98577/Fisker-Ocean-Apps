@@ -607,6 +607,34 @@ $("sign-out").addEventListener("click", async () => {
 $("search").addEventListener("input", renderPeople);
 $("filter").addEventListener("change", renderPeople);
 
+// ---- tabs ---------------------------------------------------------------------------------------
+
+const TABS = [...document.querySelectorAll("[data-tab]")];
+function showTab(name, focus = false) {
+  if (!TABS.some((t) => t.dataset.tab === name)) name = "preorders";
+  for (const t of TABS) {
+    const on = t.dataset.tab === name;
+    t.setAttribute("aria-selected", String(on));
+    t.tabIndex = on ? 0 : -1;
+    $(`panel-${t.dataset.tab}`).hidden = !on;
+    if (on && focus) t.focus();
+  }
+  try { localStorage.setItem("admin-tab", name); } catch { /* private mode */ }
+}
+for (const t of TABS) {
+  t.addEventListener("click", () => showTab(t.dataset.tab));
+  t.addEventListener("keydown", (e) => {
+    const i = TABS.indexOf(t);
+    const next = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : e.key === "Home" ? 0 : e.key === "End" ? TABS.length - 1 : null;
+    if (next === null) return;
+    e.preventDefault();
+    showTab(TABS[(next + TABS.length) % TABS.length].dataset.tab, true);
+  });
+}
+let saved = "preorders";
+try { saved = localStorage.getItem("admin-tab") || saved; } catch { /* private mode */ }
+showTab(saved);
+
 (async () => {
   const labelsReady = loadLabels();
   const m = location.hash.match(/^#login=([A-Za-z0-9_-]+)$/);

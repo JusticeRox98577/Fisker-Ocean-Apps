@@ -7,8 +7,8 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0B2545">
 <meta name="color-scheme" content="dark">
-<title>Admin · Nova beta</title>
-<meta name="description" content="Nova beta sign-ups.">
+<title>Admin · Ocean Live hardware</title>
+<meta name="description" content="Nova pre-orders, beta sign-ups, boxes and releases.">
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="/styles.css">
 <script type="module" src="/admin.js"></script>
 </head>
-<body>
+<body class="admin-page">
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="top">
@@ -25,15 +25,15 @@
       <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
       Ocean Live
     </a>
-    <span class="top-label">Hardware beta</span>
+    <span class="top-label">Admin</span>
     <button class="btn btn-ghost btn-small top-end" type="button" id="sign-out" hidden>Sign out</button>
   </div>
 </header>
 
 <main id="main" tabindex="-1">
 <div class="wrap admin">
-  <section class="sheet signin" id="signin" hidden aria-labelledby="signin-title">
-    <h1 id="signin-title" class="h-md">Nova beta admin</h1>
+  <section class="card signin" id="signin" hidden aria-labelledby="signin-title">
+    <h1 id="signin-title" class="h-md">Ocean Live admin</h1>
     <p class="muted">Only the Ocean Live admin can sign in. A one-time link is emailed to the admin address.</p>
     <div class="submit-row">
       <button class="btn btn-primary" type="button" id="send-link">Email me a sign-in link</button>
@@ -42,59 +42,96 @@
   </section>
 
   <div id="dash" hidden>
-    <header class="dash-head">
-      <div>
-        <div class="eyebrow">Nova beta</div>
-        <h1 class="h-md">Sign-ups</h1>
-      </div>
-      <a class="btn btn-ghost btn-small" href="/api/admin/responses" download>Download CSV</a>
-    </header>
-    <p class="status" id="dash-status" role="status" aria-live="polite" tabindex="-1"></p>
+    <nav class="tabs" role="tablist" aria-label="Admin sections">
+      <button class="tab" role="tab" type="button" id="tab-preorders" aria-controls="panel-preorders" data-tab="preorders">Pre-orders</button>
+      <button class="tab" role="tab" type="button" id="tab-beta" aria-controls="panel-beta" data-tab="beta">Beta sign-ups</button>
+      <button class="tab" role="tab" type="button" id="tab-boxes" aria-controls="panel-boxes" data-tab="boxes">Boxes</button>
+      <button class="tab" role="tab" type="button" id="tab-releases" aria-controls="panel-releases" data-tab="releases">Releases</button>
+      <button class="tab" role="tab" type="button" id="tab-dev" aria-controls="panel-dev" data-tab="dev">Developers</button>
+    </nav>
+    <p class="status toast" id="dash-status" role="status" aria-live="polite" tabindex="-1"></p>
 
-    <section aria-labelledby="boards-title">
-      <h2 id="boards-title" class="section-title">Test boards</h2>
-      <ol class="slots" id="slots"></ol>
-    </section>
-
-    <div class="two-col">
-      <section aria-labelledby="rank-title">
-        <h2 id="rank-title" class="section-title">Most important features</h2>
-        <p class="muted small">5 points for a #1 pick, 4 for #2 … 1 for #5.</p>
-        <ol class="ranking" id="ranking"></ol>
-      </section>
-      <section aria-labelledby="interest-title">
-        <h2 id="interest-title" class="section-title">Interest</h2>
-        <ul class="interest-list" id="interest"></ul>
-      </section>
-    </div>
-
-    <section aria-labelledby="pre-title">
-      <h2 id="pre-title" class="section-title">Pre-orders</h2>
-      <p class="muted small">From preorder.oceanlive.org. Nobody pays anything until you ask. At 10 reservations a product gets a deposit button: paste a $100 payment link from your payment provider. Right before ordering parts, ask everyone whose deposit is paid for the rest: that closes the batch at its volume price and starts its build tracker, which you tick off here. Mark payments as they come in.</p>
-      <ul class="slots" id="pre-products"></ul>
-      <p><a class="btn btn-ghost btn-small" href="/api/admin/preorders?format=csv" download>Download pre-orders CSV</a></p>
+    <!-- Pre-orders -->
+    <section class="tab-panel" role="tabpanel" id="panel-preorders" aria-labelledby="tab-preorders">
+      <header class="panel-head">
+        <div>
+          <h1 class="h-md">Pre-orders</h1>
+          <p class="muted small">From preorder.oceanlive.org. Nobody pays until you ask: a $100 deposit at 10 reservations, then the rest right before you order parts (that closes the batch at its volume price and starts its build tracker).</p>
+        </div>
+        <a class="btn btn-ghost btn-small" href="/api/admin/preorders?format=csv" download>Download CSV</a>
+      </header>
+      <ul class="stat-grid" id="pre-products"></ul>
+      <h2 class="section-title">Reservations</h2>
       <ul class="people" id="preorders"></ul>
     </section>
 
-    <section aria-labelledby="box-title">
-      <h2 id="box-title" class="section-title">Nova boxes (<span id="box-n">0</span>)</h2>
-      <p class="muted small">Cars whose nRF9151 checks in. Locations stay with the owner's paired phones and aren't shown here.</p>
-      <ul class="people" id="boxes"></ul>
-      <details class="panel">
-        <summary>Box code for a Nova Light</summary>
-        <p class="muted small">The code to print and put inside the box: the owner types it in the Ocean Live app to pair their phone (up to four phones). Shown once; making a new one stops the old one working (e.g. a resold box). The device ID is what <code>nova id</code> prints on the board.</p>
-        <input class="input" id="code-uid" placeholder="Device ID, 24 hex digits" aria-label="Device ID" autocomplete="off" spellcheck="false">
-        <button class="btn btn-small" type="button" id="code-make">Make the code</button>
-        <p class="muted small" id="code-msg" role="status"></p>
-        <p id="code-out" hidden style="font: 700 2rem/1.2 ui-monospace, monospace; letter-spacing: 0.08em; margin: 0.5rem 0;"></p>
-      </details>
+    <!-- Beta sign-ups -->
+    <section class="tab-panel" role="tabpanel" id="panel-beta" aria-labelledby="tab-beta" hidden>
+      <header class="panel-head">
+        <div>
+          <h1 class="h-md">Beta sign-ups</h1>
+          <p class="muted small">From hardware.oceanlive.org: who wants to test, and what matters most to them.</p>
+        </div>
+        <a class="btn btn-ghost btn-small" href="/api/admin/responses" download>Download CSV</a>
+      </header>
+      <div class="card">
+        <h2 class="section-title" id="boards-title">Test boards</h2>
+        <ol class="slots" id="slots" aria-labelledby="boards-title"></ol>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h2 class="section-title" id="rank-title">Most important features</h2>
+          <p class="muted small">5 points for a #1 pick, 4 for #2 … 1 for #5.</p>
+          <ol class="ranking" id="ranking" aria-labelledby="rank-title"></ol>
+        </div>
+        <div class="card">
+          <h2 class="section-title" id="interest-title">Interest</h2>
+          <ul class="interest-list" id="interest" aria-labelledby="interest-title"></ul>
+        </div>
+      </div>
+      <h2 class="section-title">People (<span id="people-n">0</span>)</h2>
+      <div class="filters">
+        <input class="input" type="search" id="search" placeholder="Search name, email, car, notes…" aria-label="Search sign-ups">
+        <select class="input" id="filter" aria-label="Show">
+          <option value="all">Everyone</option>
+          <option value="none">Not picked</option>
+          <option value="picked">Picked (invited or yes)</option>
+          <option value="declined">Said no</option>
+        </select>
+      </div>
+      <ul class="people" id="people"></ul>
     </section>
 
-    <section aria-labelledby="rel-title">
-      <h2 id="rel-title" class="section-title">Releases</h2>
-      <p class="muted small">What Nova boxes update to. Supervisor and video card files must be owner-signed <code>.nova</code> images (checked here and again on the box). Android OTAs are too big to upload here: put them in the <code>nova-releases</code> R2 bucket with <code>wrangler r2 object put</code>, then register them.</p>
-      <ul class="people" id="releases"></ul>
-      <details class="panel dev-register">
+    <!-- Boxes -->
+    <section class="tab-panel" role="tabpanel" id="panel-boxes" aria-labelledby="tab-boxes" hidden>
+      <header class="panel-head">
+        <div>
+          <h1 class="h-md">Nova boxes (<span id="box-n">0</span>)</h1>
+          <p class="muted small">Cars whose nRF9151 checks in. Locations stay with the owner's paired phones and aren't shown here.</p>
+        </div>
+      </header>
+      <details class="card fold">
+        <summary>Make a box code for a Nova Light</summary>
+        <p class="muted small">The code to print and put inside the box: the owner types it in the Ocean Live app to pair their phone (up to four phones). Shown once; making a new one stops the old one working (e.g. a resold box). The device ID is what <code>nova id</code> prints on the board.</p>
+        <div class="row">
+          <input class="input" id="code-uid" placeholder="Device ID, 24 hex digits" aria-label="Device ID" autocomplete="off" spellcheck="false">
+          <button class="btn btn-primary btn-small" type="button" id="code-make">Make the code</button>
+        </div>
+        <p class="muted small" id="code-msg" role="status"></p>
+        <p class="code-out" id="code-out" hidden></p>
+      </details>
+      <ul class="people" id="boxes"></ul>
+    </section>
+
+    <!-- Releases -->
+    <section class="tab-panel" role="tabpanel" id="panel-releases" aria-labelledby="tab-releases" hidden>
+      <header class="panel-head">
+        <div>
+          <h1 class="h-md">Releases</h1>
+          <p class="muted small">What Nova boxes update to. Supervisor and video card files must be owner-signed <code>.nova</code> images (checked here and again on the box). Android OTAs are too big to upload here: put them in the <code>nova-releases</code> R2 bucket with <code>wrangler r2 object put</code>, then register them.</p>
+        </div>
+      </header>
+      <details class="card fold dev-register">
         <summary>Upload a release</summary>
         <div class="chips" role="group" aria-label="nRF9151 firmware build">
           <button class="btn btn-small btn-ghost" type="button" id="rel-nrf-light">nRF9151 · Nova Light (Light build)</button>
@@ -116,42 +153,28 @@
         <input class="input" id="rel-notes" maxlength="1000" placeholder="Notes (optional)" aria-label="Notes">
         <button class="btn btn-small btn-primary" type="button" id="rel-send">Publish</button>
       </details>
+      <ul class="people" id="releases"></ul>
     </section>
 
-    <section aria-labelledby="dev-title">
-      <h2 id="dev-title" class="section-title">Developer access (<span id="dev-n">0</span>)</h2>
-      <p class="muted small" id="dev-keys"></p>
-      <ul class="people" id="dev-certs"></ul>
-      <details class="panel dev-register">
+    <!-- Developers -->
+    <section class="tab-panel" role="tabpanel" id="panel-dev" aria-labelledby="tab-dev" hidden>
+      <header class="panel-head">
+        <div>
+          <h1 class="h-md">Developer access (<span id="dev-n">0</span>)</h1>
+          <p class="muted small" id="dev-keys"></p>
+        </div>
+      </header>
+      <details class="card fold dev-register">
         <summary>Register a developer certificate</summary>
         <p class="muted small">Make it offline with <code>novaboot.py cert</code>, then paste the hex it prints. Boxes report here only once their certificate is registered.</p>
         <textarea class="input" id="dev-cert" rows="3" spellcheck="false" placeholder="Certificate hex (320 digits)" aria-label="Certificate hex"></textarea>
         <input class="input" id="dev-notes" maxlength="500" placeholder="Notes (optional): terms agreed, contact…" aria-label="Notes">
         <button class="btn btn-small btn-primary" type="button" id="dev-register">Register</button>
       </details>
-    </section>
-
-    <section aria-labelledby="people-title">
-      <h2 id="people-title" class="section-title">People (<span id="people-n">0</span>)</h2>
-      <div class="filters">
-        <input class="input" type="search" id="search" placeholder="Search name, email, car, notes…" aria-label="Search sign-ups">
-        <select class="input" id="filter" aria-label="Show">
-          <option value="all">Everyone</option>
-          <option value="none">Not picked</option>
-          <option value="picked">Picked (invited or yes)</option>
-          <option value="declined">Said no</option>
-        </select>
-      </div>
-      <ul class="people" id="people"></ul>
+      <ul class="people" id="dev-certs"></ul>
     </section>
   </div>
 </div>
 </main>
-
-<footer class="foot wrap">
-  <a href="https://oceanlive.org/">oceanlive.org</a>
-  <a href="https://oceanlive.org/privacy">Privacy</a>
-  <a href="mailto:support@oceanlive.org">Contact</a>
-</footer>
 </body>
 </html>
