@@ -249,6 +249,75 @@ async function loadBoxes() {
   }) : [el("li", "muted", "No Nova box has checked in yet.")]));
 }
 
+// ---- pre-orders ---------------------------------------------------------------------------------
+
+const PRE_STATUS = { unconfirmed: "not confirmed yet", confirmed: "reserved", deposit_requested: "deposit asked",
+  deposit_paid: "deposit paid", cancelled: "cancelled" };
+const usd = (c) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
+
+function preProduct(p, rows) {
+  const li = el("li", "slot");
+  li.append(el("span", "slot-n", p.name), el("b", "", `${p.reserved} of ${p.goal} reserved`),
+    el("span", "slot-state", `${usd(p.price)}, deposit ${usd(p.deposit)}`));
+  const waiting = rows.filter((r) => r.product === p.id && r.status === "confirmed").length;
+  if (p.reserved < p.goal || !waiting) return li;
+  const link = el("input", "input");
+  link.placeholder = "Deposit payment link (https://…)";
+  link.setAttribute("aria-label", `${p.name} deposit payment link`);
+  const send = el("button", "btn btn-small btn-primary", `Email the deposit link to ${waiting}`);
+  send.type = "button";
+  send.addEventListener("click", async () => {
+    if (!window.confirm(`Email the ${p.name} deposit link to ${waiting} people?`)) return;
+    send.disabled = true;
+    const r = await call("/api/admin/preorders/request", { product: p.id, link: link.value.trim() });
+    send.disabled = false;
+    if (r.error) return say($("dash-status"), r.error, "error");
+    const missed = r.failed.length ? ` Not sent to: ${r.failed.join(", ")}.` : "";
+    say($("dash-status"), `Sent to ${r.sent}.${missed}`, missed ? "error" : "ok");
+    loadPreorders();
+  });
+  li.append(link, send);
+  return li;
+}
+
+function preRow(r, names) {
+  const li = el("li", "person panel");
+  li.append(el("h3", "", `${names[r.product] || r.product}: ${r.name || r.email}`));
+  li.append(el("p", "facts", [r.email, PRE_STATUS[r.status] || r.status, usd(r.price), r.region, r.car,
+    r.confirmedAt ? `confirmed ${when(r.confirmedAt)}` : `asked ${when(r.createdAt)}`,
+    r.paidAt ? `paid ${when(r.paidAt)}` : ""].filter(Boolean).join(" · ")));
+  if (r.notes) li.append(el("p", "notes", r.notes));
+  const actions = el("div", "actions");
+  const button = (label, status, question) => {
+    const b = el("button", "btn btn-small btn-ghost", label);
+    b.type = "button";
+    b.addEventListener("click", async () => {
+      if (question && !window.confirm(question)) return;
+      b.disabled = true;
+      const x = await call("/api/admin/preorders/mark", { id: r.id, status });
+      b.disabled = false;
+      if (x.error) return say($("dash-status"), x.error, "error");
+      loadPreorders();
+    });
+    actions.append(b);
+  };
+  if (r.status === "deposit_requested") button("Deposit paid", "deposit_paid");
+  if (r.status !== "cancelled") button("Cancel", "cancelled", `Cancel ${r.email}'s reservation? Refund any deposit in the payment provider yourself.`);
+  if (r.status === "cancelled" || r.status === "deposit_paid") button("Back to reserved", "confirmed");
+  if (actions.childElementCount) li.append(actions);
+  return li;
+}
+
+async function loadPreorders() {
+  const out = await call("/api/admin/preorders");
+  if (out.signedOut || out.error) return;
+  const names = Object.fromEntries(out.products.map((p) => [p.id, p.name]));
+  $("pre-products").replaceChildren(...out.products.map((p) => preProduct(p, out.preorders)));
+  $("preorders").replaceChildren(...(out.preorders.length
+    ? out.preorders.map((r) => preRow(r, names))
+    : [el("li", "muted", "No reservations yet.")]));
+}
+
 // ---- box codes (Nova Light) ---------------------------------------------------------------------
 
 $("code-make").addEventListener("click", async () => {
@@ -455,6 +524,7 @@ async function load() {
   loadDev();
   loadReleases();
   loadBoxes();
+  loadPreorders();
 }
 
 function showSignIn() {

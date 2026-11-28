@@ -8,7 +8,7 @@ export const MAX_FEATURES = 5;
 const MAX_PRODUCTS = 10;
 const ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
 // A plain address check; the real proof is that the address answers when you write to it.
-const EMAIL = /^[^\s@"<>]{1,64}@[^\s@"<>]+\.[^\s@"<>.]{2,}$/;
+export const EMAIL = /^[^\s@"<>]{1,64}@[^\s@"<>]+\.[^\s@"<>.]{2,}$/;
 
 export interface SignUp {
   email: string;
@@ -26,7 +26,7 @@ export interface SignUp {
 export type Checked = { ok: true; value: SignUp } | { ok: false; error: string };
 
 /** One line of text: trimmed, control characters and line breaks removed, cut to `max`. */
-function line(v: unknown, max: number): string {
+export function line(v: unknown, max: number): string {
   return String(v ?? "")
     .replace(/[\u0000-\u001f\u007f]+/g, " ")
     .replace(/\s+/g, " ")
@@ -35,7 +35,7 @@ function line(v: unknown, max: number): string {
 }
 
 /** Free text that may have line breaks. */
-function text(v: unknown, max: number): string {
+export function text(v: unknown, max: number): string {
   return String(v ?? "")
     .replace(/\r\n?/g, "\n")
     .replace(/[\u0000-\u0009\u000b-\u001f\u007f]+/g, " ")

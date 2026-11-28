@@ -61,6 +61,25 @@ When a picked person answers, you get an email ("said yes" or "said no"). Replyi
 them. A no frees the board straight away; once their board has gone to someone else, they can't
 take it back.
 
+## Pre-orders (preorder.oceanlive.org)
+
+The same Worker answers on `preorder.oceanlive.org`, where the home page is `public/preorder.html`.
+People reserve a Nova Light or a SuperNova for free and confirm by email; the link in that email
+(`/reservation#token`) shows their place in line and lets them cancel.
+
+* **Prices, deposits and goals** are in `PRODUCTS` in `src/preorders.ts` (Light $179 / $50 deposit,
+  SuperNova $599 / $100 deposit, goal 10 each). Only those two are open; add the Flare and Quasar
+  there when they are. People keep the price they reserved at.
+* **Nobody is charged by this site.** When a product reaches 10 confirmed reservations you get an
+  email. In /admin, Pre-orders, paste a deposit payment link made in your payment provider (for
+  example a Stripe payment link) and press the button: everyone confirmed gets it by email. Mark
+  deposits as paid when they arrive; refunds are done in the payment provider.
+* **Cancelling** from the reservation page emails you; if they had paid, the email says to refund.
+* `PREORDERS_CLOSED` = `"true"` stops new reservations. Unconfirmed reservations are deleted after
+  7 days.
+* The text of the page, the terms and the emails are marked `EDIT` in `public/preorder.html` and
+  `src/preorders.ts`.
+
 ## First deploy
 
 1. Create the database: `npx wrangler d1 create ocean-live-hardware`. Put its id in the Cloudflare

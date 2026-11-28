@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B2545">
+<meta name="color-scheme" content="dark">
+<title>Your reservation · Nova</title>
+<meta name="description" content="Confirm, check or cancel your Nova reservation.">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script type="module" src="/reservation.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <picture class="brand-logo"><source srcset="/icons/logo-rounded-96.webp" type="image/webp"><img src="/icons/logo-rounded-96.png" width="34" height="34" alt="" decoding="async"></picture>
+      Ocean Live
+    </a>
+    <span class="top-label">Pre-order</span>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+<section class="doc-hero">
+  <div class="wrap narrow">
+    <div class="lightbar" aria-hidden="true"></div>
+    <div class="eyebrow">Your reservation</div>
+    <h1 id="r-title" tabindex="-1">Checking your link…</h1>
+  </div>
+</section>
+
+<div class="wrap narrow">
+  <section class="sheet" aria-labelledby="r-title">
+    <p class="status" id="r-status" role="status" aria-live="polite" tabindex="-1"></p>
+
+    <div id="r-view" hidden>
+      <p class="lede-sm" id="r-line"></p>
+      <div class="progress">
+        <div class="bar"><span id="r-bar"></span></div>
+        <p class="small muted" id="r-count"></p>
+      </div>
+      <ul class="plain-list" id="r-facts"></ul>
+
+      <div class="answer-row" id="r-cancel-row">
+        <button class="btn btn-ghost" type="button" id="r-cancel">Cancel my reservation</button>
+      </div>
+      <div class="answer-row" id="r-sure" hidden>
+        <button class="btn btn-primary" type="button" id="r-cancel-yes">Yes, cancel it</button>
+        <button class="btn btn-ghost" type="button" id="r-cancel-no">Keep it</button>
+      </div>
+      <div class="answer-row" id="r-again-row" hidden>
+        <button class="btn btn-primary" type="button" id="r-again">Reserve again</button>
+      </div>
+      <p class="muted small">Keep the email this link came in: it's how you get back here. Questions? <a href="mailto:support@oceanlive.org">support@oceanlive.org</a>.</p>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer class="foot wrap">
+  <a href="/">Pre-order</a>
+  <a href="https://oceanlive.org/privacy#preorders">Privacy</a>
+  <a href="mailto:support@oceanlive.org">Contact</a>
+</footer>
+</body>
+</html>

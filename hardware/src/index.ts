@@ -21,6 +21,9 @@
  * Nova releases (releases.ts): GET /api/updates, /api/updates/file/<id>; /api/admin/releases*.
  * Developer access to Nova boxes (dev.ts): POST /api/dev/checkin from boxes, /api/admin/dev* for the owner.
  *
+ * Pre-orders (preorders.ts): /api/preorder*, /api/reservation*; /api/admin/preorders*. On preorder.oceanlive.org
+ * the home page is public/preorder.html.
+ *
  * Everything else is the static pages in public/. No cookies for visitors; the only thing kept about
  * someone who doesn't sign up is a hashed network address in a counter that expires after an hour.
  */
@@ -31,6 +34,7 @@ import { allRows, deleteSignUp, publicStats, saveSignUp, tally, toCsv } from "./
 import { checkin, checkins, listCerts, register, revoke } from "./dev";
 import * as releases from "./releases";
 import * as box from "./box";
+import * as preorders from "./preorders";
 import { inviteAnswer, inviteInfo, pick, unpick } from "./testers";
 import { bump, cleanup, json, plainHeaders, readJson, sameOrigin, sha256, tokenFrom } from "./util";
 
@@ -138,6 +142,14 @@ async function admin(req: Request, env: Env, ctx: ExecutionContext, path: string
     if (!body || body === "too-big") return badBody();
     return box.makeBoxCode(env, body, now);
   }
+  if (path === "/api/admin/preorders") return req.method === "GET" ? preorders.list(env, new URL(req.url), now) : wrongMethod("GET");
+  if (path === "/api/admin/preorders/request" || path === "/api/admin/preorders/mark") {
+    if (req.method !== "POST") return wrongMethod("POST");
+    if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
+    const body = await readJson(req);
+    if (!body || body === "too-big") return badBody();
+    return path.endsWith("/request") ? preorders.requestDeposits(env, body, now) : preorders.mark(env, body, now);
+  }
   if (path === "/api/admin/dev") return req.method === "GET" ? listCerts(env, now) : wrongMethod("GET");
   if (path === "/api/admin/dev/checkins") {
     return req.method === "GET" ? checkins(env, Number(new URL(req.url).searchParams.get("serial"))) : wrongMethod("GET");
@@ -170,7 +182,13 @@ async function admin(req: Request, env: Env, ctx: ExecutionContext, path: string
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
-    if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(req);
+    if (!url.pathname.startsWith("/api/")) {
+      // preorder.oceanlive.org: its home page is the pre-order page (wrangler.jsonc sends "/" here first).
+      if (url.pathname === "/" && url.hostname.startsWith("preorder.")) {
+        return env.ASSETS.fetch(new Request(new URL("/preorder", url).toString(), req));
+      }
+      return env.ASSETS.fetch(req);
+    }
     const now = Date.now();
     try {
       if (url.pathname.startsWith("/api/admin/")) return await admin(req, env, ctx, url.pathname, now);
@@ -230,6 +248,28 @@ export default {
           }
           return await checkin(env, body, now);
         }
+        case "/api/preorder/info":
+          if (req.method !== "GET" && req.method !== "HEAD") return wrongMethod("GET, HEAD");
+          return await preorders.info(env);
+        case "/api/preorder":
+        case "/api/reservation":
+        case "/api/reservation/confirm":
+        case "/api/reservation/cancel": {
+          if (req.method !== "POST") return wrongMethod("POST");
+          if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
+          const body = await readJson(req);
+          if (body === "too-big") return json({ error: "That's too long. Shorten the notes and try again." }, 413);
+          if (!body) return badBody();
+          const ip = req.headers.get("CF-Connecting-IP");
+          const reserving = url.pathname === "/api/preorder";
+          if (ip && (await bump(env.DB, `${reserving ? "pre" : "res"}:${await sha256(`hardware:${ip}`)}`, HOUR, now)) > (reserving ? num(env.PER_IP_PER_HOUR, 5) : 30)) {
+            return json({ error: "Too many tries from this network. Please try again in an hour." }, 429);
+          }
+          if (reserving) return await preorders.reserve(env, body, now);
+          const token = tokenFrom(body.token);
+          if (url.pathname === "/api/reservation") return await preorders.show(env, token);
+          return url.pathname.endsWith("/confirm") ? await preorders.confirm(env, ctx, token, now) : await preorders.cancel(env, ctx, token, now);
+        }
         case "/api/invite":
         case "/api/invite/answer":
           if (req.method !== "POST") return wrongMethod("POST");
@@ -246,5 +286,6 @@ export default {
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
     await cleanup(env.DB, Date.now());
     await box.cleanup(env, Date.now());
+    await preorders.cleanup(env, Date.now());
   },
 };

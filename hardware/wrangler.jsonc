@@ -6,13 +6,17 @@
   "compatibility_date": "2026-11-01",
   "workers_dev": false,
   "preview_urls": false,
-  "routes": [{ "pattern": "hardware.oceanlive.org", "custom_domain": true }],
+  "routes": [
+    { "pattern": "hardware.oceanlive.org", "custom_domain": true },
+    // The pre-order page (public/preorder.html) on its own address; same Worker and database.
+    { "pattern": "preorder.oceanlive.org", "custom_domain": true }
+  ],
 
   // The page (public/) is served as static files; /api/* always runs the Worker.
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/"]
   },
 
   // The answers. The id stays a placeholder here: the Cloudflare build fills it in from the build
@@ -52,6 +56,10 @@
     // The Nova owner PUBLIC key (owner.pub, 64 hex digits): checks developer certificates registered in
     // /admin. Empty until set. The lease key is a secret: wrangler secret put LEASE_KEY (contents of lease.key).
     "OWNER_PUB": "5806f2f124722108f79aefcabd7ff3d9e53753db8f7ae249e177ae2d377ec265",
+    // The pre-order site, for the links in the reservation emails.
+    "PREORDER_URL": "https://preorder.oceanlive.org",
+    // Set to "true" to stop new pre-orders (existing reservations keep working).
+    "PREORDERS_CLOSED": "false",
     // Seconds the public counters (/api/stats) are reused.
     "STATS_CACHE_SECONDS": "60"
   }

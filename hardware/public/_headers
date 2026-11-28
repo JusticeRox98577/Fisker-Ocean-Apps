@@ -21,3 +21,7 @@
 /invite*
   X-Robots-Tag: noindex
   Cache-Control: no-store
+
+/reservation*
+  X-Robots-Tag: noindex
+  Cache-Control: no-store

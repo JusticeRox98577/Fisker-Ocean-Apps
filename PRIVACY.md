@@ -1,6 +1,6 @@
 # Ocean Live privacy policy
 
-Last updated: 27 November 2026 (added: the Nova hardware beta sign-up; Ocean Live LLC is now the company behind the app)
+Last updated: 28 November 2026 (added: Nova pre-orders)
 
 Ocean Live is an independent app for Fisker Ocean owners, made by Ocean Live LLC, a Washington
 company founded by an Ocean owner, Justice MontgomeryWalkup. Ocean Live LLC is responsible for the
@@ -471,6 +471,40 @@ first. Email justice@oceanlive.org to have your answer deleted, or to ask what i
 
 The legal basis in the EU and UK is your consent, given when you sign up, which you can withdraw
 at any time by asking for your answer to be deleted.
+
+## Nova pre-orders (only if you reserve)
+
+At preorder.oceanlive.org you can reserve a Nova Light or a SuperNova from Ocean Live LLC.
+Reserving is free and takes no payment details. It is separate from the app, your account, the
+mailing list and the beta sign-up.
+
+What is stored, in the same Cloudflare D1 database as the beta sign-up, which only the developer
+can read: your email address, which product you reserved, the price and deposit when you
+reserved, whatever else you choose to fill in (your name, state, which Ocean you have, your
+notes), the state of your reservation (waiting for confirmation, reserved, deposit asked for,
+deposit paid, cancelled) and when each of those happened, and a hash of the code in your
+reservation link.
+
+To limit abuse, the server counts reservations and link tries per network for an hour, stored
+only as a hash of the IP address and deleted within a day.
+
+What everyone can see: only how many people have reserved each product. Never who.
+
+Why: to know when enough people have reserved a product to build it, to email you about your
+reservation (the confirmation, the deposit request when the batch is built, and shipping), and to
+keep a record of the order. Never sold or shared, and never used for anything else.
+
+Who processes it: **Cloudflare** stores it and runs the server, and the emails are delivered by
+**Resend**, with a copy in the developer's mailbox on the Ocean Live mail server. When you pay a
+deposit, the payment provider named on the payment page handles your payment details; Ocean
+Live never sees your card number. The pre-order pages set no cookies.
+
+How long: a reservation you never confirm is deleted after 7 days. Others are kept while your
+order is open, and afterwards for as long as the law requires for business records. Email
+justice@oceanlive.org to have yours deleted, or to ask what is held.
+
+The legal basis in the EU and UK is taking steps at your request before entering into a
+contract, and then performing it.
 
 ## Children
 

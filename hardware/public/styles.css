@@ -270,3 +270,11 @@ textarea.input { resize: vertical; min-height: 110px; }
 .dev-register summary { cursor: pointer; font-weight: 600; }
 .dev-register textarea { font-family: ui-monospace, monospace; font-size: .85rem; word-break: break-all; }
 .dev-log { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 4px; color: var(--ink-muted); }
+
+/* Pre-orders */
+.product .price { margin: 0; font: 600 1.75rem/1.1 var(--font-head); color: var(--ink); }
+.preorder-products .product { display: grid; gap: 12px; align-content: start; }
+.preorder-products .plain-list { font-size: .9375rem; }
+.progress { display: grid; gap: 6px; margin: 8px 0 4px; }
+.progress .bar span { display: block; height: 100%; width: 0; background: var(--cyan); border-radius: 4px; transition: width var(--dur); }
+.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; }

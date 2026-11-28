@@ -26,6 +26,10 @@ export interface Env {
   OWNER_PUB?: string;
   /** Secret: the lease key (hex) that signs developer lease renewals and revocations. */
   LEASE_KEY?: string;
+  /** The pre-order site (preorder.oceanlive.org), for links in the reservation emails. */
+  PREORDER_URL?: string;
+  /** "true" stops new reservations (existing ones keep working). */
+  PREORDERS_CLOSED?: string;
   /** Seconds the public counters are reused (0: never). */
   STATS_CACHE_SECONDS?: string;
 }
