@@ -48,7 +48,7 @@ export async function requestLink(req: Request, env: Env, now: number): Promise<
     .bind(await sha256(token), now + LINK_MS)
     .run();
   const link = `${env.SITE_URL}/admin#login=${token}`;
-  const r = await sendEmail(env, {
+  const r = await sendEmail(env, { label: "Admin sign-in",
     to: env.ADMIN_EMAIL,
     subject: "Sign in to the Nova beta admin",
     text:

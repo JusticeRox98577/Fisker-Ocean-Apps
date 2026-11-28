@@ -5,6 +5,7 @@ import { bump } from "./limits";
 import { type AttachmentRow, ownMessage } from "./messages";
 import { escapeHtml, fail, isValidAddress, json, newId, oneLine, snippetOf, toBase64 } from "./util";
 import type { Person } from "./receive";
+import { letterHtml } from "./letter";
 
 /** Resend takes 40 MB per email after base64; keep the raw total under 25 MB. */
 export const MAX_SEND_BYTES = 25 * 1024 * 1024;
@@ -134,7 +135,8 @@ export async function sendMail(req: Request, env: Env, session: Session, now = D
     bcc: bcc.ok.length ? bcc.ok.map(formatPerson) : undefined,
     subject: subject || "(no subject)",
     text,
-    html: textToHtml(text),
+    // every email from an oceanlive.org address gets the Ocean Live look (src/letter.ts)
+    html: letterHtml(text, subject || "(no subject)", String(form.get("label") ?? "").slice(0, 40)),
     headers: Object.keys(headers).length ? headers : undefined,
     attachments: files.length
       ? files.map((f) => ({ filename: f.filename, content: toBase64(f.bytes), content_type: f.contentType }))

@@ -3,7 +3,9 @@
  * The hardware beta (hardware/) uses it for its sign-in links and tester invitations, so it needs no
  * Resend key of its own.
  *
- *   env.MAIL.send({ from: "justice@oceanlive.org", to: "someone@example.com", subject, text })
+ *   env.MAIL.send({ from: "justice@oceanlive.org", to: "someone@example.com", subject, text, label? })
+ *
+ * The text is sent as is, plus the branded HTML version every oceanlive.org email gets (src/letter.ts).
  *
  * It goes through the same path as webmail: `from` must be a mailbox here, the same sending limits
  * apply, and a copy is kept in that mailbox's Sent folder. One recipient per email.
@@ -18,6 +20,8 @@ export interface Notice {
   to: string;
   subject: string;
   text: string;
+  /** The small tag at the top right of the branded email, e.g. "Nova beta" (optional). */
+  label?: string;
 }
 
 export type NoticeResult = { ok: true } | { ok: false; error: string };
@@ -36,6 +40,7 @@ export async function sendNotice(env: Env, notice: Notice, now = Date.now()): Pr
   form.set("to", to);
   form.set("subject", subject.slice(0, 300));
   form.set("text", text.slice(0, 50_000));
+  if (notice.label) form.set("label", String(notice.label).slice(0, 40));
   const res = await sendMail(
     new Request("https://mail.oceanlive.org/api/send", { method: "POST", body: form }),
     env,

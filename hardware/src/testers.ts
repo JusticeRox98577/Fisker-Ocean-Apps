@@ -59,7 +59,7 @@ export async function pick(env: Env, email: string, now: number): Promise<Respon
   const token = randomToken();
   const link = `${env.SITE_URL}/invite#${token}`;
   const mail = invitation(p.name, link, total);
-  const sent = await sendEmail(env, { to: p.email, ...mail });
+  const sent = await sendEmail(env, { to: p.email, label: "Nova beta", ...mail });
   if (!sent.ok) return json({ error: sent.error }, 502);
   // Only after the email went out, so a failed send doesn't take a board.
   await env.DB.prepare(
@@ -131,6 +131,7 @@ export async function inviteAnswer(env: Env, ctx: ExecutionContext, body: Record
   ctx.waitUntil(
     sendEmail(env, {
       to: env.ADMIN_EMAIL,
+      label: "Nova beta",
       subject: next === "accepted" ? `Nova beta: ${who} said yes` : `Nova beta: ${who} said no`,
       text:
         next === "accepted"

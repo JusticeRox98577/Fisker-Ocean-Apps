@@ -28,7 +28,7 @@ const HEADER_IMAGE = "https://oceanlive.org/email/header.png";
 const LOGO_IMAGE = "https://oceanlive.org/icons/logo-rounded-96.png";
 
 // Palette: same values and contrast pairs as the sign-in email.
-const C = {
+export const C = {
   page: "#061428",
   paper: "#0B2545",
   panel: "#0E2C50",
@@ -40,8 +40,8 @@ const C = {
   onAccent: "#04223A",
   line: "#1E4672",
 };
-const SANS = "'Space Grotesk','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-const BODY = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+export const SANS = "'Space Grotesk','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+export const BODY = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
 interface ConfirmStrings {
   subject: string;
@@ -222,7 +222,7 @@ export function campaignEmail(p: CampaignParts): Email {
   return { subject: p.subject, text, html: frame("en", p.subject, "Ocean Live news", content, footer) };
 }
 
-function button(label: string, href: string): string {
+export function button(label: string, href: string): string {
   return (
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate"><tr>` +
     `<td align="center" bgcolor="${C.cyan}" style="background-color:${C.cyan};border-radius:12px">` +
@@ -231,7 +231,7 @@ function button(label: string, href: string): string {
   );
 }
 
-function note(text: string): string {
+export function note(text: string): string {
   return (
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>` +
     `<td width="3" bgcolor="${C.glass}" style="width:3px;background-color:${C.glass};border-radius:2px;font-size:1px;line-height:1px">&nbsp;</td>` +
@@ -249,7 +249,7 @@ function footerLine(footer: string, site: string): string {
 }
 
 /** The shared shell: logo band, banner, light bar, body panel, footer. `body` and `footer` must already be safe HTML. */
-function frame(lang: string, title: string, label: string, body: string, footer: string[]): string {
+export function frame(lang: string, title: string, label: string, body: string, footer: string[]): string {
   return `<!DOCTYPE html>
 <html lang="${esc(lang)}" dir="ltr">
 <head>

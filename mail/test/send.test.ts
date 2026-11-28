@@ -124,3 +124,23 @@ describe("sendMail", () => {
     expect(after!.n).toBe(before!.n);
   });
 });
+
+describe("letterHtml: the Ocean Live look on every email", () => {
+  it("brands plain text: header picture, buttons for links on their own line, quotes, footer", async () => {
+    const { letterHtml } = await import("../src/letter");
+    const html = letterHtml(
+      "Hi <Sam>,\n\nPlease tell me whether you're in:\n\nhttps://hardware.oceanlive.org/invite#abc\n\nSee https://oceanlive.org too.\n\n> earlier\n> message\n\nJustice\nOcean Live LLC",
+      "You've been picked",
+      "Nova beta",
+    );
+    expect(html).toContain("https://oceanlive.org/email/header.png");
+    expect(html).toContain("Nova beta");
+    expect(html).toContain("Hi &lt;Sam&gt;,");
+    expect(html).toContain(">Open your invitation</a>");
+    expect(html).toContain('href="https://oceanlive.org"');
+    expect(html).toContain("earlier<br>message");
+    expect(html).toContain("Justice<br>Ocean Live LLC");
+    expect(html).toContain("Ocean Live LLC ·");
+    expect(html).not.toMatch(/<script/i);
+  });
+});

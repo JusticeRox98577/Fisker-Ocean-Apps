@@ -184,7 +184,7 @@ export async function lookup(env: Env, body: Record<string, unknown>): Promise<R
     updates.push(env.DB.prepare("UPDATE preorders SET token_hash = ?2 WHERE id = ?1").bind(r.id, await sha256(token)));
     lines.push(`${PRODUCTS[r.product]?.name ?? r.product}${r.status === "cancelled" ? " (cancelled)" : ""}:\n${link(env, token)}`);
   }
-  const sent = await sendEmail(env, {
+  const sent = await sendEmail(env, { label: "Nova pre-order",
     to: email,
     subject: "Your Nova order status",
     text: `Hi,\n\nHere's the status of your Nova ${results.length === 1 ? "reservation" : "reservations"} (these links replace any older ones):\n\n${lines.join("\n\n")}\n\nJustice\nOcean Live LLC`,
@@ -352,7 +352,7 @@ export async function reserve(env: Env, body: Record<string, unknown>, now: numb
 
   if (active) {
     // Already reserved: send a fresh link, change nothing else.
-    const sent = await sendEmail(env, { to: email, ...alreadyEmail(p, name, link(env, token)) });
+    const sent = await sendEmail(env, { label: "Nova pre-order", to: email, ...alreadyEmail(p, name, link(env, token)) });
     if (!sent.ok) return json({ error: "Couldn't send the email. Please try again in a few minutes." }, 502);
     await env.DB.prepare("UPDATE preorders SET token_hash = ?3 WHERE email = ?1 AND product = ?2").bind(email, id, hash).run();
     return json({ ok: true });
@@ -361,7 +361,7 @@ export async function reserve(env: Env, body: Record<string, unknown>, now: numb
   const n = await counts(env.DB);
   const price = tierPrice(p, Math.max(1, n[id] ?? 0));
   const lightPrice = tierPrice(PRODUCTS.light, Math.max(1, n.light ?? 0)) - LIGHT_BUNDLE_OFF;
-  const sent = await sendEmail(env, { to: email, ...confirmEmail(p, price, lightPrice, name, link(env, token), bundle, signed, site) });
+  const sent = await sendEmail(env, { label: "Nova pre-order", to: email, ...confirmEmail(p, price, lightPrice, name, link(env, token), bundle, signed, site) });
   if (!sent.ok) return json({ error: "Couldn't send the email. Please try again in a few minutes." }, 502);
   const upsert = `INSERT INTO preorders (product, email, name, region, car, notes, status, token_hash, price_cents, deposit_cents, created_at, bundle,
        sig_name, sig_png, sig_at, sig_version)
@@ -442,7 +442,7 @@ async function goalNotice(env: Env, ctx: ExecutionContext, before: Record<string
     if ((before[id] ?? 0) < p.goal && (after[id] ?? 0) >= p.goal) {
       // EDIT: the email to the admin when a product reaches its goal.
       ctx.waitUntil(
-        sendEmail(env, {
+        sendEmail(env, { label: "Nova pre-order",
           to: env.ADMIN_EMAIL,
           subject: `${p.name}: ${p.goal} confirmed reservations`,
           text:
@@ -485,7 +485,7 @@ export async function cancel(env: Env, ctx: ExecutionContext, token: string, now
     const p = PRODUCTS[r.product];
     const who = r.name ? `${r.name} (${r.email})` : r.email;
     ctx.waitUntil(
-      sendEmail(env, {
+      sendEmail(env, { label: "Nova pre-order",
         to: env.ADMIN_EMAIL,
         subject: `${p?.name ?? r.product}: ${who} cancelled${["deposit_paid", "balance_requested", "paid"].includes(r.status) ? " (refund due)" : ""}`,
         text: r.status === "paid"
@@ -595,7 +595,7 @@ export async function requestPayments(env: Env, body: Record<string, unknown>, n
   for (const r of results) {
     // a fresh manage link for each email (the person's old link stops working)
     const token = randomToken();
-    const mail = await sendEmail(env, { to: r.email, ...payEmail(kind, p, r, pay, link(env, token)) });
+    const mail = await sendEmail(env, { label: "Nova pre-order", to: r.email, ...payEmail(kind, p, r, pay, link(env, token)) });
     if (!mail.ok) {
       failed.push(r.email);
       continue;

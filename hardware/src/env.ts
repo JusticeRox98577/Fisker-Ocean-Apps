@@ -1,6 +1,6 @@
 /** The mail Worker's Notify entry point (mail/src/notify.ts). */
 export interface MailService {
-  send(notice: { from: string; to: string; subject: string; text: string }): Promise<{ ok: true } | { ok: false; error: string }>;
+  send(notice: { from: string; to: string; subject: string; text: string; label?: string }): Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 export interface Env {

@@ -8,8 +8,11 @@ import type { Env } from "./env";
 export interface Email {
   to: string;
   subject: string;
-  /** Plain text, paragraphs separated by blank lines. Links are written out in full. */
+  /** Plain text, paragraphs separated by blank lines. Links are written out in full; a link alone on
+   * its own line becomes a button in the branded HTML version the mail service adds. */
   text: string;
+  /** The small tag at the top right of the branded email, e.g. "Nova beta". */
+  label?: string;
 }
 
 export async function sendEmail(env: Env, email: Email): Promise<{ ok: true } | { ok: false; error: string }> {
