@@ -443,12 +443,49 @@ $("rel-target").addEventListener("change", () => {
   const android = $("rel-target").value === "android";
   $("rel-file").hidden = android;
   $("rel-key").hidden = !android;
+  readNova();
 });
+
+// A .nova image carries its version in its header: show it as soon as the file is chosen (the server
+// reads it again on upload; the box is only for the app's versionCode and Android).
+const FW_CHIP = { supervisor: 1, card: 2, "nrf-light": 3, "nrf-nova": 3 };
+const CHIP_NAME = { 1: "the supervisor", 2: "the video card", 3: "the nRF9151" };
+async function readNova() {
+  const target = $("rel-target").value;
+  const input = $("rel-version");
+  const file = $("rel-file").files[0];
+  const fw = target in FW_CHIP;
+  input.readOnly = fw;
+  if (!fw) {
+    if (input.dataset.auto) { input.value = ""; delete input.dataset.auto; }
+    return;
+  }
+  input.value = "";
+  input.dataset.auto = "1";
+  if (!file) return;
+  const h = new DataView(await file.slice(0, 16).arrayBuffer());
+  if (h.byteLength < 16 || h.getUint32(0, true) !== 0x4d49564e) {
+    input.value = "Not a signed Nova image (.nova)";
+    return say($("dash-status"), "That file isn't a signed Nova image (.nova).", "error");
+  }
+  const chip = h.getUint8(5);
+  if (chip !== FW_CHIP[target]) {
+    input.value = `For ${CHIP_NAME[chip] || "another chip"}`;
+    return say($("dash-status"), `That image is for ${CHIP_NAME[chip] || "another chip"}, not ${CHIP_NAME[FW_CHIP[target]]}.`, "error");
+  }
+  if (h.getUint8(6) !== 0) {
+    input.value = "Developer-signed";
+    return say($("dash-status"), "That image is signed with a developer key. Releases must be signed with the owner key.", "error");
+  }
+  input.value = `${ver(h.getUint32(8, true))} (from the file)`;
+  say($("dash-status"), "");
+}
+$("rel-file").addEventListener("change", readNova);
 
 $("rel-send").addEventListener("click", async () => {
   const target = $("rel-target").value;
   const b = $("rel-send");
-  const common = { version: $("rel-version").value.trim(), label: $("rel-label").value.trim(), channel: $("rel-channel").value, notes: $("rel-notes").value };
+  const common = { version: target in FW_CHIP ? "" : $("rel-version").value.trim(), label: $("rel-label").value.trim(), channel: $("rel-channel").value, notes: $("rel-notes").value };
   let out;
   b.disabled = true;
   say($("dash-status"), "Publishing…");
