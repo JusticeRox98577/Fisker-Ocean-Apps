@@ -167,6 +167,15 @@ function renderPeople() {
           ].filter(Boolean);
           li.append(el("p", "facts", facts.join(" · ")));
           if (r.products.length) li.append(el("p", "small muted", `Wants to test: ${r.products.map((p) => label("products", p)).join(", ")}`));
+          if (r.signedName) {
+            const sig = el("p", "facts", `Signed the disclosure (v${r.signedVersion}) as "${r.signedName}", ${date(r.signedAt)} · `);
+            const a = el("a", "", "see signature");
+            a.href = `/api/admin/tester-signature?email=${encodeURIComponent(r.email)}`;
+            a.target = "_blank";
+            a.rel = "noopener";
+            sig.append(a);
+            li.append(sig);
+          }
 
           const ol = el("ol", "top5");
           for (const x of r.features) ol.append(el("li", "", label("features", x)));

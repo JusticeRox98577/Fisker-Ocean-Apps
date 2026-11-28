@@ -447,7 +447,9 @@ What is stored, in a Cloudflare D1 database that only the developer can read:
 * when you signed up and when you last changed your answer (signing up again with the same
   address replaces your earlier answer);
 * if you are picked as a tester: that you were picked and when, a hash of the code in your
-  invitation link, and whether and when you said yes or no.
+  invitation link, and whether and when you said yes or no. Saying yes means signing the
+  first-generation disclosure: the name you type, the signature you draw (as an image), when, and
+  which version are kept as the record of what you agreed to.
 
 To limit abuse, the server counts sign-ups, and tries of invitation links, per network for an
 hour, stored only as a hash of the IP address and deleted within a day. That count is not linked

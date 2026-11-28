@@ -93,7 +93,7 @@ export const PRODUCTS: Record<string, Product> = {
 
 // EDIT: bump when the first-generation disclosure (public/preorder.html, #disclosure) changes, so each
 // signature records which text was signed.
-export const DISCLOSURE_VERSION = "2026-11-28.3";
+export const DISCLOSURE_VERSION = "2026-11-28.4";
 
 for (const p of Object.values(PRODUCTS)) p.price = p.tiers[0][1];
 
@@ -311,7 +311,7 @@ function alreadyEmail(p: Product, name: string, url: string): { subject: string;
 }
 
 /** The drawn signature: a PNG data URL from the page's canvas, at most 200 kB. */
-function signature(v: unknown): Uint8Array | null {
+export function signature(v: unknown): Uint8Array | null {
   const m = /^data:image\/png;base64,([A-Za-z0-9+/=]{100,280000})$/.exec(String(v ?? ""));
   if (!m) return null;
   try {

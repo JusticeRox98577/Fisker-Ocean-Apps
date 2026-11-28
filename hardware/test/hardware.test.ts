@@ -249,6 +249,7 @@ describe("the admin page's data", () => {
 });
 
 describe("picking testers", () => {
+  const SIGNED = { signedName: "Sam Jones", signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAKCAIAAABJ+IsHAAAAGElEQVR4nGP4P0CAYdTiUYtHLR61mFwAAIZRq437tEJBAAAAAElFTkSuQmCC" };
   async function invitationToken(cookie: string, email: string) {
     const { res, sent } = await call("/api/admin/pick", { method: "POST", body: JSON.stringify({ email }), cookie });
     expect(res.status).toBe(200);
@@ -264,14 +265,20 @@ describe("picking testers", () => {
     expect((await allRows(env.DB))[0].pick).toBe("invited");
 
     const info = await call("/api/invite", { method: "POST", body: JSON.stringify({ token }) });
-    expect(await info.res.json()).toEqual({ name: "Sam", status: "invited", boards: 4 });
+    expect(await info.res.json()).toMatchObject({ name: "Sam", status: "invited", boards: 4, signed: false });
 
-    const yes = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "yes" }) });
+    // a yes needs the first-generation disclosure signed
+    const unsigned = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "yes" }) });
+    expect(unsigned.res.status).toBe(400);
+    expect((await allRows(env.DB))[0].pick).toBe("invited");
+
+    const yes = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "yes", ...SIGNED }) });
     expect(await yes.res.json()).toEqual({ ok: true, status: "accepted" });
     expect(yes.sent[0].to).toBe("justice@oceanlive.org");
     expect(yes.sent[0].subject).toMatch(/said yes/);
     expect(yes.sent[0].text).toContain("owner@example.com");
-    expect((await allRows(env.DB))[0].pick).toBe("accepted");
+    expect(yes.sent[0].text).toContain("signed the first-generation disclosure");
+    expect((await allRows(env.DB))[0]).toMatchObject({ pick: "accepted", signedName: "Sam Jones" });
   });
 
   it("never invites more people than there are boards; a no frees one", async () => {
@@ -287,7 +294,7 @@ describe("picking testers", () => {
     await invitationToken(cookie, "p4@example.com");
 
     // The one who said no can't take the board back once it's gone.
-    const late = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token: tokens[0], answer: "yes" }) });
+    const late = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token: tokens[0], answer: "yes", ...SIGNED }) });
     expect(late.res.status).toBe(409);
   });
 
@@ -296,7 +303,7 @@ describe("picking testers", () => {
     await post(good);
     const token = await invitationToken(cookie, good.email);
     await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "no" }) });
-    const again = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "yes" }) });
+    const again = await call("/api/invite/answer", { method: "POST", body: JSON.stringify({ token, answer: "yes", ...SIGNED }) });
     expect(await again.res.json()).toEqual({ ok: true, status: "accepted" });
     expect(again.sent[0].subject).toMatch(/said yes/);
     expect((await allRows(env.DB))[0].pick).toBe("accepted");

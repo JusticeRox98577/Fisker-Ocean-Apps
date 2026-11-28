@@ -18,6 +18,10 @@ export interface Row {
   pick: string;
   pickedAt: string;
   answeredAt: string;
+  /** The first-generation disclosure, signed when they said yes. */
+  signedName: string;
+  signedAt: string;
+  signedVersion: string;
 }
 
 interface DbRow {
@@ -36,6 +40,9 @@ interface DbRow {
   pick: string;
   picked_at: number | null;
   answered_at: number | null;
+  sig_name: string;
+  sig_at: number | null;
+  sig_version: string;
 }
 
 /** Saves an answer. Signing up again with the same address replaces the earlier answer. */
@@ -67,7 +74,9 @@ function list(v: string): string[] {
 }
 
 export async function allRows(db: D1Database): Promise<Row[]> {
-  const { results } = await db.prepare("SELECT * FROM responses ORDER BY created_at").all<DbRow>();
+  const { results } = await db.prepare(
+    "SELECT email, name, region, car, phone, products, features, other_feature, install, notes, created_at, updated_at, pick, picked_at, answered_at, sig_name, sig_at, sig_version FROM responses ORDER BY created_at",
+  ).all<DbRow>();
   return results.map((r) => ({
     email: r.email,
     name: r.name,
@@ -84,6 +93,9 @@ export async function allRows(db: D1Database): Promise<Row[]> {
     pick: r.pick,
     pickedAt: r.picked_at ? new Date(r.picked_at).toISOString() : "",
     answeredAt: r.answered_at ? new Date(r.answered_at).toISOString() : "",
+    signedName: r.sig_name ?? "",
+    signedAt: r.sig_at ? new Date(r.sig_at).toISOString() : "",
+    signedVersion: r.sig_version ?? "",
   }));
 }
 
@@ -128,6 +140,7 @@ export function toCsv(rows: Row[]): string {
     "email", "name", "region", "car", "phone", "products",
     ...Array.from({ length: MAX_FEATURES }, (_, i) => `feature_${i + 1}`),
     "other_feature", "install", "notes", "created_at", "updated_at", "picked", "picked_at", "answered_at",
+    "signed_name", "signed_at", "signed_version",
   ];
   const cell = (v: string) => {
     let s = v;
@@ -138,7 +151,7 @@ export function toCsv(rows: Row[]): string {
   for (const r of rows) {
     const feats = Array.from({ length: MAX_FEATURES }, (_, i) => r.features[i] ?? "");
     lines.push(
-      [r.email, r.name, r.region, r.car, r.phone, r.products.join(" "), ...feats, r.otherFeature, r.install, r.notes, r.createdAt, r.updatedAt, r.pick, r.pickedAt, r.answeredAt]
+      [r.email, r.name, r.region, r.car, r.phone, r.products.join(" "), ...feats, r.otherFeature, r.install, r.notes, r.createdAt, r.updatedAt, r.pick, r.pickedAt, r.answeredAt, r.signedName, r.signedAt, r.signedVersion]
         .map(cell)
         .join(","),
     );

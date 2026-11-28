@@ -89,14 +89,15 @@ async function stats(req: Request, env: Env, ctx: ExecutionContext): Promise<Res
 
 async function invite(req: Request, env: Env, ctx: ExecutionContext, now: number, answer: boolean): Promise<Response> {
   if (!sameOrigin(req)) return json({ error: "Not allowed." }, 403);
-  const body = await readJson(req);
+  // a yes carries the drawn signature (a small PNG)
+  const body = await readJson(req, answer ? 320 * 1024 : 16 * 1024);
   if (!body || body === "too-big") return badBody();
   const ip = req.headers.get("CF-Connecting-IP");
   if (ip && (await bump(env.DB, `invite:${await sha256(`hardware:${ip}`)}`, HOUR, now)) > 30) {
     return json({ error: "Too many tries. Please wait an hour." }, 429);
   }
   const token = tokenFrom(body.token);
-  return answer ? inviteAnswer(env, ctx, token, body.answer, now) : inviteInfo(env, token);
+  return answer ? inviteAnswer(env, ctx, body, token, now) : inviteInfo(env, token);
 }
 
 async function admin(req: Request, env: Env, ctx: ExecutionContext, path: string, now: number): Promise<Response> {
@@ -143,6 +144,13 @@ async function admin(req: Request, env: Env, ctx: ExecutionContext, path: string
     return box.makeBoxCode(env, body, now);
   }
   if (path === "/api/admin/preorders") return req.method === "GET" ? preorders.list(env, new URL(req.url), now) : wrongMethod("GET");
+  if (path === "/api/admin/tester-signature") {
+    if (req.method !== "GET") return wrongMethod("GET");
+    const r = await env.DB.prepare("SELECT sig_png FROM responses WHERE email = ?1")
+      .bind(String(new URL(req.url).searchParams.get("email") ?? "").toLowerCase()).first<{ sig_png: ArrayBuffer | number[] | null }>();
+    if (!r?.sig_png) return json({ error: "No signature." }, 404);
+    return new Response(new Uint8Array(r.sig_png as ArrayLike<number>), { headers: plainHeaders({ "Content-Type": "image/png", "Content-Security-Policy": "default-src 'none'" }) });
+  }
   if (path === "/api/admin/preorders/signature") return req.method === "GET" ? preorders.signatureImage(env, new URL(req.url)) : wrongMethod("GET");
   if (path === "/api/admin/preorders/request" || path === "/api/admin/preorders/mark" || path === "/api/admin/preorders/step") {
     if (req.method !== "POST") return wrongMethod("POST");

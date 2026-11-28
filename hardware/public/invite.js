@@ -1,11 +1,15 @@
 // The yes/no page a picked tester reaches from their email. The token is in the #fragment, so it never
-// reaches server logs; it's sent in a POST body.
+// reaches server logs; it's sent in a POST body. Saying yes means signing the first-generation
+// disclosure (sign.js), the same one pre-order customers sign.
+import { loadDisclosure } from "./sign.js";
+
 document.documentElement.classList.replace("no-js", "js");
 
 const token = location.hash.slice(1);
 const $ = (id) => document.getElementById(id);
 const title = $("inv-title");
 const status = $("inv-status");
+let name = "";
 
 async function post(url, data) {
   try {
@@ -17,14 +21,29 @@ async function post(url, data) {
       cache: "no-store",
     });
     const body = await res.json().catch(() => null);
-    if (res.ok && body) return body;
+    if (res.ok && body && !body.error) return body;
     return { error: (body && body.error) || "Something went wrong. Please try again later." };
   } catch {
     return { error: "Couldn't reach hardware.oceanlive.org. Check your connection and try again." };
   }
 }
 
-function show(state, name) {
+// EDIT: how each product is installed, for the "What testing involves" list.
+const INSTALL = {
+  light: "plugs into the spider port behind the dash trim and takes power from a fuse tap",
+  supernova: "goes behind the center console trim: it plugs into the spider port, takes power from a fuse tap, and goes inline with the center screen's video cable",
+  flare: "goes behind the center console trim, inline with the center screen's video cable, and works with a Nova Light at the spider port",
+  quasar: "goes behind the center console trim, inline with the center screen's video cable, and works with a Nova Light at the spider port",
+};
+function installLine(products) {
+  const which = (products || []).filter((p) => INSTALL[p]);
+  const p = which.includes("supernova") ? "supernova" : which[0];
+  $("inv-install").textContent = p
+    ? `You install it: the ${{ light: "Nova Light", supernova: "SuperNova", flare: "Nova Flare", quasar: "Nova Quasar" }[p]} ${INSTALL[p]}. There's a guide, and I can talk you through it. Then you use it in your Ocean day to day.`
+    : "You install it: a Nova Light plugs into the spider port behind the dash trim and takes power from a fuse tap; the screen products also go behind the center console. There's a guide, and I can talk you through it. Then you use it in your Ocean day to day.";
+}
+
+function show(state) {
   $("inv-ask").hidden = state !== "invited";
   $("inv-yes").hidden = state !== "accepted";
   $("inv-no").hidden = state !== "declined";
@@ -37,24 +56,48 @@ function show(state, name) {
   }
 }
 
-async function answer(a) {
-  for (const b of document.querySelectorAll("[data-answer], #inv-undo")) b.disabled = true;
+async function sayNo() {
+  for (const b of document.querySelectorAll("button")) b.disabled = true;
   status.textContent = "Sending…";
-  const r = await post("/api/invite/answer", { token, answer: a });
-  for (const b of document.querySelectorAll("[data-answer], #inv-undo")) b.disabled = false;
+  const r = await post("/api/invite/answer", { token, answer: "no" });
+  for (const b of document.querySelectorAll("button")) b.disabled = false;
   if (r.error) {
     status.textContent = r.error;
     status.classList.add("is-error");
-    status.focus();
-    return;
+    return status.focus();
   }
   status.textContent = "";
   show(r.status);
-  title.focus?.();
+  title.focus();
 }
 
-for (const b of document.querySelectorAll("[data-answer]")) b.addEventListener("click", () => answer(b.dataset.answer));
-$("inv-undo").addEventListener("click", () => answer("yes"));
+const disclosure = loadDisclosure({
+  mode: "tester",
+  submitLabel: "Sign and say yes",
+  onSign: async ({ signedName, signature }) => {
+    const r = await post("/api/invite/answer", { token, answer: "yes", signedName, signature });
+    if (r.error) return r.error;
+    status.textContent = "";
+    show(r.status);
+    setTimeout(() => title.focus(), 0);
+    return null;
+  },
+}).catch((e) => {
+  status.textContent = e.message;
+  status.classList.add("is-error");
+  return null;
+});
+
+async function openDisclosure(signing) {
+  const d = await disclosure;
+  if (d) d.open(signing, name);
+}
+
+$("inv-yes-btn").addEventListener("click", () => openDisclosure(true));
+$("inv-undo").addEventListener("click", () => openDisclosure(true));
+$("inv-read").addEventListener("click", () => openDisclosure(false));
+$("inv-reread").addEventListener("click", () => openDisclosure(false));
+for (const b of document.querySelectorAll('[data-answer="no"]')) b.addEventListener("click", sayNo);
 
 (async () => {
   if (!token) {
@@ -69,5 +112,7 @@ $("inv-undo").addEventListener("click", () => answer("yes"));
     status.classList.add("is-error");
     return;
   }
-  show(r.status, r.name);
+  name = r.name || "";
+  installLine(r.products);
+  show(r.status);
 })();

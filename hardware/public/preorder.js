@@ -1,6 +1,8 @@
 // The pre-order page: live prices and counts from /api/preorder/info, the build trackers from
 // /api/preorder/build, the signed first-generation disclosure (a <dialog> on this page), and the order
 // status lookup.
+import { hideDialog, loadDisclosure, showDialog } from "./sign.js";
+
 document.documentElement.classList.replace("no-js", "js");
 
 const $ = (id) => document.getElementById(id);
@@ -149,199 +151,41 @@ $("again").addEventListener("click", () => {
   $("p-email").focus();
 });
 
-// ---- the disclosure and signature ------------------------------------------------------------------
+// ---- the disclosure and signature (sign.js) ---------------------------------------------------------
 
-const dialog = $("disclosure");
-const pad = $("d-pad");
-const ctx = pad.getContext("2d");
-let strokes = [];
-let drawing = null;
+let disclosure = null;
+const disclosureReady = loadDisclosure({
+  mode: "reserve",
+  submitLabel: "Sign and reserve",
+  onSign: async ({ signedName, signature }) => {
+    const data = new FormData(form);
+    const r = await postJson("/api/preorder", {
+      product: picked(),
+      email: String(data.get("email") || "").trim(),
+      name: data.get("name"),
+      region: data.get("region"),
+      car: data.get("car"),
+      notes: data.get("notes"),
+      website: data.get("website"),
+      hasLight: $("p-has-light").checked,
+      consent: true,
+      signedName,
+      signature,
+    });
+    if (r.error) return r.error;
+    form.hidden = true;
+    $("thanks").hidden = false;
+    $("thanks").focus();
+    loadInfo();
+    return null;
+  },
+}).then((d) => (disclosure = d)).catch((e) => setStatus(status, e.message, true));
 
-function sizePad() {
-  const r = pad.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  pad.width = Math.round(r.width * dpr);
-  pad.height = Math.round(r.height * dpr);
-  redraw();
+async function openDisclosure(signing) {
+  await disclosureReady;
+  if (disclosure) disclosure.open(signing, $("p-name").value);
 }
-
-function redraw() {
-  const dpr = window.devicePixelRatio || 1;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, pad.width, pad.height);
-  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#EAF4FF";
-  ctx.lineWidth = 2.2;
-  ctx.lineCap = ctx.lineJoin = "round";
-  for (const s of strokes) {
-    ctx.beginPath();
-    s.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-    if (s.length === 1) ctx.lineTo(s[0][0] + 0.1, s[0][1]);
-    ctx.stroke();
-  }
-}
-
-function point(e) {
-  const r = pad.getBoundingClientRect();
-  return [e.clientX - r.left, e.clientY - r.top];
-}
-pad.addEventListener("pointerdown", (e) => {
-  e.preventDefault();
-  pad.setPointerCapture(e.pointerId);
-  drawing = [point(e)];
-  strokes.push(drawing);
-  redraw();
-});
-pad.addEventListener("pointermove", (e) => {
-  if (!drawing) return;
-  drawing.push(point(e));
-  redraw();
-});
-for (const ev of ["pointerup", "pointercancel"]) pad.addEventListener(ev, () => { drawing = null; checkReady(); });
-$("d-clear").addEventListener("click", () => { strokes = []; redraw(); checkReady(); });
-
-/** The signature for the record: black ink on white, whatever the page theme. */
-function signaturePng() {
-  const r = pad.getBoundingClientRect();
-  const c = document.createElement("canvas");
-  c.width = Math.round(r.width);
-  c.height = Math.round(r.height);
-  const x = c.getContext("2d");
-  x.fillStyle = "#fff";
-  x.fillRect(0, 0, c.width, c.height);
-  x.strokeStyle = "#0B2545";
-  x.lineWidth = 2.2;
-  x.lineCap = x.lineJoin = "round";
-  for (const s of strokes) {
-    x.beginPath();
-    s.forEach(([px, py], i) => (i ? x.lineTo(px, py) : x.moveTo(px, py)));
-    if (s.length === 1) x.lineTo(s[0][0] + 0.1, s[0][1]);
-    x.stroke();
-  }
-  return c.toDataURL("image/png");
-}
-
-const inkLength = () => strokes.reduce((n, s) => n + s.length, 0);
-
-// Reading first: at least READ_MS with the disclosure open (time from earlier openings counts), and
-// scrolled to its end.
-const READ_MS = 60 * 1000;
-let readBefore = 0;    // ms the disclosure was open before this opening
-let openedAt = 0;      // when this opening started (0: closed)
-let reachedEnd = false;
-let tick = 0;
-const readMs = () => readBefore + (openedAt ? Date.now() - openedAt : 0);
-const leftS = () => Math.max(0, Math.ceil((READ_MS - readMs()) / 1000));
-const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-
-function checkEnd() {
-  const b = $("d-body");
-  if (b.scrollTop + b.clientHeight >= b.scrollHeight - 12) reachedEnd = true;
-  $("d-more").hidden = reachedEnd;
-  checkReady();
-}
-$("d-body").addEventListener("scroll", checkEnd, { passive: true });
-
-/** What's still missing before signing, or "" when ready. */
-function missing() {
-  if (!reachedEnd) return "Please read the whole disclosure first: scroll to the end of it.";
-  if (leftS() > 0) return `Please take at least a minute to read it: ${mmss(leftS())} to go.`;
-  if (!$("d-agree").checked) return "Tick the box to say you've read and agree to the disclosure.";
-  if ($("d-name").value.trim().length < 3) return "Type your full name.";
-  if (inkLength() < 10) return "Draw your signature in the box (with your finger or mouse).";
-  return "";
-}
-function checkReady() {
-  const need = missing();
-  const b = $("d-submit");
-  b.classList.toggle("is-waiting", !!need);
-  b.textContent = !reachedEnd ? "Scroll to the end first"
-    : leftS() > 0 ? `Sign and reserve · ${mmss(leftS())}`
-    : "Sign and reserve";
-  const st = $("d-status");
-  if (!need) setStatus(st, "");
-  else if (st.classList.contains("is-error")) setStatus(st, need, true); // keep a shown hint current (the countdown)
-}
-$("d-agree").addEventListener("change", checkReady);
-$("d-name").addEventListener("input", checkReady);
-
-// <dialog> everywhere it exists; a plain overlay on older browsers.
-function show(d) {
-  if (typeof d.showModal === "function") d.showModal();
-  else {
-    d.setAttribute("open", "");
-    d.classList.add("is-fallback");
-  }
-  document.documentElement.classList.add("has-dialog");
-}
-function hide(d) {
-  if (typeof d.close === "function" && d.open) d.close();
-  d.removeAttribute("open");
-  d.classList.remove("is-fallback");
-  document.documentElement.classList.remove("has-dialog");
-}
-
-function openDisclosure(signing) {
-  $("d-sign").hidden = !signing;
-  $("d-date").textContent = new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
-  if (signing && !$("d-name").value) $("d-name").value = $("p-name").value;
-  setStatus($("d-status"), "");
-  show(dialog);
-  openedAt = Date.now();
-  if (!reachedEnd) $("d-body").scrollTop = 0;
-  clearInterval(tick);
-  tick = setInterval(checkReady, 1000);
-  if (signing) sizePad();
-  checkEnd();
-}
-function closeDisclosure() {
-  if (openedAt) readBefore += Date.now() - openedAt;
-  openedAt = 0;
-  clearInterval(tick);
-  hide(dialog);
-}
-dialog.addEventListener("close", () => {
-  if (openedAt) readBefore += Date.now() - openedAt;
-  openedAt = 0;
-  clearInterval(tick);
-});
-$("d-close").addEventListener("click", closeDisclosure);
-$("d-cancel").addEventListener("click", closeDisclosure);
 $("read-disclosure").addEventListener("click", () => openDisclosure(false));
-dialog.addEventListener("click", (e) => { if (e.target === dialog) closeDisclosure(); });
-window.addEventListener("resize", () => { if (dialog.open && !$("d-sign").hidden) sizePad(); });
-
-$("d-submit").addEventListener("click", async () => {
-  const b = $("d-submit");
-  const need = missing();
-  if (need) return setStatus($("d-status"), need, true);
-  b.disabled = true;
-  setStatus($("d-status"), "Sending…");
-  const data = new FormData(form);
-  const r = await postJson("/api/preorder", {
-    product: picked(),
-    email: String(data.get("email") || "").trim(),
-    name: data.get("name"),
-    region: data.get("region"),
-    car: data.get("car"),
-    notes: data.get("notes"),
-    website: data.get("website"),
-    hasLight: $("p-has-light").checked,
-    consent: true,
-    signedName: $("d-name").value.trim(),
-    signature: signaturePng(),
-  });
-  if (r.error) {
-    b.disabled = false;
-    return setStatus($("d-status"), r.error, true);
-  }
-  hide(dialog);
-  strokes = [];
-  $("d-agree").checked = false;
-  form.hidden = true;
-  $("thanks").hidden = false;
-  $("thanks").focus();
-  loadInfo();
-});
 
 // ---- build trackers ----------------------------------------------------------------------------------
 
@@ -352,7 +196,7 @@ async function openTracker(id) {
   $("t-title").textContent = `${product(id)?.name || "Nova"} build tracker`;
   $("t-list").replaceChildren();
   $("t-line").textContent = "Loading…";
-  show(tracker);
+  showDialog(tracker);
   if (!builds) {
     try {
       const res = await fetch("/api/preorder/build", { credentials: "omit", cache: "no-store" });
@@ -390,9 +234,9 @@ for (const card of document.querySelectorAll(".product[data-product]")) {
   b.addEventListener("click", () => openTracker(card.dataset.product));
   card.append(b);
 }
-$("t-close").addEventListener("click", () => hide(tracker));
-tracker.addEventListener("click", (e) => { if (e.target === tracker) hide(tracker); });
-for (const d of [dialog, tracker]) d.addEventListener("close", () => document.documentElement.classList.remove("has-dialog"));
+$("t-close").addEventListener("click", () => hideDialog(tracker));
+tracker.addEventListener("click", (e) => { if (e.target === tracker) hideDialog(tracker); });
+tracker.addEventListener("close", () => document.documentElement.classList.remove("has-dialog"));
 
 // ---- order status lookup -------------------------------------------------------------------------------
 

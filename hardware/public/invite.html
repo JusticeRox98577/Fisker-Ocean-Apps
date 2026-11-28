@@ -34,7 +34,7 @@
   <div class="wrap narrow">
     <div class="lightbar" aria-hidden="true"></div>
     <div class="eyebrow">Nova beta</div>
-    <h1 id="inv-title">Checking your link…</h1>
+    <h1 id="inv-title" tabindex="-1">Checking your link…</h1>
   </div>
 </section>
 
@@ -44,16 +44,18 @@
 
     <div id="inv-ask" hidden>
       <p class="lede-sm" id="inv-hello"></p>
-      <!-- EDIT: what testing involves. -->
+      <!-- EDIT: what testing involves. The install line is filled in for the products they picked. -->
       <h2 class="h-sm">What testing involves</h2>
       <ul class="plain-list">
-        <li>I send you a Nova test board and the harness, free.</li>
-        <li>You fit it behind the center console trim (there's a guide, and I can talk you through it), and use it in your Ocean day to day.</li>
+        <li>I send you a Nova test board and its harness, free.</li>
+        <li id="inv-install">You install it (there's a guide, and I can talk you through it), and use it in your Ocean day to day.</li>
         <li>You tell me what works and what doesn't, roughly once a week, by email.</li>
-        <li>It's early hardware: expect bugs. If anything goes wrong, unplugging it puts the car back to stock.</li>
+        <li>It's first-generation hardware running pre-release software: expect bugs. If anything goes wrong, unplugging it puts the car back to stock.</li>
       </ul>
+      <h2 class="h-sm">Before you say yes</h2>
+      <p class="muted">You'll read and sign the first-generation disclosure, the same one pre-order customers sign. It explains what first-generation hardware means, what it does to your car, and the terms that apply. It takes a few minutes; you can <button class="link-btn" type="button" id="inv-read">read it first</button>.</p>
       <div class="answer-row">
-        <button class="btn btn-primary" type="button" data-answer="yes">Yes, I'm in</button>
+        <button class="btn btn-primary" type="button" id="inv-yes-btn">Yes, I'm in: read and sign</button>
         <button class="btn btn-ghost" type="button" data-answer="no">No thanks</button>
       </div>
       <p class="muted small">Saying no is fine: the board goes to the next person on the list.</p>
@@ -61,7 +63,8 @@
 
     <div class="thanks" id="inv-yes" hidden>
       <h3>You're in. Thank you!</h3>
-      <p>I'll email you soon about shipping and installing your board. Questions before then? Reply to the invitation email.</p>
+      <p>You've signed the first-generation disclosure. I'll email you soon about shipping and installing your board. Questions before then? Reply to the invitation email.</p>
+      <p class="small"><button class="link-btn" type="button" id="inv-reread">Read the disclosure again</button></p>
     </div>
     <div class="thanks thanks-neutral" id="inv-no" hidden>
       <h3>No problem, thanks for letting me know.</h3>
@@ -74,7 +77,7 @@
 
 <footer class="foot wrap">
   <a href="https://oceanlive.org/">oceanlive.org</a>
-  <a href="https://oceanlive.org/privacy">Privacy</a>
+  <a href="https://oceanlive.org/privacy#nova-beta">Privacy</a>
   <a href="mailto:support@oceanlive.org">Contact</a>
 </footer>
 </body>
